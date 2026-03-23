@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPEEKSNET | Portals</title>
+<style>
+  :root { --slate-charcoal: #1a1c1e; --sage-professional: #5a8d3b; --text-dark: #2d2d2d; }
+  body { font-family: 'Inter', -apple-system, sans-serif; margin: 0; background: #fff; color: var(--text-dark); line-height: 1.6; }
+  .header-main { background: var(--slate-charcoal); color: white; padding: 60px 20px; text-align: center; border-bottom: 5px solid var(--sage-professional); }
+  .header-main h1 { margin: 0; font-size: 48px; font-weight: 200; letter-spacing: 10px; text-transform: uppercase; }
+
+  /* NAVIGATION */
+  .nav-bar { display: flex; background: white; border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 1000; justify-content: center; }
+  .nav-link { text-decoration: none; color: #888; padding: 20px 30px; font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 1.5px; transition: 0.3s; border-bottom: 3px solid transparent; }
+  .nav-link:hover { color: var(--sage-professional); }
+  .nav-link.active { color: var(--sage-professional); border-bottom: 3px solid var(--sage-professional); }
+
+  .content-wrapper { max-width: 1400px; margin: 40px auto; padding: 0 30px; }
+  .portals-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 25px; }
+  .store-card { border: 1px solid #eee; border-radius: 12px; padding: 25px; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+  .store-name { font-size: 24px; font-weight: 800; color: var(--slate-charcoal); border-bottom: 2px solid var(--sage-professional); padding-bottom: 10px; margin-bottom: 15px; }
+  .portal-btn { display: block; text-decoration: none; padding: 12px 15px; background: #fff; border: 1px solid #ddd; border-radius: 6px; color: var(--text-dark); font-size: 14px; font-weight: 600; margin-bottom: 10px; transition: 0.2s; }
+  .portal-btn:hover { background: var(--sage-professional); color: white; border-color: var(--sage-professional); }
+</style>
+</head>
+<body>
+
+<div class="header-main"><h1>SPEEKSNET</h1></div>
+
+<div class="nav-bar">
+  <a href="index.html" class="nav-link">SPEEKS Hub</a>
+  <a href="portals.html" class="nav-link active">Portals</a>
+  <a href="metrics.html" class="nav-link">Metrics & Leaderboards</a>
+</div>
+
+<div class="content-wrapper">
+  <div class="portals-grid">
+      <div class="store-card"><div class="store-name">OVL 📍</div><a href="https://docs.google.com/spreadsheets/d/1Ze3z9iyDZZaXsOEjOekEEsrO7OqDpVeH6Bhk4t67K2I/edit" target="_blank" class="portal-btn">🔐 OVL Passwords</a><a href="https://docs.google.com/spreadsheets/d/1r2UfB926QvaSDuO7_mqOE8z4u6IWjgbIqg_N6rfFV9c/edit" target="_blank" class="portal-btn">📦 Marketplace</a><a href="https://docs.google.com/spreadsheets/d/1DhNRld28CSUKG-4B-dHU4o8gyREKtqLo2J2rI2IdT8M/edit" target="_blank" class="portal-btn">💳 Employee Purchases</a><a href="https://docs.google.com/spreadsheets/d/1RKMryoJ7BZgB5DjSUaTjCSvJQW8_OAkmnwXfBznlSX0/edit" target="_blank" class="portal-btn">⚙️ PC Parts/Repairs</a></div>
+      <div class="store-card"><div class="store-name">LEE 📍</div><a href="https://docs.google.com/spreadsheets/d/1BWWMPddxjoTTZL9ZRfgiH6-EiE5vaOczi-x_41Skaxk/edit" target="_blank" class="portal-btn">🔐 LEE Passwords</a><a href="https://docs.google.com/spreadsheets/d/130-aH4s8pNeggrqVSXSJ0R0JDnWkskXUfhNPxSAlPRg/edit" target="_blank" class="portal-btn">📦 Marketplace</a><a href="https://docs.google.com/spreadsheets/d/1qExWuMZKBD3DCm_i9m5kNnN4WhouHeJuA3gYWXLihrA/edit" target="_blank" class="portal-btn">💳 Employee Purchases</a></div>
+      <div class="store-card"><div class="store-name">WSP 📍</div><a href="https://docs.google.com/spreadsheets/d/14AYsHQ0R1IEXqgKqrGEuyURHGi3fFKrAglgu0dVFJPE/edit" target="_blank" class="portal-btn">🔐 WSP Passwords</a><a href="https://docs.google.com/spreadsheets/d/1V0TQ1cJXqUzt0mRnrjvPt_TLzlE8vE7MpxxIMQ9X2yE/edit" target="_blank" class="portal-btn">📦 Marketplace</a><a href="https://docs.google.com/spreadsheets/d/1tp5E1yQhx0j776N-1WMhTzXA_ltvPOPiltsYo65fyc0/edit" target="_blank" class="portal-btn">💳 Employee Purchases</a></div>
+      <div class="store-card"><div class="store-name">MPL 📍</div><a href="https://docs.google.com/spreadsheets/d/18VeWgGjoIfKRlJUtj0PTU1-uJJavKaPu3W2o_A4vyFs/edit" target="_blank" class="portal-btn">🔐 MPL Passwords</a><a href="https://docs.google.com/spreadsheets/d/1xVJ_JJD-wZUbzFfer4fF50CH6RkZ-sqzxe4bYRGqDtE/edit" target="_blank" class="portal-btn">📦 Marketplace</a><a href="https://docs.google.com/spreadsheets/d/10DiGbDO0tyHitLpltOiTix2TowoeMNzsp0a3MjOtTSY/edit" target="_blank" class="portal-btn">💳 Employee Purchases</a></div>
+      <div class="store-card"><div class="store-name">BAL 📍</div><a href="https://docs.google.com/spreadsheets/d/1SuXAQc66OzKOfXkPcp7pCCsccWFB4RbHG2N6YGt3wf0/edit" target="_blank" class="portal-btn">🔐 BAL Passwords</a><a href="https://docs.google.com/spreadsheets/d/192c0M5Mxe9oy5PR6JQelD_DPh4ebvJpCnK26kYGpnbk/edit" target="_blank" class="portal-btn">📦 Marketplace</a><a href="https://docs.google.com/spreadsheets/d/1RHnw3rK9kvNvmQznMFr6qkg82j0GpWEwUhDOIPDGfts/edit" target="_blank" class="portal-btn">💳 Employee Purchases</a></div>
+  </div>
+</div>
+
+</body>
+</html>
