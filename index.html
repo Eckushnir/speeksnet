@@ -35,9 +35,14 @@
 
   /* HUB STYLING */
   .hub-section-header { font-size: 14px; font-weight: 900; text-transform: uppercase; color: #444; margin-bottom: 15px; letter-spacing: 0.5px; }
-  .hub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 40px; }
+  
+  /* 3-COLUMN GRID FOR ANNOUNCEMENTS & PROJECTS */
+  .hub-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-bottom: 40px; }
+  
   .announcement-box { background: #fffcf0; border-left: 4px solid #e6c200; padding: 12px 15px; margin-bottom: 10px; font-size: 13px; font-weight: 500; color: #444; }
   .project-box { background: #f4f9f2; border-left: 4px solid var(--sage-professional); padding: 12px 15px; margin-bottom: 10px; font-size: 13px; font-weight: 500; color: #444; }
+  .upcoming-box { background: #f0f7ff; border-left: 4px solid #0078d4; padding: 12px 15px; margin-bottom: 10px; font-size: 13px; font-weight: 500; color: #444; }
+  
   .hub-embed-card { background: var(--bg-muted); border: 1px solid #eee; border-radius: 12px; padding: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); margin-bottom: 40px; }
   iframe { width: 100%; border: none; border-radius: 8px; background: white; }
 
@@ -110,7 +115,7 @@
 <div class="header-main"><h1>SPEEKSNET</h1></div>
 
 <div class="nav-bar">
-  <button class="nav-link active" onclick="switchTab(event, 'home')">Hub</button>
+  <button class="nav-link active" onclick="switchTab(event, 'home')">SPEEKS Hub</button>
   <button class="nav-link" onclick="switchTab(event, 'portals')">Portals</button>
   <button class="nav-link" onclick="switchTab(event, 'metrics')">Metrics & Leaderboards</button>
 </div>
@@ -125,9 +130,14 @@
         <div class="announcement-box">STL Manager Training KC Week of March 16th.</div>
       </div>
       <div>
-        <div class="hub-section-header">Upcoming Projects</div>
+        <div class="hub-section-header">Active Projects & Initiatives</div>
         <div class="project-box">SPEEKS Picture Guide v2</div>
         <div class="project-box">SPEEKSNET 2.0</div>
+      </div>
+      <div>
+        <div class="hub-section-header">Upcoming Projects & Initiatives</div>
+        <div class="upcoming-box">Summer Promo Rollout</div>
+        <div class="upcoming-box">Q3 Inventory Audit Prep</div>
       </div>
     </div>
 
@@ -306,7 +316,7 @@ function updateKpiView() {
     const metric = document.getElementById('metricSelector').value;
     let rowIndices = [], unit = '%', isPct = false, yMin = 0, yMax = 100;
 
-    // Both stores use the same indices from the API response 
+    // Fixed index mapping so both LEE and WSP pull from the correct 0-3 rows
     if (metric === 'conversion') { 
         isPct = true; yMin = 70; yMax = 100; 
         rowIndices = [0, 1, 2, 3];
