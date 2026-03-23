@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPEEKSNET | Internal Hub</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+<style>
+  :root {
+    --slate-charcoal: #1a1c1e;
+    --sage-professional: #5a8d3b;
+    --text-dark: #2d2d2d;
+    --bg-muted: #f8f9fa;
+    /* Hotkey Specific Colors */
+    --apple-bg: #f5f5f7; --apple-text: #1d1d1f; --apple-border: #d2d2d7;
+    --win-bg: #e1f0fe; --win-text: #0078d4; --win-border: #cce5ff;
+    --android-bg: #e6f7ef; --android-text: #188038; --android-border: #ceead6;
+    --gen-bg: #f1f3f4; --gen-text: #5f6368; --gen-border: #dadce0;
+  }
+
+  body { font-family: 'Inter', -apple-system, sans-serif; margin: 0; background: #fff; color: var(--text-dark); line-height: 1.6; }
+
+  /* HEADER & NAVIGATION */
+  .header-main { background: var(--slate-charcoal); color: white; padding: 60px 20px; text-align: center; border-bottom: 5px solid var(--sage-professional); }
+  .header-main h1 { margin: 0; font-size: 48px; font-weight: 200; letter-spacing: 10px; text-transform: uppercase; }
+
+  .nav-bar { display: flex; background: white; border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 1000; justify-content: center; }
+  .nav-link { background: none; border: none; color: #888; padding: 20px 30px; cursor: pointer; font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 1.5px; transition: 0.3s; border-bottom: 3px solid transparent; }
+  .nav-link.active { color: var(--sage-professional); border-bottom: 3px solid var(--sage-professional); }
+
+  .content-wrapper { max-width: 1400px; margin: 40px auto; padding: 0 30px; }
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+
+  /* HUB STYLING */
+  .hub-section-header { font-size: 14px; font-weight: 900; text-transform: uppercase; color: #444; margin-bottom: 15px; letter-spacing: 0.5px; }
+  .hub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 40px; }
+  .announcement-box { background: #fffcf0; border-left: 4px solid #e6c200; padding: 12px 15px; margin-bottom: 10px; font-size: 13px; font-weight: 500; color: #444; }
+  .project-box { background: #f4f9f2; border-left: 4px solid var(--sage-professional); padding: 12px 15px; margin-bottom: 10px; font-size: 13px; font-weight: 500; color: #444; }
+  .hub-embed-card { background: var(--bg-muted); border: 1px solid #eee; border-radius: 12px; padding: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); margin-bottom: 40px; }
+  iframe { width: 100%; border: none; border-radius: 8px; background: white; }
+
+  /* HOTKEYS INTEGRATION STYLING */
+  .hotkeys-wrapper { margin-bottom: 50px; }
+  .kb-control-bar { display: flex; gap: 15px; margin-bottom: 20px; align-items: center; background: #fbfbfb; padding: 15px; border-radius: 12px; border: 1px solid #eee; flex-wrap: wrap; }
+  #kbSearch { flex-grow: 1; padding: 12px 18px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; outline: none; transition: 0.2s; }
+  #kbSearch:focus { border-color: var(--sage-professional); box-shadow: 0 0 0 3px rgba(90, 141, 59, 0.1); }
+  .kb-sync-group { display: flex; align-items: center; gap: 15px; }
+  .kb-last-synced { font-size: 11px; color: #888; font-weight: 700; text-transform: uppercase; }
+  .kb-sync-btn { background: var(--sage-professional); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 11px; }
+  
+  .kb-scroll-box { max-height: 600px; overflow-y: auto; border: 1px solid #eee; border-radius: 12px; background: white; }
+  .kb-table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; table-layout: fixed; }
+  .kb-table thead th { position: sticky; top: 0; background: var(--slate-charcoal); color: #efefef; z-index: 20; padding: 15px; text-transform: uppercase; font-size: 10px; border-bottom: 2px solid var(--sage-professional); }
+  .kb-table td { padding: 15px 10px; border-bottom: 1px solid #f2f2f2; vertical-align: middle; }
+  .kb-table tr:hover td { background-color: rgba(90, 141, 59, 0.04); }
+
+  .bubble { display: inline-block; padding: 6px 14px; border-radius: 8px; font-weight: 700; line-height: 1.4; border: 1px solid transparent; word-wrap: break-word; max-width: 95%; }
+  .b-apple { background: var(--apple-bg); color: var(--apple-text); border-color: var(--apple-border); }
+  .b-windows { background: var(--win-bg); color: var(--win-text); border-color: var(--win-border); }
+  .b-android { background: var(--android-bg); color: var(--android-text); border-color: var(--android-border); }
+  .b-generic { background: var(--gen-bg); color: var(--gen-text); border-color: var(--gen-border); }
+  .b-device { background: #fff; border: 1px solid #ddd; color: #555; font-weight: 600; }
+  .b-os { background: #fff9db; border: 1px solid #fab005; color: #862e00; }
+  .b-instruction { background: #fff; border: 2px solid #333; color: var(--slate-charcoal); font-weight: 800; font-size: 13px; width: 90%; }
+  .b-objective { background: #f3f0ff; border: 1px solid #d0bfff; color: #5f3dc4; font-style: italic; }
+
+  /* PORTALS GRID */
+  .portals-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 25px; }
+  .store-card { border: 1px solid #eee; border-radius: 12px; padding: 25px; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+  .store-name { font-size: 24px; font-weight: 800; color: var(--slate-charcoal); border-bottom: 2px solid var(--sage-professional); padding-bottom: 10px; margin-bottom: 15px; }
+  .portal-btn { display: block; text-decoration: none; padding: 12px 15px; background: #fff; border: 1px solid #ddd; border-radius: 6px; color: var(--text-dark); font-size: 14px; font-weight: 600; margin-bottom: 10px; transition: 0.2s; }
+  .portal-btn:hover { background: var(--sage-professional); color: white; border-color: var(--sage-professional); }
+
+  /* METRICS STYLING */
+  .chart-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+  .chart-controls { display: flex; gap: 10px; align-items: center; }
+  .metric-dropdown { padding: 10px 15px; border-radius: 8px; border: 1px solid #ddd; font-weight: 600; color: var(--slate-charcoal); background: white; outline: none; }
+  
+  .sync-container { display: flex; align-items: center; gap: 15px; }
+  .last-synced { font-size: 12px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+  .sync-btn { padding: 10px 20px; background: var(--sage-professional); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 12px; transition: 0.2s; }
+
+  .big-chart-card { background: white; border: 1px solid #eee; border-radius: 12px; padding: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); margin-bottom: 40px; height: 500px; position: relative; }
+  #chartLoading { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); display: none; justify-content: center; align-items: center; z-index: 5; border-radius: 12px; font-weight: 700; color: var(--sage-professional); text-transform: uppercase; }
+  
+  .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-bottom: 40px; }
+  .metric-card { background: white; border: 1px solid #eee; border-radius: 12px; padding: 25px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+  .goal-text, .tracking-box { font-weight: 800; font-size: 15px; margin-top: 5px; color: var(--slate-charcoal); }
+
+  .progress-ring { position: relative; width: 120px; height: 120px; margin: 0 auto 15px; }
+  .progress-ring svg { transform: rotate(-90deg); width: 120px; height: 120px; }
+  .progress-ring circle { fill: none; stroke-width: 10; stroke-linecap: round; }
+  .progress-ring .bg { stroke: #f0f0f0; }
+  .progress-ring .bar { stroke: var(--sage-professional); transition: 1.5s ease-out; stroke-dasharray: 326.7; stroke-dashoffset: 326.7; }
+  .percentage { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: 800; font-size: 20px; }
+  
+  .leaderboard-container { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 30px; }
+  .lb-card { background: white; border: 1px solid #eee; border-radius: 12px; padding: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+  .lb-header { font-size: 16px; font-weight: 800; text-transform: uppercase; color: var(--slate-charcoal); border-bottom: 2px solid var(--sage-professional); padding-bottom: 10px; margin-bottom: 20px; text-align: center; }
+  .lb-row { display: flex; align-items: center; padding: 15px 15px; border-bottom: 1px solid #f9f9f9; }
+  .lb-rank { width: 40px; font-weight: 800; color: var(--sage-professional); font-size: 22px; }
+  .lb-name { flex-grow: 1; font-weight: 700; font-size: 18px; margin-left: 15px; }
+  .lb-val { font-weight: 800; color: var(--slate-charcoal); font-size: 18px; }
+</style>
+</head>
+<body>
+
+<div class="header-main"><h1>SPEEKSNET</h1></div>
+
+<div class="nav-bar">
+  <button class="nav-link active" onclick="switchTab(event, 'home')">Hub</button>
+  <button class="nav-link" onclick="switchTab(event, 'portals')">Portals</button>
+  <button class="nav-link" onclick="switchTab(event, 'metrics')">Metrics & Leaderboards</button>
+</div>
+
+<div class="content-wrapper">
+
+  <div id="home" class="tab-pane active">
+    <div class="hub-grid">
+      <div>
+        <div class="hub-section-header">Announcements</div>
+        <div class="announcement-box">MPL store opening projected for March 30th!</div>
+        <div class="announcement-box">STL Manager Training KC Week of March 16th.</div>
+      </div>
+      <div>
+        <div class="hub-section-header">Upcoming Projects</div>
+        <div class="project-box">SPEEKS Picture Guide v2</div>
+        <div class="project-box">SPEEKSNET 2.0</div>
+      </div>
+    </div>
+
+    <div class="hotkeys-wrapper">
+        <div class="hub-section-header">Helpful System Hotkeys</div>
+        <div class="kb-control-bar">
+            <input type="text" id="kbSearch" onkeyup="filterKB()" placeholder="Filter by Brand, Device, or Task (e.g. Apple, Dell, Boot Menu)...">
+            <div class="kb-sync-group">
+                <span class="kb-last-synced" id="kbLastSynced">Not Synced</span>
+                <button onclick="loadHotkeys()" class="kb-sync-btn" id="kbSyncBtn">Sync Hotkeys</button>
+            </div>
+        </div>
+        <div class="kb-scroll-box">
+            <table class="kb-table" id="kbTable">
+                <thead>
+                    <tr>
+                        <th style="width: 15%;">Brand</th>
+                        <th style="width: 15%;">Device</th>
+                        <th style="width: 15%;">OS</th>
+                        <th style="width: 35%;">Instructions</th>
+                        <th style="width: 20%;">Objective</th>
+                    </tr>
+                </thead>
+                <tbody id="kbBody">
+                    <tr><td colspan="5" style="padding: 30px; text-align: center; color: #999;">Click Sync to load hotkeys...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="hub-section-header">Strategic Ideas & Initiatives</div>
+    <div class="hub-embed-card">
+      <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSfEm449owjdKiT_zp7ATB_oLvsy3x51bL38Q3nKNiM7UNUZFQ/viewform?embedded=true" height="400"></iframe>
+    </div>
+    
+    <div class="hub-section-header">Strategic Company Calendar</div>
+    <div class="hub-embed-card">
+      <iframe src="https://calendar.google.com/calendar/embed?src=75d63f4495d48b06d2405686eb56d8dfe7fe74175f4dddc340588565a5545980%40group.calendar.google.com&ctz=America%2FChicago" height="750"></iframe>
+    </div>
+  </div>
+
+  <div id="portals" class="tab-pane">
+    <div class="portals-grid">
+        <div class="store-card"><div class="store-name">OVL 📍</div><a href="https://docs.google.com/spreadsheets/d/1Ze3z9iyDZZaXsOEjOekEEsrO7OqDpVeH6Bhk4t67K2I/edit" target="_blank" class="portal-btn">🔐 OVL Passwords</a><a href="https://docs.google.com/spreadsheets/d/1r2UfB926QvaSDuO7_mqOE8z4u6IWjgbIqg_N6rfFV9c/edit" target="_blank" class="portal-btn">📦 Marketplace</a><a href="https://docs.google.com/spreadsheets/d/1DhNRld28CSUKG-4B-dHU4o8gyREKtqLo2J2rI2IdT8M/edit" target="_blank" class="portal-btn">💳 Employee Purchases</a><a href="https://docs.google.com/spreadsheets/d/1RKMryoJ7BZgB5DjSUaTjCSvJQW8_OAkmnwXfBznlSX0/edit" target="_blank" class="portal-btn">⚙️ PC Parts/Repairs</a></div>
+        <div class="store-card"><div class="store-name">LEE 📍</div><a href="https://docs.google.com/spreadsheets/d/1BWWMPddxjoTTZL9ZRfgiH6-EiE5vaOczi-x_41Skaxk/edit" target="_blank" class="portal-btn">🔐 LEE Passwords</a><a href="https://docs.google.com/spreadsheets/d/130-aH4s8pNeggrqVSXSJ0R0JDnWkskXUfhNPxSAlPRg/edit" target="_blank" class="portal-btn">📦 Marketplace</a><a href="https://docs.google.com/spreadsheets/d/1qExWuMZKBD3DCm_i9m5kNnN4WhouHeJuA3gYWXLihrA/edit" target="_blank" class="portal-btn">💳 Employee Purchases</a></div>
+        <div class="store-card"><div class="store-name">WSP 📍</div><a href="https://docs.google.com/spreadsheets/d/14AYsHQ0R1IEXqgKqrGEuyURHGi3fFKrAglgu0dVFJPE/edit" target="_blank" class="portal-btn">🔐 WSP Passwords</a><a href="https://docs.google.com/spreadsheets/d/1V0TQ1cJXqUzt0mRnrjvPt_TLzlE8vE7MpxxIMQ9X2yE/edit" target="_blank" class="portal-btn">📦 Marketplace</a><a href="https://docs.google.com/spreadsheets/d/1tp5E1yQhx0j776N-1WMhTzXA_ltvPOPiltsYo65fyc0/edit" target="_blank" class="portal-btn">💳 Employee Purchases</a></div>
+        <div class="store-card"><div class="store-name">MPL 📍</div><a href="https://docs.google.com/spreadsheets/d/18VeWgGjoIfKRlJUtj0PTU1-uJJavKaPu3W2o_A4vyFs/edit" target="_blank" class="portal-btn">🔐 MPL Passwords</a><a href="https://docs.google.com/spreadsheets/d/1xVJ_JJD-wZUbzFfer4fF50CH6RkZ-sqzxe4bYRGqDtE/edit" target="_blank" class="portal-btn">📦 Marketplace</a><a href="https://docs.google.com/spreadsheets/d/10DiGbDO0tyHitLpltOiTix2TowoeMNzsp0a3MjOtTSY/edit" target="_blank" class="portal-btn">💳 Employee Purchases</a></div>
+        <div class="store-card"><div class="store-name">BAL 📍</div><a href="https://docs.google.com/spreadsheets/d/1SuXAQc66OzKOfXkPcp7pCCsccWFB4RbHG2N6YGt3wf0/edit" target="_blank" class="portal-btn">🔐 BAL Passwords</a><a href="https://docs.google.com/spreadsheets/d/192c0M5Mxe9oy5PR6JQelD_DPh4ebvJpCnK26kYGpnbk/edit" target="_blank" class="portal-btn">📦 Marketplace</a><a href="https://docs.google.com/spreadsheets/d/1RHnw3rK9kvNvmQznMFr6qkg82j0GpWEwUhDOIPDGfts/edit" target="_blank" class="portal-btn">💳 Employee Purchases</a></div>
+    </div>
+  </div>
+
+  <div id="metrics" class="tab-pane">
+    <div class="chart-header-row">
+        <div class="chart-controls">
+            <select id="storeSelector" class="metric-dropdown" onchange="loadKpiData()">
+                <option value="LEE">LEE (Lees Summit)</option>
+                <option value="WSP">WSP (Westport)</option>
+            </select>
+            <select id="metricSelector" class="metric-dropdown" onchange="updateKpiView()">
+                <option value="conversion">Customer Conversion</option>
+                <option value="margin">Buying Margin</option>
+                <option value="nodeals">No Deals</option>
+                <option value="time">Transaction Time</option>
+            </select>
+        </div>
+        <div class="sync-container">
+            <div class="last-synced" id="lastSyncedText">Last Synced: --:--</div>
+            <button class="sync-btn" onclick="syncAllData()">🔄 Sync All Data</button>
+        </div>
+    </div>
+
+    <div class="big-chart-card"><div id="chartLoading">Syncing...</div><canvas id="mainKpiChart"></canvas></div>
+
+    <div class="metrics-grid">
+      <div class="metric-card"><h3>OVL Projected Goal</h3><div class="progress-ring"><svg><circle class="bg" cx="60" cy="60" r="52"></circle><circle class="bar" id="ovl-bar" cx="60" cy="60" r="52"></circle></svg><div class="percentage" id="ovl-pct">0%</div></div><div class="goal-text" id="ovl-goal">Goal: --</div><div class="tracking-box">GP Track: <span id="ovl-t-gp">--</span></div></div>
+      <div class="metric-card"><h3>LEE Projected Goal</h3><div class="progress-ring"><svg><circle class="bg" cx="60" cy="60" r="52"></circle><circle class="bar" id="lee-bar" cx="60" cy="60" r="52"></circle></svg><div class="percentage" id="lee-pct">0%</div></div><div class="goal-text" id="lee-goal">Goal: --</div><div class="tracking-box">GP Track: <span id="lee-t-gp">--</span></div></div>
+      <div class="metric-card"><h3>WSP Projected Goal</h3><div class="progress-ring"><svg><circle class="bg" cx="60" cy="60" r="52"></circle><circle class="bar" id="wsp-bar" cx="60" cy="60" r="52"></circle></svg><div class="percentage" id="wsp-pct">0%</div></div><div class="goal-text" id="wsp-goal">Goal: --</div><div class="tracking-box">GP Track: <span id="wsp-t-gp">--</span></div></div>
+    </div>
+
+    <div class="leaderboard-container">
+      <div class="lb-card"><div class="lb-header">MTD Revenue Rank</div><div id="rev-list"></div></div>
+      <div class="lb-card"><div class="lb-header">MTD GP Rank</div><div id="gp-list"></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// --- CONFIGURATION ---
+const HUB_URL = 'https://script.google.com/macros/s/AKfycbw3Ms5nc2bhbrjVW-da3xbZ3vKhyBx2TpeR-eSd1L05ZhV-h2Yh0yLmIV_E7TWDmwM69A/exec';
+const KPI_URL = 'https://script.google.com/macros/s/AKfycbztIQtyruTayW0iQwZ06Q9jsp8yYpm1sqfM_BInx89otX4iNgy3QWX9E6uOMB2ndcqY/exec';
+const HOTKEYS_URL = 'https://script.google.com/macros/s/AKfycbyLburcVWM8xAKwDt2RHAQhZBLb_rJjb2__EzhoAKx1KgkNFi-BchVetgaTKvwCwqZiRw/exec';
+
+let kpiRawData = [];
+let mainChartInstance = null;
+
+// --- HOTKEYS LOGIC ---
+async function loadHotkeys() {
+    const tbody = document.getElementById('kbBody');
+    const btn = document.getElementById('kbSyncBtn');
+    const timeSpan = document.getElementById('kbLastSynced');
+    btn.innerText = "Syncing...";
+    try {
+        const response = await fetch(`${HOTKEYS_URL}?v=${Date.now()}`);
+        const data = await response.json();
+        tbody.innerHTML = data.map((row) => {
+            const cols = Object.values(row);
+            const brand = cols[1] || "";
+            const device = cols[2] || "";
+            const os = cols[3] || "";
+            const instruction = cols[4] || "";
+            const objective = cols[5] || "";
+            if (brand.toLowerCase() === "brand" || !brand) return '';
+            let bClass = 'b-generic';
+            const bL = brand.toLowerCase();
+            if (bL.includes('apple')) bClass = 'b-apple';
+            else if (['dell','hp','lenovo','asus','acer','msi','surface','windows'].some(x => bL.includes(x))) bClass = 'b-windows';
+            else if (bL.includes('android') || bL.includes('samsung')) bClass = 'b-android';
+            return `<tr>
+                <td><span class="bubble ${bClass}">${brand}</span></td>
+                <td><span class="bubble b-device">${device}</span></td>
+                <td><span class="bubble b-os">${os}</span></td>
+                <td><span class="bubble b-instruction">${instruction}</span></td>
+                <td><span class="bubble b-objective">${objective}</span></td>
+            </tr>`;
+        }).join('');
+        const now = new Date();
+        timeSpan.innerText = "Last Synced: " + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch (e) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:red;">Sync Failed</td></tr>`; }
+    finally { btn.innerText = "Sync Hotkeys"; }
+}
+
+function filterKB() {
+    const filter = document.getElementById("kbSearch").value.toUpperCase();
+    const rows = document.getElementById("kbTable").getElementsByTagName("tr");
+    for (let i = 1; i < rows.length; i++) {
+        const text = rows[i].textContent || rows[i].innerText;
+        rows[i].style.display = text.toUpperCase().includes(filter) ? "" : "none";
+    }
+}
+
+// --- ORIGINAL METRICS LOGIC ---
+function updateTimestamp() {
+    const now = new Date();
+    let hours = now.getHours();
+    const mins = String(now.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12; 
+    document.getElementById('lastSyncedText').innerText = `Last Synced: ${hours}:${mins} ${ampm}`;
+}
+
+function cleanValue(val, isPercentage = false) {
+    if (val === undefined || val === null || val === "" || val === 0) return null;
+    let str = String(val).trim();
+    if (str.includes('#')) return null;
+    let num = parseFloat(str.replace(/[$,%]/g, ''));
+    if (isNaN(num)) return null;
+    if (isPercentage && num <= 1.1 && num > 0) return num * 100;
+    return num;
+}
+
+async function loadKpiData() {
+    const loader = document.getElementById('chartLoading');
+    if(loader) loader.style.display = 'flex';
+    const store = document.getElementById('storeSelector').value;
+    try { 
+        const response = await fetch(`${KPI_URL}?store=${store}&v=${Date.now()}`); 
+        kpiRawData = await response.json(); 
+        updateKpiView();
+    } catch (e) { console.error("Load Failed", e); }
+    if(loader) loader.style.display = 'none';
+}
+
+function updateKpiView() {
+    if (!kpiRawData || kpiRawData.length < 5) return;
+    const store = document.getElementById('storeSelector').value;
+    const metric = document.getElementById('metricSelector').value;
+    let rowIndices = [], unit = '%', isPct = false, yMin = 0, yMax = 100;
+
+    // Both stores use the same indices from the API response 
+    if (metric === 'conversion') { 
+        isPct = true; yMin = 70; yMax = 100; 
+        rowIndices = [0, 1, 2, 3];
+    } 
+    else if (metric === 'margin') { 
+        isPct = true; yMin = 35; yMax = 70; 
+        rowIndices = [7, 8, 9, 10];
+    } 
+    else if (metric === 'nodeals') { 
+        unit = ''; yMin = 0; yMax = 20; 
+        rowIndices = [14, 15, 16, 17];
+    } 
+    else if (metric === 'time') { 
+        unit = 'm'; yMin = 5; yMax = 30; 
+        rowIndices = [21, 22, 23, 24];
+    }
+
+    const getEmpData = (col) => rowIndices.map(i => cleanValue(kpiRawData[i] ? kpiRawData[i][col] : null, isPct));
+    let datasets = (store === 'LEE') ? [
+        { label: 'Nick', data: getEmpData(1), borderColor: '#5a8d3b' },
+        { label: 'Daniel', data: getEmpData(2), borderColor: '#0076ce' },
+        { label: 'Caleb', data: getEmpData(4), borderColor: '#d1410c' }
+    ] : [
+        { label: 'Eli', data: getEmpData(1), borderColor: '#5a8d3b' },
+        { label: 'Duncan', data: getEmpData(2), borderColor: '#0076ce' },
+        { label: 'Josiah', data: getEmpData(3), borderColor: '#d1410c' }
+    ];
+    datasets.push({ label: 'Store Average', data: getEmpData(5), borderColor: '#9c27b0', borderWidth: 5 });
+
+    const ctx = document.getElementById('mainKpiChart').getContext('2d');
+    if (mainChartInstance) mainChartInstance.destroy();
+    mainChartInstance = new Chart(ctx, {
+        type: 'line',
+        plugins: [ChartDataLabels],
+        data: { labels: ["Week 1", "Week 2", "Week 3", "Week 4"], datasets: datasets.map(d => ({...d, tension: 0.3, spanGaps: true, pointRadius: 5})) },
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            plugins: {
+                datalabels: {
+                    align: 'top',
+                    anchor: 'end',
+                    offset: 8,
+                    font: { weight: 'bold', size: 14 },
+                    formatter: (v) => v !== null ? (Math.round(v*10)/10 + unit) : ''
+                }
+            },
+            scales: { 
+                y: { min: yMin, max: yMax, ticks: { font: { weight: 'bold' }, callback: v => v + unit } },
+                x: { ticks: { font: { weight: 'bold' } } }
+            } 
+        }
+    });
+}
+
+async function fetchLiveData() {
+    try {
+        const res = await fetch(`${HUB_URL}?v=${Date.now()}`);
+        const data = await res.json();
+        ['ovl', 'lee', 'wsp'].forEach(id => updateCircle(id, data[`${id}Pct`], data[`${id}Goal`], data[`${id}TrackGP`]));
+        const stores = [{ name: 'OVL', rev: data.ovlRev, gp: data.ovlGP }, { name: 'LEE', rev: data.leeRev, gp: data.leeGP }, { name: 'WSP', rev: data.wspRev, gp: data.wspGP }];
+        document.getElementById('rev-list').innerHTML = [...stores].sort((a,b) => b.rev - a.rev).map((s, i) => `<div class="lb-row"><div class="lb-rank">${i+1}</div><div class="lb-name">${s.name}</div><div class="lb-val">$${Math.round(s.rev).toLocaleString()}</div></div>`).join('');
+        document.getElementById('gp-list').innerHTML = [...stores].sort((a,b) => b.gp - a.gp).map((s, i) => `<div class="lb-row"><div class="lb-rank">${i+1}</div><div class="lb-name">${s.name}</div><div class="lb-val">$${Math.round(s.gp).toLocaleString()}</div></div>`).join('');
+        updateTimestamp();
+    } catch(e) { console.error("Hub Failed", e); }
+}
+
+function updateCircle(id, pct, goal, track) {
+    const val = Math.round(pct || 0);
+    const pctEl = document.getElementById(`${id}-pct`);
+    if(pctEl) {
+        pctEl.innerText = val + '%';
+        document.getElementById(`${id}-goal`).innerText = `Goal: $${Math.round(goal || 0).toLocaleString()}`;
+        document.getElementById(`${id}-t-gp`).innerText = `$${Math.round(track || 0).toLocaleString()}`;
+        const offset = 326.7 - (Math.min(val, 100) / 100) * 326.7;
+        document.getElementById(`${id}-bar`).style.strokeDashoffset = offset;
+    }
+}
+
+function syncAllData() { 
+    loadKpiData(); 
+    fetchLiveData(); 
+    loadHotkeys(); 
+}
+
+function switchTab(evt, name) {
+    document.querySelectorAll('.tab-pane').forEach(p => p.style.display = 'none');
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    document.getElementById(name).style.display = 'block';
+    evt.currentTarget.classList.add('active');
+    if(name === 'metrics' || name === 'home') syncAllData();
+}
+
+window.onload = syncAllData;
+</script>
+</body>
+</html>
