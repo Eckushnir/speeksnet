@@ -4,9 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SPEEKSNET | SPEEKS Hub</title>
-<title>SPEEKSNET | Internal Hub</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 <style>
   :root {
     --slate-charcoal: #1a1c1e; --sage-professional: #5a8d3b; --text-dark: #2d2d2d; --bg-muted: #f8f9fa;
@@ -19,22 +16,25 @@
   .header-main { background: var(--slate-charcoal); color: white; padding: 60px 20px; text-align: center; border-bottom: 5px solid var(--sage-professional); }
   .header-main h1 { margin: 0; font-size: 48px; font-weight: 200; letter-spacing: 10px; text-transform: uppercase; }
 
-  /* NAVIGATION - Now using standard links! */
+  /* GITHUB PAGES CLEAN NAVIGATION */
   .nav-bar { display: flex; background: white; border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 1000; justify-content: center; }
-  .nav-link { text-decoration: none; color: #888; padding: 20px 30px; font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 1.5px; transition: 0.3s; border-bottom: 3px solid transparent; }
+  .nav-link { text-decoration: none; display: inline-block; color: #888; padding: 20px 30px; font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 1.5px; transition: 0.3s; border-bottom: 3px solid transparent; }
   .nav-link:hover { color: var(--sage-professional); }
   .nav-link.active { color: var(--sage-professional); border-bottom: 3px solid var(--sage-professional); }
 
   .content-wrapper { max-width: 1400px; margin: 40px auto; padding: 0 30px; }
   .hub-section-header { font-size: 14px; font-weight: 900; text-transform: uppercase; color: #444; margin-bottom: 15px; letter-spacing: 0.5px; }
   .hub-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-bottom: 40px; }
+  
+  /* Dynamic CMS Boxes */
   .announcement-box { background: #fffcf0; border-left: 4px solid #e6c200; padding: 12px 15px; margin-bottom: 10px; font-size: 13px; font-weight: 500; color: #444; }
   .project-box { background: #f4f9f2; border-left: 4px solid var(--sage-professional); padding: 12px 15px; margin-bottom: 10px; font-size: 13px; font-weight: 500; color: #444; }
   .upcoming-box { background: #f0f7ff; border-left: 4px solid #0078d4; padding: 12px 15px; margin-bottom: 10px; font-size: 13px; font-weight: 500; color: #444; }
+  
   .hub-embed-card { background: var(--bg-muted); border: 1px solid #eee; border-radius: 12px; padding: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); margin-bottom: 40px; }
   iframe { width: 100%; border: none; border-radius: 8px; background: white; }
 
-  /* HOTKEYS STYLING */
+  /* Hotkeys Styling */
   .hotkeys-wrapper { margin-bottom: 50px; }
   .kb-control-bar { display: flex; gap: 15px; margin-bottom: 20px; align-items: center; background: #fbfbfb; padding: 15px; border-radius: 12px; border: 1px solid #eee; flex-wrap: wrap; }
   #kbSearch { flex-grow: 1; padding: 12px 18px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; outline: none; transition: 0.2s; }
@@ -72,18 +72,15 @@
     <div class="hub-grid">
       <div>
         <div class="hub-section-header">Announcements</div>
-        <div class="announcement-box">MPL store opening projected for March 30th!</div>
-        <div class="announcement-box">STL Manager Training KC Week of March 16th.</div>
+        <div id="announcements-container"><div style="padding: 12px; color: #999; font-size: 12px;">Loading...</div></div>
       </div>
       <div>
         <div class="hub-section-header">Active Projects & Initiatives</div>
-        <div class="project-box">SPEEKS Picture Guide v2</div>
-        <div class="project-box">SPEEKSNET 2.0</div>
+        <div id="active-container"><div style="padding: 12px; color: #999; font-size: 12px;">Loading...</div></div>
       </div>
       <div>
         <div class="hub-section-header">Upcoming Projects & Initiatives</div>
-        <div class="upcoming-box">Summer Promo Rollout</div>
-        <div class="upcoming-box">Q3 Inventory Audit Prep</div>
+        <div id="upcoming-container"><div style="padding: 12px; color: #999; font-size: 12px;">Loading...</div></div>
       </div>
     </div>
 
@@ -126,7 +123,27 @@
 </div>
 
 <script>
+// --- YOUR APPS SCRIPT URLS ---
 const HOTKEYS_URL = 'https://script.google.com/macros/s/AKfycbyLburcVWM8xAKwDt2RHAQhZBLb_rJjb2__EzhoAKx1KgkNFi-BchVetgaTKvwCwqZiRw/exec';
+const CMS_URL = 'https://script.google.com/macros/s/AKfycby8cueKK9CLXVK_-7R5DhLccU5-nFjRjHqGRvPyGFx9MKSqFE6q3nTgYHeTqZouCS0/exec';
+
+async function loadCMS() {
+    try {
+        const response = await fetch(`${CMS_URL}?v=${Date.now()}`);
+        const data = await response.json();
+
+        const annContainer = document.getElementById('announcements-container');
+        const actContainer = document.getElementById('active-container');
+        const upContainer = document.getElementById('upcoming-container');
+
+        annContainer.innerHTML = data.announcements.length ? data.announcements.map(txt => `<div class="announcement-box">${txt}</div>`).join('') : '<div class="announcement-box">No new announcements</div>';
+        actContainer.innerHTML = data.active.length ? data.active.map(txt => `<div class="project-box">${txt}</div>`).join('') : '<div class="project-box">No active projects</div>';
+        upContainer.innerHTML = data.upcoming.length ? data.upcoming.map(txt => `<div class="upcoming-box">${txt}</div>`).join('') : '<div class="upcoming-box">No upcoming projects</div>';
+    } catch (e) {
+        console.error("CMS Load Failed", e);
+        document.getElementById('announcements-container').innerHTML = `<div style="padding: 12px; color: red; font-size: 12px;">Failed to load data. Check URL.</div>`;
+    }
+}
 
 async function loadHotkeys() {
     const tbody = document.getElementById('kbBody');
@@ -172,7 +189,11 @@ function filterKB() {
     }
 }
 
-window.onload = loadHotkeys;
+// Load both on page load
+window.onload = () => {
+    loadHotkeys();
+    loadCMS();
+};
 </script>
 </body>
 </html>
