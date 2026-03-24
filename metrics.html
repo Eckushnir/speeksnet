@@ -69,7 +69,7 @@
   .lb-row:hover { background: #fbfdfa; transform: translateX(4px); }
   .lb-row:last-child { border-bottom: none; }
   .lb-rank { width: 40px; font-weight: 900; color: #ccc; font-size: 22px; }
-  .lb-row:nth-child(1) .lb-rank { color: #f59e0b; }
+  .lb-row:nth-child(1) .lb-rank { color: #f59e0b; } /* Gold for 1st */
   .lb-name { flex-grow: 1; font-weight: 700; font-size: 16px; margin-left: 10px; color: var(--slate-charcoal); }
   .lb-val { font-weight: 800; color: var(--sage-professional); font-size: 16px; }
 </style>
@@ -126,7 +126,7 @@
             <div class="card-title" style="margin: 0;">Employee Metric Trends</div>
             <div class="chart-controls">
                 <select id="storeSelector" class="metric-dropdown" onchange="loadKpiData()">
-                    <option value="OVL">OVL (Overland Park)</option>
+                    <option value="OVL" selected>OVL (Overland Park)</option>
                     <option value="LEE">LEE (Lees Summit)</option>
                     <option value="WSP">WSP (Westport)</option>
                 </select>
@@ -158,7 +158,9 @@
 
 <script>
 const HUB_URL = 'https://script.google.com/macros/s/AKfycbw3Ms5nc2bhbrjVW-da3xbZ3vKhyBx2TpeR-eSd1L05ZhV-h2Yh0yLmIV_E7TWDmwM69A/exec';
-const KPI_URL = 'https://script.google.com/macros/s/AKfycbztIQtyruTayW0iQwZ06Q9jsp8yYpm1sqfM_BInx89otX4iNgy3QWX9E6uOMB2ndcqY/exec';
+
+// --- UPDATED KPI SCRIPT URL ---
+const KPI_URL = 'https://script.google.com/macros/s/AKfycbzR-_kAsiPtJ76zIFHuZd_vHIPTX9eUFq4nfuDBumBSRjnA0zgJxvhinFt7uNqbAOD0/exec';
 
 let kpiRawData = [];
 let mainChartInstance = null;
