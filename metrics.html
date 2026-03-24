@@ -69,7 +69,7 @@
   .lb-row:hover { background: #fbfdfa; transform: translateX(4px); }
   .lb-row:last-child { border-bottom: none; }
   .lb-rank { width: 40px; font-weight: 900; color: #ccc; font-size: 22px; }
-  .lb-row:nth-child(1) .lb-rank { color: #f59e0b; } /* Gold for 1st */
+  .lb-row:nth-child(1) .lb-rank { color: #f59e0b; }
   .lb-name { flex-grow: 1; font-weight: 700; font-size: 16px; margin-left: 10px; color: var(--slate-charcoal); }
   .lb-val { font-weight: 800; color: var(--sage-professional); font-size: 16px; }
 </style>
@@ -126,7 +126,7 @@
             <div class="card-title" style="margin: 0;">Employee Metric Trends</div>
             <div class="chart-controls">
                 <select id="storeSelector" class="metric-dropdown" onchange="loadKpiData()">
-                    <option value="OVL">OVL (Overland Park)</option>
+                    <option value="OVL" selected>OVL (Overland Park)</option>
                     <option value="LEE">LEE (Lees Summit)</option>
                     <option value="WSP">WSP (Westport)</option>
                 </select>
@@ -157,8 +157,9 @@
 </main>
 
 <script>
+// --- URL CONFIGURATION ---
 const HUB_URL = 'https://script.google.com/macros/s/AKfycbw3Ms5nc2bhbrjVW-da3xbZ3vKhyBx2TpeR-eSd1L05ZhV-h2Yh0yLmIV_E7TWDmwM69A/exec';
-const KPI_URL = 'https://script.google.com/macros/s/AKfycbztIQtyruTayW0iQwZ06Q9jsp8yYpm1sqfM_BInx89otX4iNgy3QWX9E6uOMB2ndcqY/exec';
+const KPI_URL = 'https://script.google.com/macros/s/AKfycbyXvRW9zMZdgMRCSTZ_qcU-uX5SdTFOgxff0Uw0LfN7peNfaYwi0-yrhb3fSmxgkAuJ/exec';
 
 let kpiRawData = [];
 let mainChartInstance = null;
@@ -173,9 +174,20 @@ function updateTimestamp() {
 }
 
 function cleanValue(val, isPercentage = false) {
-    if (val === undefined || val === null || val === "" || val === 0) return null;
+    if (val === undefined || val === null || val === "") return null;
     let str = String(val).trim();
-    if (str.includes('#')) return null;
+    if (str === "") return null;
+    if (str.includes('#')) return null; 
+    
+    if (str.includes(':')) {
+        let parts = str.split(':');
+        if (parts.length === 3) {
+            return parseInt(parts[0]) * 60 + parseInt(parts[1]) + (parseInt(parts[2]) / 60);
+        } else if (parts.length === 2) {
+            return parseInt(parts[0]) + (parseInt(parts[1]) / 60);
+        }
+    }
+
     let num = parseFloat(str.replace(/[$,%]/g, ''));
     if (isNaN(num)) return null;
     if (isPercentage && num <= 1.1 && num > 0) return num * 100;
@@ -195,15 +207,33 @@ async function loadKpiData() {
 }
 
 function updateKpiView() {
-    if (!kpiRawData || kpiRawData.length < 5) return;
+    if (!kpiRawData || kpiRawData.length === 0) return;
     const store = document.getElementById('storeSelector').value;
     const metric = document.getElementById('metricSelector').value;
-    let rowIndices = [], unit = '%', isPct = false, yMin = 0, yMax = 100;
+    
+    // Auto-Targeting Logic: Find where each block starts by looking for "Week 1"
+    let week1Rows = [];
+    for (let i = 0; i < kpiRawData.length; i++) {
+        if (kpiRawData[i] && kpiRawData[i][0] && String(kpiRawData[i][0]).trim() === "Week 1") {
+            week1Rows.push(i);
+        }
+    }
+    
+    // Safety Fallback just in case
+    if (week1Rows.length < 4) {
+        console.warn("Could not find all metric headers. Defaulting.");
+        week1Rows = [0, 7, 14, 21];
+    }
 
-    if (metric === 'conversion') { isPct = true; yMin = 70; yMax = 100; rowIndices = [0, 1, 2, 3]; } 
-    else if (metric === 'margin') { isPct = true; yMin = 35; yMax = 70; rowIndices = [7, 8, 9, 10]; } 
-    else if (metric === 'nodeals') { unit = ''; yMin = 0; yMax = 20; rowIndices = [14, 15, 16, 17]; } 
-    else if (metric === 'time') { unit = 'm'; yMin = 5; yMax = 30; rowIndices = [21, 22, 23, 24]; }
+    let baseRow = 0, unit = '%', isPct = false, yMin = 0, yMax = 100;
+
+    if (metric === 'conversion') { isPct = true; yMin = 70; yMax = 100; baseRow = week1Rows[0]; } 
+    else if (metric === 'margin') { isPct = true; yMin = 35; yMax = 70; baseRow = week1Rows[1]; } 
+    else if (metric === 'nodeals') { unit = ''; yMin = 0; yMax = 20; baseRow = week1Rows[2]; } 
+    else if (metric === 'time') { unit = 'm'; yMin = 5; yMax = 30; baseRow = week1Rows[3]; }
+
+    // Creates the dynamic row index based on where it found "Week 1"
+    let rowIndices = [baseRow, baseRow + 1, baseRow + 2, baseRow + 3];
 
     const getEmpData = (col) => rowIndices.map(i => cleanValue(kpiRawData[i] ? kpiRawData[i][col] : null, isPct));
     
@@ -213,7 +243,7 @@ function updateKpiView() {
             { label: 'Jurell', data: getEmpData(1), borderColor: '#5a8d3b', backgroundColor: '#5a8d3b' },
             { label: 'Jon', data: getEmpData(2), borderColor: '#0ea5e9', backgroundColor: '#0ea5e9' },
             { label: 'Essence', data: getEmpData(3), borderColor: '#f97316', backgroundColor: '#f97316' },
-            { label: 'Christian', data: getEmpData(4), borderColor: '#8b5cf6', backgroundColor: '#8b5cf6' } // Added 4th color
+            { label: 'Christian', data: getEmpData(4), borderColor: '#8b5cf6', backgroundColor: '#8b5cf6' }
         ];
     } else if (store === 'LEE') {
         datasets = [
