@@ -235,6 +235,7 @@ function updateKpiView() {
         return;
     }
 
+    const store = document.getElementById('storeSelector').value;
     const metric = document.getElementById('metricSelector').value;
     
     // Map HTML dropdown to exact Google Sheets headers
@@ -253,12 +254,12 @@ function updateKpiView() {
     else if (metric === 'time') { unit = 'm'; yMin = 5; yMax = 35; }
 
     // 1. DYNAMICALLY FIND THE DATA BLOCK HEADER
-    let r = -1, c = -1;
+    let r = -1;
     for(let i=0; i<kpiRawData.length; i++) {
         if (!kpiRawData[i]) continue;
         for(let j=0; j<kpiRawData[i].length; j++) {
             if(kpiRawData[i][j] && String(kpiRawData[i][j]).trim() === searchTarget) {
-                r = i; c = j; break;
+                r = i; break;
             }
         }
         if(r !== -1) break;
@@ -270,40 +271,62 @@ function updateKpiView() {
         return; 
     }
 
-    // 2. DYNAMICALLY EXTRACT EMPLOYEE NAMES
+    // 2. FIND THE LABEL COLUMN (Where the Store name lives)
     let namesRow = r + 1;
+    let labelCol = -1;
+    
+    for (let j = 0; j < kpiRawData[namesRow].length; j++) {
+        let cellVal = String(kpiRawData[namesRow][j]).trim().toUpperCase();
+        if (cellVal === store.toUpperCase()) {
+            labelCol = j;
+            break;
+        }
+    }
+
+    // Fallback if Store name is missing
+    if (labelCol === -1) {
+        for (let j = 0; j < kpiRawData[namesRow].length; j++) {
+            if (String(kpiRawData[namesRow][j]).trim() !== "") {
+                labelCol = j;
+                break;
+            }
+        }
+    }
+
+    // 3. EXTRACT EMPLOYEE NAMES AUTOMATICALLY
     let empNames = [];
     let storeColIndex = -1;
     
-    for(let j = c; j < kpiRawData[namesRow].length; j++) {
+    for(let j = labelCol + 1; j < kpiRawData[namesRow].length; j++) {
         let name = String(kpiRawData[namesRow][j]).trim();
-        if(!name) break; // Reached end of block
-        if(name.toLowerCase() === 'store') {
+        if(!name) break; // Reached end of employee block
+        if(name.toLowerCase().includes('store')) {
             storeColIndex = j;
-            break; // Stop when we hit the Store average
+            break; 
         }
         empNames.push({name: name, col: j});
     }
 
-    // 3. DYNAMICALLY EXTRACT TIME LABELS (Weeks or Months)
+    // 4. EXTRACT X-AXIS LABELS AUTOMATICALLY (Months/Weeks)
     let labels = [];
-    let labelCol = c - 1; // Labels are always one column to the left
-    let startRow = r + 2; // Data starts two rows below header
+    let startRow = r + 2; 
     
     for(let i = startRow; i < kpiRawData.length; i++) {
         if (!kpiRawData[i]) break;
         let label = String(kpiRawData[i][labelCol]).trim();
         // Stop scanning if it hits empty space or another header block
-        if(!label || label.includes('%') || label.includes('Deals') || label.includes('Time') || label === "Customer Conversion %" || label === "Buying Margin %" || label === "Total No Deals" || label === "Transaction Time") break; 
+        if(!label || label.includes('%') || label.includes('Deals') || label.includes('Time') || 
+           label === "Customer Conversion %" || label === "Buying Margin %" || 
+           label === "Total No Deals" || label === "Transaction Time") {
+            break; 
+        }
         labels.push(label);
     }
 
-    // 4. BUILD DATASETS
-    // Distinct brand colors for up to 6 employees
+    // 5. BUILD DATASETS AUTOMATICALLY
     const colors = ['#5a8d3b', '#0ea5e9', '#f97316', '#8b5cf6', '#ec4899', '#eab308'];
     let datasets = [];
 
-    // Map each employee's data automatically
     empNames.forEach((emp, index) => {
         let color = colors[index % colors.length];
         let empData = [];
@@ -319,7 +342,6 @@ function updateKpiView() {
         });
     });
 
-    // Add the Store Average line
     if(storeColIndex !== -1) {
         let storeData = [];
         for(let i = 0; i < labels.length; i++) {
@@ -336,7 +358,7 @@ function updateKpiView() {
         });
     }
 
-    // Auto-scale Y-Axis for high volume metrics
+    // Auto-scale Y-Axis
     let allValues = [];
     datasets.forEach(d => allValues.push(...d.data));
     let maxVal = Math.max(...allValues.filter(v => v !== null));
