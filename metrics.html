@@ -235,7 +235,6 @@ function updateKpiView() {
         return;
     }
 
-    const store = document.getElementById('storeSelector').value;
     const metric = document.getElementById('metricSelector').value;
     
     const metricTitles = {
@@ -252,59 +251,58 @@ function updateKpiView() {
     else if (metric === 'nodeals') { unit = ''; yMin = 0; yMax = 30; } 
     else if (metric === 'time') { unit = 'm'; yMin = 5; yMax = 35; }
 
-    // 1. HIGH-PRECISION TARGETING: Find Store Name NEXT TO Metric Name
-    let r = -1, labelCol = -1, metricCol = -1;
-    
+    // 1. ABSOLUTE TARGETING: Scan the entire sheet strictly for the exact metric phrase
+    let r = -1, c = -1;
     for (let i = 0; i < kpiRawData.length; i++) {
         if (!kpiRawData[i]) continue;
         for (let j = 0; j < kpiRawData[i].length; j++) {
-            let cell = String(kpiRawData[i][j]).trim();
-            // Look for the Store Name (OVL, LEE, WSP)
-            if (cell.toUpperCase() === store.toUpperCase()) {
-                // Check the cell immediately to the right for the Metric Name
-                if (kpiRawData[i][j+1] && String(kpiRawData[i][j+1]).trim().includes(searchTarget.replace('%', '').trim())) {
-                    r = i;
-                    labelCol = j;
-                    metricCol = j + 1;
-                    break;
-                }
+            if (kpiRawData[i][j] && String(kpiRawData[i][j]).trim() === searchTarget) {
+                r = i;
+                c = j;
+                break;
             }
         }
         if (r !== -1) break;
     }
 
     if (r === -1) {
-        console.error("Could not pinpoint exact metric block:", searchTarget);
+        console.error("Could not find exact metric block:", searchTarget);
         if (mainChartInstance) mainChartInstance.destroy();
         return; 
     }
 
-    // 2. EXTRACT EMPLOYEE NAMES
+    // Now that we have the exact coordinates (r, c) of the metric header:
+    // The Time Labels (Weeks/Months) are ALWAYS exactly one column to the left.
+    // The Employee names are ALWAYS exactly one row down, starting in the same column.
+    let labelCol = c - 1;
     let namesRow = r + 1;
+    let startRow = r + 2; 
+
+    // 2. EXTRACT EMPLOYEE NAMES
     let empNames = [];
     let storeColIndex = -1;
     
-    // Scan right starting from the Metric Column
-    for(let j = metricCol; j < kpiRawData[namesRow].length; j++) {
+    for (let j = c; j < kpiRawData[namesRow].length; j++) {
         let name = String(kpiRawData[namesRow][j]).trim();
-        if(!name || name.includes('%') || name.includes('Time') || name.includes('Deals')) break; 
+        // Stop scanning right if we hit an empty cell or a different metric header
+        if (!name || name.includes('%') || name.includes('Time') || name.includes('Deals')) break; 
         
-        if(name.toLowerCase().includes('store')) {
+        if (name.toLowerCase() === 'store') {
             storeColIndex = j;
             break; 
         }
         empNames.push({name: name, col: j});
     }
 
-    // 3. EXTRACT X-AXIS LABELS
+    // 3. EXTRACT X-AXIS LABELS (Weeks or Months)
     let labels = [];
-    let startRow = r + 2; 
     
-    for(let i = startRow; i < kpiRawData.length; i++) {
+    for (let i = startRow; i < kpiRawData.length; i++) {
         if (!kpiRawData[i]) break;
         let label = String(kpiRawData[i][labelCol]).trim();
-        // Stop if empty or hits another block header
-        if(!label || label.toUpperCase() === store.toUpperCase()) {
+        
+        // Stop scanning down if the cell is empty or looks like another header
+        if (!label || label === "OVL" || label === "LEE" || label === "WSP" || label.includes('Store') || label.includes('%') || label.includes('Time') || label.includes('Deals')) {
             break; 
         }
         labels.push(label);
@@ -329,7 +327,7 @@ function updateKpiView() {
         });
     });
 
-    if(storeColIndex !== -1) {
+    if (storeColIndex !== -1) {
         let storeData = [];
         for(let i = 0; i < labels.length; i++) {
             let val = cleanValue(kpiRawData[startRow + i][storeColIndex], isPct);
