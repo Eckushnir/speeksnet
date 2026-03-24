@@ -126,6 +126,7 @@
             <div class="card-title" style="margin: 0;">Employee Metric Trends</div>
             <div class="chart-controls">
                 <select id="storeSelector" class="metric-dropdown" onchange="loadKpiData()">
+                    <option value="OVL">OVL (Overland Park)</option>
                     <option value="LEE">LEE (Lees Summit)</option>
                     <option value="WSP">WSP (Westport)</option>
                 </select>
@@ -156,7 +157,6 @@
 </main>
 
 <script>
-// --- URL CONFIGURATION ---
 const HUB_URL = 'https://script.google.com/macros/s/AKfycbw3Ms5nc2bhbrjVW-da3xbZ3vKhyBx2TpeR-eSd1L05ZhV-h2Yh0yLmIV_E7TWDmwM69A/exec';
 const KPI_URL = 'https://script.google.com/macros/s/AKfycbztIQtyruTayW0iQwZ06Q9jsp8yYpm1sqfM_BInx89otX4iNgy3QWX9E6uOMB2ndcqY/exec';
 
@@ -206,15 +206,29 @@ function updateKpiView() {
     else if (metric === 'time') { unit = 'm'; yMin = 5; yMax = 30; rowIndices = [21, 22, 23, 24]; }
 
     const getEmpData = (col) => rowIndices.map(i => cleanValue(kpiRawData[i] ? kpiRawData[i][col] : null, isPct));
-    let datasets = (store === 'LEE') ? [
-        { label: 'Nick', data: getEmpData(1), borderColor: '#5a8d3b', backgroundColor: '#5a8d3b' },
-        { label: 'Daniel', data: getEmpData(2), borderColor: '#0ea5e9', backgroundColor: '#0ea5e9' },
-        { label: 'Caleb', data: getEmpData(4), borderColor: '#f97316', backgroundColor: '#f97316' }
-    ] : [
-        { label: 'Eli', data: getEmpData(1), borderColor: '#5a8d3b', backgroundColor: '#5a8d3b' },
-        { label: 'Duncan', data: getEmpData(2), borderColor: '#0ea5e9', backgroundColor: '#0ea5e9' },
-        { label: 'Josiah', data: getEmpData(3), borderColor: '#f97316', backgroundColor: '#f97316' }
-    ];
+    
+    let datasets = [];
+    if (store === 'OVL') {
+        datasets = [
+            { label: 'Jurell', data: getEmpData(1), borderColor: '#5a8d3b', backgroundColor: '#5a8d3b' },
+            { label: 'Jon', data: getEmpData(2), borderColor: '#0ea5e9', backgroundColor: '#0ea5e9' },
+            { label: 'Essence', data: getEmpData(3), borderColor: '#f97316', backgroundColor: '#f97316' },
+            { label: 'Christian', data: getEmpData(4), borderColor: '#8b5cf6', backgroundColor: '#8b5cf6' } // Added 4th color
+        ];
+    } else if (store === 'LEE') {
+        datasets = [
+            { label: 'Nick', data: getEmpData(1), borderColor: '#5a8d3b', backgroundColor: '#5a8d3b' },
+            { label: 'Daniel', data: getEmpData(2), borderColor: '#0ea5e9', backgroundColor: '#0ea5e9' },
+            { label: 'Caleb', data: getEmpData(4), borderColor: '#f97316', backgroundColor: '#f97316' }
+        ];
+    } else { // WSP
+        datasets = [
+            { label: 'Eli', data: getEmpData(1), borderColor: '#5a8d3b', backgroundColor: '#5a8d3b' },
+            { label: 'Duncan', data: getEmpData(2), borderColor: '#0ea5e9', backgroundColor: '#0ea5e9' },
+            { label: 'Josiah', data: getEmpData(3), borderColor: '#f97316', backgroundColor: '#f97316' }
+        ];
+    }
+    
     datasets.push({ label: 'Store Average', data: getEmpData(5), borderColor: '#6366f1', backgroundColor: '#6366f1', borderWidth: 4, borderDash: [5, 5] });
 
     const ctx = document.getElementById('mainKpiChart').getContext('2d');
@@ -256,7 +270,7 @@ function updateCircle(id, pct, goal, track) {
         pctEl.innerText = val + '%';
         document.getElementById(`${id}-goal`).innerText = `Goal: $${Math.round(goal || 0).toLocaleString()}`;
         document.getElementById(`${id}-t-gp`).innerText = `$${Math.round(track || 0).toLocaleString()}`;
-        const offset = 402 - (Math.min(val, 100) / 100) * 402; /* Adjusted offset for new 140px circle size */
+        const offset = 402 - (Math.min(val, 100) / 100) * 402;
         document.getElementById(`${id}-bar`).style.strokeDashoffset = offset;
     }
 }
