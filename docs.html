@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPEEKSNET | Policies & SOPs</title>
+<style>
+  :root {
+    --slate-charcoal: #1a1c1e; 
+    --sage-professional: #5a8d3b; 
+    --text-dark: #2d2d2d; 
+    --bg-app: #f4f7f9;
+  }
+  
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg-app); color: var(--text-dark); line-height: 1.6; display: flex; min-height: 100vh; overflow-x: hidden; }
+
+  /* SIDEBAR */
+  .sidebar { width: 260px; background: var(--slate-charcoal); color: white; position: fixed; top: 0; bottom: 0; left: 0; display: flex; flex-direction: column; box-shadow: 4px 0 15px rgba(0,0,0,0.05); z-index: 100; }
+  .brand-area { padding: 40px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); margin-bottom: 20px; }
+  .brand-area h1 { font-size: 28px; font-weight: 200; letter-spacing: 6px; margin: 0; color: white; }
+  .brand-area .badge { display: inline-block; background: var(--sage-professional); color: white; font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 12px; margin-top: 10px; letter-spacing: 1px; text-transform: uppercase; }
+
+  .nav-bar { display: flex; flex-direction: column; gap: 8px; padding: 0 15px; }
+  .nav-link { text-decoration: none; color: #a0aab2; padding: 14px 20px; font-weight: 600; font-size: 13px; letter-spacing: 1px; border-radius: 10px; transition: all 0.2s; display: flex; align-items: center; gap: 12px; }
+  .nav-link:hover { background: rgba(255,255,255,0.05); color: white; transform: translateX(3px); }
+  .nav-link.active { background: var(--sage-professional); color: white; box-shadow: 0 4px 12px rgba(90, 141, 59, 0.3); }
+
+  /* MAIN CONTENT */
+  .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; max-width: 1400px; }
+  
+  /* HEADER & SEARCH */
+  .page-header { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 20px; }
+  .header-text h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin-bottom: 5px; }
+  .header-text p { color: #888; font-size: 14px; font-weight: 500; }
+  
+  .search-container { flex-grow: 1; max-width: 500px; position: relative; }
+  .search-input { width: 100%; padding: 16px 20px 16px 45px; border-radius: 12px; border: 1px solid #ddd; font-size: 15px; outline: none; transition: 0.2s; font-family: 'Inter', sans-serif; box-shadow: 0 4px 15px rgba(0,0,0,0.02); }
+  .search-input:focus { border-color: var(--sage-professional); box-shadow: 0 0 0 4px rgba(90, 141, 59, 0.1); }
+  .search-icon { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 18px; }
+
+  /* CATEGORY SECTIONS */
+  .category-section { margin-bottom: 50px; }
+  .category-title { font-size: 16px; font-weight: 800; text-transform: uppercase; color: var(--slate-charcoal); margin-bottom: 20px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #eaeaea; padding-bottom: 10px; }
+  
+  .docs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+  
+  /* DOC CARDS */
+  .doc-card { 
+    background: white; border-radius: 12px; padding: 20px; display: flex; align-items: flex-start; gap: 15px; 
+    text-decoration: none; border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 4px 10px rgba(0,0,0,0.02); 
+    transition: all 0.2s ease; cursor: pointer;
+  }
+  .doc-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.06); border-color: var(--sage-professional); }
+  
+  .doc-icon { font-size: 28px; background: var(--bg-app); width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 10px; flex-shrink: 0; }
+  .doc-info { display: flex; flex-direction: column; }
+  .doc-title { font-size: 15px; font-weight: 700; color: var(--slate-charcoal); margin-bottom: 4px; }
+  .doc-desc { font-size: 12px; color: #888; font-weight: 500; line-height: 1.4; }
+  
+  /* Hidden class for search filtering */
+  .hidden { display: none !important; }
+  .empty-state { display: none; text-align: center; padding: 50px; color: #888; font-weight: 600; font-size: 16px; background: white; border-radius: 12px; border: 1px dashed #ccc; }
+
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="brand-area">
+    <h1>SPEEKS</h1>
+    <div class="badge">KNOWLEDGE BASE</div>
+  </div>
+  <nav class="nav-bar">
+    <a href="index.html" class="nav-link">🏠 SPEEKS Hub</a>
+    <a href="portals.html" class="nav-link">🔗 Portals</a>
+    <a href="metrics.html" class="nav-link">📊 Metrics & Leaderboards</a>
+    <a href="docs.html" class="nav-link active">📚 SOPs & Policies</a>
+  </nav>
+</aside>
+
+<main class="main-content">
+  <div class="page-header">
+    <div class="header-text">
+      <h2>SOPs & Policies</h2>
+      <p>Your central library for company guidelines, procedures, and manuals.</p>
+    </div>
+    <div class="search-container">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="docSearch" class="search-input" placeholder="Search for 'Dress Code', 'Opening', etc..." onkeyup="filterDocs()">
+    </div>
+  </div>
+
+  <div id="noResults" class="empty-state">No documents found matching your search.</div>
+
+  <div class="category-section" id="cat-hr">
+    <div class="category-title">🤝 HR & Employee Guidelines</div>
+    <div class="docs-grid">
+      
+      <a href="#" target="_blank" class="doc-card" data-title="Employee Handbook Dress Code Time Off">
+        <div class="doc-icon">📘</div>
+        <div class="doc-info">
+          <div class="doc-title">Official Employee Handbook</div>
+          <div class="doc-desc">The complete guide to working at SPEEKS, including core values and expectations.</div>
+        </div>
+      </a>
+
+      <a href="#" target="_blank" class="doc-card" data-title="Dress Code Policy Uniform">
+        <div class="doc-icon">👔</div>
+        <div class="doc-info">
+          <div class="doc-title">Dress Code Policy</div>
+          <div class="doc-desc">Guidelines for acceptable work attire and uniform requirements.</div>
+        </div>
+      </a>
+      
+      <a href="#" target="_blank" class="doc-card" data-title="Time Off Request PTO Vacation">
+        <div class="doc-icon">✈️</div>
+        <div class="doc-info">
+          <div class="doc-title">Time-Off & PTO Procedures</div>
+          <div class="doc-desc">How to request vacation, sick days, and understand your accrual.</div>
+        </div>
+      </a>
+
+    </div>
+  </div>
+
+  <div class="category-section" id="cat-ops">
+    <div class="category-title">🏪 Store Operations</div>
+    <div class="docs-grid">
+      
+      <a href="#" target="_blank" class="doc-card" data-title="Opening Checklist Morning">
+        <div class="doc-icon">🌅</div>
+        <div class="doc-info">
+          <div class="doc-title">Store Opening Checklist</div>
+          <div class="doc-desc">Step-by-step procedures for opening the store and prepping the registers.</div>
+        </div>
+      </a>
+
+      <a href="#" target="_blank" class="doc-card" data-title="Closing Checklist Night End of Day">
+        <div class="doc-icon">🌙</div>
+        <div class="doc-info">
+          <div class="doc-title">Store Closing Checklist</div>
+          <div class="doc-desc">Security, cash handling, and closing duties for the end of the shift.</div>
+        </div>
+      </a>
+
+      <a href="#" target="_blank" class="doc-card" data-title="Device Buying Guide Trade In Purchasing">
+        <div class="doc-icon">📱</div>
+        <div class="doc-info">
+          <div class="doc-title">Device Purchasing Matrix</div>
+          <div class="doc-desc">Condition grading, pricing guidelines, and trade-in procedures.</div>
+        </div>
+      </a>
+
+    </div>
+  </div>
+
+  <div class="category-section" id="cat-tech">
+    <div class="category-title">⚙️ Technical Guides & Repairs</div>
+    <div class="docs-grid">
+      
+      <a href="#" target="_blank" class="doc-card" data-title="iPhone Screen Repair LCD Fix">
+        <div class="doc-icon">🛠️</div>
+        <div class="doc-info">
+          <div class="doc-title">iPhone Repair SOP</div>
+          <div class="doc-desc">Standard operating procedure for disassembling and repairing iPhones safely.</div>
+        </div>
+      </a>
+
+      <a href="#" target="_blank" class="doc-card" data-title="Data Wipe Reset Factory Restore">
+        <div class="doc-icon">🗑️</div>
+        <div class="doc-info">
+          <div class="doc-title">Data Wipe & Reset Protocol</div>
+          <div class="doc-desc">Mandatory steps to securely erase customer data before resale.</div>
+        </div>
+      </a>
+
+    </div>
+  </div>
+
+</main>
+
+<script>
+// Search Filter Functionality
+function filterDocs() {
+    const searchInput = document.getElementById('docSearch').value.toLowerCase();
+    const docCards = document.querySelectorAll('.doc-card');
+    const categories = document.querySelectorAll('.category-section');
+    let hasVisibleCards = false;
+
+    // Filter individual cards
+    docCards.forEach(card => {
+        // We use the data-title attribute to search against invisible keywords too!
+        const searchTerms = card.getAttribute('data-title').toLowerCase();
+        if (searchTerms.includes(searchInput)) {
+            card.classList.remove('hidden');
+            hasVisibleCards = true;
+        } else {
+            card.classList.add('hidden');
+        }
+    });
+
+    // Hide empty category sections
+    categories.forEach(category => {
+        const visibleCards = category.querySelectorAll('.doc-card:not(.hidden)');
+        if (visibleCards.length === 0) {
+            category.classList.add('hidden');
+        } else {
+            category.classList.remove('hidden');
+        }
+    });
+
+    // Show or hide empty state message
+    const noResults = document.getElementById('noResults');
+    if (hasVisibleCards) {
+        noResults.style.display = 'none';
+    } else {
+        noResults.style.display = 'block';
+    }
+}
+</script>
+</body>
+</html>
