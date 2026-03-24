@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPEEKSNET | Processes & Policies</title>
+<style>
+  :root {
+    --slate-charcoal: #1a1c1e; 
+    --sage-professional: #5a8d3b; 
+    --text-dark: #2d2d2d; 
+    --bg-app: #f4f7f9;
+  }
+  
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg-app); color: var(--text-dark); line-height: 1.6; display: flex; min-height: 100vh; overflow-x: hidden; }
+
+  /* SIDEBAR */
+  .sidebar { width: 260px; background: var(--slate-charcoal); color: white; position: fixed; top: 0; bottom: 0; left: 0; display: flex; flex-direction: column; box-shadow: 4px 0 15px rgba(0,0,0,0.05); z-index: 100; }
+  .brand-area { padding: 40px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); margin-bottom: 20px; }
+  .brand-area h1 { font-size: 28px; font-weight: 200; letter-spacing: 6px; margin: 0; color: white; }
+  .brand-area .badge { display: inline-block; background: var(--sage-professional); color: white; font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 12px; margin-top: 10px; letter-spacing: 1px; text-transform: uppercase; }
+
+  .nav-bar { display: flex; flex-direction: column; gap: 8px; padding: 0 15px; }
+  .nav-link { text-decoration: none; color: #a0aab2; padding: 14px 20px; font-weight: 600; font-size: 13px; letter-spacing: 1px; border-radius: 10px; transition: all 0.2s; display: flex; align-items: center; gap: 12px; }
+  .nav-link:hover { background: rgba(255,255,255,0.05); color: white; transform: translateX(3px); }
+  .nav-link.active { background: var(--sage-professional); color: white; box-shadow: 0 4px 12px rgba(90, 141, 59, 0.3); }
+
+  /* MAIN CONTENT */
+  .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; max-width: 1400px; }
+  
+  /* HEADER & SEARCH */
+  .page-header { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 20px; }
+  .header-text h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin-bottom: 5px; }
+  .header-text p { color: #888; font-size: 14px; font-weight: 500; }
+  
+  .search-container { flex-grow: 1; max-width: 500px; position: relative; }
+  .search-input { width: 100%; padding: 16px 20px 16px 45px; border-radius: 12px; border: 1px solid #ddd; font-size: 15px; outline: none; transition: 0.2s; font-family: 'Inter', sans-serif; box-shadow: 0 4px 15px rgba(0,0,0,0.02); }
+  .search-input:focus { border-color: var(--sage-professional); box-shadow: 0 0 0 4px rgba(90, 141, 59, 0.1); }
+  .search-icon { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 18px; }
+
+  /* CATEGORY SECTIONS */
+  .category-section { margin-bottom: 50px; }
+  .category-title { font-size: 16px; font-weight: 800; text-transform: uppercase; color: var(--slate-charcoal); margin-bottom: 20px; letter-spacing: 0.5px; border-bottom: 2px solid #eaeaea; padding-bottom: 10px; }
+  
+  .docs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+  
+  /* DOC CARDS */
+  .doc-card { 
+    background: white; border-radius: 12px; padding: 20px; display: flex; align-items: flex-start; gap: 15px; 
+    text-decoration: none; border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 4px 10px rgba(0,0,0,0.02); 
+    transition: all 0.2s ease; cursor: pointer;
+  }
+  .doc-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.06); border-color: var(--sage-professional); }
+  
+  .doc-icon { font-size: 28px; background: var(--bg-app); width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 10px; flex-shrink: 0; }
+  .doc-info { display: flex; flex-direction: column; }
+  .doc-title { font-size: 15px; font-weight: 700; color: var(--slate-charcoal); margin-bottom: 4px; }
+  .doc-desc { font-size: 12px; color: #888; font-weight: 500; line-height: 1.4; }
+  
+  .hidden { display: none !important; }
+  .empty-state { text-align: center; padding: 50px; color: #888; font-weight: 600; font-size: 16px; background: white; border-radius: 12px; border: 1px dashed #ccc; }
+
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="brand-area">
+    <h1>SPEEKS</h1>
+    <div class="badge">KNOWLEDGE BASE</div>
+  </div>
+  <nav class="nav-bar">
+    <a href="index.html" class="nav-link">🏠 SPEEKS Hub</a>
+    <a href="portals.html" class="nav-link">🔗 Portals</a>
+    <a href="metrics.html" class="nav-link">📊 Metrics & Leaderboards</a>
+    <a href="docs.html" class="nav-link active">📚 Processes & Policies</a>
+  </nav>
+</aside>
+
+<main class="main-content">
+  <div class="page-header">
+    <div class="header-text">
+      <h2>Processes & Policies</h2>
+      <p>Your central library for company guidelines, procedures, and manuals.</p>
+    </div>
+    <div class="search-container">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="docSearch" class="search-input" placeholder="Search for 'Dress Code', 'Opening', etc..." onkeyup="filterDocs()">
+    </div>
+  </div>
+
+  <div id="content-container">
+      <div class="empty-state">Loading Documents...</div>
+  </div>
+  <div id="noResults" class="empty-state hidden">No documents found matching your search.</div>
+
+</main>
+
+<script>
+// Your working Apps Script URL
+const DOCS_URL = 'https://script.google.com/macros/s/AKfycbzW261BITTpanD3Sn6ZDJjcFJAmpT7VMTRN9qAtqqgoKDzQqc4BYsEq5e4JcWonOuUtuA/exec';
+
+async function loadDocs() {
+    const container = document.getElementById('content-container');
+    
+    try {
+        const response = await fetch(`${DOCS_URL}?v=${Date.now()}`);
+        if (!response.ok) throw new Error("Network response was not ok");
+        
+        const docs = await response.json();
+        
+        if (!docs || docs.length === 0) {
+            container.innerHTML = '<div class="empty-state">No documents found. Check your Google Sheet data.</div>';
+            return;
+        }
+
+        // Group the documents by Category
+        const groupedDocs = {};
+        docs.forEach(doc => {
+            if (!groupedDocs[doc.category]) {
+                groupedDocs[doc.category] = [];
+            }
+            groupedDocs[doc.category].push(doc);
+        });
+
+        // Build the HTML
+        let htmlContent = '';
+        for (const [category, items] of Object.entries(groupedDocs)) {
+            htmlContent += `
+                <div class="category-section">
+                    <div class="category-title">${category}</div>
+                    <div class="docs-grid">
+            `;
+            
+            items.forEach(item => {
+                const searchKeywords = `${item.title} ${item.desc} ${category}`.toLowerCase();
+                htmlContent += `
+                    <a href="${item.link}" target="_blank" class="doc-card" data-search="${searchKeywords}">
+                        <div class="doc-icon">${item.icon}</div>
+                        <div class="doc-info">
+                            <div class="doc-title">${item.title}</div>
+                            <div class="doc-desc">${item.desc}</div>
+                        </div>
+                    </a>
+                `;
+            });
+            
+            htmlContent += `</div></div>`;
+        }
+
+        container.innerHTML = htmlContent;
+        
+    } catch (e) {
+        console.error("Failed to load documents", e);
+        container.innerHTML = '<div class="empty-state" style="color: #dc2626; border-color: #fca5a5; background: #fef2f2;">Failed to load documents. Please check that your Apps Script is deployed as "Anyone" can access.</div>';
+    }
+}
+
+// Live Search Filter
+function filterDocs() {
+    const searchInput = document.getElementById('docSearch').value.toLowerCase();
+    const docCards = document.querySelectorAll('.doc-card');
+    const categories = document.querySelectorAll('.category-section');
+    let hasVisibleCards = false;
+
+    docCards.forEach(card => {
+        const searchTerms = card.getAttribute('data-search');
+        if (searchTerms.includes(searchInput)) {
+            card.classList.remove('hidden');
+            hasVisibleCards = true;
+        } else {
+            card.classList.add('hidden');
+        }
+    });
+
+    categories.forEach(category => {
+        const visibleCards = category.querySelectorAll('.doc-card:not(.hidden)');
+        if (visibleCards.length === 0) {
+            category.classList.add('hidden');
+        } else {
+            category.classList.remove('hidden');
+        }
+    });
+
+    const noResults = document.getElementById('noResults');
+    if (hasVisibleCards || searchInput === '') {
+        noResults.classList.add('hidden');
+    } else {
+        noResults.classList.remove('hidden');
+    }
+}
+
+// Auto-load on page start
+window.onload = loadDocs;
+</script>
+</body>
+</html>
