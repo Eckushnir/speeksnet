@@ -9,7 +9,7 @@
     --slate-charcoal: #1a1c1e; 
     --sage-professional: #5a8d3b; 
     --text-dark: #2d2d2d; 
-    --bg-app: #f4f7f9; /* Soft, modern app background */
+    --bg-app: #f4f7f9;
     
     /* Hotkey Colors */
     --apple-bg: #f5f5f7; --apple-text: #1d1d1f; --apple-border: #d2d2d7;
@@ -59,14 +59,14 @@
   ========================================= */
   .main-content {
     flex-grow: 1;
-    margin-left: 260px; /* Offset for sidebar */
+    margin-left: 260px;
     padding: 40px 50px;
     max-width: 1600px;
   }
   
-  .page-header { margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-end; }
-  .page-header h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; }
-  .page-header p { color: #888; font-size: 14px; font-weight: 500; }
+  .page-header { margin-bottom: 30px; }
+  .page-header h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin-bottom: 5px; }
+  .mission-statement { color: var(--sage-professional); font-size: 16px; font-weight: 600; font-style: italic; letter-spacing: 0.3px; }
 
   /* Dashboard Cards Framework */
   .card {
@@ -117,7 +117,6 @@
   .kb-sync-btn:hover { background: var(--sage-professional); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(90, 141, 59, 0.2); }
   
   .kb-scroll-box { max-height: 500px; overflow-y: auto; border-radius: 12px; border: 1px solid #eee; }
-  /* Custom Scrollbar */
   .kb-scroll-box::-webkit-scrollbar { width: 8px; }
   .kb-scroll-box::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
   .kb-scroll-box::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
@@ -128,7 +127,6 @@
   .kb-table td { padding: 16px 12px; border-bottom: 1px solid #f4f4f4; vertical-align: middle; }
   .kb-table tr:hover td { background-color: #fbfdfa; }
 
-  /* Hotkey Bubbles */
   .bubble { display: inline-block; padding: 6px 14px; border-radius: 8px; font-weight: 700; line-height: 1.4; border: 1px solid transparent; word-wrap: break-word; max-width: 95%; font-size: 12px; }
   .b-apple { background: var(--apple-bg); color: var(--apple-text); border-color: var(--apple-border); }
   .b-windows { background: var(--win-bg); color: var(--win-text); border-color: var(--win-border); }
@@ -144,7 +142,6 @@
   ========================================= */
   iframe { width: 100%; border: none; border-radius: 8px; background: white; }
 
-  /* Responsive styling for smaller screens */
   @media (max-width: 1024px) {
     .hub-grid { grid-template-columns: 1fr; }
   }
@@ -167,10 +164,8 @@
 <main class="main-content">
     
     <div class="page-header">
-      <div>
-        <h2>Welcome to SPEEKSNET</h2>
-        <p>Your central operational dashboard</p>
-      </div>
+      <h2>Welcome to SPEEKSNET</h2>
+      <p class="mission-statement">"To become the #1 trusted source for electronics buy back, resale and recycle in all communities that we serve!"</p>
     </div>
 
     <div class="hub-grid">
@@ -243,7 +238,6 @@ async function loadCMS() {
         const actContainer = document.getElementById('active-container');
         const upContainer = document.getElementById('upcoming-container');
 
-        // Apply new classes for the updated SaaS styling
         annContainer.innerHTML = data.announcements.length 
           ? data.announcements.map(txt => `<div class="cms-item cms-announcement">${txt}</div>`).join('') 
           : '<div class="cms-item">No new announcements</div>';
@@ -308,7 +302,6 @@ function filterKB() {
     }
 }
 
-// Load data on start
 window.onload = () => {
     loadHotkeys();
     loadCMS();
