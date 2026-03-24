@@ -57,9 +57,16 @@
 
   /* CHART CONTROLS IN HEADER */
   .chart-header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #f4f7f9; padding-bottom: 15px; }
-  .chart-controls { display: flex; gap: 15px; }
+  .chart-controls { display: flex; gap: 15px; align-items: center; }
+  
+  /* TIMEFRAME TOGGLE */
+  .timeframe-toggle { display: flex; background: #e2e8f0; border-radius: 8px; padding: 4px; }
+  .toggle-btn { background: transparent; border: none; padding: 8px 16px; font-size: 12px; font-weight: 700; color: #64748b; border-radius: 6px; cursor: pointer; transition: 0.2s; font-family: 'Inter', sans-serif; }
+  .toggle-btn.active { background: white; color: var(--slate-charcoal); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+
   .metric-dropdown { padding: 10px 15px; border-radius: 8px; border: 1px solid #ddd; font-weight: 600; color: var(--slate-charcoal); background: var(--bg-app); outline: none; font-size: 13px; font-family: 'Inter', sans-serif; cursor: pointer; transition: 0.2s; }
   .metric-dropdown:hover { border-color: var(--sage-professional); }
+  
   .chart-container { height: 450px; position: relative; }
   #chartLoading { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); display: none; justify-content: center; align-items: center; z-index: 5; border-radius: 12px; font-weight: 800; color: var(--sage-professional); text-transform: uppercase; font-size: 14px; letter-spacing: 1px; }
 
@@ -125,6 +132,12 @@
         <div class="chart-header-flex">
             <div class="card-title" style="margin: 0;">Employee Metric Trends</div>
             <div class="chart-controls">
+                
+                <div class="timeframe-toggle">
+                    <button class="toggle-btn active" id="btn-4week" onclick="setTimeframe('4-Week')">4-Week</button>
+                    <button class="toggle-btn" id="btn-monthly" onclick="setTimeframe('Monthly')">Monthly</button>
+                </div>
+
                 <select id="storeSelector" class="metric-dropdown" onchange="loadKpiData()">
                     <option value="OVL" selected>OVL (Overland Park)</option>
                     <option value="LEE">LEE (Lees Summit)</option>
@@ -157,12 +170,21 @@
 </main>
 
 <script>
-// --- URL CONFIGURATION ---
 const HUB_URL = 'https://script.google.com/macros/s/AKfycbw3Ms5nc2bhbrjVW-da3xbZ3vKhyBx2TpeR-eSd1L05ZhV-h2Yh0yLmIV_E7TWDmwM69A/exec';
-const KPI_URL = 'https://script.google.com/macros/s/AKfycbyXvRW9zMZdgMRCSTZ_qcU-uX5SdTFOgxff0Uw0LfN7peNfaYwi0-yrhb3fSmxgkAuJ/exec';
+const KPI_URL = 'https://script.google.com/macros/s/AKfycbyVBos-uJuhaqfLMBqoz9byNkvUG06igl4RX2_cs8hH15rbp7K4uFFEN-wpQgS2ChAU/exec';
 
 let kpiRawData = [];
 let mainChartInstance = null;
+let currentTimeframe = '4-Week'; 
+
+function setTimeframe(timeframe) {
+    currentTimeframe = timeframe;
+    document.getElementById('btn-4week').classList.remove('active');
+    document.getElementById('btn-monthly').classList.remove('active');
+    if (timeframe === '4-Week') document.getElementById('btn-4week').classList.add('active');
+    else document.getElementById('btn-monthly').classList.add('active');
+    loadKpiData();
+}
 
 function updateTimestamp() {
     const now = new Date();
@@ -181,11 +203,8 @@ function cleanValue(val, isPercentage = false) {
     
     if (str.includes(':')) {
         let parts = str.split(':');
-        if (parts.length === 3) {
-            return parseInt(parts[0]) * 60 + parseInt(parts[1]) + (parseInt(parts[2]) / 60);
-        } else if (parts.length === 2) {
-            return parseInt(parts[0]) + (parseInt(parts[1]) / 60);
-        }
+        if (parts.length === 3) return parseInt(parts[0]) * 60 + parseInt(parts[1]) + (parseInt(parts[2]) / 60);
+        else if (parts.length === 2) return parseInt(parts[0]) + (parseInt(parts[1]) / 60);
     }
 
     let num = parseFloat(str.replace(/[$,%]/g, ''));
@@ -199,73 +218,143 @@ async function loadKpiData() {
     if(loader) loader.style.display = 'flex';
     const store = document.getElementById('storeSelector').value;
     try { 
-        const response = await fetch(`${KPI_URL}?store=${store}&v=${Date.now()}`); 
+        const response = await fetch(`${KPI_URL}?store=${store}&time=${currentTimeframe}&v=${Date.now()}`); 
         kpiRawData = await response.json(); 
+        if (kpiRawData.error) {
+            console.error(kpiRawData.error);
+            kpiRawData = [];
+        }
         updateKpiView();
     } catch (e) { console.error("Load Failed", e); }
     if(loader) loader.style.display = 'none';
 }
 
 function updateKpiView() {
-    if (!kpiRawData || kpiRawData.length === 0) return;
-    const store = document.getElementById('storeSelector').value;
+    if (!kpiRawData || kpiRawData.length === 0) {
+        if (mainChartInstance) mainChartInstance.destroy();
+        return;
+    }
+
     const metric = document.getElementById('metricSelector').value;
     
-    // Auto-Targeting Logic: Find where each block starts by looking for "Week 1"
-    let week1Rows = [];
+    const metricTitles = {
+        'conversion': 'Customer Conversion %',
+        'margin': 'Buying Margin %',
+        'nodeals': 'Total No Deals',
+        'time': 'Transaction Time'
+    };
+    const searchTarget = metricTitles[metric];
+    
+    let unit = '%', isPct = false, yMin = 0, yMax = 100;
+    if (metric === 'conversion') { isPct = true; yMin = 70; yMax = 100; } 
+    else if (metric === 'margin') { isPct = true; yMin = 35; yMax = 70; } 
+    else if (metric === 'nodeals') { unit = ''; yMin = 0; yMax = 30; } 
+    else if (metric === 'time') { unit = 'm'; yMin = 5; yMax = 35; }
+
+    // 1. ABSOLUTE TARGETING: Scan the entire sheet strictly for the exact metric phrase
+    let r = -1, c = -1;
     for (let i = 0; i < kpiRawData.length; i++) {
-        if (kpiRawData[i] && kpiRawData[i][0] && String(kpiRawData[i][0]).trim() === "Week 1") {
-            week1Rows.push(i);
+        if (!kpiRawData[i]) continue;
+        for (let j = 0; j < kpiRawData[i].length; j++) {
+            if (kpiRawData[i][j] && String(kpiRawData[i][j]).trim() === searchTarget) {
+                r = i;
+                c = j;
+                break;
+            }
         }
-    }
-    
-    // Safety Fallback just in case
-    if (week1Rows.length < 4) {
-        console.warn("Could not find all metric headers. Defaulting.");
-        week1Rows = [0, 7, 14, 21];
+        if (r !== -1) break;
     }
 
-    let baseRow = 0, unit = '%', isPct = false, yMin = 0, yMax = 100;
+    if (r === -1) {
+        console.error("Could not find exact metric block:", searchTarget);
+        if (mainChartInstance) mainChartInstance.destroy();
+        return; 
+    }
 
-    if (metric === 'conversion') { isPct = true; yMin = 70; yMax = 100; baseRow = week1Rows[0]; } 
-    else if (metric === 'margin') { isPct = true; yMin = 35; yMax = 70; baseRow = week1Rows[1]; } 
-    else if (metric === 'nodeals') { unit = ''; yMin = 0; yMax = 20; baseRow = week1Rows[2]; } 
-    else if (metric === 'time') { unit = 'm'; yMin = 5; yMax = 30; baseRow = week1Rows[3]; }
+    // Now that we have the exact coordinates (r, c) of the metric header:
+    // The Time Labels (Weeks/Months) are ALWAYS exactly one column to the left.
+    // The Employee names are ALWAYS exactly one row down, starting in the same column.
+    let labelCol = c - 1;
+    let namesRow = r + 1;
+    let startRow = r + 2; 
 
-    // Creates the dynamic row index based on where it found "Week 1"
-    let rowIndices = [baseRow, baseRow + 1, baseRow + 2, baseRow + 3];
-
-    const getEmpData = (col) => rowIndices.map(i => cleanValue(kpiRawData[i] ? kpiRawData[i][col] : null, isPct));
+    // 2. EXTRACT EMPLOYEE NAMES
+    let empNames = [];
+    let storeColIndex = -1;
     
+    for (let j = c; j < kpiRawData[namesRow].length; j++) {
+        let name = String(kpiRawData[namesRow][j]).trim();
+        // Stop scanning right if we hit an empty cell or a different metric header
+        if (!name || name.includes('%') || name.includes('Time') || name.includes('Deals')) break; 
+        
+        if (name.toLowerCase() === 'store') {
+            storeColIndex = j;
+            break; 
+        }
+        empNames.push({name: name, col: j});
+    }
+
+    // 3. EXTRACT X-AXIS LABELS (Weeks or Months)
+    let labels = [];
+    
+    for (let i = startRow; i < kpiRawData.length; i++) {
+        if (!kpiRawData[i]) break;
+        let label = String(kpiRawData[i][labelCol]).trim();
+        
+        // Stop scanning down if the cell is empty or looks like another header
+        if (!label || label === "OVL" || label === "LEE" || label === "WSP" || label.includes('Store') || label.includes('%') || label.includes('Time') || label.includes('Deals')) {
+            break; 
+        }
+        labels.push(label);
+    }
+
+    // 4. BUILD DATASETS
+    const colors = ['#5a8d3b', '#0ea5e9', '#f97316', '#8b5cf6', '#ec4899', '#eab308'];
     let datasets = [];
-    if (store === 'OVL') {
-        datasets = [
-            { label: 'Jurell', data: getEmpData(1), borderColor: '#5a8d3b', backgroundColor: '#5a8d3b' },
-            { label: 'Jon', data: getEmpData(2), borderColor: '#0ea5e9', backgroundColor: '#0ea5e9' },
-            { label: 'Essence', data: getEmpData(3), borderColor: '#f97316', backgroundColor: '#f97316' },
-            { label: 'Christian', data: getEmpData(4), borderColor: '#8b5cf6', backgroundColor: '#8b5cf6' }
-        ];
-    } else if (store === 'LEE') {
-        datasets = [
-            { label: 'Nick', data: getEmpData(1), borderColor: '#5a8d3b', backgroundColor: '#5a8d3b' },
-            { label: 'Daniel', data: getEmpData(2), borderColor: '#0ea5e9', backgroundColor: '#0ea5e9' },
-            { label: 'Caleb', data: getEmpData(4), borderColor: '#f97316', backgroundColor: '#f97316' }
-        ];
-    } else { // WSP
-        datasets = [
-            { label: 'Eli', data: getEmpData(1), borderColor: '#5a8d3b', backgroundColor: '#5a8d3b' },
-            { label: 'Duncan', data: getEmpData(2), borderColor: '#0ea5e9', backgroundColor: '#0ea5e9' },
-            { label: 'Josiah', data: getEmpData(3), borderColor: '#f97316', backgroundColor: '#f97316' }
-        ];
-    }
-    
-    datasets.push({ label: 'Store Average', data: getEmpData(5), borderColor: '#6366f1', backgroundColor: '#6366f1', borderWidth: 4, borderDash: [5, 5] });
 
+    empNames.forEach((emp, index) => {
+        let color = colors[index % colors.length];
+        let empData = [];
+        for(let i = 0; i < labels.length; i++) {
+            let val = cleanValue(kpiRawData[startRow + i][emp.col], isPct);
+            empData.push(val);
+        }
+        datasets.push({
+            label: emp.name,
+            data: empData,
+            borderColor: color,
+            backgroundColor: color
+        });
+    });
+
+    if (storeColIndex !== -1) {
+        let storeData = [];
+        for(let i = 0; i < labels.length; i++) {
+            let val = cleanValue(kpiRawData[startRow + i][storeColIndex], isPct);
+            storeData.push(val);
+        }
+        datasets.push({
+            label: 'Store Average',
+            data: storeData,
+            borderColor: '#6366f1',
+            backgroundColor: '#6366f1',
+            borderWidth: 4,
+            borderDash: [5, 5]
+        });
+    }
+
+    // Auto-scale Y-Axis
+    let allValues = [];
+    datasets.forEach(d => allValues.push(...d.data));
+    let maxVal = Math.max(...allValues.filter(v => v !== null));
+    if (maxVal > yMax) yMax = Math.ceil(maxVal * 1.2);
+
+    // DRAW CHART
     const ctx = document.getElementById('mainKpiChart').getContext('2d');
     if (mainChartInstance) mainChartInstance.destroy();
     mainChartInstance = new Chart(ctx, {
         type: 'line', plugins: [ChartDataLabels],
-        data: { labels: ["Week 1", "Week 2", "Week 3", "Week 4"], datasets: datasets.map(d => ({...d, tension: 0.4, spanGaps: true, pointRadius: 5, pointHoverRadius: 8})) },
+        data: { labels: labels, datasets: datasets.map(d => ({...d, tension: 0.4, spanGaps: true, pointRadius: 5, pointHoverRadius: 8})) },
         options: { 
             responsive: true, maintainAspectRatio: false, 
             interaction: { mode: 'index', intersect: false },
