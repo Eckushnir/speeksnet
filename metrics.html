@@ -69,7 +69,7 @@
   .lb-row:hover { background: #fbfdfa; transform: translateX(4px); }
   .lb-row:last-child { border-bottom: none; }
   .lb-rank { width: 40px; font-weight: 900; color: #ccc; font-size: 22px; }
-  .lb-row:nth-child(1) .lb-rank { color: #f59e0b; } /* Gold for 1st */
+  .lb-row:nth-child(1) .lb-rank { color: #f59e0b; }
   .lb-name { flex-grow: 1; font-weight: 700; font-size: 16px; margin-left: 10px; color: var(--slate-charcoal); }
   .lb-val { font-weight: 800; color: var(--sage-professional); font-size: 16px; }
 </style>
@@ -172,10 +172,23 @@ function updateTimestamp() {
     document.getElementById('lastSyncedText').innerText = `Last Synced: ${hours}:${mins} ${ampm}`;
 }
 
+// ** UPDATED TO HANDLE TIME FORMATS & ZEROS PROPERLY **
 function cleanValue(val, isPercentage = false) {
-    if (val === undefined || val === null || val === "" || val === 0) return null;
+    if (val === undefined || val === null || val === "") return null;
     let str = String(val).trim();
-    if (str.includes('#')) return null;
+    if (str === "") return null;
+    if (str.includes('#')) return null; // Catch #DIV/0!
+    
+    // Time format parsing (e.g., "0:18:57" or "18:57")
+    if (str.includes(':')) {
+        let parts = str.split(':');
+        if (parts.length === 3) {
+            return parseInt(parts[0]) * 60 + parseInt(parts[1]) + (parseInt(parts[2]) / 60);
+        } else if (parts.length === 2) {
+            return parseInt(parts[0]) + (parseInt(parts[1]) / 60);
+        }
+    }
+
     let num = parseFloat(str.replace(/[$,%]/g, ''));
     if (isNaN(num)) return null;
     if (isPercentage && num <= 1.1 && num > 0) return num * 100;
@@ -213,7 +226,7 @@ function updateKpiView() {
             { label: 'Jurell', data: getEmpData(1), borderColor: '#5a8d3b', backgroundColor: '#5a8d3b' },
             { label: 'Jon', data: getEmpData(2), borderColor: '#0ea5e9', backgroundColor: '#0ea5e9' },
             { label: 'Essence', data: getEmpData(3), borderColor: '#f97316', backgroundColor: '#f97316' },
-            { label: 'Christian', data: getEmpData(4), borderColor: '#8b5cf6', backgroundColor: '#8b5cf6' } // Added 4th color
+            { label: 'Christian', data: getEmpData(4), borderColor: '#8b5cf6', backgroundColor: '#8b5cf6' }
         ];
     } else if (store === 'LEE') {
         datasets = [
