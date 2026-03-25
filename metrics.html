@@ -37,12 +37,16 @@
   .sidebar.collapsed .nav-link span { display: none; }
   .sidebar.collapsed .nav-link { justify-content: center; padding: 14px 0; }
 
-  /* FLOATING ARROW TOGGLE */
+  /* SIDEBAR TOGGLE */
   .sidebar-toggle { position: fixed; left: 244px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; background: var(--slate-charcoal); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 105; border: 4px solid var(--bg-app); transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s; font-size: 12px; }
   .sidebar-toggle.collapsed { left: 60px; transform: translateY(-50%) rotate(180deg); }
 
-  /* NOTIFICATION UI */
-  .top-actions { position: fixed; top: 30px; right: 50px; z-index: 200; }
+  /* TOP ACTIONS (SYNC & BELL) */
+  .top-actions { position: fixed; top: 30px; right: 50px; z-index: 200; display: flex; align-items: center; gap: 20px; }
+  
+  /* Clear separation for Sync controls to avoid Bell overlap */
+  .sync-controls { display: flex; align-items: center; gap: 15px; margin-right: 60px; } /* Pushes Sync away from Bell */
+  
   .notif-container { position: relative; }
   .notif-bell { background: white; border: 1px solid #ddd; width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 22px; transition: 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
   .notif-bell:hover { border-color: var(--sage-professional); transform: translateY(-2px); }
@@ -63,8 +67,7 @@
   .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
   .main-content.expanded { margin-left: 76px; }
   
-  .page-header { margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-end; }
-  .title-wrapper { display: flex; align-items: center; gap: 15px; margin-bottom: 5px; }
+  .page-header { margin-bottom: 30px; }
   .page-header h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin: 0;}
   .page-header p { color: #888; font-size: 14px; font-weight: 500; margin-top: 5px; }
   
@@ -103,6 +106,7 @@
 
   .sync-btn { background: var(--slate-charcoal); color: white; border: none; padding: 12px 24px; border-radius: 10px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 11px; transition: 0.2s; }
   .sync-btn:hover { background: var(--sage-professional); }
+  .last-synced-text { font-size: 11px; color: #888; font-weight: 700; text-transform: uppercase; }
 </style>
 </head>
 <body>
@@ -123,6 +127,10 @@
 <div class="sidebar-toggle" onclick="toggleSidebar()">◀</div>
 
 <div class="top-actions">
+    <div class="sync-controls">
+        <span class="last-synced-text" id="lastSyncedText">Last Synced: --:--</span>
+        <button class="sync-btn" onclick="syncAllData()">🔄 Sync Data</button>
+    </div>
     <div class="notif-container" id="notifContainer">
         <div class="notif-bell" onclick="toggleNotifs()">
             🔔 <div class="notif-dot" id="notifBadge"></div>
@@ -138,16 +146,8 @@
 
 <main class="main-content">
     <div class="page-header">
-        <div>
-            <div class="title-wrapper">
-                <h2>Company Metrics Comparison</h2>
-            </div>
-            <p>Comparing average performance trends across all locations</p>
-        </div>
-        <div style="display: flex; align-items: center;">
-            <span style="font-size: 11px; color: #888; font-weight: 700; text-transform: uppercase; margin-right: 15px;" id="lastSyncedText">Last Synced: --:--</span>
-            <button class="sync-btn" onclick="syncAllData()">🔄 Sync Data</button>
-        </div>
+        <h2>Company Metrics Comparison</h2>
+        <p>Comparing average performance trends across all locations</p>
     </div>
 
     <div class="metrics-grid">
