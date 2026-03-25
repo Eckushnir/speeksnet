@@ -11,6 +11,7 @@
     --win-bg: #e1f0fe; --win-text: #0078d4; --win-border: #cce5ff;
     --android-bg: #e6f7ef; --android-text: #188038; --android-border: #ceead6;
     --gen-bg: #f1f3f4; --gen-text: #5f6368; --gen-border: #dadce0;
+    --idea-gold: #f59e0b; /* Accent color for the new button */
   }
   
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -28,12 +29,18 @@
   .nav-link.active { background: var(--sage-professional); color: white; box-shadow: 0 4px 12px rgba(90, 141, 59, 0.3); }
   .nav-link i { font-style: normal; font-size: 16px; width: 20px; text-align: center; display: inline-block; }
 
+  /* NEW: SIDEBAR BOTTOM CTA */
+  .sidebar-bottom { margin-top: auto; padding: 20px 15px; border-top: 1px solid rgba(255,255,255,0.05); }
+  .idea-btn { text-decoration: none; color: white; background: linear-gradient(135deg, var(--idea-gold), #d97706); padding: 14px 20px; font-weight: 700; font-size: 13px; letter-spacing: 0.5px; border-radius: 10px; transition: all 0.2s; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); }
+  .idea-btn:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5); }
+  .idea-btn i { font-style: normal; font-size: 18px; width: 20px; text-align: center; display: inline-block; }
+
   .sidebar.collapsed { width: 76px; }
   .sidebar.collapsed .brand-area { padding: 40px 10px; }
   .sidebar.collapsed .brand-area h1 { font-size: 12px; letter-spacing: 1px; }
   .sidebar.collapsed .badge { opacity: 0; height: 0; margin: 0; padding: 0; }
-  .sidebar.collapsed .nav-link span { display: none; }
-  .sidebar.collapsed .nav-link { justify-content: center; padding: 14px 0; }
+  .sidebar.collapsed .nav-link span, .sidebar.collapsed .idea-btn span { display: none; }
+  .sidebar.collapsed .nav-link, .sidebar.collapsed .idea-btn { justify-content: center; padding: 14px 0; }
 
   .sidebar-toggle { position: fixed; left: 244px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; background: var(--slate-charcoal); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 105; border: 4px solid var(--bg-app); transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s; font-size: 12px; }
   .sidebar-toggle.collapsed { left: 60px; transform: translateY(-50%) rotate(180deg); }
@@ -65,14 +72,14 @@
 
   /* EVEN PROJECT GRID */
   .project-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
-  .card { background: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.04); padding: 30px; transition: 0.3s; }
+  .card { background: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.04); padding: 30px; transition: 0.3s; margin-bottom: 30px; }
   .card-title { font-size: 13px; font-weight: 800; text-transform: uppercase; color: #888; margin-bottom: 20px; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
 
   .cms-item { padding: 16px 20px; border-radius: 10px; margin-bottom: 12px; font-size: 14px; font-weight: 600; color: var(--slate-charcoal); border-left: 4px solid transparent; }
   .cms-active { border-left-color: var(--sage-professional); background: #f4f9f2; }
   .cms-upcoming { border-left-color: #3b82f6; background: #f0f7ff; }
 
-  iframe { width: 100%; border: none; border-radius: 8px; background: white; margin-bottom: 30px;}
+  iframe { width: 100%; border: none; border-radius: 8px; background: white; }
   @media (max-width: 1024px) { .project-grid { grid-template-columns: 1fr; } .top-actions { right: 20px; } }
 </style>
 </head>
@@ -89,6 +96,12 @@
     <a href="metrics.html" class="nav-link"><i>📊</i> <span>Metrics & Leaderboards</span></a>
     <a href="docs.html" class="nav-link"><i>📚</i> <span>Processes & Policies</span></a>
   </nav>
+  
+  <div class="sidebar-bottom">
+    <a href="ideas.html" class="idea-btn">
+      <i>💡</i> <span>Have an Idea? Click Here</span>
+    </a>
+  </div>
 </aside>
 
 <div class="sidebar-toggle" onclick="toggleSidebar()">◀</div>
@@ -114,11 +127,11 @@
     </div>
 
     <div class="project-grid">
-      <div class="card">
+      <div class="card" style="margin-bottom: 0;">
         <div class="card-title">⚡ Active Projects</div>
         <div id="active-container"><div style="padding: 12px; color: #999; font-size: 12px;">Syncing...</div></div>
       </div>
-      <div class="card">
+      <div class="card" style="margin-bottom: 0;">
         <div class="card-title">🚀 Upcoming Projects</div>
         <div id="upcoming-container"><div style="padding: 12px; color: #999; font-size: 12px;">Syncing...</div></div>
       </div>
@@ -138,11 +151,6 @@
               <tbody id="kbBody"></tbody>
             </table>
         </div>
-    </div>
-
-    <div class="card">
-        <div class="card-title">💡 Idea Submission Portal</div>
-        <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSfEm449owjdKiT_zp7ATB_oLvsy3x51bL38Q3nKNiM7UNUZFQ/viewform?embedded=true" height="400"></iframe>
     </div>
 
     <div class="card">
