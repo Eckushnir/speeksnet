@@ -41,33 +41,38 @@
   .sidebar-toggle.collapsed { left: 60px; transform: translateY(-50%) rotate(180deg); }
 
   /* =========================================================
-     1. SYNC ZONE - FIXED TO SCREEN (WILL NOT SCROLL)
+     1. FIXED SYNC ZONE (NEVER SCROLLS)
      ========================================================= */
-  .sync-zone {
-    position: fixed !important;
-    top: 40px !important;
-    right: 120px !important; /* Pushed left so it sits nicely next to the bell's initial spot */
-    display: flex !important;
-    align-items: center !important;
-    gap: 15px !important;
-    z-index: 9999 !important;
+  .fixed-sync {
+    position: fixed;
+    top: 30px;
+    right: 50px;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 15px;
   }
   .last-synced-text { font-size: 11px; color: #888; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
   .sync-btn { background: var(--slate-charcoal); color: white; border: none; padding: 12px 24px; border-radius: 10px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 11px; transition: 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
   .sync-btn:hover { background: var(--sage-professional); transform: translateY(-1px); }
 
   /* =========================================================
-     2. MAIN CONTENT & SCROLLING BELL
+     2. MAIN CONTENT & SCROLLING HEADER (BELL LIVES HERE)
      ========================================================= */
   .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
   .main-content.expanded { margin-left: 76px; }
   
-  /* The header uses flexbox. The text goes left, the Bell goes right. It scrolls naturally. */
-  .page-header { margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-start; }
+  .page-header { 
+    margin-bottom: 30px; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: flex-start;
+    padding-right: 250px; /* Prevents the scrolling bell from hiding behind the fixed sync button on initial load */
+  }
   .page-header h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin: 0;}
   .page-header p { color: #888; font-size: 14px; font-weight: 500; margin-top: 5px; }
 
-  /* NOTIFICATION UI */
+  /* NOTIFICATION UI (SCROLLS WITH PAGE) */
   .notif-container { position: relative; }
   .notif-bell { background: white; border: 1px solid #ddd; width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 22px; transition: 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
   .notif-bell:hover { border-color: var(--sage-professional); transform: translateY(-2px); }
@@ -117,7 +122,7 @@
 
   @media (max-width: 1024px) { 
     .metrics-grid, .leaderboard-container { grid-template-columns: 1fr; } 
-    .sync-zone { right: 20px !important; top: 10px !important; }
+    .page-header { padding-right: 0; flex-direction: column; gap: 20px; }
   }
 </style>
 </head>
@@ -138,7 +143,7 @@
 
 <div class="sidebar-toggle" onclick="toggleSidebar()">◀</div>
 
-<div class="sync-zone">
+<div class="fixed-sync">
     <span class="last-synced-text" id="lastSyncedText">Last Synced: --:--</span>
     <button class="sync-btn" onclick="syncAllData()">🔄 Sync Data</button>
 </div>
