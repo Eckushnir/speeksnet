@@ -53,7 +53,7 @@
   .notif-menu.show { display: block; }
   .notif-header { padding: 15px 20px; background: #f9fafb; border-bottom: 1px solid #eee; font-size: 13px; font-weight: 800; text-transform: uppercase; color: #666; letter-spacing: 0.5px; }
   .notif-content { max-height: 400px; overflow-y: auto; }
-  .notif-item { padding: 15px 20px; border-bottom: 1px solid #f5f5f5; font-size: 13px; color: var(--text-dark); line-height: 1.5; }
+  .notif-item { padding: 15px 20px; border-bottom: 1px solid #f5f5f5; font-size: 13px; color: var(--text-dark); line-height: 1.5; text-align: left; }
   .notif-item small { display: block; color: #aaa; margin-top: 5px; font-weight: 600; font-size: 11px; }
 
   /* MAIN HUB CANVAS */
@@ -65,7 +65,6 @@
 
   /* EVEN PROJECT GRID */
   .project-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
-  
   .card { background: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.04); padding: 30px; transition: 0.3s; }
   .card-title { font-size: 13px; font-weight: 800; text-transform: uppercase; color: #888; margin-bottom: 20px; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
 
@@ -73,20 +72,7 @@
   .cms-active { border-left-color: var(--sage-professional); background: #f4f9f2; }
   .cms-upcoming { border-left-color: #3b82f6; background: #f0f7ff; }
 
-  /* HOTKEYS TABLE */
-  .kb-control-bar { display: flex; gap: 15px; margin-bottom: 20px; align-items: center; background: var(--bg-app); padding: 15px; border-radius: 12px; }
-  #kbSearch { flex-grow: 1; padding: 14px 20px; border-radius: 10px; border: 1px solid #ddd; outline: none; font-family: 'Inter', sans-serif; }
-  .kb-scroll-box { max-height: 500px; overflow-y: auto; border-radius: 12px; border: 1px solid #eee; }
-  .kb-table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
-  .kb-table thead th { position: sticky; top: 0; background: var(--slate-charcoal); color: white; padding: 16px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
-  .kb-table td { padding: 16px 12px; border-bottom: 1px solid #f4f4f4; }
-  .bubble { display: inline-block; padding: 6px 14px; border-radius: 8px; font-weight: 700; font-size: 12px; }
-  .b-apple { background: var(--apple-bg); color: var(--apple-text); border: 1px solid var(--apple-border); }
-  .b-windows { background: var(--win-bg); color: var(--win-text); border: 1px solid var(--win-border); }
-  .b-generic { background: var(--gen-bg); color: var(--gen-text); border: 1px solid var(--gen-border); }
-  
   iframe { width: 100%; border: none; border-radius: 8px; background: white; margin-bottom: 30px;}
-
   @media (max-width: 1024px) { .project-grid { grid-template-columns: 1fr; } .top-actions { right: 20px; } }
 </style>
 </head>
@@ -108,10 +94,9 @@
 <div class="sidebar-toggle" onclick="toggleSidebar()">◀</div>
 
 <div class="top-actions">
-    <div class="notif-container">
+    <div class="notif-container" id="notifContainer">
         <div class="notif-bell" onclick="toggleNotifs()">
-            🔔
-            <div class="notif-dot" id="notifBadge"></div>
+            🔔 <div class="notif-dot" id="notifBadge"></div>
         </div>
         <div class="notif-menu" id="notifDropdown">
             <div class="notif-header">Announcements</div>
@@ -133,7 +118,6 @@
         <div class="card-title">⚡ Active Projects</div>
         <div id="active-container"><div style="padding: 12px; color: #999; font-size: 12px;">Syncing...</div></div>
       </div>
-      
       <div class="card">
         <div class="card-title">🚀 Upcoming Projects</div>
         <div id="upcoming-container"><div style="padding: 12px; color: #999; font-size: 12px;">Syncing...</div></div>
@@ -142,13 +126,15 @@
 
     <div class="card">
         <div class="card-title">⌨️ System Hotkeys & Knowledge Base</div>
-        <div class="kb-control-bar">
-            <input type="text" id="kbSearch" onkeyup="filterKB()" placeholder="Search by Brand, Device, or Task (e.g. Dell, Boot Menu)...">
-            <button onclick="loadHotkeys()" class="kb-sync-btn" id="kbSyncBtn" style="background:var(--slate-charcoal); color:white; border:none; padding:12px 24px; border-radius:10px; font-weight:700; cursor:pointer; font-size:11px;">Sync Database</button>
+        <div id="kbSearchArea" style="margin-bottom:20px; display:flex; gap:10px;">
+            <input type="text" id="kbSearch" onkeyup="filterKB()" placeholder="Search by Brand, Device, or Task..." style="flex-grow:1; padding:12px; border-radius:10px; border:1px solid #ddd; outline:none; font-family:'Inter';">
+            <button onclick="loadHotkeys()" style="background:var(--slate-charcoal); color:white; border:none; padding:12px 20px; border-radius:10px; font-weight:700; cursor:pointer;">Sync</button>
         </div>
-        <div class="kb-scroll-box">
-            <table class="kb-table" id="kbTable">
-              <thead><tr><th style="width:15%">Brand</th><th style="width:15%">Device</th><th style="width:15%">OS</th><th style="width:35%">Instructions</th><th style="width:20%">Objective</th></tr></thead>
+        <div style="max-height:500px; overflow-y:auto; border-radius:12px; border:1px solid #eee;">
+            <table style="width:100%; border-collapse:collapse; font-size:13px; table-layout:fixed;">
+              <thead style="position:sticky; top:0; background:var(--slate-charcoal); color:white;">
+                <tr><th style="width:15%; padding:16px;">Brand</th><th style="width:15%">Device</th><th style="width:15%">OS</th><th style="width:35%">Instructions</th><th style="width:20%">Objective</th></tr>
+              </thead>
               <tbody id="kbBody"></tbody>
             </table>
         </div>
@@ -180,33 +166,39 @@ function toggleNotifs() {
     document.getElementById('notifBadge').classList.remove('active');
 }
 
+// Click outside to close notification menu
+window.addEventListener('click', function(e) {
+    const container = document.getElementById('notifContainer');
+    const dropdown = document.getElementById('notifDropdown');
+    if (!container.contains(e.target)) {
+        dropdown.classList.remove('show');
+    }
+});
+
 async function loadCMS() {
     try {
         const response = await fetch(`${CMS_URL}?v=${Date.now()}`);
         const data = await response.json();
         
-        // --- 1. PROCESS ANNOUNCEMENTS (COL A & B) ---
+        // --- ANNOUNCEMENTS (COL A = Text, COL B = Timestamp) ---
         const annContainer = document.getElementById('ann-container');
         const badge = document.getElementById('notifBadge');
         let showBadge = false;
         let announcementsHtml = "";
 
         if (data.announcements && data.announcements.length > 0) {
-            // Newest at the top
             const sortedAnns = [...data.announcements].reverse();
             const now = new Date();
 
             announcementsHtml = sortedAnns.map(item => {
-                const text = item.text || "";
-                const dateStr = item.date || "";
+                const text = item.text || ""; // From Col A
+                const dateStr = item.date || ""; // From Col B
                 
-                // 24-hour glow logic: Compare Column B timestamp to current time
+                // If the date exists and is within 24 hours, show the red badge
                 if (dateStr) {
                   const annDate = new Date(dateStr);
-                  const diffInHours = (now - annDate) / (1000 * 60 * 60);
-                  if (diffInHours <= 24) showBadge = true;
+                  if (!isNaN(annDate) && (now - annDate) / (1000 * 60 * 60) <= 24) showBadge = true;
                 }
-
                 return `<div class="notif-item">${text}${dateStr ? `<small>${dateStr}</small>` : ''}</div>`;
             }).join('');
         } else {
@@ -216,12 +208,11 @@ async function loadCMS() {
         annContainer.innerHTML = announcementsHtml;
         if (showBadge) badge.classList.add('active');
 
-        // --- 2. PROCESS ACTIVE PROJECTS (COL C) ---
+        // --- PROJECTS (COL C = Active, COL D = Upcoming) ---
         document.getElementById('active-container').innerHTML = data.active.length 
           ? data.active.map(txt => `<div class="cms-item cms-active">${txt}</div>`).join('') 
           : '<div class="cms-item">No active projects</div>';
           
-        // --- 3. PROCESS UPCOMING PROJECTS (COL D) ---
         document.getElementById('upcoming-container').innerHTML = data.upcoming.length 
           ? data.upcoming.map(txt => `<div class="cms-item cms-upcoming">${txt}</div>`).join('') 
           : '<div class="cms-item">No upcoming projects</div>';
@@ -239,18 +230,17 @@ async function loadHotkeys() {
             const brand = cols[1] || "";
             if (brand.toLowerCase() === "brand" || !brand) return '';
             let bClass = 'b-generic';
-            const bL = brand.toLowerCase();
-            if (bL.includes('apple')) bClass = 'b-apple';
-            else if (['dell','hp','lenovo','asus'].some(x => bL.includes(x))) bClass = 'b-windows';
-            return `<tr><td><span class="bubble ${bClass}">${brand}</span></td><td>${cols[2]}</td><td>${cols[3]}</td><td>${cols[4]}</td><td>${cols[5]}</td></tr>`;
+            if (brand.toLowerCase().includes('apple')) bClass = 'b-apple';
+            else if (['dell','hp','lenovo','asus'].some(x => brand.toLowerCase().includes(x))) bClass = 'b-windows';
+            return `<tr><td style="padding:16px;"><span class="bubble ${bClass}">${brand}</span></td><td>${cols[2]}</td><td>${cols[3]}</td><td>${cols[4]}</td><td>${cols[5]}</td></tr>`;
         }).join('');
     } catch (e) { console.error("KB Failed", e); }
 }
 
 function filterKB() {
     const filter = document.getElementById("kbSearch").value.toUpperCase();
-    const rows = document.getElementById("kbTable").getElementsByTagName("tr");
-    for (let i = 1; i < rows.length; i++) {
+    const rows = document.getElementById("kbBody").getElementsByTagName("tr");
+    for (let i = 0; i < rows.length; i++) {
         const text = rows[i].textContent || rows[i].innerText;
         rows[i].style.display = text.toUpperCase().includes(filter) ? "" : "none";
     }
