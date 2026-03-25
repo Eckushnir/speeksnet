@@ -7,14 +7,21 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 <style>
-  :root { --slate-charcoal: #1a1c1e; --sage-professional: #5a8d3b; --text-dark: #2d2d2d; --bg-app: #f4f7f9; }
+  :root {
+    --slate-charcoal: #1a1c1e; 
+    --sage-professional: #5a8d3b; 
+    --text-dark: #2d2d2d; 
+    --bg-app: #f4f7f9;
+    --gold-rank: #f59e0b; /* Professional Gold */
+  }
+  
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Inter', sans-serif; background: var(--bg-app); color: var(--text-dark); line-height: 1.6; display: flex; min-height: 100vh; overflow-x: hidden; }
+  body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg-app); color: var(--text-dark); line-height: 1.6; display: flex; min-height: 100vh; overflow-x: hidden; }
 
   /* SIDEBAR STYLES */
   .sidebar { width: 260px; background: var(--slate-charcoal); color: white; position: fixed; top: 0; bottom: 0; left: 0; display: flex; flex-direction: column; box-shadow: 4px 0 15px rgba(0,0,0,0.05); z-index: 100; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); white-space: nowrap; overflow: hidden; }
   .brand-area { padding: 40px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); margin-bottom: 20px; }
-  .brand-area h1 { font-size: 28px; font-weight: 200; letter-spacing: 6px; color: white; }
+  .brand-area h1 { font-size: 28px; font-weight: 200; letter-spacing: 6px; margin: 0; color: white; }
   .brand-area .badge { display: inline-block; background: var(--sage-professional); color: white; font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 12px; margin-top: 10px; letter-spacing: 1px; text-transform: uppercase; }
 
   .nav-bar { display: flex; flex-direction: column; gap: 8px; padding: 0 15px; }
@@ -25,19 +32,28 @@
 
   .sidebar.collapsed { width: 76px; }
   .sidebar.collapsed .brand-area h1 { font-size: 12px; letter-spacing: 1px; }
-  .sidebar.collapsed .badge { opacity: 0; height: 0; }
+  .sidebar.collapsed .badge { opacity: 0; height: 0; pointer-events: none; }
   .sidebar.collapsed .nav-link span { display: none; }
   .sidebar.collapsed .nav-link { justify-content: center; padding: 14px 0; }
 
   .sidebar-toggle { position: fixed; left: 244px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; background: var(--slate-charcoal); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 105; border: 4px solid var(--bg-app); transition: left 0.3s; font-size: 12px; }
   .sidebar-toggle.collapsed { left: 60px; transform: translateY(-50%) rotate(180deg); }
 
-  /* FIXED HEADER CONTROLS */
-  .top-actions { position: fixed; top: 30px; right: 50px; z-index: 200; display: flex; align-items: center; gap: 20px; }
-  .sync-controls { display: flex; align-items: center; gap: 15px; margin-right: 15px; }
+  /* FIXED TOP ACTIONS - THE FIX */
+  .top-actions { 
+    position: fixed; 
+    top: 30px; 
+    right: 50px; 
+    z-index: 999; /* Highest priority */
+    display: flex; 
+    align-items: center; 
+    gap: 20px;
+    pointer-events: auto;
+  }
+  .sync-controls { display: flex; align-items: center; gap: 15px; }
   .last-synced-text { font-size: 11px; color: #888; font-weight: 700; text-transform: uppercase; }
-  .sync-btn { background: var(--slate-charcoal); color: white; border: none; padding: 12px 24px; border-radius: 10px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 11px; transition: 0.2s; }
-  .sync-btn:hover { background: var(--sage-professional); }
+  .sync-btn { background: var(--slate-charcoal); color: white; border: none; padding: 12px 24px; border-radius: 10px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 11px; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+  .sync-btn:hover { background: var(--sage-professional); transform: translateY(-1px); }
 
   .notif-container { position: relative; }
   .notif-bell { background: white; border: 1px solid #ddd; width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 22px; transition: 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
@@ -45,7 +61,8 @@
   .notif-dot { position: absolute; top: -4px; right: -4px; width: 14px; height: 14px; background: #ef4444; border-radius: 50%; border: 3px solid white; display: none; }
   .notif-dot.active { display: block; animation: pulse 2s infinite; }
   @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-  .notif-menu { position: absolute; top: 60px; right: 0; width: 340px; background: white; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.12); border: 1px solid #eee; display: none; z-index: 300; overflow: hidden; }
+
+  .notif-menu { position: absolute; top: 60px; right: 0; width: 340px; background: white; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.12); border: 1px solid #eee; display: none; z-index: 1000; overflow: hidden; }
   .notif-menu.show { display: block; }
   .notif-header { padding: 15px 20px; background: #f9fafb; border-bottom: 1px solid #eee; font-size: 13px; font-weight: 800; text-transform: uppercase; color: #666; }
   .notif-content { max-height: 400px; overflow-y: auto; }
@@ -53,38 +70,49 @@
   .notif-item small { display: block; color: #999; margin-top: 5px; font-size: 11px; }
 
   /* MAIN CONTENT */
-  .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s; }
+  .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
   .main-content.expanded { margin-left: 76px; }
   .page-header { margin-bottom: 30px; }
-  .page-header h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; }
+  .page-header h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin: 0;}
+  .page-header p { color: #888; font-size: 14px; font-weight: 500; margin-top: 5px; }
 
+  /* METRICS UI */
   .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-bottom: 30px; }
   .card { background: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.04); padding: 30px; margin-bottom: 30px; transition: 0.3s; text-align: center; }
-  .card-title { font-size: 15px; font-weight: 800; text-transform: uppercase; color: var(--slate-charcoal); margin-bottom: 20px; }
+  .card-title { font-size: 15px; font-weight: 800; text-transform: uppercase; color: var(--slate-charcoal); margin-bottom: 20px; letter-spacing: 0.5px; }
 
   .progress-ring { position: relative; width: 140px; height: 140px; margin: 0 auto 15px; }
   .progress-ring svg { transform: rotate(-90deg); width: 140px; height: 140px; }
   .progress-ring circle { fill: none; stroke-width: 12; stroke-linecap: round; }
   .progress-ring .bg { stroke: #f0f0f0; }
   .progress-ring .bar { stroke: var(--sage-professional); transition: 1.5s ease-out; stroke-dasharray: 402; stroke-dashoffset: 402; }
-  .percentage { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: 800; font-size: 24px; }
+  .percentage { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: 800; font-size: 24px; color: var(--slate-charcoal); }
   .goal-text, .tracking-box { font-weight: 800; font-size: 14px; color: #888; margin-top: 5px; }
+  .tracking-box span { color: var(--slate-charcoal); font-size: 16px; }
 
+  /* CHART UI */
   .chart-header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #f4f7f9; padding-bottom: 15px; }
-  .chart-controls { display: flex; gap: 15px; }
+  .chart-controls { display: flex; gap: 15px; align-items: center; }
   .timeframe-toggle { display: flex; background: #e2e8f0; border-radius: 8px; padding: 4px; }
-  .toggle-btn { background: transparent; border: none; padding: 8px 16px; font-size: 12px; font-weight: 700; color: #64748b; border-radius: 6px; cursor: pointer; }
-  .toggle-btn.active { background: white; color: var(--slate-charcoal); }
-  .metric-dropdown { padding: 10px 15px; border-radius: 8px; border: 1px solid #ddd; font-weight: 600; cursor: pointer; }
+  .toggle-btn { background: transparent; border: none; padding: 8px 16px; font-size: 12px; font-weight: 700; color: #64748b; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+  .toggle-btn.active { background: white; color: var(--slate-charcoal); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+  .metric-dropdown { padding: 10px 15px; border-radius: 8px; border: 1px solid #ddd; font-weight: 600; color: var(--slate-charcoal); background: var(--bg-app); outline: none; font-size: 13px; cursor: pointer; }
 
   .chart-container { height: 450px; position: relative; }
-  #chartLoading { position: absolute; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); display:none; justify-content:center; align-items:center; z-index:5; font-weight:800; color:var(--sage-professional); }
+  #chartLoading { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); display: none; justify-content: center; align-items: center; z-index: 5; font-weight: 800; color: var(--sage-professional); text-transform: uppercase; }
 
+  /* LEADERBOARDS & GOLD COLOR */
   .leaderboard-container { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
-  .lb-row { display: flex; align-items: center; padding: 15px 10px; border-bottom: 1px solid #f9f9f9; border-radius: 8px; text-align: left; }
+  .lb-row { display: flex; align-items: center; padding: 15px 10px; border-bottom: 1px solid #f9f9f9; transition: 0.2s; border-radius: 8px; text-align: left; }
   .lb-rank { width: 40px; font-weight: 900; color: #ccc; font-size: 22px; }
-  .lb-name { flex-grow: 1; font-weight: 700; font-size: 16px; margin-left: 10px; }
+  .lb-gold { color: var(--gold-rank) !important; } /* The specific gold color */
+  .lb-name { flex-grow: 1; font-weight: 700; font-size: 16px; margin-left: 10px; color: var(--slate-charcoal); }
   .lb-val { font-weight: 800; color: var(--sage-professional); font-size: 16px; }
+
+  @media (max-width: 1024px) {
+    .metrics-grid, .leaderboard-container { grid-template-columns: 1fr; }
+    .top-actions { right: 20px; top: 20px; }
+  }
 </style>
 </head>
 <body>
@@ -101,29 +129,62 @@
 
 <div class="sidebar-toggle" onclick="toggleSidebar()">◀</div>
 
-<div class="top-actions" id="notifContainer">
+<div class="top-actions" id="notifArea">
     <div class="sync-controls">
         <span class="last-synced-text" id="lastSyncedText">Last Synced: --:--</span>
         <button class="sync-btn" onclick="syncAllData()">🔄 Sync Data</button>
     </div>
-    <div class="notif-container">
-        <div class="notif-bell" onclick="toggleNotifs()">🔔 <div class="notif-dot" id="notifBadge"></div></div>
+    <div class="notif-container" id="notifContainer">
+        <div class="notif-bell" onclick="toggleNotifs()">
+            🔔 <div class="notif-dot" id="notifBadge"></div>
+        </div>
         <div class="notif-menu" id="notifDropdown">
             <div class="notif-header">Announcements</div>
-            <div id="ann-container" class="notif-content"><div style="padding: 20px; color:#999; font-size:12px; text-align:center;">Syncing...</div></div>
+            <div id="ann-container" class="notif-content">
+                <div style="padding: 20px; color:#999; font-size:12px; text-align:center;">Syncing...</div>
+            </div>
         </div>
     </div>
 </div>
 
 <main class="main-content">
-  <div class="page-header"><h2>Company Metrics Comparison</h2><p style="color:#888;">Performance trends across all locations.</p></div>
-  <div class="metrics-grid">
-    <div class="card"><div class="card-title">OVL Projected Goal</div><div class="progress-ring"><svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="ovl-bar" cx="70" cy="70" r="64"></circle></svg><div class="percentage" id="ovl-pct">0%</div></div><div class="goal-text" id="ovl-goal">Goal: --</div><div class="tracking-box">GP Track: <span id="ovl-t-gp">--</span></div></div>
-    <div class="card"><div class="card-title">LEE Projected Goal</div><div class="progress-ring"><svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="lee-bar" cx="70" cy="70" r="64"></circle></svg><div class="percentage" id="lee-pct">0%</div></div><div class="goal-text" id="lee-goal">Goal: --</div><div class="tracking-box">GP Track: <span id="lee-t-gp">--</span></div></div>
-    <div class="card"><div class="card-title">WSP Projected Goal</div><div class="progress-ring"><svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="wsp-bar" cx="70" cy="70" r="64"></circle></svg><div class="percentage" id="wsp-pct">0%</div></div><div class="goal-text" id="wsp-goal">Goal: --</div><div class="tracking-box">GP Track: <span id="wsp-t-gp">--</span></div></div>
-  </div>
-  <div class="card" style="text-align:left;"><div class="chart-header-flex"><div class="card-title" style="margin: 0;">Store Comparison Trends</div><div class="chart-controls"><div class="timeframe-toggle"><button class="toggle-btn active" id="btn-4week" onclick="setTimeframe('4-Week')">4-Week</button><button class="toggle-btn" id="btn-monthly" onclick="setTimeframe('Monthly')">Monthly</button></div><select id="metricSelector" class="metric-dropdown" onchange="updateKpiView()"><option value="conversion">Customer Conversion</option><option value="margin">Buying Margin</option><option value="nodeals">No Deals</option><option value="time">Transaction Time</option></select></div></div><div class="chart-container"><div id="chartLoading">Syncing...</div><canvas id="mainKpiChart"></canvas></div></div>
-  <div class="leaderboard-container"><div class="card"><div class="card-title">🏆 MTD Revenue Rank</div><div id="rev-list"></div></div><div class="card"><div class="card-title">📈 MTD GP Rank</div><div id="gp-list"></div></div></div>
+    <div class="page-header">
+        <h2>Company Metrics Comparison</h2>
+        <p>Comparing average performance trends across all locations</p>
+    </div>
+
+    <div class="metrics-grid">
+      <div class="card"><div class="card-title">OVL Projected Goal</div><div class="progress-ring"><svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="ovl-bar" cx="70" cy="70" r="64"></circle></svg><div class="percentage" id="ovl-pct">0%</div></div><div class="goal-text" id="ovl-goal">Goal: --</div><div class="tracking-box">GP Track: <span id="ovl-t-gp">--</span></div></div>
+      <div class="card"><div class="card-title">LEE Projected Goal</div><div class="progress-ring"><svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="lee-bar" cx="70" cy="70" r="64"></circle></svg><div class="percentage" id="lee-pct">0%</div></div><div class="goal-text" id="lee-goal">Goal: --</div><div class="tracking-box">GP Track: <span id="lee-t-gp">--</span></div></div>
+      <div class="card"><div class="card-title">WSP Projected Goal</div><div class="progress-ring"><svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="wsp-bar" cx="70" cy="70" r="64"></circle></svg><div class="percentage" id="wsp-pct">0%</div></div><div class="goal-text" id="wsp-goal">Goal: --</div><div class="tracking-box">GP Track: <span id="wsp-t-gp">--</span></div></div>
+    </div>
+
+    <div class="card" style="text-align: left;">
+        <div class="chart-header-flex">
+            <div class="card-title" style="margin: 0;">Store Comparison Trends</div>
+            <div class="chart-controls">
+                <div class="timeframe-toggle">
+                    <button class="toggle-btn active" id="btn-4week" onclick="setTimeframe('4-Week')">4-Week</button>
+                    <button class="toggle-btn" id="btn-monthly" onclick="setTimeframe('Monthly')">Monthly</button>
+                </div>
+                <select id="metricSelector" class="metric-dropdown" onchange="updateKpiView()">
+                    <option value="conversion">Customer Conversion</option>
+                    <option value="margin">Buying Margin</option>
+                    <option value="nodeals">No Deals</option>
+                    <option value="time">Transaction Time</option>
+                </select>
+            </div>
+        </div>
+        <div class="chart-container">
+            <div id="chartLoading">Syncing...</div>
+            <canvas id="mainKpiChart"></canvas>
+        </div>
+    </div>
+
+    <div class="leaderboard-container">
+      <div class="card"><div class="card-title">🏆 MTD Revenue Rank</div><div id="rev-list"></div></div>
+      <div class="card"><div class="card-title">📈 MTD GP Rank</div><div id="gp-list"></div></div>
+    </div>
 </main>
 
 <script>
@@ -142,9 +203,18 @@ function toggleSidebar() {
 }
 
 function toggleNotifs() { document.getElementById('notifDropdown').classList.toggle('show'); document.getElementById('notifBadge').classList.remove('active'); }
-window.addEventListener('click', function(e) { if (!document.getElementById('notifContainer').contains(e.target)) { document.getElementById('notifDropdown').classList.remove('show'); } });
 
-function setTimeframe(t) { currentTimeframe = t; document.getElementById('btn-4week').classList.toggle('active', t === '4-Week'); document.getElementById('btn-monthly').classList.toggle('active', t === 'Monthly'); loadKpiData(); }
+window.addEventListener('click', function(e) {
+    const container = document.getElementById('notifContainer');
+    if (container && !container.contains(e.target)) { document.getElementById('notifDropdown').classList.remove('show'); }
+});
+
+function setTimeframe(t) { 
+  currentTimeframe = t; 
+  document.getElementById('btn-4week').classList.toggle('active', t === '4-Week');
+  document.getElementById('btn-monthly').classList.toggle('active', t === 'Monthly');
+  loadKpiData(); 
+}
 
 function cleanValue(val, isPct = false) {
     if (val === undefined || val === null || val === "") return null;
@@ -154,7 +224,10 @@ function cleanValue(val, isPct = false) {
     return (isPct && num <= 1.1 && num > 0) ? num * 100 : num;
 }
 
-async function loadKpiData() { document.getElementById('chartLoading').style.display = 'flex'; updateKpiView(); }
+async function loadKpiData() {
+    document.getElementById('chartLoading').style.display = 'flex';
+    updateKpiView();
+}
 
 function updateKpiView() {
     const metric = document.getElementById('metricSelector').value;
@@ -196,8 +269,23 @@ async function fetchLiveData() {
             document.getElementById(`${id}-bar`).style.strokeDashoffset = 402 - (Math.min(val, 100) / 100) * 402;
         });
         const stores = [{ name: 'OVL', rev: data.ovlRev, gp: data.ovlGP }, { name: 'LEE', rev: data.leeRev, gp: data.leeGP }, { name: 'WSP', rev: data.wspRev, gp: data.wspGP }];
-        document.getElementById('rev-list').innerHTML = [...stores].sort((a,b) => b.rev - a.rev).map((s, i) => `<div class="lb-row"><div class="lb-rank">#${i+1}</div><div class="lb-name">${s.name}</div><div class="lb-val">$${Math.round(s.rev).toLocaleString()}</div></div>`).join('');
-        document.getElementById('gp-list').innerHTML = [...stores].sort((a,b) => b.gp - a.gp).map((s, i) => `<div class="lb-row"><div class="lb-rank">#${i+1}</div><div class="lb-name">${s.name}</div><div class="lb-val">$${Math.round(s.gp).toLocaleString()}</div></div>`).join('');
+        
+        // REVENUE LEADERBOARD WITH GOLD #1
+        document.getElementById('rev-list').innerHTML = [...stores].sort((a,b) => b.rev - a.rev).map((s, i) => `
+            <div class="lb-row">
+                <div class="lb-rank ${i === 0 ? 'lb-gold' : ''}">#${i+1}</div>
+                <div class="lb-name">${s.name}</div>
+                <div class="lb-val">$${Math.round(s.rev).toLocaleString()}</div>
+            </div>`).join('');
+        
+        // GP LEADERBOARD WITH GOLD #1
+        document.getElementById('gp-list').innerHTML = [...stores].sort((a,b) => b.gp - a.gp).map((s, i) => `
+            <div class="lb-row">
+                <div class="lb-rank ${i === 0 ? 'lb-gold' : ''}">#${i+1}</div>
+                <div class="lb-name">${s.name}</div>
+                <div class="lb-val">$${Math.round(s.gp).toLocaleString()}</div>
+            </div>`).join('');
+            
         const now = new Date(); document.getElementById('lastSyncedText').innerText = `Last Synced: ${now.getHours()%12||12}:${String(now.getMinutes()).padStart(2,'0')} ${now.getHours()>=12?'PM':'AM'}`;
     } catch(e) { console.error(e); }
 }
