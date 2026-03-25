@@ -31,7 +31,7 @@
   .sidebar.collapsed { width: 76px; }
   .sidebar.collapsed .brand-area { padding: 40px 10px; }
   .sidebar.collapsed .brand-area h1 { font-size: 12px; letter-spacing: 1px; }
-  .sidebar.collapsed .badge { opacity: 0; height: 0; margin: 0; padding: 0; }
+  .sidebar.collapsed .badge { opacity: 0; pointer-events: none; height: 0; margin: 0; padding: 0; }
   .sidebar.collapsed .nav-link span { display: none; }
   .sidebar.collapsed .nav-link { justify-content: center; padding: 14px 0; }
 
@@ -56,7 +56,7 @@
   .notif-item { padding: 15px 20px; border-bottom: 1px solid #f5f5f5; font-size: 13px; color: var(--text-dark); line-height: 1.5; text-align: left; }
   .notif-item small { display: block; color: #aaa; margin-top: 5px; font-weight: 600; font-size: 11px; }
 
-  /* MAIN HUB CANVAS */
+  /* MAIN CONTENT */
   .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s; }
   .main-content.expanded { margin-left: 76px; }
   .page-header { margin-bottom: 30px; }
@@ -126,13 +126,13 @@
 
     <div class="card">
         <div class="card-title">⌨️ System Hotkeys & Knowledge Base</div>
-        <div id="kbSearchArea" style="margin-bottom:20px; display:flex; gap:10px;">
+        <div style="margin-bottom:20px; display:flex; gap:10px;">
             <input type="text" id="kbSearch" onkeyup="filterKB()" placeholder="Search by Brand, Device, or Task..." style="flex-grow:1; padding:12px; border-radius:10px; border:1px solid #ddd; outline:none; font-family:'Inter';">
             <button onclick="loadHotkeys()" style="background:var(--slate-charcoal); color:white; border:none; padding:12px 20px; border-radius:10px; font-weight:700; cursor:pointer;">Sync</button>
         </div>
         <div style="max-height:500px; overflow-y:auto; border-radius:12px; border:1px solid #eee;">
             <table style="width:100%; border-collapse:collapse; font-size:13px; table-layout:fixed;">
-              <thead style="position:sticky; top:0; background:var(--slate-charcoal); color:white;">
+              <thead style="position:sticky; top:0; background:var(--slate-charcoal); color:white; z-index:10;">
                 <tr><th style="width:15%; padding:16px;">Brand</th><th style="width:15%">Device</th><th style="width:15%">OS</th><th style="width:35%">Instructions</th><th style="width:20%">Objective</th></tr>
               </thead>
               <tbody id="kbBody"></tbody>
@@ -147,7 +147,8 @@
 </main>
 
 <script>
-const CMS_URL = 'https://script.google.com/macros/s/AKfycby8cueKK9CLXVK_-7R5DhLccU5-nFjRjHqGRvPyGFx9MKSqFE6q3nTgYHeTqZouCS0/exec';
+// --- REPLACE WITH YOUR NEW WEB APP URL ---
+const CMS_URL = 'PASTE_YOUR_NEW_DEPLOY_URL_HERE';
 const HOTKEYS_URL = 'https://script.google.com/macros/s/AKfycbyLburcVWM8xAKwDt2RHAQhZBLb_rJjb2__EzhoAKx1KgkNFi-BchVetgaTKvwCwqZiRw/exec';
 
 function toggleSidebar() {
@@ -180,7 +181,7 @@ async function loadCMS() {
         const response = await fetch(`${CMS_URL}?v=${Date.now()}`);
         const data = await response.json();
         
-        // --- ANNOUNCEMENTS (COL A = Text, COL B = Timestamp) ---
+        // --- 1. ANNOUNCEMENTS (Mapping to Script Objects) ---
         const annContainer = document.getElementById('ann-container');
         const badge = document.getElementById('notifBadge');
         let showBadge = false;
@@ -191,13 +192,16 @@ async function loadCMS() {
             const now = new Date();
 
             announcementsHtml = sortedAnns.map(item => {
-                const text = item.text || ""; // From Col A
-                const dateStr = item.date || ""; // From Col B
+                const text = item.text || "";
+                const dateStr = item.date || "";
                 
                 // If the date exists and is within 24 hours, show the red badge
                 if (dateStr) {
                   const annDate = new Date(dateStr);
-                  if (!isNaN(annDate) && (now - annDate) / (1000 * 60 * 60) <= 24) showBadge = true;
+                  if (!isNaN(annDate.getTime())) {
+                    const diffInHours = (now - annDate) / (1000 * 60 * 60);
+                    if (diffInHours <= 24 && diffInHours >= 0) showBadge = true;
+                  }
                 }
                 return `<div class="notif-item">${text}${dateStr ? `<small>${dateStr}</small>` : ''}</div>`;
             }).join('');
@@ -208,7 +212,7 @@ async function loadCMS() {
         annContainer.innerHTML = announcementsHtml;
         if (showBadge) badge.classList.add('active');
 
-        // --- PROJECTS (COL C = Active, COL D = Upcoming) ---
+        // --- 2. PROJECTS ---
         document.getElementById('active-container').innerHTML = data.active.length 
           ? data.active.map(txt => `<div class="cms-item cms-active">${txt}</div>`).join('') 
           : '<div class="cms-item">No active projects</div>';
@@ -217,7 +221,10 @@ async function loadCMS() {
           ? data.upcoming.map(txt => `<div class="cms-item cms-upcoming">${txt}</div>`).join('') 
           : '<div class="cms-item">No upcoming projects</div>';
           
-    } catch (e) { console.error("CMS Failed", e); }
+    } catch (e) { 
+        console.error("CMS Failed", e); 
+        document.getElementById('ann-container').innerHTML = '<div style="color:red; font-size:10px; padding:20px;">Data Link Broken</div>';
+    }
 }
 
 async function loadHotkeys() {
