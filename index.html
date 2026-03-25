@@ -3,147 +3,44 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SPEEKSNET | SPEEKS Hub</title>
+<title>SPEEKSNET | Hub</title>
 <style>
-  :root {
-    --slate-charcoal: #1a1c1e; 
-    --sage-professional: #5a8d3b; 
-    --text-dark: #2d2d2d; 
-    --bg-app: #f4f7f9;
-    
-    /* Hotkey Colors */
-    --apple-bg: #f5f5f7; --apple-text: #1d1d1f; --apple-border: #d2d2d7;
-    --win-bg: #e1f0fe; --win-text: #0078d4; --win-border: #cce5ff;
-    --android-bg: #e6f7ef; --android-text: #188038; --android-border: #ceead6;
-    --gen-bg: #f1f3f4; --gen-text: #5f6368; --gen-border: #dadce0;
-  }
-  
+  :root { --slate-charcoal: #1a1c1e; --sage-professional: #5a8d3b; --text-dark: #2d2d2d; --bg-app: #f4f7f9; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg-app); color: var(--text-dark); line-height: 1.6; display: flex; min-height: 100vh; overflow-x: hidden; }
 
-  /* =========================================
-     MODERN SAAS SIDEBAR
-  ========================================= */
-  .sidebar {
-    width: 260px;
-    background: var(--slate-charcoal);
-    color: white;
-    position: fixed;
-    top: 0; bottom: 0; left: 0;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 4px 0 15px rgba(0,0,0,0.05);
-    z-index: 100;
-  }
-  
-  .brand-area {
-    padding: 40px 20px;
-    text-align: center;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-    margin-bottom: 20px;
-  }
-  .brand-area h1 { font-size: 28px; font-weight: 200; letter-spacing: 6px; margin: 0; color: white; }
-  .brand-area .badge { display: inline-block; background: var(--sage-professional); color: white; font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 12px; margin-top: 10px; letter-spacing: 1px; }
+  /* SIDEBAR STYLES */
+  .sidebar { width: 260px; background: var(--slate-charcoal); color: white; position: fixed; top: 0; bottom: 0; left: 0; display: flex; flex-direction: column; box-shadow: 4px 0 15px rgba(0,0,0,0.05); z-index: 100; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); white-space: nowrap; overflow: hidden; }
+  .brand-area { padding: 40px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); margin-bottom: 20px; transition: padding 0.3s; }
+  .brand-area h1 { font-size: 28px; font-weight: 200; letter-spacing: 6px; margin: 0; color: white; transition: font-size 0.3s; }
+  .brand-area .badge { display: inline-block; background: var(--sage-professional); color: white; font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 12px; margin-top: 10px; letter-spacing: 1px; text-transform: uppercase; transition: opacity 0.3s; }
 
   .nav-bar { display: flex; flex-direction: column; gap: 8px; padding: 0 15px; }
-  .nav-link { 
-    text-decoration: none; color: #a0aab2; padding: 14px 20px; font-weight: 600; 
-    font-size: 13px; letter-spacing: 1px; border-radius: 10px; transition: all 0.2s;
-    display: flex; align-items: center; gap: 12px;
-  }
+  .nav-link { text-decoration: none; color: #a0aab2; padding: 14px 20px; font-weight: 600; font-size: 13px; letter-spacing: 1px; border-radius: 10px; transition: all 0.2s; display: flex; align-items: center; gap: 12px; }
   .nav-link:hover { background: rgba(255,255,255,0.05); color: white; transform: translateX(3px); }
   .nav-link.active { background: var(--sage-professional); color: white; box-shadow: 0 4px 12px rgba(90, 141, 59, 0.3); }
+  .nav-link i { font-style: normal; font-size: 16px; width: 20px; text-align: center; }
 
-  /* =========================================
-     MAIN CONTENT CANVAS
-  ========================================= */
-  .main-content {
-    flex-grow: 1;
-    margin-left: 260px;
-    padding: 40px 50px;
-  }
+  /* COLLAPSED STATE */
+  .sidebar.collapsed { width: 76px; }
+  .sidebar.collapsed .brand-area { padding: 40px 10px; }
+  .sidebar.collapsed .brand-area h1 { font-size: 12px; letter-spacing: 1px; }
+  .sidebar.collapsed .badge { opacity: 0; pointer-events: none; height: 0; margin: 0; padding: 0; }
+  .sidebar.collapsed .nav-link span { display: none; }
+  .sidebar.collapsed .nav-link { justify-content: center; padding: 14px 0; }
+
+  /* MAIN CONTENT */
+  .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; max-width: 1400px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+  .main-content.expanded { margin-left: 76px; }
   
-  .page-header { margin-bottom: 30px; }
-  .page-header h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin-bottom: 5px; }
-  .mission-statement { color: var(--sage-professional); font-size: 16px; font-weight: 600; font-style: italic; letter-spacing: 0.3px; }
+  .page-header { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 20px; }
+  .title-wrapper { display: flex; align-items: center; gap: 15px; margin-bottom: 5px; }
+  .menu-toggle { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--slate-charcoal); transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; }
+  .menu-toggle:hover { color: var(--sage-professional); transform: scale(1.1); }
+  .header-text h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin: 0; }
+  .header-text p { color: #888; font-size: 14px; font-weight: 500; margin-top: 5px; }
 
-  /* Dashboard Cards Framework */
-  .card {
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.02);
-    border: 1px solid rgba(0,0,0,0.04);
-    padding: 30px;
-    margin-bottom: 30px;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-  }
-  .card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.05); }
-  
-  .card-title { font-size: 13px; font-weight: 800; text-transform: uppercase; color: #888; margin-bottom: 20px; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
-
-  /* =========================================
-     TOP GRID: CMS DATA
-  ========================================= */
-  .hub-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; margin-bottom: 10px; }
-  
-  .cms-item {
-    padding: 16px 20px;
-    border-radius: 10px;
-    margin-bottom: 12px;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--slate-charcoal);
-    border-left: 4px solid transparent;
-    transition: 0.2s;
-    line-height: 1.4;
-  }
-  .cms-item:hover { filter: brightness(0.97); }
-  
-  .cms-announcement { border-left-color: #f59e0b; background: #fffdf5; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.05); }
-  .cms-active { border-left-color: var(--sage-professional); background: #f4f9f2; box-shadow: 0 2px 8px rgba(90, 141, 59, 0.05); }
-  .cms-upcoming { border-left-color: #3b82f6; background: #f0f7ff; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.05); }
-
-  /* =========================================
-     HOTKEYS COMPONENT
-  ========================================= */
-  .kb-control-bar { display: flex; gap: 15px; margin-bottom: 20px; align-items: center; background: var(--bg-app); padding: 15px; border-radius: 12px; flex-wrap: wrap; }
-  #kbSearch { flex-grow: 1; padding: 14px 20px; border-radius: 10px; border: 1px solid #ddd; font-size: 15px; outline: none; transition: 0.2s; font-family: 'Inter', sans-serif; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
-  #kbSearch:focus { border-color: var(--sage-professional); box-shadow: 0 0 0 4px rgba(90, 141, 59, 0.1); }
-  
-  .kb-sync-group { display: flex; align-items: center; gap: 15px; }
-  .kb-last-synced { font-size: 11px; color: #888; font-weight: 700; text-transform: uppercase; }
-  .kb-sync-btn { background: var(--slate-charcoal); color: white; border: none; padding: 14px 24px; border-radius: 10px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 11px; transition: 0.2s; letter-spacing: 0.5px; }
-  .kb-sync-btn:hover { background: var(--sage-professional); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(90, 141, 59, 0.2); }
-  
-  .kb-scroll-box { max-height: 500px; overflow-y: auto; border-radius: 12px; border: 1px solid #eee; }
-  .kb-scroll-box::-webkit-scrollbar { width: 8px; }
-  .kb-scroll-box::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
-  .kb-scroll-box::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
-  .kb-scroll-box::-webkit-scrollbar-thumb:hover { background: #aaa; }
-
-  .kb-table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; table-layout: fixed; background: white; }
-  .kb-table thead th { position: sticky; top: 0; background: var(--slate-charcoal); color: white; z-index: 20; padding: 16px; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; }
-  .kb-table td { padding: 16px 12px; border-bottom: 1px solid #f4f4f4; vertical-align: middle; }
-  .kb-table tr:hover td { background-color: #fbfdfa; }
-
-  .bubble { display: inline-block; padding: 6px 14px; border-radius: 8px; font-weight: 700; line-height: 1.4; border: 1px solid transparent; word-wrap: break-word; max-width: 95%; font-size: 12px; }
-  .b-apple { background: var(--apple-bg); color: var(--apple-text); border-color: var(--apple-border); }
-  .b-windows { background: var(--win-bg); color: var(--win-text); border-color: var(--win-border); }
-  .b-android { background: var(--android-bg); color: var(--android-text); border-color: var(--android-border); }
-  .b-generic { background: var(--gen-bg); color: var(--gen-text); border-color: var(--gen-border); }
-  .b-device { background: #fff; border: 1px solid #ddd; color: #555; font-weight: 600; }
-  .b-os { background: #fff9db; border: 1px solid #fab005; color: #862e00; }
-  .b-instruction { background: #fff; border: 2px solid #333; color: var(--slate-charcoal); font-weight: 800; font-size: 13px; width: 90%; }
-  .b-objective { background: #f3f0ff; border: 1px solid #d0bfff; color: #5f3dc4; font-style: italic; }
-
-  /* =========================================
-     EMBED CARDS
-  ========================================= */
-  iframe { width: 100%; border: none; border-radius: 8px; background: white; }
-
-  @media (max-width: 1024px) {
-    .hub-grid { grid-template-columns: 1fr; }
-  }
+  .card-container { background: white; padding: 40px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
 </style>
 </head>
 <body>
@@ -151,161 +48,47 @@
 <aside class="sidebar">
   <div class="brand-area">
     <h1>SPEEKS</h1>
-    <div class="badge">HUB & DASHBOARD</div>
+    <div class="badge">KNOWLEDGE BASE</div>
   </div>
   <nav class="nav-bar">
-    <a href="index.html" class="nav-link active">🏠 SPEEKS Hub</a>
-    <a href="portals.html" class="nav-link">🔗 Portals</a>
-    <a href="metrics.html" class="nav-link">📊 Metrics & Leaderboards</a>
-    <a href="docs.html" class="nav-link">📚 Processes & Policies</a>
+    <a href="index.html" class="nav-link active"><i>🏠</i> <span>SPEEKS Hub</span></a>
+    <a href="portals.html" class="nav-link"><i>🔗</i> <span>Portals</span></a>
+    <a href="metrics.html" class="nav-link"><i>📊</i> <span>Metrics & Leaderboards</span></a>
+    <a href="docs.html" class="nav-link"><i>📚</i> <span>Processes & Policies</span></a>
   </nav>
 </aside>
 
 <main class="main-content">
-    
-    <div class="page-header">
-      <h2>Welcome to SPEEKSNET</h2>
-      <p class="mission-statement">To become the #1 trusted source for electronics buy back, resale and recycle in all communities that we serve!</p>
-    </div>
-
-    <div class="hub-grid">
-      <div class="card">
-        <div class="card-title">📌 Announcements</div>
-        <div id="announcements-container"><div style="padding: 12px; color: #999; font-size: 12px;">Syncing data...</div></div>
+  <div class="page-header">
+    <div class="header-text">
+      <div class="title-wrapper">
+        <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+        <h2>SPEEKS Hub</h2>
       </div>
-      
-      <div class="card">
-        <div class="card-title">⚡ Active Projects</div>
-        <div id="active-container"><div style="padding: 12px; color: #999; font-size: 12px;">Syncing data...</div></div>
-      </div>
-      
-      <div class="card">
-        <div class="card-title">🚀 Upcoming Initiatives</div>
-        <div id="upcoming-container"><div style="padding: 12px; color: #999; font-size: 12px;">Syncing data...</div></div>
-      </div>
+      <p>Welcome to your central command center.</p>
     </div>
-
-    <div class="card">
-        <div class="card-title">⌨️ System Hotkeys & Knowledge Base</div>
-        <div class="kb-control-bar">
-            <input type="text" id="kbSearch" onkeyup="filterKB()" placeholder="Search by Brand, Device, or Task (e.g. Dell, Boot Menu)...">
-            <div class="kb-sync-group">
-                <span class="kb-last-synced" id="kbLastSynced">Not Synced</span>
-                <button onclick="loadHotkeys()" class="kb-sync-btn" id="kbSyncBtn">Sync Database</button>
-            </div>
-        </div>
-        <div class="kb-scroll-box">
-            <table class="kb-table" id="kbTable">
-                <thead>
-                    <tr>
-                        <th style="width: 15%;">Brand</th>
-                        <th style="width: 15%;">Device</th>
-                        <th style="width: 15%;">OS</th>
-                        <th style="width: 35%;">Instructions</th>
-                        <th style="width: 20%;">Objective</th>
-                    </tr>
-                </thead>
-                <tbody id="kbBody">
-                    <tr><td colspan="5" style="padding: 30px; text-align: center; color: #999;">Fetching hotkeys...</td></tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <div class="card">
-        <div class="card-title">💡 Idea Submission Portal</div>
-        <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSfEm449owjdKiT_zp7ATB_oLvsy3x51bL38Q3nKNiM7UNUZFQ/viewform?embedded=true" height="400"></iframe>
-    </div>
-    
-    <div class="card">
-        <div class="card-title">📅 Strategic Calendar</div>
-        <iframe src="https://calendar.google.com/calendar/embed?src=75d63f4495d48b06d2405686eb56d8dfe7fe74175f4dddc340588565a5545980%40group.calendar.google.com&ctz=America%2FChicago" height="600"></iframe>
-    </div>
-
+  </div>
+  <div class="card-container">
+    <h3>Welcome Team!</h3>
+    <p style="color: #666; margin-top: 10px;">Use the sidebar to navigate to Portals, performance metrics, or company procedures.</p>
+  </div>
 </main>
 
 <script>
-// --- YOUR APPS SCRIPT URLS ---
-const HOTKEYS_URL = 'https://script.google.com/macros/s/AKfycbyLburcVWM8xAKwDt2RHAQhZBLb_rJjb2__EzhoAKx1KgkNFi-BchVetgaTKvwCwqZiRw/exec';
-const CMS_URL = 'https://script.google.com/macros/s/AKfycby8cueKK9CLXVK_-7R5DhLccU5-nFjRjHqGRvPyGFx9MKSqFE6q3nTgYHeTqZouCS0/exec';
+  function toggleSidebar() {
+      const sidebar = document.querySelector('.sidebar');
+      const mainContent = document.querySelector('.main-content');
+      sidebar.classList.toggle('collapsed');
+      mainContent.classList.toggle('expanded');
+      localStorage.setItem('speeksSidebar', sidebar.classList.contains('collapsed') ? 'collapsed' : 'expanded');
+  }
 
-async function loadCMS() {
-    try {
-        const response = await fetch(`${CMS_URL}?v=${Date.now()}`);
-        const data = await response.json();
-
-        const annContainer = document.getElementById('announcements-container');
-        const actContainer = document.getElementById('active-container');
-        const upContainer = document.getElementById('upcoming-container');
-
-        annContainer.innerHTML = data.announcements.length 
-          ? data.announcements.map(txt => `<div class="cms-item cms-announcement">${txt}</div>`).join('') 
-          : '<div class="cms-item">No new announcements</div>';
-          
-        actContainer.innerHTML = data.active.length 
-          ? data.active.map(txt => `<div class="cms-item cms-active">${txt}</div>`).join('') 
-          : '<div class="cms-item">No active projects</div>';
-          
-        upContainer.innerHTML = data.upcoming.length 
-          ? data.upcoming.map(txt => `<div class="cms-item cms-upcoming">${txt}</div>`).join('') 
-          : '<div class="cms-item">No upcoming projects</div>';
-          
-    } catch (e) {
-        console.error("CMS Load Failed", e);
-        document.getElementById('announcements-container').innerHTML = `<div style="padding: 12px; color: red; font-size: 12px;">Failed to load data.</div>`;
-    }
-}
-
-async function loadHotkeys() {
-    const tbody = document.getElementById('kbBody');
-    const btn = document.getElementById('kbSyncBtn');
-    const timeSpan = document.getElementById('kbLastSynced');
-    btn.innerText = "Syncing...";
-    try {
-        const response = await fetch(`${HOTKEYS_URL}?v=${Date.now()}`);
-        const data = await response.json();
-        tbody.innerHTML = data.map((row) => {
-            const cols = Object.values(row);
-            const brand = cols[1] || "";
-            const device = cols[2] || "";
-            const os = cols[3] || "";
-            const instruction = cols[4] || "";
-            const objective = cols[5] || "";
-            if (brand.toLowerCase() === "brand" || !brand) return '';
-            
-            let bClass = 'b-generic';
-            const bL = brand.toLowerCase();
-            if (bL.includes('apple')) bClass = 'b-apple';
-            else if (['dell','hp','lenovo','asus','acer','msi','surface','windows'].some(x => bL.includes(x))) bClass = 'b-windows';
-            else if (bL.includes('android') || bL.includes('samsung')) bClass = 'b-android';
-            
-            return `<tr>
-                <td><span class="bubble ${bClass}">${brand}</span></td>
-                <td><span class="bubble b-device">${device}</span></td>
-                <td><span class="bubble b-os">${os}</span></td>
-                <td><span class="bubble b-instruction">${instruction}</span></td>
-                <td><span class="bubble b-objective">${objective}</span></td>
-            </tr>`;
-        }).join('');
-        const now = new Date();
-        timeSpan.innerText = "Last Synced: " + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } catch (e) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:red;">Sync Failed</td></tr>`; }
-    finally { btn.innerText = "Sync Database"; }
-}
-
-function filterKB() {
-    const filter = document.getElementById("kbSearch").value.toUpperCase();
-    const rows = document.getElementById("kbTable").getElementsByTagName("tr");
-    for (let i = 1; i < rows.length; i++) {
-        const text = rows[i].textContent || rows[i].innerText;
-        rows[i].style.display = text.toUpperCase().includes(filter) ? "" : "none";
-    }
-}
-
-window.onload = () => {
-    loadHotkeys();
-    loadCMS();
-};
+  document.addEventListener("DOMContentLoaded", () => {
+      if (localStorage.getItem('speeksSidebar') === 'collapsed') {
+          document.querySelector('.sidebar').classList.add('collapsed');
+          document.querySelector('.main-content').classList.add('expanded');
+      }
+  });
 </script>
 </body>
 </html>
