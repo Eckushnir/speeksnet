@@ -5,15 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SPEEKSNET | Portals</title>
 <style>
-  :root { --slate-charcoal: #1a1c1e; --sage-professional: #5a8d3b; --text-dark: #2d2d2d; --bg-app: #f4f7f9; }
+  :root {
+    --slate-charcoal: #1a1c1e; 
+    --sage-professional: #5a8d3b; 
+    --text-dark: #2d2d2d; 
+    --bg-app: #f4f7f9;
+  }
+  
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Inter', sans-serif; background: var(--bg-app); color: var(--text-dark); line-height: 1.6; display: flex; min-height: 100vh; overflow-x: hidden; }
+  body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg-app); color: var(--text-dark); line-height: 1.6; display: flex; min-height: 100vh; overflow-x: hidden; }
 
   /* SIDEBAR STYLES */
   .sidebar { width: 260px; background: var(--slate-charcoal); color: white; position: fixed; top: 0; bottom: 0; left: 0; display: flex; flex-direction: column; box-shadow: 4px 0 15px rgba(0,0,0,0.05); z-index: 100; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); white-space: nowrap; overflow: hidden; }
-  .brand-area { padding: 40px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); margin-bottom: 20px; }
-  .brand-area h1 { font-size: 28px; font-weight: 200; letter-spacing: 6px; color: white; }
-  .brand-area .badge { display: inline-block; background: var(--sage-professional); color: white; font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 12px; margin-top: 10px; letter-spacing: 1px; text-transform: uppercase; }
+  .brand-area { padding: 40px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); margin-bottom: 20px; transition: padding 0.3s; }
+  .brand-area h1 { font-size: 28px; font-weight: 200; letter-spacing: 6px; margin: 0; color: white; transition: font-size 0.3s; }
+  .brand-area .badge { display: inline-block; background: var(--sage-professional); color: white; font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 12px; margin-top: 10px; letter-spacing: 1px; text-transform: uppercase; transition: opacity 0.3s; }
 
   .nav-bar { display: flex; flex-direction: column; gap: 8px; padding: 0 15px; }
   .nav-link { text-decoration: none; color: #a0aab2; padding: 14px 20px; font-weight: 600; font-size: 13px; letter-spacing: 1px; border-radius: 10px; transition: all 0.2s; display: flex; align-items: center; gap: 12px; }
@@ -21,13 +27,35 @@
   .nav-link.active { background: var(--sage-professional); color: white; box-shadow: 0 4px 12px rgba(90, 141, 59, 0.3); }
   .nav-link i { font-style: normal; font-size: 16px; width: 20px; text-align: center; display: inline-block; }
 
+  /* COLLAPSED STATE */
   .sidebar.collapsed { width: 76px; }
+  .sidebar.collapsed .brand-area { padding: 40px 10px; }
   .sidebar.collapsed .brand-area h1 { font-size: 12px; letter-spacing: 1px; }
-  .sidebar.collapsed .badge { opacity: 0; height: 0; }
+  .sidebar.collapsed .badge { opacity: 0; height: 0; margin: 0; padding: 0; pointer-events: none; }
   .sidebar.collapsed .nav-link span { display: none; }
   .sidebar.collapsed .nav-link { justify-content: center; padding: 14px 0; }
 
-  .sidebar-toggle { position: fixed; left: 244px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; background: var(--slate-charcoal); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 105; border: 4px solid var(--bg-app); transition: left 0.3s; font-size: 12px; }
+  /* FLOATING ARROW TOGGLE */
+  .sidebar-toggle {
+    position: fixed;
+    left: 244px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    background: var(--slate-charcoal);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 105;
+    border: 4px solid var(--bg-app); 
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s, background 0.2s;
+    font-size: 12px;
+  }
+  .sidebar-toggle:hover { background: var(--sage-professional); }
   .sidebar-toggle.collapsed { left: 60px; transform: translateY(-50%) rotate(180deg); }
 
   /* NOTIFICATION UI */
@@ -35,34 +63,50 @@
   .notif-container { position: relative; }
   .notif-bell { background: white; border: 1px solid #ddd; width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 22px; transition: 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
   .notif-bell:hover { border-color: var(--sage-professional); transform: translateY(-2px); }
+  
   .notif-dot { position: absolute; top: -4px; right: -4px; width: 14px; height: 14px; background: #ef4444; border-radius: 50%; border: 3px solid white; display: none; }
   .notif-dot.active { display: block; animation: pulse 2s infinite; }
+
   @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+
   .notif-menu { position: absolute; top: 60px; right: 0; width: 340px; background: white; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.12); border: 1px solid #eee; display: none; z-index: 300; overflow: hidden; }
   .notif-menu.show { display: block; }
-  .notif-header { padding: 15px 20px; background: #f9fafb; border-bottom: 1px solid #eee; font-size: 13px; font-weight: 800; text-transform: uppercase; color: #666; }
+  .notif-header { padding: 15px 20px; background: #f9fafb; border-bottom: 1px solid #eee; font-size: 13px; font-weight: 800; text-transform: uppercase; color: #666; letter-spacing: 0.5px; }
   .notif-content { max-height: 400px; overflow-y: auto; }
   .notif-item { padding: 15px 20px; border-bottom: 1px solid #f5f5f5; font-size: 13px; color: var(--text-dark); line-height: 1.5; text-align: left; }
-  .notif-item small { display: block; color: #999; margin-top: 5px; font-size: 11px; }
+  .notif-item small { display: block; color: #999; margin-top: 5px; font-weight: 600; font-size: 11px; }
 
   /* MAIN CONTENT */
   .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s; }
   .main-content.expanded { margin-left: 76px; }
+  
   .page-header { margin-bottom: 40px; }
-  .page-header h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; }
+  .page-header h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin: 0; }
+  .page-header p { color: #888; font-size: 14px; font-weight: 500; margin-top: 5px;}
 
+  /* PORTALS GRID & CARDS */
   .portals-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px; }
-  .card { background: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.04); padding: 30px; transition: 0.3s; }
+  .card { background: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.04); padding: 30px; transition: transform 0.3s ease, box-shadow 0.3s ease; }
   .card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.05); }
-  .store-name { font-size: 20px; font-weight: 800; color: var(--slate-charcoal); border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; }
-  .portal-btn { display: block; text-decoration: none; padding: 14px 16px; background: var(--bg-app); border-radius: 10px; color: var(--text-dark); font-size: 13px; font-weight: 600; margin-bottom: 10px; transition: 0.2s; }
+  
+  .store-name { font-size: 20px; font-weight: 800; color: var(--slate-charcoal); border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+  
+  /* SLEEK BUTTONS */
+  .portal-btn { 
+    display: block; text-decoration: none; padding: 14px 16px; background: var(--bg-app); 
+    border-radius: 10px; color: var(--text-dark); font-size: 13px; font-weight: 600; 
+    margin-bottom: 10px; transition: 0.2s; border: 1px solid transparent;
+  }
   .portal-btn:hover { background: var(--sage-professional); color: white; transform: translateX(6px); box-shadow: 0 4px 10px rgba(90, 141, 59, 0.2); }
 </style>
 </head>
 <body>
 
 <aside class="sidebar">
-  <div class="brand-area"><h1>SPEEKS</h1><div class="badge">STORE PORTALS</div></div>
+  <div class="brand-area">
+    <h1>SPEEKS</h1>
+    <div class="badge">STORE PORTALS</div>
+  </div>
   <nav class="nav-bar">
     <a href="index.html" class="nav-link"><i>🏠</i> <span>SPEEKS Hub</span></a>
     <a href="portals.html" class="nav-link active"><i>🔗</i> <span>Portals</span></a>
@@ -74,45 +118,62 @@
 <div class="sidebar-toggle" onclick="toggleSidebar()">◀</div>
 
 <div class="top-actions">
-  <div class="notif-container" id="notifContainer">
-    <div class="notif-bell" onclick="toggleNotifs()">🔔 <div class="notif-dot" id="notifBadge"></div></div>
-    <div class="notif-menu" id="notifDropdown">
-      <div class="notif-header">Announcements</div>
-      <div id="ann-container" class="notif-content"><div style="padding: 20px; color:#999; font-size:12px; text-align:center;">Syncing...</div></div>
+    <div class="notif-container" id="notifContainer">
+        <div class="notif-bell" onclick="toggleNotifs()">
+            🔔 <div class="notif-dot" id="notifBadge"></div>
+        </div>
+        <div class="notif-menu" id="notifDropdown">
+            <div class="notif-header">Announcements</div>
+            <div id="ann-container" class="notif-content">
+                <div style="padding: 20px; color:#999; font-size:12px; text-align:center;">Syncing...</div>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
 
 <main class="main-content">
-  <div class="page-header"><h2>Store Portals & Resources</h2><p style="color:#888;">Secure access to tools and databases.</p></div>
+  <div class="page-header">
+    <h2>Store Portals & Resources</h2>
+    <p>Secure access to location-specific tools, passwords, and databases.</p>
+  </div>
+
   <div class="portals-grid">
-    <div class="card"><div class="store-name">OVL <span>📍</span></div>
-      <a href="https://docs.google.com/spreadsheets/d/1Ze3z9iyDZZaXsOEjOekEEsrO7OqDpVeH6Bhk4t67K2I/edit" target="_blank" class="portal-btn">🔐 OVL Passwords</a>
-      <a href="https://docs.google.com/spreadsheets/d/1r2UfB926QvaSDuO7_mqOE8z4u6IWjgbIqg_N6rfFV9c/edit" target="_blank" class="portal-btn">📦 Marketplace</a>
-      <a href="https://docs.google.com/spreadsheets/d/1DhNRld28CSUKG-4B-dHU4o8gyREKtqLo2J2rI2IdT8M/edit" target="_blank" class="portal-btn">💳 Employee Purchases</a>
-      <a href="https://docs.google.com/spreadsheets/d/1RKMryoJ7BZgB5DjSUaTjCSvJQW8_OAkmnwXfBznlSX0/edit" target="_blank" class="portal-btn">⚙️ PC Parts/Repairs</a>
-    </div>
-    <div class="card"><div class="store-name">LEE <span>📍</span></div>
-      <a href="https://docs.google.com/spreadsheets/d/1BWWMPddxjoTTZL9ZRfgiH6-EiE5vaOczi-x_41Skaxk/edit" target="_blank" class="portal-btn">🔐 LEE Passwords</a>
-      <a href="https://docs.google.com/spreadsheets/d/130-aH4s8pNeggrqVSXSJ0R0JDnWkskXUfhNPxSAlPRg/edit" target="_blank" class="portal-btn">📦 Marketplace</a>
-      <a href="https://docs.google.com/spreadsheets/d/1qExWuMZKBD3DCm_i9m5kNnN4WhouHeJuA3gYWXLihrA/edit" target="_blank" class="portal-btn">💳 Employee Purchases</a>
-      <a href="https://docs.google.com/spreadsheets/d/1D9epYOeJ1OZADUniM4MovvUqaiPfoyKAnedCcbEeFbM/edit?usp=sharing" target="_blank" class="portal-btn">⚙️ PC Inventory</a>
-    </div>
-    <div class="card"><div class="store-name">WSP <span>📍</span></div>
-      <a href="https://docs.google.com/spreadsheets/d/14AYsHQ0R1IEXqgKqrGEuyURHGi3fFKrAglgu0dVFJPE/edit" target="_blank" class="portal-btn">🔐 WSP Passwords</a>
-      <a href="https://docs.google.com/spreadsheets/d/1V0TQ1cJXqUzt0mRnrjvPt_TLzlE8vE7MpxxIMQ9X2yE/edit" target="_blank" class="portal-btn">📦 Marketplace</a>
-      <a href="https://docs.google.com/spreadsheets/d/1tp5E1yQhx0j776N-1WMhTzXA_ltvPOPiltsYo65fyc0/edit" target="_blank" class="portal-btn">💳 Employee Purchases</a>
-    </div>
-    <div class="card"><div class="store-name">MPL <span>📍</span></div>
-      <a href="https://docs.google.com/spreadsheets/d/18VeWgGjoIfKRlJUtj0PTU1-uJJavKaPu3W2o_A4vyFs/edit" target="_blank" class="portal-btn">🔐 MPL Passwords</a>
-      <a href="https://docs.google.com/spreadsheets/d/1xVJ_JJD-wZUbzFfer4fF50CH6RkZ-sqzxe4bYRGqDtE/edit" target="_blank" class="portal-btn">📦 Marketplace</a>
-      <a href="https://docs.google.com/spreadsheets/d/10DiGbDO0tyHitLpltOiTix2TowoeMNzsp0a3MjOtTSY/edit" target="_blank" class="portal-btn">💳 Employee Purchases</a>
-    </div>
-    <div class="card"><div class="store-name">BAL <span>📍</span></div>
-      <a href="https://docs.google.com/spreadsheets/d/1SuXAQc66OzKOfXkPcp7pCCsccWFB4RbHG2N6YGt3wf0/edit" target="_blank" class="portal-btn">🔐 BAL Passwords</a>
-      <a href="https://docs.google.com/spreadsheets/d/192c0M5Mxe9oy5PR6JQelD_DPh4ebvJpCnK26kYGpnbk/edit" target="_blank" class="portal-btn">📦 Marketplace</a>
-      <a href="https://docs.google.com/spreadsheets/d/1RHnw3rK9kvNvmQznMFr6qkg82j0GpWEwUhDOIPDGfts/edit" target="_blank" class="portal-btn">💳 Employee Purchases</a>
-    </div>
+      <div class="card">
+        <div class="store-name">OVL <span>📍</span></div>
+        <a href="https://docs.google.com/spreadsheets/d/1Ze3z9iyDZZaXsOEjOekEEsrO7OqDpVeH6Bhk4t67K2I/edit" target="_blank" class="portal-btn">🔐 OVL Passwords</a>
+        <a href="https://docs.google.com/spreadsheets/d/1r2UfB926QvaSDuO7_mqOE8z4u6IWjgbIqg_N6rfFV9c/edit" target="_blank" class="portal-btn">📦 Marketplace</a>
+        <a href="https://docs.google.com/spreadsheets/d/1DhNRld28CSUKG-4B-dHU4o8gyREKtqLo2J2rI2IdT8M/edit" target="_blank" class="portal-btn">💳 Employee Purchases</a>
+        <a href="https://docs.google.com/spreadsheets/d/1RKMryoJ7BZgB5DjSUaTjCSvJQW8_OAkmnwXfBznlSX0/edit" target="_blank" class="portal-btn">⚙️ PC Parts/Repairs</a>
+      </div>
+      
+      <div class="card">
+        <div class="store-name">LEE <span>📍</span></div>
+        <a href="https://docs.google.com/spreadsheets/d/1BWWMPddxjoTTZL9ZRfgiH6-EiE5vaOczi-x_41Skaxk/edit" target="_blank" class="portal-btn">🔐 LEE Passwords</a>
+        <a href="https://docs.google.com/spreadsheets/d/130-aH4s8pNeggrqVSXSJ0R0JDnWkskXUfhNPxSAlPRg/edit" target="_blank" class="portal-btn">📦 Marketplace</a>
+        <a href="https://docs.google.com/spreadsheets/d/1qExWuMZKBD3DCm_i9m5kNnN4WhouHeJuA3gYWXLihrA/edit" target="_blank" class="portal-btn">💳 Employee Purchases</a>
+        <a href="https://docs.google.com/spreadsheets/d/1D9epYOeJ1OZADUniM4MovvUqaiPfoyKAnedCcbEeFbM/edit?usp=sharing" target="_blank" class="portal-btn">⚙️ PC Inventory</a>
+      </div>
+      
+      <div class="card">
+        <div class="store-name">WSP <span>📍</span></div>
+        <a href="https://docs.google.com/spreadsheets/d/14AYsHQ0R1IEXqgKqrGEuyURHGi3fFKrAglgu0dVFJPE/edit" target="_blank" class="portal-btn">🔐 WSP Passwords</a>
+        <a href="https://docs.google.com/spreadsheets/d/1V0TQ1cJXqUzt0mRnrjvPt_TLzlE8vE7MpxxIMQ9X2yE/edit" target="_blank" class="portal-btn">📦 Marketplace</a>
+        <a href="https://docs.google.com/spreadsheets/d/1tp5E1yQhx0j776N-1WMhTzXA_ltvPOPiltsYo65fyc0/edit" target="_blank" class="portal-btn">💳 Employee Purchases</a>
+      </div>
+      
+      <div class="card">
+        <div class="store-name">MPL <span>📍</span></div>
+        <a href="https://docs.google.com/spreadsheets/d/18VeWgGjoIfKRlJUtj0PTU1-uJJavKaPu3W2o_A4vyFs/edit" target="_blank" class="portal-btn">🔐 MPL Passwords</a>
+        <a href="https://docs.google.com/spreadsheets/d/1xVJ_JJD-wZUbzFfer4fF50CH6RkZ-sqzxe4bYRGqDtE/edit" target="_blank" class="portal-btn">📦 Marketplace</a>
+        <a href="https://docs.google.com/spreadsheets/d/10DiGbDO0tyHitLpltOiTix2TowoeMNzsp0a3MjOtTSY/edit" target="_blank" class="portal-btn">💳 Employee Purchases</a>
+      </div>
+      
+      <div class="card">
+        <div class="store-name">BAL <span>📍</span></div>
+        <a href="https://docs.google.com/spreadsheets/d/1SuXAQc66OzKOfXkPcp7pCCsccWFB4RbHG2N6YGt3wf0/edit" target="_blank" class="portal-btn">🔐 BAL Passwords</a>
+        <a href="https://docs.google.com/spreadsheets/d/192c0M5Mxe9oy5PR6JQelD_DPh4ebvJpCnK26kYGpnbk/edit" target="_blank" class="portal-btn">📦 Marketplace</a>
+        <a href="https://docs.google.com/spreadsheets/d/1RHnw3rK9kvNvmQznMFr6qkg82j0GpWEwUhDOIPDGfts/edit" target="_blank" class="portal-btn">💳 Employee Purchases</a>
+      </div>
   </div>
 </main>
 
@@ -135,9 +196,13 @@ function toggleNotifs() {
     document.getElementById('notifBadge').classList.remove('active');
 }
 
+// Click outside to close notification menu
 window.addEventListener('click', function(e) {
     const container = document.getElementById('notifContainer');
-    if (container && !container.contains(e.target)) { document.getElementById('notifDropdown').classList.remove('show'); }
+    const dropdown = document.getElementById('notifDropdown');
+    if (container && !container.contains(e.target)) {
+        dropdown.classList.remove('show');
+    }
 });
 
 async function loadCMS() {
@@ -147,6 +212,42 @@ async function loadCMS() {
         const annContainer = document.getElementById('ann-container');
         const badge = document.getElementById('notifBadge');
         let showBadge = false;
+
         if (data.announcements && data.announcements.length > 0) {
+            const sortedAnns = [...data.announcements].reverse();
             const now = new Date();
-            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+            annContainer.innerHTML = sortedAnns.map(item => {
+                const text = item.text || "";
+                const rawDate = item.date || "";
+                let displayDate = "";
+                if (rawDate) {
+                  const annDate = new Date(rawDate);
+                  if (!isNaN(annDate.getTime())) {
+                    displayDate = annDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                    const annDateOnly = new Date(annDate.getFullYear(), annDate.getMonth(), annDate.getDate());
+                    const diffDays = (today - annDateOnly) / (1000 * 60 * 60 * 24);
+                    if (diffDays <= 1 && diffDays >= 0) showBadge = true;
+                  }
+                }
+                return `<div class="notif-item"><div>${text}</div>${displayDate ? `<small>Posted: ${displayDate}</small>` : ''}</div>`;
+            }).join('');
+        } else {
+            annContainer.innerHTML = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No announcements</div>';
+        }
+        if (showBadge) badge.classList.add('active');
+    } catch (e) { console.error(e); }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    if (localStorage.getItem('speeksSidebar') === 'collapsed') {
+        document.querySelector('.sidebar').classList.add('collapsed');
+        document.querySelector('.main-content').classList.add('expanded');
+        document.querySelector('.sidebar-toggle').classList.add('collapsed');
+    }
+    loadCMS();
+});
+</script>
+</body>
+</html>
