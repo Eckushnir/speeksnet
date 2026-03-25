@@ -11,7 +11,7 @@
     --win-bg: #e1f0fe; --win-text: #0078d4; --win-border: #cce5ff;
     --android-bg: #e6f7ef; --android-text: #188038; --android-border: #ceead6;
     --gen-bg: #f1f3f4; --gen-text: #5f6368; --gen-border: #dadce0;
-    --idea-gold: #f59e0b; /* Accent color for the new button */
+    --idea-gold: #f59e0b;
   }
   
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -160,8 +160,8 @@
 </main>
 
 <script>
-// Replace this with your actual CMS URL
-const CMS_URL = 'https://script.google.com/macros/s/AKfycby8cueKK9CLXVK_-7R5DhLccU5-nFjRjHqGRvPyGFx9MKSqFE6q3nTgYHeTqZouCS0/exec';
+// UPDATED CMS URL
+const CMS_URL = 'https://script.google.com/macros/s/AKfycbxZviJiiQKcQYyp3SK4tcNBHrHXkID7cmwwuONStVPE9DHCSAMappqAs9dBns7ufECI/exec';
 const HOTKEYS_URL = 'https://script.google.com/macros/s/AKfycbyLburcVWM8xAKwDt2RHAQhZBLb_rJjb2__EzhoAKx1KgkNFi-BchVetgaTKvwCwqZiRw/exec';
 
 function toggleSidebar() {
@@ -201,7 +201,6 @@ async function loadCMS() {
         if (data.announcements && data.announcements.length > 0) {
             const sortedAnns = [...data.announcements].reverse();
             const now = new Date();
-            // Create a "Midnight of Today" reference for 2-day logic
             const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
             announcementsHtml = sortedAnns.map(item => {
@@ -213,8 +212,6 @@ async function loadCMS() {
                   const annDate = new Date(rawDate);
                   if (!isNaN(annDate.getTime())) {
                     displayDate = annDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-                    
-                    // Logic: If annDate is Today OR Yesterday, show pulse
                     const annDateOnly = new Date(annDate.getFullYear(), annDate.getMonth(), annDate.getDate());
                     const diffDays = (today - annDateOnly) / (1000 * 60 * 60 * 24);
                     if (diffDays <= 1 && diffDays >= 0) showBadge = true;
@@ -229,7 +226,6 @@ async function loadCMS() {
         annContainer.innerHTML = announcementsHtml;
         if (showBadge) badge.classList.add('active');
 
-        // FIXED: Safe array checks for Active and Upcoming projects
         const activeProjects = data.active || [];
         document.getElementById('active-container').innerHTML = activeProjects.length > 0
           ? activeProjects.map(txt => `<div class="cms-item cms-active">${txt}</div>`).join('') 
