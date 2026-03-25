@@ -34,6 +34,9 @@
     flex-direction: column;
     box-shadow: 4px 0 15px rgba(0,0,0,0.05);
     z-index: 100;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+    white-space: nowrap; 
+    overflow: hidden;
   }
   
   .brand-area {
@@ -54,6 +57,38 @@
   .nav-link:hover { background: rgba(255,255,255,0.05); color: white; transform: translateX(3px); }
   .nav-link.active { background: var(--sage-professional); color: white; box-shadow: 0 4px 12px rgba(90, 141, 59, 0.3); }
 
+  /* COLLAPSED SIDEBAR ADDITIONS */
+  .sidebar.collapsed { width: 76px; }
+  .sidebar.collapsed .brand-area { padding: 40px 10px; }
+  .sidebar.collapsed .brand-area h1 { font-size: 12px; letter-spacing: 1px; }
+  .sidebar.collapsed .badge { opacity: 0; pointer-events: none; height: 0; margin: 0; padding: 0; }
+  .nav-link i { font-style: normal; font-size: 16px; width: 20px; text-align: center; display: inline-block; }
+  .sidebar.collapsed .nav-link span { display: none; }
+  .sidebar.collapsed .nav-link { justify-content: center; padding: 14px 0; }
+
+  /* FLOATING ARROW TOGGLE */
+  .sidebar-toggle {
+    position: fixed;
+    left: 244px; /* Sits right on the border */
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    background: var(--slate-charcoal);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 105;
+    border: 4px solid var(--bg-app); /* Creates the cutout illusion */
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s, background 0.2s;
+    font-size: 12px;
+  }
+  .sidebar-toggle:hover { background: var(--sage-professional); }
+  .sidebar-toggle.collapsed { left: 60px; transform: translateY(-50%) rotate(180deg); }
+
   /* =========================================
      MAIN CONTENT CANVAS
   ========================================= */
@@ -61,11 +96,13 @@
     flex-grow: 1;
     margin-left: 260px;
     padding: 40px 50px;
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
+  .main-content.expanded { margin-left: 76px; }
   
   .page-header { margin-bottom: 30px; }
   .page-header h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin-bottom: 5px; }
-  .mission-statement { color: var(--sage-professional); font-size: 16px; font-weight: 600; font-style: italic; letter-spacing: 0.3px; }
+  .mission-statement { color: var(--sage-professional); font-size: 16px; font-weight: 600; font-style: italic; letter-spacing: 0.3px; margin-top: 5px;}
 
   /* Dashboard Cards Framework */
   .card {
@@ -154,17 +191,19 @@
     <div class="badge">HUB & DASHBOARD</div>
   </div>
   <nav class="nav-bar">
-    <a href="index.html" class="nav-link active">🏠 SPEEKS Hub</a>
-    <a href="portals.html" class="nav-link">🔗 Portals</a>
-    <a href="metrics.html" class="nav-link">📊 Metrics & Leaderboards</a>
-    <a href="docs.html" class="nav-link">📚 Processes & Policies</a>
+    <a href="index.html" class="nav-link active"><i>🏠</i> <span>SPEEKS Hub</span></a>
+    <a href="portals.html" class="nav-link"><i>🔗</i> <span>Portals</span></a>
+    <a href="metrics.html" class="nav-link"><i>📊</i> <span>Metrics & Leaderboards</span></a>
+    <a href="docs.html" class="nav-link"><i>📚</i> <span>Processes & Policies</span></a>
   </nav>
 </aside>
+
+<div class="sidebar-toggle" onclick="toggleSidebar()">◀</div>
 
 <main class="main-content">
     
     <div class="page-header">
-      <h2>Welcome to SPEEKSNET</h2>
+      <h2 style="margin: 0;">Welcome to SPEEKSNET</h2>
       <p class="mission-statement">To become the #1 trusted source for electronics buy back, resale and recycle in all communities that we serve!</p>
     </div>
 
@@ -225,6 +264,29 @@
 </main>
 
 <script>
+// --- SIDEBAR TOGGLE & MEMORY ---
+function toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const mainContent = document.querySelector('.main-content');
+    const toggleBtn = document.querySelector('.sidebar-toggle');
+    
+    sidebar.classList.toggle('collapsed');
+    mainContent.classList.toggle('expanded');
+    toggleBtn.classList.toggle('collapsed');
+    
+    // Save their preference to the browser
+    localStorage.setItem('speeksSidebar', sidebar.classList.contains('collapsed') ? 'collapsed' : 'expanded');
+}
+
+// Check memory as soon as the DOM loads
+document.addEventListener("DOMContentLoaded", () => {
+    if (localStorage.getItem('speeksSidebar') === 'collapsed') {
+        document.querySelector('.sidebar').classList.add('collapsed');
+        document.querySelector('.main-content').classList.add('expanded');
+        document.querySelector('.sidebar-toggle').classList.add('collapsed');
+    }
+});
+
 // --- YOUR APPS SCRIPT URLS ---
 const HOTKEYS_URL = 'https://script.google.com/macros/s/AKfycbyLburcVWM8xAKwDt2RHAQhZBLb_rJjb2__EzhoAKx1KgkNFi-BchVetgaTKvwCwqZiRw/exec';
 const CMS_URL = 'https://script.google.com/macros/s/AKfycby8cueKK9CLXVK_-7R5DhLccU5-nFjRjHqGRvPyGFx9MKSqFE6q3nTgYHeTqZouCS0/exec';

@@ -17,22 +17,57 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg-app); color: var(--text-dark); line-height: 1.6; display: flex; min-height: 100vh; overflow-x: hidden; }
 
-  /* SIDEBAR */
-  .sidebar { width: 260px; background: var(--slate-charcoal); color: white; position: fixed; top: 0; bottom: 0; left: 0; display: flex; flex-direction: column; box-shadow: 4px 0 15px rgba(0,0,0,0.05); z-index: 100; }
-  .brand-area { padding: 40px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); margin-bottom: 20px; }
-  .brand-area h1 { font-size: 28px; font-weight: 200; letter-spacing: 6px; margin: 0; color: white; }
-  .brand-area .badge { display: inline-block; background: var(--sage-professional); color: white; font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 12px; margin-top: 10px; letter-spacing: 1px; }
+  /* SIDEBAR STYLES */
+  .sidebar { width: 260px; background: var(--slate-charcoal); color: white; position: fixed; top: 0; bottom: 0; left: 0; display: flex; flex-direction: column; box-shadow: 4px 0 15px rgba(0,0,0,0.05); z-index: 100; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); white-space: nowrap; overflow: hidden; }
+  .brand-area { padding: 40px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); margin-bottom: 20px; transition: padding 0.3s; }
+  .brand-area h1 { font-size: 28px; font-weight: 200; letter-spacing: 6px; margin: 0; color: white; transition: font-size 0.3s; }
+  .brand-area .badge { display: inline-block; background: var(--sage-professional); color: white; font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 12px; margin-top: 10px; letter-spacing: 1px; text-transform: uppercase; transition: opacity 0.3s; }
 
   .nav-bar { display: flex; flex-direction: column; gap: 8px; padding: 0 15px; }
   .nav-link { text-decoration: none; color: #a0aab2; padding: 14px 20px; font-weight: 600; font-size: 13px; letter-spacing: 1px; border-radius: 10px; transition: all 0.2s; display: flex; align-items: center; gap: 12px; }
   .nav-link:hover { background: rgba(255,255,255,0.05); color: white; transform: translateX(3px); }
   .nav-link.active { background: var(--sage-professional); color: white; box-shadow: 0 4px 12px rgba(90, 141, 59, 0.3); }
+  .nav-link i { font-style: normal; font-size: 16px; width: 20px; text-align: center; display: inline-block; }
+
+  /* COLLAPSED STATE */
+  .sidebar.collapsed { width: 76px; }
+  .sidebar.collapsed .brand-area { padding: 40px 10px; }
+  .sidebar.collapsed .brand-area h1 { font-size: 12px; letter-spacing: 1px; }
+  .sidebar.collapsed .badge { opacity: 0; pointer-events: none; height: 0; margin: 0; padding: 0; }
+  .sidebar.collapsed .nav-link span { display: none; }
+  .sidebar.collapsed .nav-link { justify-content: center; padding: 14px 0; }
+
+  /* FLOATING ARROW TOGGLE */
+  .sidebar-toggle {
+    position: fixed;
+    left: 244px; /* Sits right on the border */
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    background: var(--slate-charcoal);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 105;
+    border: 4px solid var(--bg-app); /* Creates the cutout illusion */
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s, background 0.2s;
+    font-size: 12px;
+  }
+  .sidebar-toggle:hover { background: var(--sage-professional); }
+  .sidebar-toggle.collapsed { left: 60px; transform: translateY(-50%) rotate(180deg); }
 
   /* MAIN CONTENT & CARDS */
-  .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px;}
+  .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+  .main-content.expanded { margin-left: 76px; }
+  
   .page-header { margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-end; }
-  .page-header h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin-bottom: 5px;}
-  .page-header p { color: #888; font-size: 14px; font-weight: 500; }
+  .title-wrapper { display: flex; align-items: center; gap: 15px; margin-bottom: 5px; }
+  .page-header h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin: 0;}
+  .page-header p { color: #888; font-size: 14px; font-weight: 500; margin-top: 5px; }
   
   .card { background: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.04); padding: 30px; margin-bottom: 30px; transition: transform 0.3s ease, box-shadow 0.3s ease; }
   .card:hover { box-shadow: 0 8px 25px rgba(0,0,0,0.05); }
@@ -89,17 +124,21 @@
     <div class="badge">PERFORMANCE METRICS</div>
   </div>
   <nav class="nav-bar">
-    <a href="index.html" class="nav-link">🏠 SPEEKS Hub</a>
-    <a href="portals.html" class="nav-link">🔗 Portals</a>
-    <a href="metrics.html" class="nav-link active">📊 Metrics & Leaderboards</a>
-    <a href="docs.html" class="nav-link">📚 Processes & Policies</a>
+    <a href="index.html" class="nav-link"><i>🏠</i> <span>SPEEKS Hub</span></a>
+    <a href="portals.html" class="nav-link"><i>🔗</i> <span>Portals</span></a>
+    <a href="metrics.html" class="nav-link active"><i>📊</i> <span>Metrics & Leaderboards</span></a>
+    <a href="docs.html" class="nav-link"><i>📚</i> <span>Processes & Policies</span></a>
   </nav>
 </aside>
+
+<div class="sidebar-toggle" onclick="toggleSidebar()">◀</div>
 
 <main class="main-content">
     <div class="page-header">
         <div>
-            <h2>Performance Metrics</h2>
+            <div class="title-wrapper">
+                <h2 style="margin: 0;">Performance Metrics</h2>
+            </div>
             <p>Real-time KPI tracking and store leaderboards</p>
         </div>
         <div style="display: flex; align-items: center;">
@@ -171,6 +210,30 @@
 </main>
 
 <script>
+// --- SIDEBAR TOGGLE & MEMORY ---
+function toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const mainContent = document.querySelector('.main-content');
+    const toggleBtn = document.querySelector('.sidebar-toggle');
+    
+    sidebar.classList.toggle('collapsed');
+    mainContent.classList.toggle('expanded');
+    toggleBtn.classList.toggle('collapsed');
+    
+    // Save their preference to the browser
+    localStorage.setItem('speeksSidebar', sidebar.classList.contains('collapsed') ? 'collapsed' : 'expanded');
+}
+
+// Check memory as soon as the page loads
+document.addEventListener("DOMContentLoaded", () => {
+    if (localStorage.getItem('speeksSidebar') === 'collapsed') {
+        document.querySelector('.sidebar').classList.add('collapsed');
+        document.querySelector('.main-content').classList.add('expanded');
+        document.querySelector('.sidebar-toggle').classList.add('collapsed');
+    }
+});
+
+// --- EXISTING CHART LOGIC ---
 const HUB_URL = 'https://script.google.com/macros/s/AKfycbw3Ms5nc2bhbrjVW-da3xbZ3vKhyBx2TpeR-eSd1L05ZhV-h2Yh0yLmIV_E7TWDmwM69A/exec';
 const KPI_URL = 'https://script.google.com/macros/s/AKfycbyVBos-uJuhaqfLMBqoz9byNkvUG06igl4RX2_cs8hH15rbp7K4uFFEN-wpQgS2ChAU/exec';
 
@@ -252,7 +315,6 @@ function updateKpiView() {
     else if (metric === 'nodeals') { unit = ''; yMin = 0; yMax = 30; } 
     else if (metric === 'time') { unit = 'm'; yMin = 5; yMax = 35; }
 
-    // 1. ABSOLUTE TARGETING: Scan the entire sheet strictly for the exact metric phrase
     let r = -1, c = -1;
     for (let i = 0; i < kpiRawData.length; i++) {
         if (!kpiRawData[i]) continue;
@@ -272,20 +334,15 @@ function updateKpiView() {
         return; 
     }
 
-    // Now that we have the exact coordinates (r, c) of the metric header:
-    // The Time Labels (Weeks/Months) are ALWAYS exactly one column to the left.
-    // The Employee names are ALWAYS exactly one row down, starting in the same column.
     let labelCol = c - 1;
     let namesRow = r + 1;
     let startRow = r + 2; 
 
-    // 2. EXTRACT EMPLOYEE NAMES
     let empNames = [];
     let storeColIndex = -1;
     
     for (let j = c; j < kpiRawData[namesRow].length; j++) {
         let name = String(kpiRawData[namesRow][j]).trim();
-        // Stop scanning right if we hit an empty cell or a different metric header
         if (!name || name.includes('%') || name.includes('Time') || name.includes('Deals')) break; 
         
         if (name.toLowerCase() === 'store') {
@@ -295,21 +352,18 @@ function updateKpiView() {
         empNames.push({name: name, col: j});
     }
 
-    // 3. EXTRACT X-AXIS LABELS (Weeks or Months)
     let labels = [];
     
     for (let i = startRow; i < kpiRawData.length; i++) {
         if (!kpiRawData[i]) break;
         let label = String(kpiRawData[i][labelCol]).trim();
         
-        // Stop scanning down if the cell is empty or looks like another header
         if (!label || label === "OVL" || label === "LEE" || label === "WSP" || label.includes('Store') || label.includes('%') || label.includes('Time') || label.includes('Deals')) {
             break; 
         }
         labels.push(label);
     }
 
-    // 4. BUILD DATASETS
     const colors = ['#5a8d3b', '#0ea5e9', '#f97316', '#8b5cf6', '#ec4899', '#eab308'];
     let datasets = [];
 
@@ -344,13 +398,11 @@ function updateKpiView() {
         });
     }
 
-    // Auto-scale Y-Axis
     let allValues = [];
     datasets.forEach(d => allValues.push(...d.data));
     let maxVal = Math.max(...allValues.filter(v => v !== null));
     if (maxVal > yMax) yMax = Math.ceil(maxVal * 1.2);
 
-    // DRAW CHART
     const ctx = document.getElementById('mainKpiChart').getContext('2d');
     if (mainChartInstance) mainChartInstance.destroy();
     mainChartInstance = new Chart(ctx, {

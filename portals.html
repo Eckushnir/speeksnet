@@ -15,22 +15,57 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg-app); color: var(--text-dark); line-height: 1.6; display: flex; min-height: 100vh; overflow-x: hidden; }
 
-  /* SIDEBAR */
-  .sidebar { width: 260px; background: var(--slate-charcoal); color: white; position: fixed; top: 0; bottom: 0; left: 0; display: flex; flex-direction: column; box-shadow: 4px 0 15px rgba(0,0,0,0.05); z-index: 100; }
-  .brand-area { padding: 40px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); margin-bottom: 20px; }
-  .brand-area h1 { font-size: 28px; font-weight: 200; letter-spacing: 6px; margin: 0; color: white; }
-  .brand-area .badge { display: inline-block; background: var(--sage-professional); color: white; font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 12px; margin-top: 10px; letter-spacing: 1px; }
+  /* SIDEBAR STYLES */
+  .sidebar { width: 260px; background: var(--slate-charcoal); color: white; position: fixed; top: 0; bottom: 0; left: 0; display: flex; flex-direction: column; box-shadow: 4px 0 15px rgba(0,0,0,0.05); z-index: 100; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); white-space: nowrap; overflow: hidden; }
+  .brand-area { padding: 40px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); margin-bottom: 20px; transition: padding 0.3s; }
+  .brand-area h1 { font-size: 28px; font-weight: 200; letter-spacing: 6px; margin: 0; color: white; transition: font-size 0.3s; }
+  .brand-area .badge { display: inline-block; background: var(--sage-professional); color: white; font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 12px; margin-top: 10px; letter-spacing: 1px; text-transform: uppercase; transition: opacity 0.3s; }
 
   .nav-bar { display: flex; flex-direction: column; gap: 8px; padding: 0 15px; }
   .nav-link { text-decoration: none; color: #a0aab2; padding: 14px 20px; font-weight: 600; font-size: 13px; letter-spacing: 1px; border-radius: 10px; transition: all 0.2s; display: flex; align-items: center; gap: 12px; }
   .nav-link:hover { background: rgba(255,255,255,0.05); color: white; transform: translateX(3px); }
   .nav-link.active { background: var(--sage-professional); color: white; box-shadow: 0 4px 12px rgba(90, 141, 59, 0.3); }
+  .nav-link i { font-style: normal; font-size: 16px; width: 20px; text-align: center; display: inline-block; }
+
+  /* COLLAPSED STATE */
+  .sidebar.collapsed { width: 76px; }
+  .sidebar.collapsed .brand-area { padding: 40px 10px; }
+  .sidebar.collapsed .brand-area h1 { font-size: 12px; letter-spacing: 1px; }
+  .sidebar.collapsed .badge { opacity: 0; pointer-events: none; height: 0; margin: 0; padding: 0; }
+  .sidebar.collapsed .nav-link span { display: none; }
+  .sidebar.collapsed .nav-link { justify-content: center; padding: 14px 0; }
+
+  /* FLOATING ARROW TOGGLE */
+  .sidebar-toggle {
+    position: fixed;
+    left: 244px; /* Sits right on the border */
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    background: var(--slate-charcoal);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 105;
+    border: 4px solid var(--bg-app); /* Creates the cutout illusion */
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s, background 0.2s;
+    font-size: 12px;
+  }
+  .sidebar-toggle:hover { background: var(--sage-professional); }
+  .sidebar-toggle.collapsed { left: 60px; transform: translateY(-50%) rotate(180deg); }
 
   /* MAIN CONTENT */
-  .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; }
+  .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+  .main-content.expanded { margin-left: 76px; }
+  
   .page-header { margin-bottom: 40px; }
-  .page-header h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin-bottom: 5px; }
-  .page-header p { color: #888; font-size: 14px; font-weight: 500; }
+  .title-wrapper { display: flex; align-items: center; gap: 15px; margin-bottom: 5px; }
+  .page-header h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin: 0; }
+  .page-header p { color: #888; font-size: 14px; font-weight: 500; margin-top: 5px;}
 
   /* PORTALS GRID & CARDS */
   .portals-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px; }
@@ -56,16 +91,20 @@
     <div class="badge">STORE PORTALS</div>
   </div>
   <nav class="nav-bar">
-    <a href="index.html" class="nav-link">🏠 SPEEKS Hub</a>
-    <a href="portals.html" class="nav-link active">🔗 Portals</a>
-    <a href="metrics.html" class="nav-link">📊 Metrics & Leaderboards</a>
-    <a href="docs.html" class="nav-link">📚 Processes & Policies</a>
+    <a href="index.html" class="nav-link"><i>🏠</i> <span>SPEEKS Hub</span></a>
+    <a href="portals.html" class="nav-link active"><i>🔗</i> <span>Portals</span></a>
+    <a href="metrics.html" class="nav-link"><i>📊</i> <span>Metrics & Leaderboards</span></a>
+    <a href="docs.html" class="nav-link"><i>📚</i> <span>Processes & Policies</span></a>
   </nav>
 </aside>
 
+<div class="sidebar-toggle" onclick="toggleSidebar()">◀</div>
+
 <main class="main-content">
   <div class="page-header">
-    <h2>Store Portals & Resources</h2>
+    <div class="title-wrapper">
+        <h2>Store Portals & Resources</h2>
+    </div>
     <p>Secure access to location-specific tools, passwords, and databases.</p>
   </div>
 
@@ -109,5 +148,29 @@
   </div>
 </main>
 
+<script>
+// --- SIDEBAR TOGGLE & MEMORY ---
+function toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const mainContent = document.querySelector('.main-content');
+    const toggleBtn = document.querySelector('.sidebar-toggle');
+    
+    sidebar.classList.toggle('collapsed');
+    mainContent.classList.toggle('expanded');
+    toggleBtn.classList.toggle('collapsed');
+    
+    // Save their preference to the browser
+    localStorage.setItem('speeksSidebar', sidebar.classList.contains('collapsed') ? 'collapsed' : 'expanded');
+}
+
+// Check memory as soon as the DOM loads
+document.addEventListener("DOMContentLoaded", () => {
+    if (localStorage.getItem('speeksSidebar') === 'collapsed') {
+        document.querySelector('.sidebar').classList.add('collapsed');
+        document.querySelector('.main-content').classList.add('expanded');
+        document.querySelector('.sidebar-toggle').classList.add('collapsed');
+    }
+});
+</script>
 </body>
 </html>
