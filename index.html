@@ -144,10 +144,15 @@
         <div class="card-title">💡 Idea Submission Portal</div>
         <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSfEm449owjdKiT_zp7ATB_oLvsy3x51bL38Q3nKNiM7UNUZFQ/viewform?embedded=true" height="400"></iframe>
     </div>
+
+    <div class="card">
+        <div class="card-title">📅 Strategic Calendar</div>
+        <iframe src="https://calendar.google.com/calendar/embed?src=75d63f4495d48b06d2405686eb56d8dfe7fe74175f4dddc340588565a5545980%40group.calendar.google.com&ctz=America%2FChicago" height="600"></iframe>
+    </div>
 </main>
 
 <script>
-// --- MAKE SURE TO USE YOUR CORRECT URL BELOW ---
+// Replace this with your actual CMS URL
 const CMS_URL = 'https://script.google.com/macros/s/AKfycby8cueKK9CLXVK_-7R5DhLccU5-nFjRjHqGRvPyGFx9MKSqFE6q3nTgYHeTqZouCS0/exec';
 const HOTKEYS_URL = 'https://script.google.com/macros/s/AKfycbyLburcVWM8xAKwDt2RHAQhZBLb_rJjb2__EzhoAKx1KgkNFi-BchVetgaTKvwCwqZiRw/exec';
 
@@ -186,9 +191,10 @@ async function loadCMS() {
         let announcementsHtml = "";
 
         if (data.announcements && data.announcements.length > 0) {
-            // Reverse so latest is on top
             const sortedAnns = [...data.announcements].reverse();
             const now = new Date();
+            // Create a "Midnight of Today" reference for 2-day logic
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
             announcementsHtml = sortedAnns.map(item => {
                 const text = item.text || "";
@@ -198,11 +204,12 @@ async function loadCMS() {
                 if (rawDate) {
                   const annDate = new Date(rawDate);
                   if (!isNaN(annDate.getTime())) {
-                    // Clean Date Formatting
                     displayDate = annDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
                     
-                    const diffInHours = (now - annDate) / (1000 * 60 * 60);
-                    if (diffInHours <= 24 && diffInHours >= 0) showBadge = true;
+                    // Logic: If annDate is Today OR Yesterday, show pulse
+                    const annDateOnly = new Date(annDate.getFullYear(), annDate.getMonth(), annDate.getDate());
+                    const diffDays = (today - annDateOnly) / (1000 * 60 * 60 * 24);
+                    if (diffDays <= 1 && diffDays >= 0) showBadge = true;
                   }
                 }
                 return `<div class="notif-item"><div>${text}</div>${displayDate ? `<small>Posted: ${displayDate}</small>` : ''}</div>`;
