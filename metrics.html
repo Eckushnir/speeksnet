@@ -41,39 +41,14 @@
   .sidebar-toggle.collapsed { left: 60px; transform: translateY(-50%) rotate(180deg); }
 
   /* =========================================================
-     1. FIXED SYNC ZONE (NEVER SCROLLS)
+     1. NOTIFICATION UI (NOW FIXED & SCROLLS WITH YOU)
      ========================================================= */
-  .fixed-sync {
+  .notif-container {
     position: fixed;
     top: 30px;
     right: 50px;
     z-index: 9999;
-    display: flex;
-    align-items: center;
-    gap: 15px;
   }
-  .last-synced-text { font-size: 11px; color: #888; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
-  .sync-btn { background: var(--slate-charcoal); color: white; border: none; padding: 12px 24px; border-radius: 10px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 11px; transition: 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-  .sync-btn:hover { background: var(--sage-professional); transform: translateY(-1px); }
-
-  /* =========================================================
-     2. MAIN CONTENT & SCROLLING HEADER (BELL LIVES HERE)
-     ========================================================= */
-  .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-  .main-content.expanded { margin-left: 76px; }
-  
-  .page-header { 
-    margin-bottom: 30px; 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: flex-start;
-    padding-right: 250px; /* Prevents the scrolling bell from hiding behind the fixed sync button on initial load */
-  }
-  .page-header h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin: 0;}
-  .page-header p { color: #888; font-size: 14px; font-weight: 500; margin-top: 5px; }
-
-  /* NOTIFICATION UI (SCROLLS WITH PAGE) */
-  .notif-container { position: relative; }
   .notif-bell { background: white; border: 1px solid #ddd; width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 22px; transition: 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
   .notif-bell:hover { border-color: var(--sage-professional); transform: translateY(-2px); }
   .notif-dot { position: absolute; top: -4px; right: -4px; width: 14px; height: 14px; background: #ef4444; border-radius: 50%; border: 3px solid white; display: none; }
@@ -86,6 +61,31 @@
   .notif-content { max-height: 400px; overflow-y: auto; }
   .notif-item { padding: 15px 20px; border-bottom: 1px solid #f5f5f5; font-size: 13px; color: var(--text-dark); text-align: left; }
   .notif-item small { display: block; color: #999; margin-top: 5px; font-size: 11px; }
+
+  /* =========================================================
+     2. MAIN CONTENT & SCROLLING HEADER (SYNC LIVES HERE NOW)
+     ========================================================= */
+  .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+  .main-content.expanded { margin-left: 76px; }
+  
+  .page-header { 
+    margin-bottom: 30px; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: flex-start;
+    padding-right: 120px; /* Adjusted: Prevents the new fixed bell from overlapping the sync button on load */
+  }
+  .page-header h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin: 0;}
+  .page-header p { color: #888; font-size: 14px; font-weight: 500; margin-top: 5px; }
+
+  .sync-zone {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+  .last-synced-text { font-size: 11px; color: #888; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
+  .sync-btn { background: var(--slate-charcoal); color: white; border: none; padding: 12px 24px; border-radius: 10px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 11px; transition: 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+  .sync-btn:hover { background: var(--sage-professional); transform: translateY(-1px); }
 
   /* METRICS CARDS */
   .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-bottom: 30px; }
@@ -143,9 +143,16 @@
 
 <div class="sidebar-toggle" onclick="toggleSidebar()">◀</div>
 
-<div class="fixed-sync">
-    <span class="last-synced-text" id="lastSyncedText">Last Synced: --:--</span>
-    <button class="sync-btn" onclick="syncAllData()">🔄 Sync Data</button>
+<div class="notif-container" id="notifContainer">
+    <div class="notif-bell" onclick="toggleNotifs()">
+        🔔 <div class="notif-dot" id="notifBadge"></div>
+    </div>
+    <div class="notif-menu" id="notifDropdown">
+        <div class="notif-header">Announcements</div>
+        <div id="ann-container" class="notif-content">
+            <div style="padding: 20px; color:#999; font-size:12px; text-align:center;">Syncing...</div>
+        </div>
+    </div>
 </div>
 
 <main class="main-content">
@@ -156,16 +163,9 @@
       <p>MTD Goal Tracking and Trend Analysis.</p>
     </div>
     
-    <div class="notif-container" id="notifContainer">
-        <div class="notif-bell" onclick="toggleNotifs()">
-            🔔 <div class="notif-dot" id="notifBadge"></div>
-        </div>
-        <div class="notif-menu" id="notifDropdown">
-            <div class="notif-header">Announcements</div>
-            <div id="ann-container" class="notif-content">
-                <div style="padding: 20px; color:#999; font-size:12px; text-align:center;">Syncing...</div>
-            </div>
-        </div>
+    <div class="sync-zone">
+        <span class="last-synced-text" id="lastSyncedText">Last Synced: --:--</span>
+        <button class="sync-btn" onclick="syncAllData()">🔄 Sync Data</button>
     </div>
   </div>
 
