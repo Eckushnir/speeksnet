@@ -41,10 +41,10 @@
   /* NOTIFICATION UI */
   .top-actions { position: fixed; top: 30px; right: 50px; z-index: 200; }
   .notif-container { position: relative; }
-  .notif-bell { background: white; border: 1px solid #ddd; width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 22px; transition: 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+  .notif-bell { background: white; border: 1px solid #ddd; width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 26px; transition: 0.2s; box-shadow: 0 6px 16px rgba(0,0,0,0.06); }
   .notif-bell:hover { border-color: var(--sage-professional); transform: translateY(-2px); }
   
-  .notif-dot { position: absolute; top: -4px; right: -4px; width: 14px; height: 14px; background: #ef4444; border-radius: 50%; border: 3px solid white; display: none; }
+  .notif-dot { position: absolute; top: -6px; right: -6px; width: 16px; height: 16px; background: #ef4444; border-radius: 50%; border: 3px solid white; display: none; }
   .notif-dot.active { display: block; animation: pulse 2s infinite; }
 
   @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
