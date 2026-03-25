@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPEEKSNET | Idea Portal</title>
+<style>
+  :root {
+    --slate-charcoal: #1a1c1e; --sage-professional: #5a8d3b; --text-dark: #2d2d2d; --bg-app: #f4f7f9;
+    --idea-gold: #f59e0b;
+  }
+  
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg-app); color: var(--text-dark); line-height: 1.6; display: flex; min-height: 100vh; overflow-x: hidden; }
+
+  /* SIDEBAR STYLES */
+  .sidebar { width: 260px; background: var(--slate-charcoal); color: white; position: fixed; top: 0; bottom: 0; left: 0; display: flex; flex-direction: column; box-shadow: 4px 0 15px rgba(0,0,0,0.05); z-index: 100; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); white-space: nowrap; overflow: hidden; }
+  .brand-area { padding: 40px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); margin-bottom: 20px; }
+  .brand-area h1 { font-size: 28px; font-weight: 200; letter-spacing: 6px; margin: 0; color: white; }
+  .brand-area .badge { display: inline-block; background: var(--sage-professional); color: white; font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 12px; margin-top: 10px; letter-spacing: 1px; }
+
+  .nav-bar { display: flex; flex-direction: column; gap: 8px; padding: 0 15px; }
+  .nav-link { text-decoration: none; color: #a0aab2; padding: 14px 20px; font-weight: 600; font-size: 13px; letter-spacing: 1px; border-radius: 10px; transition: all 0.2s; display: flex; align-items: center; gap: 12px; }
+  .nav-link:hover { background: rgba(255,255,255,0.05); color: white; transform: translateX(3px); }
+  .nav-link.active { background: var(--sage-professional); color: white; box-shadow: 0 4px 12px rgba(90, 141, 59, 0.3); }
+  .nav-link i { font-style: normal; font-size: 16px; width: 20px; text-align: center; display: inline-block; }
+
+  /* SIDEBAR BOTTOM CTA */
+  .sidebar-bottom { margin-top: auto; padding: 20px 15px; border-top: 1px solid rgba(255,255,255,0.05); }
+  .idea-btn { text-decoration: none; color: white; background: linear-gradient(135deg, var(--idea-gold), #d97706); padding: 14px 20px; font-weight: 700; font-size: 13px; letter-spacing: 0.5px; border-radius: 10px; transition: all 0.2s; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); }
+  .idea-btn:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5); }
+  .idea-btn i { font-style: normal; font-size: 18px; width: 20px; text-align: center; display: inline-block; }
+
+  .sidebar.collapsed { width: 76px; }
+  .sidebar.collapsed .brand-area { padding: 40px 10px; }
+  .sidebar.collapsed .brand-area h1 { font-size: 12px; letter-spacing: 1px; }
+  .sidebar.collapsed .badge { opacity: 0; height: 0; margin: 0; padding: 0; }
+  .sidebar.collapsed .nav-link span, .sidebar.collapsed .idea-btn span { display: none; }
+  .sidebar.collapsed .nav-link, .sidebar.collapsed .idea-btn { justify-content: center; padding: 14px 0; }
+
+  .sidebar-toggle { position: fixed; left: 244px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; background: var(--slate-charcoal); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 105; border: 4px solid var(--bg-app); transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s; font-size: 12px; }
+  .sidebar-toggle.collapsed { left: 60px; transform: translateY(-50%) rotate(180deg); }
+
+  /* NOTIFICATION UI */
+  .top-actions { position: fixed; top: 30px; right: 50px; z-index: 200; }
+  .notif-container { position: relative; }
+  .notif-bell { background: white; border: 1px solid #ddd; width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 26px; transition: 0.2s; box-shadow: 0 6px 16px rgba(0,0,0,0.06); }
+  .notif-bell:hover { border-color: var(--sage-professional); transform: translateY(-2px); }
+  
+  .notif-dot { position: absolute; top: -6px; right: -6px; width: 16px; height: 16px; background: #ef4444; border-radius: 50%; border: 3px solid white; display: none; }
+  .notif-dot.active { display: block; animation: pulse 2s infinite; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+
+  .notif-menu { position: absolute; top: 60px; right: 0; width: 340px; background: white; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.12); border: 1px solid #eee; display: none; z-index: 300; overflow: hidden; }
+  .notif-menu.show { display: block; }
+  .notif-header { padding: 15px 20px; background: #f9fafb; border-bottom: 1px solid #eee; font-size: 13px; font-weight: 800; text-transform: uppercase; color: #666; letter-spacing: 0.5px; }
+  .notif-content { max-height: 400px; overflow-y: auto; }
+  .notif-item { padding: 15px 20px; border-bottom: 1px solid #f5f5f5; font-size: 13px; color: var(--text-dark); line-height: 1.5; text-align: left; }
+  .notif-item small { display: block; color: #999; margin-top: 5px; font-weight: 600; font-size: 11px; }
+
+  /* MAIN HUB CANVAS */
+  .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s; }
+  .main-content.expanded { margin-left: 76px; }
+  .page-header { margin-bottom: 30px; }
+  .page-header h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; }
+  .mission-statement { color: var(--idea-gold); font-size: 16px; font-weight: 600; font-style: italic; margin-top: 5px; }
+
+  .card { background: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.04); padding: 30px; transition: 0.3s; margin-bottom: 30px; }
+  iframe { width: 100%; border: none; border-radius: 8px; background: white; }
+  
+  @media (max-width: 1024px) { .top-actions { right: 20px; } }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="brand-area">
+    <h1>SPEEKS</h1>
+    <div class="badge">HUB & DASHBOARD</div>
+  </div>
+  <nav class="nav-bar">
+    <a href="index.html" class="nav-link"><i>🏠</i> <span>SPEEKS Hub</span></a>
+    <a href="portals.html" class="nav-link"><i>🔗</i> <span>Portals</span></a>
+    <a href="metrics.html" class="nav-link"><i>📊</i> <span>Metrics & Leaderboards</span></a>
+    <a href="docs.html" class="nav-link"><i>📚</i> <span>Processes & Policies</span></a>
+  </nav>
+  
+  <div class="sidebar-bottom">
+    <a href="ideas.html" class="idea-btn">
+      <i>💡</i> <span>Idea Portal Active</span>
+    </a>
+  </div>
+</aside>
+
+<div class="sidebar-toggle" onclick="toggleSidebar()">◀</div>
+
+<div class="top-actions">
+    <div class="notif-container" id="notifContainer">
+        <div class="notif-bell" onclick="toggleNotifs()">
+            🔔 <div class="notif-dot" id="notifBadge"></div>
+        </div>
+        <div class="notif-menu" id="notifDropdown">
+            <div class="notif-header">Announcements</div>
+            <div id="ann-container" class="notif-content">
+                <div style="padding: 20px; color:#999; font-size:12px; text-align:center;">Syncing...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<main class="main-content">
+    <div class="page-header">
+      <h2>Idea Submission Portal</h2>
+      <p class="mission-statement">Have a suggestion? Let us know how we can improve our operations.</p>
+    </div>
+
+    <div class="card">
+        <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSfEm449owjdKiT_zp7ATB_oLvsy3x51bL38Q3nKNiM7UNUZFQ/viewform?embedded=true" height="800"></iframe>
+    </div>
+</main>
+
+<script>
+const CMS_URL = 'https://script.google.com/macros/s/AKfycby8cueKK9CLXVK_-7R5DhLccU5-nFjRjHqGRvPyGFx9MKSqFE6q3nTgYHeTqZouCS0/exec';
+
+function toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const mainContent = document.querySelector('.main-content');
+    const toggleBtn = document.querySelector('.sidebar-toggle');
+    sidebar.classList.toggle('collapsed');
+    mainContent.classList.toggle('expanded');
+    toggleBtn.classList.toggle('collapsed');
+    localStorage.setItem('speeksSidebar', sidebar.classList.contains('collapsed') ? 'collapsed' : 'expanded');
+}
+
+function toggleNotifs() {
+    const dropdown = document.getElementById('notifDropdown');
+    dropdown.classList.toggle('show');
+    document.getElementById('notifBadge').classList.remove('active');
+}
+
+window.addEventListener('click', function(e) {
+    const container = document.getElementById('notifContainer');
+    const dropdown = document.getElementById('notifDropdown');
+    if (container && !container.contains(e.target)) {
+        dropdown.classList.remove('show');
+    }
+});
+
+async function loadCMS() {
+    try {
+        const response = await fetch(`${CMS_URL}?v=${Date.now()}`);
+        const data = await response.json();
+        const annContainer = document.getElementById('ann-container');
+        const badge = document.getElementById('notifBadge');
+        let showBadge = false;
+
+        if (data.announcements && data.announcements.length > 0) {
+            const sortedAnns = [...data.announcements].reverse();
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+            annContainer.innerHTML = sortedAnns.map(item => {
+                const text = item.text || "";
+                const rawDate = item.date || "";
+                let displayDate = "";
+
+                if (rawDate) {
+                  const annDate = new Date(rawDate);
+                  if (!isNaN(annDate.getTime())) {
+                    displayDate = annDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                    const annDateOnly = new Date(annDate.getFullYear(), annDate.getMonth(), annDate.getDate());
+                    const diffDays = (today - annDateOnly) / (1000 * 60 * 60 * 24);
+                    if (diffDays <= 1 && diffDays >= 0) showBadge = true;
+                  }
+                }
+                return `<div class="notif-item"><div>${text}</div>${displayDate ? `<small>Posted: ${displayDate}</small>` : ''}</div>`;
+            }).join('');
+        } else {
+            annContainer.innerHTML = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No announcements</div>';
+        }
+        if (showBadge) badge.classList.add('active');
+    } catch (e) { console.error("CMS Failed", e); }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    if (localStorage.getItem('speeksSidebar') === 'collapsed') {
+        document.querySelector('.sidebar').classList.add('collapsed');
+        document.querySelector('.main-content').classList.add('expanded');
+        document.querySelector('.sidebar-toggle').classList.add('collapsed');
+    }
+    loadCMS();
+});
+</script>
+</body>
+</html>
