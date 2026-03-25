@@ -35,27 +35,8 @@
   .sidebar.collapsed .nav-link span { display: none; }
   .sidebar.collapsed .nav-link { justify-content: center; padding: 14px 0; }
 
-  /* FLOATING ARROW TOGGLE */
-  .sidebar-toggle {
-    position: fixed;
-    left: 244px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 32px;
-    height: 32px;
-    background: var(--slate-charcoal);
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    z-index: 105;
-    border: 4px solid var(--bg-app); 
-    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s, background 0.2s;
-    font-size: 12px;
-  }
-  .sidebar-toggle:hover { background: var(--sage-professional); }
+  /* SIDEBAR TOGGLE */
+  .sidebar-toggle { position: fixed; left: 244px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; background: var(--slate-charcoal); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 105; border: 4px solid var(--bg-app); transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s; font-size: 12px; }
   .sidebar-toggle.collapsed { left: 60px; transform: translateY(-50%) rotate(180deg); }
 
   /* NOTIFICATION UI */
@@ -84,7 +65,13 @@
   .header-text h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin: 0; }
   .header-text p { color: #888; font-size: 14px; font-weight: 500; margin-top: 5px; }
   
-  .search-container { flex-grow: 1; max-width: 500px; position: relative; }
+  /* SEARCH BAR ADJUSTMENT TO AVOID BELL */
+  .search-container { 
+    flex-grow: 1; 
+    max-width: 500px; 
+    position: relative; 
+    margin-right: 60px; /* This creates the clear gap for the bell icon */
+  }
   .search-input { width: 100%; padding: 16px 20px 16px 45px; border-radius: 12px; border: 1px solid #ddd; font-size: 15px; outline: none; transition: 0.2s; font-family: 'Inter', sans-serif; box-shadow: 0 4px 15px rgba(0,0,0,0.02); }
   .search-input:focus { border-color: var(--sage-professional); box-shadow: 0 0 0 4px rgba(90, 141, 59, 0.1); }
   .search-icon { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 18px; }
@@ -156,7 +143,6 @@
 </main>
 
 <script>
-// Replace this with your actual Apps Script URLs
 const CMS_URL = 'https://script.google.com/macros/s/AKfycby8cueKK9CLXVK_-7R5DhLccU5-nFjRjHqGRvPyGFx9MKSqFE6q3nTgYHeTqZouCS0/exec';
 const DOCS_URL = 'https://script.google.com/macros/s/AKfycbzW261BITTpanD3Sn6ZDJjcFJAmpT7VMTRN9qAtqqgoKDzQqc4BYsEq5e4JcWonOuUtuA/exec';
 
@@ -176,7 +162,6 @@ function toggleNotifs() {
     document.getElementById('notifBadge').classList.remove('active');
 }
 
-// Click outside to close notification menu
 window.addEventListener('click', function(e) {
     const container = document.getElementById('notifContainer');
     const dropdown = document.getElementById('notifDropdown');
