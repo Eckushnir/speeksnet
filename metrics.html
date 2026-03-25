@@ -13,7 +13,7 @@
   }
   
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Inter', sans-serif; background: var(--bg-app); color: var(--text-dark); line-height: 1.6; display: flex; min-height: 100vh; }
+  body { font-family: 'Inter', sans-serif; background: var(--bg-app); color: var(--text-dark); line-height: 1.6; display: flex; min-height: 100vh; overflow-x: hidden; }
 
   /* SIDEBAR STYLES */
   .sidebar { width: 260px; background: var(--slate-charcoal); color: white; position: fixed; top: 0; bottom: 0; left: 0; z-index: 100; transition: width 0.3s; overflow: hidden; white-space: nowrap; }
@@ -31,40 +31,49 @@
   .sidebar-toggle { position: fixed; left: 244px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; background: var(--slate-charcoal); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1000; border: 4px solid var(--bg-app); transition: left 0.3s; font-size: 12px; }
   .sidebar-toggle.collapsed { left: 60px; transform: translateY(-50%) rotate(180deg); }
 
-  /* THE FINAL POSITIONING FIX - LOCKED TO VIEWPORT */
-  .top-actions { 
-    position: fixed !important; 
-    top: 30px !important; 
-    right: 50px !important; 
-    z-index: 9999 !important; /* Forces it above EVERYTHING */
-    display: flex !important; 
-    align-items: center !important; 
-    gap: 20px !important;
-    pointer-events: auto !important;
+  /* --- INDEPENDENT UI LAYERS (DE-COUPLED) --- */
+  
+  .sync-zone {
+    position: fixed !important;
+    top: 30px !important;
+    right: 120px !important; /* Pushed left of the bell */
+    display: flex !important;
+    align-items: center !important;
+    gap: 15px !important;
+    z-index: 9999 !important;
   }
-  .sync-controls { display: flex; align-items: center; gap: 15px; }
+
+  .bell-zone {
+    position: fixed !important;
+    top: 30px !important;
+    right: 50px !important;
+    z-index: 10000 !important;
+  }
+
   .last-synced-text { font-size: 11px; color: #888; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
   .sync-btn { background: var(--slate-charcoal); color: white; border: none; padding: 12px 24px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 11px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+  .sync-btn:hover { background: var(--sage-professional); transform: translateY(-1px); }
 
-  /* NOTIFICATION UI */
+  /* NOTIFICATION DROPDOWN */
   .notif-container { position: relative; }
   .notif-bell { background: white; border: 1px solid #ddd; width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 22px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
   .notif-dot { position: absolute; top: -4px; right: -4px; width: 14px; height: 14px; background: #ef4444; border-radius: 50%; border: 3px solid white; display: none; }
   .notif-dot.active { display: block; animation: pulse 2s infinite; }
   @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-  .notif-menu { position: absolute; top: 60px; right: 0; width: 340px; background: white; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); border: 1px solid #eee; display: none; overflow: hidden; }
+  
+  .notif-menu { position: absolute; top: 60px; right: 0; width: 340px; background: white; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); border: 1px solid #eee; display: none; overflow: hidden; }
   .notif-menu.show { display: block; }
   .notif-header { padding: 15px 20px; background: #f9fafb; border-bottom: 1px solid #eee; font-size: 12px; font-weight: 800; text-transform: uppercase; color: #666; }
   .notif-content { max-height: 400px; overflow-y: auto; }
-  .notif-item { padding: 15px 20px; border-bottom: 1px solid #f5f5f5; font-size: 13px; color: var(--text-dark); text-align: left; }
-  .notif-item small { display: block; color: #999; margin-top: 5px; font-size: 11px; }
+  .notif-item { padding: 15px 20px; border-bottom: 1px solid #f5f5f5; font-size: 13px; color: var(--text-dark); text-align: left; line-height: 1.4; }
 
-  /* CONTENT AREA */
+  /* MAIN CONTENT */
   .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s; }
   .main-content.expanded { margin-left: 76px; }
   .page-header { margin-bottom: 30px; }
   .page-header h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; }
 
+  /* METRICS CARDS */
   .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-bottom: 30px; }
   .card { background: white; border-radius: 16px; padding: 30px; margin-bottom: 30px; text-align: center; border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 4px 15px rgba(0,0,0,0.02); }
   .card-title { font-size: 14px; font-weight: 800; text-transform: uppercase; color: var(--slate-charcoal); margin-bottom: 20px; }
@@ -75,11 +84,6 @@
   .progress-ring .bg { stroke: #f0f0f0; }
   .progress-ring .bar { stroke: var(--sage-professional); stroke-dasharray: 402; stroke-dashoffset: 402; transition: 1.5s; }
   .percentage { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: 800; font-size: 24px; }
-
-  .chart-header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-  .toggle-btn { padding: 8px 16px; font-size: 12px; font-weight: 700; cursor: pointer; border: none; background: #e2e8f0; border-radius: 6px; margin-left: 5px; }
-  .toggle-btn.active { background: white; color: black; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-  .metric-dropdown { padding: 8px; border-radius: 8px; border: 1px solid #ddd; font-weight: 600; margin-left: 10px; }
 
   /* LEADERBOARD GOLD */
   .leaderboard-container { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
@@ -107,41 +111,27 @@
 <main class="main-content">
   <div class="page-header">
     <h2>Company Metrics Comparison</h2>
-    <p style="color:#888; font-size:14px;">Performance trends across all locations.</p>
+    <p style="color:#888; font-size:14px;">MTD Goal Tracking and Performance Rank.</p>
   </div>
 
   <div class="metrics-grid">
-    <div class="card"><div class="card-title">OVL Goal</div><div class="progress-ring"><svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="ovl-bar" cx="70" cy="70" r="64"></circle></svg><div class="percentage" id="ovl-pct">0%</div></div><div id="ovl-goal" style="font-weight:800; color:#888;">Goal: --</div></div>
-    <div class="card"><div class="card-title">LEE Goal</div><div class="progress-ring"><svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="lee-bar" cx="70" cy="70" r="64"></circle></svg><div class="percentage" id="lee-pct">0%</div></div><div id="lee-goal" style="font-weight:800; color:#888;">Goal: --</div></div>
-    <div class="card"><div class="card-title">WSP Goal</div><div class="progress-ring"><svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="wsp-bar" cx="70" cy="70" r="64"></circle></svg><div class="percentage" id="wsp-pct">0%</div></div><div id="wsp-goal" style="font-weight:800; color:#888;">Goal: --</div></div>
-  </div>
-
-  <div class="card" style="text-align:left;">
-    <div class="chart-header-flex">
-      <div class="card-title">Comparison Trends</div>
-      <div>
-        <button class="toggle-btn active" id="btn-4week" onclick="setTimeframe('4-Week')">4-Week</button>
-        <button class="toggle-btn" id="btn-monthly" onclick="setTimeframe('Monthly')">Monthly</button>
-        <select id="metricSelector" class="metric-dropdown" onchange="updateKpiView()">
-          <option value="conversion">Conversion %</option>
-          <option value="margin">Margin %</option>
-        </select>
-      </div>
-    </div>
-    <div style="height:400px;"><canvas id="mainKpiChart"></canvas></div>
+    <div class="card"><div class="card-title">OVL MTD Goal</div><div class="progress-ring"><svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="ovl-bar" cx="70" cy="70" r="64"></circle></svg><div class="percentage" id="ovl-pct">0%</div></div><div id="ovl-goal" style="font-weight:800; color:#888;">Goal: $--</div></div>
+    <div class="card"><div class="card-title">LEE MTD Goal</div><div class="progress-ring"><svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="lee-bar" cx="70" cy="70" r="64"></circle></svg><div class="percentage" id="lee-pct">0%</div></div><div id="lee-goal" style="font-weight:800; color:#888;">Goal: $--</div></div>
+    <div class="card"><div class="card-title">WSP MTD Goal</div><div class="progress-ring"><svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="wsp-bar" cx="70" cy="70" r="64"></circle></svg><div class="percentage" id="wsp-pct">0%</div></div><div id="wsp-goal" style="font-weight:800; color:#888;">Goal: $--</div></div>
   </div>
 
   <div class="leaderboard-container">
-    <div class="card"><div class="card-title">🏆 Revenue Rank</div><div id="rev-list"></div></div>
-    <div class="card"><div class="card-title">📈 GP Rank</div><div id="gp-list"></div></div>
+    <div class="card"><div class="card-title">🏆 Revenue Leaderboard</div><div id="rev-list"></div></div>
+    <div class="card"><div class="card-title">📈 Gross Profit Leaderboard</div><div id="gp-list"></div></div>
   </div>
 </main>
 
-<div class="top-actions">
-    <div class="sync-controls">
-        <span class="last-synced-text" id="lastSyncedText">Last Synced: --:--</span>
-        <button class="sync-btn" onclick="syncAllData()">🔄 Sync Data</button>
-    </div>
+<div class="sync-zone">
+    <span class="last-synced-text" id="lastSyncedText">Last Synced: --:--</span>
+    <button class="sync-btn" onclick="syncAllData()">🔄 Sync Data</button>
+</div>
+
+<div class="bell-zone">
     <div class="notif-container" id="notifContainer">
         <div class="notif-bell" onclick="toggleNotifs()">🔔 <div class="notif-dot" id="notifBadge"></div></div>
         <div class="notif-menu" id="notifDropdown">
@@ -152,8 +142,8 @@
 </div>
 
 <script>
-const CMS_URL = 'https://script.google.com/macros/s/AKfycby8cueKK9CLXVK_-7R5DhLccU5-nFjRjHqGRvPyGFx9MKSqFE6q3nTgYHeTqZouCS0/exec';
 const HUB_URL = 'https://script.google.com/macros/s/AKfycbw3Ms5nc2bhbrjVW-da3xbZ3vKhyBx2TpeR-eSd1L05ZhV-h2Yh0yLmIV_E7TWDmwM69A/exec';
+const CMS_URL = 'https://script.google.com/macros/s/AKfycby8cueKK9CLXVK_-7R5DhLccU5-nFjRjHqGRvPyGFx9MKSqFE6q3nTgYHeTqZouCS0/exec';
 
 function toggleSidebar() {
     const s = document.querySelector('.sidebar');
@@ -167,34 +157,66 @@ window.addEventListener('click', e => { if(!document.getElementById('notifContai
 
 async function fetchLiveData() {
     try {
-        const res = await fetch(`${HUB_URL}?v=${Date.now()}`); const data = await res.json();
+        const res = await fetch(`${HUB_URL}?v=${Date.now()}`); 
+        const data = await res.json();
         ['ovl', 'lee', 'wsp'].forEach(id => {
             let p = Math.round(data[`${id}Pct`] || 0); document.getElementById(`${id}-pct`).innerText = p + '%';
             document.getElementById(`${id}-goal`).innerText = `Goal: $${Math.round(data[`${id}Goal`] || 0).toLocaleString()}`;
             document.getElementById(`${id}-bar`).style.strokeDashoffset = 402 - (Math.min(p, 100)/100)*402;
         });
         const stores = [{n:'OVL', r:data.ovlRev, g:data.ovlGP}, {n:'LEE', r:data.leeRev, g:data.leeGP}, {n:'WSP', r:data.wspRev, g:data.wspGP}];
-        document.getElementById('rev-list').innerHTML = [...stores].sort((a,b)=>b.r-a.r).map((s,i)=>`<div class="lb-row"><div class="lb-rank ${i===0?'lb-gold':''}">#${i+1}</div><div class="lb-name">${s.n}</div><div class="lb-val">$${Math.round(s.r).toLocaleString()}</div></div>`).join('');
-        document.getElementById('gp-list').innerHTML = [...stores].sort((a,b)=>b.g-a.g).map((s,i)=>`<div class="lb-row"><div class="lb-rank ${i===0?'lb-gold':''}">#${i+1}</div><div class="lb-name">${s.n}</div><div class="lb-val">$${Math.round(s.g).toLocaleString()}</div></div>`).join('');
-        const n = new Date(); document.getElementById('lastSyncedText').innerText = `Last Synced: ${n.getHours()%12||12}:${String(n.getMinutes()).padStart(2,'0')}`;
-    } catch(e) {}
+        
+        document.getElementById('rev-list').innerHTML = [...stores].sort((a,b)=>b.r-a.r).map((s,i)=>`
+            <div class="lb-row">
+                <div class="lb-rank ${i===0?'lb-gold':''}">#${i+1}</div>
+                <div class="lb-name">${s.n}</div>
+                <div class="lb-val">$${Math.round(s.r).toLocaleString()}</div>
+            </div>`).join('');
+            
+        document.getElementById('gp-list').innerHTML = [...stores].sort((a,b)=>b.g-a.g).map((s,i)=>`
+            <div class="lb-row">
+                <div class="lb-rank ${i===0?'lb-gold':''}">#${i+1}</div>
+                <div class="lb-name">${s.n}</div>
+                <div class="lb-val">$${Math.round(s.g).toLocaleString()}</div>
+            </div>`).join('');
+            
+        const n = new Date(); document.getElementById('lastSyncedText').innerText = `Last Synced: ${n.getHours()%12||12}:${String(n.getMinutes()).padStart(2,'0')} ${n.getHours()>=12?'PM':'AM'}`;
+    } catch(e) { console.error("Fetch Error:", e); }
 }
 
 async function loadCMS() {
     try {
-        const res = await fetch(`${CMS_URL}?v=${Date.now()}`); const data = await res.json();
-        const badge = document.getElementById('notifBadge'); let show = false, now = new Date(), today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const res = await fetch(`${CMS_URL}?v=${Date.now()}`); 
+        const data = await res.json();
+        const badge = document.getElementById('notifBadge'); 
+        let show = false, now = new Date(), today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        
         document.getElementById('ann-container').innerHTML = [...data.announcements].reverse().map(item => {
             let t = item.text || "", rd = item.date || "", dd = "";
-            if(rd) { let ad = new Date(rd); if(!isNaN(ad)) { dd = ad.toLocaleDateString(); let ado = new Date(ad.getFullYear(), ad.getMonth(), ad.getDate()); if((today-ado)/86400000 <= 1) show = true; } }
-            return `<div class="notif-item"><div>${t}</div><small>Posted: ${dd}</small></div>`;
+            if(rd) { 
+                let ad = new Date(rd); 
+                if(!isNaN(ad)) { 
+                    dd = ad.toLocaleDateString('en-US', {month:'short', day:'numeric'}); 
+                    let ado = new Date(ad.getFullYear(), ad.getMonth(), ad.getDate()); 
+                    if((today-ado)/86400000 <= 1) show = true; 
+                } 
+            }
+            return `<div class="notif-item"><div>${t}</div><small style="color:#aaa;">Posted: ${dd}</small></div>`;
         }).join('');
         if(show) badge.classList.add('active');
-    } catch(e) {}
+    } catch(e) { console.error("CMS Error:", e); }
 }
 
 function syncAllData() { fetchLiveData(); loadCMS(); }
 window.onload = syncAllData;
+
+document.addEventListener("DOMContentLoaded", () => {
+    if (localStorage.getItem('speeksSidebar') === 'collapsed') {
+        document.querySelector('.sidebar').classList.add('collapsed');
+        document.querySelector('.main-content').classList.add('expanded');
+        document.querySelector('.sidebar-toggle').classList.add('collapsed');
+    }
+});
 </script>
 </body>
 </html>
