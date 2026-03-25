@@ -31,7 +31,7 @@
   .sidebar.collapsed { width: 76px; }
   .sidebar.collapsed .brand-area { padding: 40px 10px; }
   .sidebar.collapsed .brand-area h1 { font-size: 12px; letter-spacing: 1px; }
-  .sidebar.collapsed .badge { opacity: 0; pointer-events: none; height: 0; margin: 0; padding: 0; }
+  .sidebar.collapsed .badge { opacity: 0; height: 0; margin: 0; padding: 0; pointer-events: none; }
   .sidebar.collapsed .nav-link span { display: none; }
   .sidebar.collapsed .nav-link { justify-content: center; padding: 14px 0; }
 
@@ -58,8 +58,26 @@
   .sidebar-toggle:hover { background: var(--sage-professional); }
   .sidebar-toggle.collapsed { left: 60px; transform: translateY(-50%) rotate(180deg); }
 
+  /* NOTIFICATION UI */
+  .top-actions { position: fixed; top: 30px; right: 50px; z-index: 200; }
+  .notif-container { position: relative; }
+  .notif-bell { background: white; border: 1px solid #ddd; width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 22px; transition: 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+  .notif-bell:hover { border-color: var(--sage-professional); transform: translateY(-2px); }
+  
+  .notif-dot { position: absolute; top: -4px; right: -4px; width: 14px; height: 14px; background: #ef4444; border-radius: 50%; border: 3px solid white; display: none; }
+  .notif-dot.active { display: block; animation: pulse 2s infinite; }
+
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+
+  .notif-menu { position: absolute; top: 60px; right: 0; width: 340px; background: white; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.12); border: 1px solid #eee; display: none; z-index: 300; overflow: hidden; }
+  .notif-menu.show { display: block; }
+  .notif-header { padding: 15px 20px; background: #f9fafb; border-bottom: 1px solid #eee; font-size: 13px; font-weight: 800; text-transform: uppercase; color: #666; letter-spacing: 0.5px; }
+  .notif-content { max-height: 400px; overflow-y: auto; }
+  .notif-item { padding: 15px 20px; border-bottom: 1px solid #f5f5f5; font-size: 13px; color: var(--text-dark); line-height: 1.5; text-align: left; }
+  .notif-item small { display: block; color: #999; margin-top: 5px; font-weight: 600; font-size: 11px; }
+
   /* MAIN CONTENT */
-  .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; max-width: 1400px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+  .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s; max-width: 1400px; }
   .main-content.expanded { margin-left: 76px; }
   
   .page-header { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 20px; }
@@ -104,6 +122,20 @@
 
 <div class="sidebar-toggle" onclick="toggleSidebar()">◀</div>
 
+<div class="top-actions">
+    <div class="notif-container" id="notifContainer">
+        <div class="notif-bell" onclick="toggleNotifs()">
+            🔔 <div class="notif-dot" id="notifBadge"></div>
+        </div>
+        <div class="notif-menu" id="notifDropdown">
+            <div class="notif-header">Announcements</div>
+            <div id="ann-container" class="notif-content">
+                <div style="padding: 20px; color:#999; font-size:12px; text-align:center;">Syncing...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <main class="main-content">
   <div class="page-header">
     <div class="header-text">
@@ -112,7 +144,7 @@
     </div>
     <div class="search-container">
       <span class="search-icon">🔍</span>
-      <input type="text" id="docSearch" class="search-input" placeholder="Search for 'Dress Code', 'Opening', etc..." onkeyup="filterDocs()">
+      <input type="text" id="docSearch" class="search-input" placeholder="Search for documents..." onkeyup="filterDocs()">
     </div>
   </div>
 
@@ -124,40 +156,77 @@
 </main>
 
 <script>
-// --- SIDEBAR TOGGLE & MEMORY ---
+// Replace this with your actual Apps Script URLs
+const CMS_URL = 'https://script.google.com/macros/s/AKfycby8cueKK9CLXVK_-7R5DhLccU5-nFjRjHqGRvPyGFx9MKSqFE6q3nTgYHeTqZouCS0/exec';
+const DOCS_URL = 'https://script.google.com/macros/s/AKfycbzW261BITTpanD3Sn6ZDJjcFJAmpT7VMTRN9qAtqqgoKDzQqc4BYsEq5e4JcWonOuUtuA/exec';
+
 function toggleSidebar() {
     const sidebar = document.querySelector('.sidebar');
     const mainContent = document.querySelector('.main-content');
     const toggleBtn = document.querySelector('.sidebar-toggle');
-    
     sidebar.classList.toggle('collapsed');
     mainContent.classList.toggle('expanded');
     toggleBtn.classList.toggle('collapsed');
-    
     localStorage.setItem('speeksSidebar', sidebar.classList.contains('collapsed') ? 'collapsed' : 'expanded');
 }
 
-// Check memory as soon as the DOM loads
-document.addEventListener("DOMContentLoaded", () => {
-    if (localStorage.getItem('speeksSidebar') === 'collapsed') {
-        document.querySelector('.sidebar').classList.add('collapsed');
-        document.querySelector('.main-content').classList.add('expanded');
-        document.querySelector('.sidebar-toggle').classList.add('collapsed');
+function toggleNotifs() {
+    const dropdown = document.getElementById('notifDropdown');
+    dropdown.classList.toggle('show');
+    document.getElementById('notifBadge').classList.remove('active');
+}
+
+// Click outside to close notification menu
+window.addEventListener('click', function(e) {
+    const container = document.getElementById('notifContainer');
+    const dropdown = document.getElementById('notifDropdown');
+    if (container && !container.contains(e.target)) {
+        dropdown.classList.remove('show');
     }
-    loadDocs();
 });
 
-// Google Sheet Data Fetch
-const DOCS_URL = 'https://script.google.com/macros/s/AKfycbzW261BITTpanD3Sn6ZDJjcFJAmpT7VMTRN9qAtqqgoKDzQqc4BYsEq5e4JcWonOuUtuA/exec';
+async function loadCMS() {
+    try {
+        const response = await fetch(`${CMS_URL}?v=${Date.now()}`);
+        const data = await response.json();
+        const annContainer = document.getElementById('ann-container');
+        const badge = document.getElementById('notifBadge');
+        let showBadge = false;
+
+        if (data.announcements && data.announcements.length > 0) {
+            const sortedAnns = [...data.announcements].reverse();
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+            annContainer.innerHTML = sortedAnns.map(item => {
+                const text = item.text || "";
+                const rawDate = item.date || "";
+                let displayDate = "";
+                if (rawDate) {
+                  const annDate = new Date(rawDate);
+                  if (!isNaN(annDate.getTime())) {
+                    displayDate = annDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                    const annDateOnly = new Date(annDate.getFullYear(), annDate.getMonth(), annDate.getDate());
+                    const diffDays = (today - annDateOnly) / (1000 * 60 * 60 * 24);
+                    if (diffDays <= 1 && diffDays >= 0) showBadge = true;
+                  }
+                }
+                return `<div class="notif-item"><div>${text}</div>${displayDate ? `<small>Posted: ${displayDate}</small>` : ''}</div>`;
+            }).join('');
+        } else {
+            annContainer.innerHTML = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No announcements</div>';
+        }
+        if (showBadge) badge.classList.add('active');
+    } catch (e) { console.error(e); }
+}
 
 async function loadDocs() {
     const container = document.getElementById('content-container');
     try {
         const response = await fetch(`${DOCS_URL}?v=${Date.now()}`);
-        if (!response.ok) throw new Error("Network response was not ok");
         const docs = await response.json();
         if (!docs || docs.length === 0) {
-            container.innerHTML = '<div class="empty-state">No documents found. Check your Google Sheet data.</div>';
+            container.innerHTML = '<div class="empty-state">No documents found.</div>';
             return;
         }
         const groupedDocs = {};
@@ -167,58 +236,46 @@ async function loadDocs() {
         });
         let htmlContent = '';
         for (const [category, items] of Object.entries(groupedDocs)) {
-            htmlContent += `
-                <div class="category-section">
-                    <div class="category-title">${category}</div>
-                    <div class="docs-grid">
-            `;
+            htmlContent += `<div class="category-section"><div class="category-title">${category}</div><div class="docs-grid">`;
             items.forEach(item => {
                 const searchKeywords = `${item.title} ${item.desc} ${category}`.toLowerCase();
-                htmlContent += `
-                    <a href="${item.link}" target="_blank" class="doc-card" data-search="${searchKeywords}">
-                        <div class="doc-icon">${item.icon}</div>
-                        <div class="doc-info">
-                            <div class="doc-title">${item.title}</div>
-                            <div class="doc-desc">${item.desc}</div>
-                        </div>
-                    </a>
-                `;
+                htmlContent += `<a href="${item.link}" target="_blank" class="doc-card" data-search="${searchKeywords}"><div class="doc-icon">${item.icon}</div><div class="doc-info"><div class="doc-title">${item.title}</div><div class="doc-desc">${item.desc}</div></div></a>`;
             });
             htmlContent += `</div></div>`;
         }
         container.innerHTML = htmlContent;
-    } catch (e) {
-        console.error("Failed to load documents", e);
-        container.innerHTML = '<div class="empty-state" style="color: #dc2626; border-color: #fca5a5; background: #fef2f2;">Failed to load documents.</div>';
-    }
+    } catch (e) { console.error("Docs Failed", e); container.innerHTML = '<div class="empty-state">Failed to load documents.</div>'; }
 }
 
 function filterDocs() {
     const searchInput = document.getElementById('docSearch').value.toLowerCase();
     const docCards = document.querySelectorAll('.doc-card');
-    const categories = document.querySelectorAll('.category-section');
     let hasVisibleCards = false;
 
     docCards.forEach(card => {
         const searchTerms = card.getAttribute('data-search');
-        if (searchTerms.includes(searchInput)) {
-            card.classList.remove('hidden');
-            hasVisibleCards = true;
-        } else {
-            card.classList.add('hidden');
-        }
+        const isMatch = searchTerms.includes(searchInput);
+        card.classList.toggle('hidden', !isMatch);
+        if (isMatch) hasVisibleCards = true;
     });
 
-    categories.forEach(category => {
-        const visibleCards = category.querySelectorAll('.doc-card:not(.hidden)');
-        if (visibleCards.length === 0) category.classList.add('hidden');
-        else category.classList.remove('hidden');
+    document.querySelectorAll('.category-section').forEach(section => {
+        const visibleInGroup = section.querySelectorAll('.doc-card:not(.hidden)').length > 0;
+        section.classList.toggle('hidden', !visibleInGroup);
     });
 
-    const noResults = document.getElementById('noResults');
-    if (hasVisibleCards || searchInput === '') noResults.classList.add('hidden');
-    else noResults.classList.remove('hidden');
+    document.getElementById('noResults').classList.toggle('hidden', hasVisibleCards || searchInput === '');
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+    if (localStorage.getItem('speeksSidebar') === 'collapsed') {
+        document.querySelector('.sidebar').classList.add('collapsed');
+        document.querySelector('.main-content').classList.add('expanded');
+        document.querySelector('.sidebar-toggle').classList.add('collapsed');
+    }
+    loadDocs();
+    loadCMS();
+});
 </script>
 </body>
 </html>
