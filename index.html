@@ -51,10 +51,25 @@
 
   .notif-menu { position: absolute; top: 60px; right: 0; width: 340px; background: white; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.12); border: 1px solid #eee; display: none; z-index: 300; overflow: hidden; }
   .notif-menu.show { display: block; }
+
+  /* Modal overlay that blurs the background when notifications open */
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.22); backdrop-filter: blur(6px); display: none; z-index: 240; }
+  .overlay.show { display: block; }
+
+  /* Center notif menu as a modal */
+  .notif-menu { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 1260px; max-width: calc(100% - 40px); }
   .notif-header { padding: 15px 20px; background: #f9fafb; border-bottom: 1px solid #eee; font-size: 13px; font-weight: 800; text-transform: uppercase; color: #666; letter-spacing: 0.5px; }
-  .notif-content { max-height: 400px; overflow-y: auto; }
+  .notif-content { max-height: 600px; overflow-y: auto; }
   .notif-item { padding: 15px 20px; border-bottom: 1px solid #f5f5f5; font-size: 13px; color: var(--text-dark); line-height: 1.5; text-align: left; }
   .notif-item small { display: block; color: #999; margin-top: 5px; font-weight: 600; font-size: 11px; }
+
+  /* Larger announcement card styling */
+  .notif-item { font-size: 16px; padding: 20px; }
+  .notif-item .ann-header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .notif-item .ann-author { font-weight: 800; font-size: 18px; color: var(--slate-charcoal); }
+  .notif-item .ann-date { color: #666; font-size: 13px; font-weight: 700; }
+  .notif-item hr { border: none; border-top: 1px solid #eee; margin: 10px 0; }
+  .notif-item .ann-text { margin-top: 8px; font-size: 15px; color: var(--text-dark); }
 
   /* MAIN HUB CANVAS */
   .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s; }
@@ -98,7 +113,8 @@
         <div class="notif-bell" onclick="toggleNotifs()">
             🔔 <div class="notif-dot" id="notifBadge"></div>
         </div>
-        <div class="notif-menu" id="notifDropdown">
+      <div id="notifOverlay" class="overlay"></div>
+      <div class="notif-menu" id="notifDropdown">
             <div class="notif-header">Announcements</div>
             <div id="ann-container" class="notif-content">
                 <div style="padding: 20px; color:#999; font-size:12px; text-align:center;">Syncing...</div>
@@ -153,7 +169,7 @@
 
 <script>
 // Replace this with your actual CMS URL
-const CMS_URL = 'https://script.google.com/macros/s/AKfycby8cueKK9CLXVK_-7R5DhLccU5-nFjRjHqGRvPyGFx9MKSqFE6q3nTgYHeTqZouCS0/exec';
+const CMS_URL = 'https://script.google.com/macros/s/AKfycbxZviJiiQKcQYyp3SK4tcNBHrHXkID7cmwwuONStVPE9DHCSAMappqAs9dBns7ufECI/exec';
 const HOTKEYS_URL = 'https://script.google.com/macros/s/AKfycbyLburcVWM8xAKwDt2RHAQhZBLb_rJjb2__EzhoAKx1KgkNFi-BchVetgaTKvwCwqZiRw/exec';
 
 function toggleSidebar() {
@@ -167,17 +183,40 @@ function toggleSidebar() {
 }
 
 function toggleNotifs() {
-    const dropdown = document.getElementById('notifDropdown');
-    dropdown.classList.toggle('show');
-    document.getElementById('notifBadge').classList.remove('active');
+  const dropdown = document.getElementById('notifDropdown');
+  const overlay = document.getElementById('notifOverlay');
+  const badge = document.getElementById('notifBadge');
+  const isOpen = dropdown.classList.contains('show');
+  if (isOpen) {
+    dropdown.classList.remove('show');
+    overlay.classList.remove('show');
+    document.body.classList.remove('no-scroll');
+  } else {
+    dropdown.classList.add('show');
+    overlay.classList.add('show');
+    badge.classList.remove('active');
+    document.body.classList.add('no-scroll');
+  }
 }
 
 window.addEventListener('click', function(e) {
-    const container = document.getElementById('notifContainer');
+  const overlay = document.getElementById('notifOverlay');
+  const dropdown = document.getElementById('notifDropdown');
+  if (overlay && e.target === overlay) {
+    dropdown.classList.remove('show');
+    overlay.classList.remove('show');
+    document.body.classList.remove('no-scroll');
+  }
+});
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    const overlay = document.getElementById('notifOverlay');
     const dropdown = document.getElementById('notifDropdown');
-    if (container && !container.contains(e.target)) {
-        dropdown.classList.remove('show');
-    }
+    dropdown.classList.remove('show');
+    overlay.classList.remove('show');
+    document.body.classList.remove('no-scroll');
+  }
 });
 
 async function loadCMS() {
@@ -199,6 +238,7 @@ async function loadCMS() {
             announcementsHtml = sortedAnns.map(item => {
                 const text = item.text || "";
                 const rawDate = item.date || "";
+                const author = item.author || "";
                 let displayDate = "";
 
                 if (rawDate) {
@@ -212,7 +252,16 @@ async function loadCMS() {
                     if (diffDays <= 1 && diffDays >= 0) showBadge = true;
                   }
                 }
-                return `<div class="notif-item"><div>${text}</div>${displayDate ? `<small>Posted: ${displayDate}</small>` : ''}</div>`;
+
+                return `
+                  <div class="notif-item">
+                    <div class="ann-header">
+                      <span class="ann-author">${author || 'Announcement'}</span>
+                      ${displayDate ? `<small class="ann-date">${displayDate}</small>` : ''}
+                    </div>
+                    <hr />
+                    <div class="ann-text">${text}</div>
+                  </div>`;
             }).join('');
         } else {
             announcementsHtml = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No announcements</div>';
