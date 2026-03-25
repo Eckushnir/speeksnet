@@ -40,7 +40,7 @@
   /* FLOATING ARROW TOGGLE */
   .sidebar-toggle {
     position: fixed;
-    left: 244px; /* Sits right on the border */
+    left: 244px;
     top: 50%;
     transform: translateY(-50%);
     width: 32px;
@@ -53,7 +53,7 @@
     justify-content: center;
     cursor: pointer;
     z-index: 105;
-    border: 4px solid var(--bg-app); /* Creates the cutout illusion */
+    border: 4px solid var(--bg-app); 
     transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s, background 0.2s;
     font-size: 12px;
   }
@@ -73,7 +73,6 @@
   .card:hover { box-shadow: 0 8px 25px rgba(0,0,0,0.05); }
   .card-title { font-size: 15px; font-weight: 800; text-transform: uppercase; color: var(--slate-charcoal); margin-bottom: 20px; letter-spacing: 0.5px; }
 
-  /* TOP CONTROLS */
   .sync-btn { background: var(--slate-charcoal); color: white; border: none; padding: 12px 24px; border-radius: 10px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 11px; transition: 0.2s; letter-spacing: 0.5px; }
   .sync-btn:hover { background: var(--sage-professional); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(90, 141, 59, 0.2); }
   .last-synced { font-size: 11px; color: #888; font-weight: 700; text-transform: uppercase; margin-right: 15px; }
@@ -90,11 +89,10 @@
   .goal-text, .tracking-box { font-weight: 800; font-size: 14px; margin-top: 5px; color: #888; }
   .tracking-box span { color: var(--slate-charcoal); font-size: 16px; }
 
-  /* CHART CONTROLS IN HEADER */
+  /* CHART CONTROLS */
   .chart-header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #f4f7f9; padding-bottom: 15px; }
   .chart-controls { display: flex; gap: 15px; align-items: center; }
   
-  /* TIMEFRAME TOGGLE */
   .timeframe-toggle { display: flex; background: #e2e8f0; border-radius: 8px; padding: 4px; }
   .toggle-btn { background: transparent; border: none; padding: 8px 16px; font-size: 12px; font-weight: 700; color: #64748b; border-radius: 6px; cursor: pointer; transition: 0.2s; font-family: 'Inter', sans-serif; }
   .toggle-btn.active { background: white; color: var(--slate-charcoal); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
@@ -137,9 +135,9 @@
     <div class="page-header">
         <div>
             <div class="title-wrapper">
-                <h2 style="margin: 0;">Performance Metrics</h2>
+                <h2 style="margin: 0;">Company Metrics Comparison</h2>
             </div>
-            <p>Real-time KPI tracking and store leaderboards</p>
+            <p>Comparing average performance trends across all locations</p>
         </div>
         <div style="display: flex; align-items: center;">
             <span class="last-synced" id="lastSyncedText">Last Synced: --:--</span>
@@ -170,19 +168,12 @@
 
     <div class="card">
         <div class="chart-header-flex">
-            <div class="card-title" style="margin: 0;">Employee Metric Trends</div>
+            <div class="card-title" style="margin: 0;">Store Comparison Trends</div>
             <div class="chart-controls">
-                
                 <div class="timeframe-toggle">
                     <button class="toggle-btn active" id="btn-4week" onclick="setTimeframe('4-Week')">4-Week</button>
                     <button class="toggle-btn" id="btn-monthly" onclick="setTimeframe('Monthly')">Monthly</button>
                 </div>
-
-                <select id="storeSelector" class="metric-dropdown" onchange="loadKpiData()">
-                    <option value="OVL" selected>OVL (Overland Park)</option>
-                    <option value="LEE">LEE (Lees Summit)</option>
-                    <option value="WSP">WSP (Westport)</option>
-                </select>
                 <select id="metricSelector" class="metric-dropdown" onchange="updateKpiView()">
                     <option value="conversion">Customer Conversion</option>
                     <option value="margin">Buying Margin</option>
@@ -210,21 +201,16 @@
 </main>
 
 <script>
-// --- SIDEBAR TOGGLE & MEMORY ---
 function toggleSidebar() {
     const sidebar = document.querySelector('.sidebar');
     const mainContent = document.querySelector('.main-content');
     const toggleBtn = document.querySelector('.sidebar-toggle');
-    
     sidebar.classList.toggle('collapsed');
     mainContent.classList.toggle('expanded');
     toggleBtn.classList.toggle('collapsed');
-    
-    // Save their preference to the browser
     localStorage.setItem('speeksSidebar', sidebar.classList.contains('collapsed') ? 'collapsed' : 'expanded');
 }
 
-// Check memory as soon as the page loads
 document.addEventListener("DOMContentLoaded", () => {
     if (localStorage.getItem('speeksSidebar') === 'collapsed') {
         document.querySelector('.sidebar').classList.add('collapsed');
@@ -233,7 +219,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-// --- EXISTING CHART LOGIC ---
 const HUB_URL = 'https://script.google.com/macros/s/AKfycbw3Ms5nc2bhbrjVW-da3xbZ3vKhyBx2TpeR-eSd1L05ZhV-h2Yh0yLmIV_E7TWDmwM69A/exec';
 const KPI_URL = 'https://script.google.com/macros/s/AKfycbyVBos-uJuhaqfLMBqoz9byNkvUG06igl4RX2_cs8hH15rbp7K4uFFEN-wpQgS2ChAU/exec';
 
@@ -262,15 +247,12 @@ function updateTimestamp() {
 function cleanValue(val, isPercentage = false) {
     if (val === undefined || val === null || val === "") return null;
     let str = String(val).trim();
-    if (str === "") return null;
-    if (str.includes('#')) return null; 
-    
+    if (str === "" || str.includes('#')) return null;
     if (str.includes(':')) {
         let parts = str.split(':');
         if (parts.length === 3) return parseInt(parts[0]) * 60 + parseInt(parts[1]) + (parseInt(parts[2]) / 60);
         else if (parts.length === 2) return parseInt(parts[0]) + (parseInt(parts[1]) / 60);
     }
-
     let num = parseFloat(str.replace(/[$,%]/g, ''));
     if (isNaN(num)) return null;
     if (isPercentage && num <= 1.1 && num > 0) return num * 100;
@@ -280,27 +262,12 @@ function cleanValue(val, isPercentage = false) {
 async function loadKpiData() {
     const loader = document.getElementById('chartLoading');
     if(loader) loader.style.display = 'flex';
-    const store = document.getElementById('storeSelector').value;
-    try { 
-        const response = await fetch(`${KPI_URL}?store=${store}&time=${currentTimeframe}&v=${Date.now()}`); 
-        kpiRawData = await response.json(); 
-        if (kpiRawData.error) {
-            console.error(kpiRawData.error);
-            kpiRawData = [];
-        }
-        updateKpiView();
-    } catch (e) { console.error("Load Failed", e); }
+    updateKpiView();
     if(loader) loader.style.display = 'none';
 }
 
 function updateKpiView() {
-    if (!kpiRawData || kpiRawData.length === 0) {
-        if (mainChartInstance) mainChartInstance.destroy();
-        return;
-    }
-
     const metric = document.getElementById('metricSelector').value;
-    
     const metricTitles = {
         'conversion': 'Customer Conversion %',
         'margin': 'Buying Margin %',
@@ -310,116 +277,104 @@ function updateKpiView() {
     const searchTarget = metricTitles[metric];
     
     let unit = '%', isPct = false, yMin = 0, yMax = 100;
-    if (metric === 'conversion') { isPct = true; yMin = 70; yMax = 100; } 
-    else if (metric === 'margin') { isPct = true; yMin = 35; yMax = 70; } 
-    else if (metric === 'nodeals') { unit = ''; yMin = 0; yMax = 30; } 
-    else if (metric === 'time') { unit = 'm'; yMin = 5; yMax = 35; }
+    if (metric === 'conversion' || metric === 'margin') { isPct = true; unit = '%'; } 
+    else { unit = (metric === 'time') ? 'm' : ''; isPct = false; }
 
-    let r = -1, c = -1;
-    for (let i = 0; i < kpiRawData.length; i++) {
-        if (!kpiRawData[i]) continue;
-        for (let j = 0; j < kpiRawData[i].length; j++) {
-            if (kpiRawData[i][j] && String(kpiRawData[i][j]).trim() === searchTarget) {
-                r = i;
-                c = j;
-                break;
+    let stores = [
+        { key: 'OVL', color: '#5a8d3b', label: 'OVL Average', data: [] },
+        { key: 'LEE', color: '#0ea5e9', label: 'LEE Average', data: [] },
+        { key: 'WSP', color: '#f97316', label: 'WSP Average', data: [] }
+    ];
+
+    Promise.all([
+        fetch(`${KPI_URL}?store=OVL&time=${currentTimeframe}`).then(r => r.json()),
+        fetch(`${KPI_URL}?store=LEE&time=${currentTimeframe}`).then(r => r.json()),
+        fetch(`${KPI_URL}?store=WSP&time=${currentTimeframe}`).then(r => r.json())
+    ]).then(allData => {
+        let labels = [];
+        let finalDatasets = [];
+        let allNumericValues = [];
+
+        allData.forEach((data, idx) => {
+            let storeData = [];
+            let sr=-1, sc=-1;
+            for(let i=0; i<data.length; i++) {
+                for(let j=0; j<data[i].length; j++) {
+                    if(data[i][j] && String(data[i][j]).trim() === searchTarget) { sr=i; sc=j; break; }
+                }
+                if(sr!==-1) break;
+            }
+            if(sr === -1) return;
+
+            let sCol = -1;
+            for(let j=sc; j<data[sr+1].length; j++){
+                if(String(data[sr+1][j]).toLowerCase() === 'store'){ sCol=j; break; }
+            }
+
+            if(labels.length === 0) {
+                for (let i = sr + 2; i < data.length; i++) {
+                    let lbl = String(data[i][sc - 1]).trim();
+                    if (!lbl || lbl.includes('Store') || lbl.includes('%')) break; 
+                    labels.push(lbl);
+                }
+            }
+
+            for(let i=0; i<labels.length; i++){
+                let val = cleanValue(data[sr+2+i][sCol], isPct);
+                storeData.push(val);
+                if(val !== null) allNumericValues.push(val);
+            }
+
+            finalDatasets.push({
+                label: stores[idx].label,
+                data: storeData,
+                borderColor: stores[idx].color,
+                backgroundColor: stores[idx].color,
+                tension: 0.4,
+                pointRadius: 5,
+                spanGaps: true
+            });
+        });
+
+        // SMART ZOOM LOGIC
+        if (allNumericValues.length > 0) {
+            let maxVal = Math.max(...allNumericValues);
+            let minVal = Math.min(...allNumericValues);
+
+            if (isPct) {
+                yMin = Math.floor(minVal / 10) * 10 - 10; 
+                if (yMin < 0) yMin = 0;
+                yMax = Math.ceil(maxVal / 10) * 10 + 10;
+                if (yMax > 100) yMax = 100;
+            } else {
+                yMin = 0;
+                yMax = Math.ceil(maxVal * 1.2); 
+                if (yMax < 10) yMax = 10; 
             }
         }
-        if (r !== -1) break;
-    }
 
-    if (r === -1) {
-        console.error("Could not find exact metric block:", searchTarget);
+        const ctx = document.getElementById('mainKpiChart').getContext('2d');
         if (mainChartInstance) mainChartInstance.destroy();
-        return; 
-    }
-
-    let labelCol = c - 1;
-    let namesRow = r + 1;
-    let startRow = r + 2; 
-
-    let empNames = [];
-    let storeColIndex = -1;
-    
-    for (let j = c; j < kpiRawData[namesRow].length; j++) {
-        let name = String(kpiRawData[namesRow][j]).trim();
-        if (!name || name.includes('%') || name.includes('Time') || name.includes('Deals')) break; 
-        
-        if (name.toLowerCase() === 'store') {
-            storeColIndex = j;
-            break; 
-        }
-        empNames.push({name: name, col: j});
-    }
-
-    let labels = [];
-    
-    for (let i = startRow; i < kpiRawData.length; i++) {
-        if (!kpiRawData[i]) break;
-        let label = String(kpiRawData[i][labelCol]).trim();
-        
-        if (!label || label === "OVL" || label === "LEE" || label === "WSP" || label.includes('Store') || label.includes('%') || label.includes('Time') || label.includes('Deals')) {
-            break; 
-        }
-        labels.push(label);
-    }
-
-    const colors = ['#5a8d3b', '#0ea5e9', '#f97316', '#8b5cf6', '#ec4899', '#eab308'];
-    let datasets = [];
-
-    empNames.forEach((emp, index) => {
-        let color = colors[index % colors.length];
-        let empData = [];
-        for(let i = 0; i < labels.length; i++) {
-            let val = cleanValue(kpiRawData[startRow + i][emp.col], isPct);
-            empData.push(val);
-        }
-        datasets.push({
-            label: emp.name,
-            data: empData,
-            borderColor: color,
-            backgroundColor: color
+        mainChartInstance = new Chart(ctx, {
+            type: 'line', plugins: [ChartDataLabels],
+            data: { labels: labels, datasets: finalDatasets },
+            options: { 
+                responsive: true, maintainAspectRatio: false, 
+                plugins: { 
+                    legend: { position: 'top', labels: { font: { weight: '600', family: 'Inter' } } },
+                    datalabels: { align: 'top', anchor: 'end', font: { weight: '700' }, formatter: v => v !== null ? (Math.round(v*10)/10 + unit) : '' }
+                },
+                scales: { 
+                    y: { 
+                        min: yMin, 
+                        max: yMax, 
+                        ticks: { font: { weight: '600' }, callback: v => v + unit },
+                        grid: { borderDash: [4, 4], color: '#f0f0f0' }
+                    },
+                    x: { ticks: { font: { weight: '600' } }, grid: { display: false } }
+                }
+            }
         });
-    });
-
-    if (storeColIndex !== -1) {
-        let storeData = [];
-        for(let i = 0; i < labels.length; i++) {
-            let val = cleanValue(kpiRawData[startRow + i][storeColIndex], isPct);
-            storeData.push(val);
-        }
-        datasets.push({
-            label: 'Store Average',
-            data: storeData,
-            borderColor: '#6366f1',
-            backgroundColor: '#6366f1',
-            borderWidth: 4,
-            borderDash: [5, 5]
-        });
-    }
-
-    let allValues = [];
-    datasets.forEach(d => allValues.push(...d.data));
-    let maxVal = Math.max(...allValues.filter(v => v !== null));
-    if (maxVal > yMax) yMax = Math.ceil(maxVal * 1.2);
-
-    const ctx = document.getElementById('mainKpiChart').getContext('2d');
-    if (mainChartInstance) mainChartInstance.destroy();
-    mainChartInstance = new Chart(ctx, {
-        type: 'line', plugins: [ChartDataLabels],
-        data: { labels: labels, datasets: datasets.map(d => ({...d, tension: 0.4, spanGaps: true, pointRadius: 5, pointHoverRadius: 8})) },
-        options: { 
-            responsive: true, maintainAspectRatio: false, 
-            interaction: { mode: 'index', intersect: false },
-            plugins: { 
-                legend: { position: 'top', labels: { font: { family: 'Inter', weight: '600' }, usePointStyle: true, padding: 20 } },
-                datalabels: { align: 'top', anchor: 'end', offset: 6, font: { family: 'Inter', weight: '700', size: 12 }, color: '#444', formatter: (v) => v !== null ? (Math.round(v*10)/10 + unit) : '' } 
-            }, 
-            scales: { 
-                y: { min: yMin, max: yMax, grid: { borderDash: [4, 4], color: '#f0f0f0' }, border: { display: false }, ticks: { font: { family: 'Inter', weight: '600' }, color: '#888', callback: v => v + unit } }, 
-                x: { grid: { display: false }, border: { display: false }, ticks: { font: { family: 'Inter', weight: '600' }, color: '#888', padding: 10 } } 
-            } 
-        }
     });
 }
 
