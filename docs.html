@@ -5,52 +5,52 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SPEEKSNET | Processes & Policies</title>
 <style>
-  :root {
-    --slate-charcoal: #1a1c1e; 
-    --sage-professional: #5a8d3b; 
-    --text-dark: #2d2d2d; 
-    --bg-app: #f4f7f9;
-  }
-  
+  :root { --slate-charcoal: #1a1c1e; --sage-professional: #5a8d3b; --text-dark: #2d2d2d; --bg-app: #f4f7f9; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg-app); color: var(--text-dark); line-height: 1.6; display: flex; min-height: 100vh; overflow-x: hidden; }
 
-  /* SIDEBAR */
-  .sidebar { width: 260px; background: var(--slate-charcoal); color: white; position: fixed; top: 0; bottom: 0; left: 0; display: flex; flex-direction: column; box-shadow: 4px 0 15px rgba(0,0,0,0.05); z-index: 100; }
-  .brand-area { padding: 40px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); margin-bottom: 20px; }
-  .brand-area h1 { font-size: 28px; font-weight: 200; letter-spacing: 6px; margin: 0; color: white; }
-  .brand-area .badge { display: inline-block; background: var(--sage-professional); color: white; font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 12px; margin-top: 10px; letter-spacing: 1px; text-transform: uppercase; }
+  /* SIDEBAR STYLES */
+  .sidebar { width: 260px; background: var(--slate-charcoal); color: white; position: fixed; top: 0; bottom: 0; left: 0; display: flex; flex-direction: column; box-shadow: 4px 0 15px rgba(0,0,0,0.05); z-index: 100; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); white-space: nowrap; overflow: hidden; }
+  .brand-area { padding: 40px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); margin-bottom: 20px; transition: padding 0.3s; }
+  .brand-area h1 { font-size: 28px; font-weight: 200; letter-spacing: 6px; margin: 0; color: white; transition: font-size 0.3s; }
+  .brand-area .badge { display: inline-block; background: var(--sage-professional); color: white; font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 12px; margin-top: 10px; letter-spacing: 1px; text-transform: uppercase; transition: opacity 0.3s; }
 
   .nav-bar { display: flex; flex-direction: column; gap: 8px; padding: 0 15px; }
   .nav-link { text-decoration: none; color: #a0aab2; padding: 14px 20px; font-weight: 600; font-size: 13px; letter-spacing: 1px; border-radius: 10px; transition: all 0.2s; display: flex; align-items: center; gap: 12px; }
   .nav-link:hover { background: rgba(255,255,255,0.05); color: white; transform: translateX(3px); }
   .nav-link.active { background: var(--sage-professional); color: white; box-shadow: 0 4px 12px rgba(90, 141, 59, 0.3); }
+  .nav-link i { font-style: normal; font-size: 16px; width: 20px; text-align: center; }
+
+  /* COLLAPSED STATE */
+  .sidebar.collapsed { width: 76px; }
+  .sidebar.collapsed .brand-area { padding: 40px 10px; }
+  .sidebar.collapsed .brand-area h1 { font-size: 12px; letter-spacing: 1px; }
+  .sidebar.collapsed .badge { opacity: 0; pointer-events: none; height: 0; margin: 0; padding: 0; }
+  .sidebar.collapsed .nav-link span { display: none; }
+  .sidebar.collapsed .nav-link { justify-content: center; padding: 14px 0; }
 
   /* MAIN CONTENT */
-  .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; max-width: 1400px; }
+  .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; max-width: 1400px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+  .main-content.expanded { margin-left: 76px; }
   
-  /* HEADER & SEARCH */
   .page-header { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 20px; }
-  .header-text h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin-bottom: 5px; }
-  .header-text p { color: #888; font-size: 14px; font-weight: 500; }
-  
+  .title-wrapper { display: flex; align-items: center; gap: 15px; margin-bottom: 5px; }
+  .menu-toggle { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--slate-charcoal); transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; }
+  .menu-toggle:hover { color: var(--sage-professional); transform: scale(1.1); }
+  .header-text h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin: 0; }
+  .header-text p { color: #888; font-size: 14px; font-weight: 500; margin-top: 5px; }
+
+  /* SEARCH BARS & DOCS GRID */
   .search-container { flex-grow: 1; max-width: 500px; position: relative; }
   .search-input { width: 100%; padding: 16px 20px 16px 45px; border-radius: 12px; border: 1px solid #ddd; font-size: 15px; outline: none; transition: 0.2s; font-family: 'Inter', sans-serif; box-shadow: 0 4px 15px rgba(0,0,0,0.02); }
   .search-input:focus { border-color: var(--sage-professional); box-shadow: 0 0 0 4px rgba(90, 141, 59, 0.1); }
   .search-icon { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 18px; }
 
-  /* CATEGORY SECTIONS */
   .category-section { margin-bottom: 50px; }
   .category-title { font-size: 16px; font-weight: 800; text-transform: uppercase; color: var(--slate-charcoal); margin-bottom: 20px; letter-spacing: 0.5px; border-bottom: 2px solid #eaeaea; padding-bottom: 10px; }
   
   .docs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
-  
-  /* DOC CARDS */
-  .doc-card { 
-    background: white; border-radius: 12px; padding: 20px; display: flex; align-items: flex-start; gap: 15px; 
-    text-decoration: none; border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 4px 10px rgba(0,0,0,0.02); 
-    transition: all 0.2s ease; cursor: pointer;
-  }
+  .doc-card { background: white; border-radius: 12px; padding: 20px; display: flex; align-items: flex-start; gap: 15px; text-decoration: none; border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 4px 10px rgba(0,0,0,0.02); transition: all 0.2s ease; cursor: pointer; }
   .doc-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.06); border-color: var(--sage-professional); }
   
   .doc-icon { font-size: 28px; background: var(--bg-app); width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 10px; flex-shrink: 0; }
@@ -60,7 +60,6 @@
   
   .hidden { display: none !important; }
   .empty-state { text-align: center; padding: 50px; color: #888; font-weight: 600; font-size: 16px; background: white; border-radius: 12px; border: 1px dashed #ccc; }
-
 </style>
 </head>
 <body>
@@ -71,17 +70,20 @@
     <div class="badge">KNOWLEDGE BASE</div>
   </div>
   <nav class="nav-bar">
-    <a href="index.html" class="nav-link">🏠 SPEEKS Hub</a>
-    <a href="portals.html" class="nav-link">🔗 Portals</a>
-    <a href="metrics.html" class="nav-link">📊 Metrics & Leaderboards</a>
-    <a href="docs.html" class="nav-link active">📚 Processes & Policies</a>
+    <a href="index.html" class="nav-link"><i>🏠</i> <span>SPEEKS Hub</span></a>
+    <a href="portals.html" class="nav-link"><i>🔗</i> <span>Portals</span></a>
+    <a href="metrics.html" class="nav-link"><i>📊</i> <span>Metrics & Leaderboards</span></a>
+    <a href="docs.html" class="nav-link active"><i>📚</i> <span>Processes & Policies</span></a>
   </nav>
 </aside>
 
 <main class="main-content">
   <div class="page-header">
     <div class="header-text">
-      <h2>Processes & Policies</h2>
+      <div class="title-wrapper">
+        <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+        <h2>Processes & Policies</h2>
+      </div>
       <p>Your central library for company guidelines, procedures, and manuals.</p>
     </div>
     <div class="search-container">
@@ -98,7 +100,16 @@
 </main>
 
 <script>
-// Your working Apps Script URL
+// Sidebar Memory System
+function toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const mainContent = document.querySelector('.main-content');
+    sidebar.classList.toggle('collapsed');
+    mainContent.classList.toggle('expanded');
+    localStorage.setItem('speeksSidebar', sidebar.classList.contains('collapsed') ? 'collapsed' : 'expanded');
+}
+
+// Google Sheet Data Fetch
 const DOCS_URL = 'https://script.google.com/macros/s/AKfycbzW261BITTpanD3Sn6ZDJjcFJAmpT7VMTRN9qAtqqgoKDzQqc4BYsEq5e4JcWonOuUtuA/exec';
 
 async function loadDocs() {
@@ -115,7 +126,6 @@ async function loadDocs() {
             return;
         }
 
-        // Group the documents by Category
         const groupedDocs = {};
         docs.forEach(doc => {
             if (!groupedDocs[doc.category]) {
@@ -124,7 +134,6 @@ async function loadDocs() {
             groupedDocs[doc.category].push(doc);
         });
 
-        // Build the HTML
         let htmlContent = '';
         for (const [category, items] of Object.entries(groupedDocs)) {
             htmlContent += `
@@ -145,10 +154,8 @@ async function loadDocs() {
                     </a>
                 `;
             });
-            
             htmlContent += `</div></div>`;
         }
-
         container.innerHTML = htmlContent;
         
     } catch (e) {
@@ -157,7 +164,7 @@ async function loadDocs() {
     }
 }
 
-// Live Search Filter
+// Live Search
 function filterDocs() {
     const searchInput = document.getElementById('docSearch').value.toLowerCase();
     const docCards = document.querySelectorAll('.doc-card');
@@ -191,8 +198,14 @@ function filterDocs() {
     }
 }
 
-// Auto-load on page start
-window.onload = loadDocs;
+// Check Sidebar Memory & Load Data
+document.addEventListener("DOMContentLoaded", () => {
+    if (localStorage.getItem('speeksSidebar') === 'collapsed') {
+        document.querySelector('.sidebar').classList.add('collapsed');
+        document.querySelector('.main-content').classList.add('expanded');
+    }
+    loadDocs();
+});
 </script>
 </body>
 </html>
