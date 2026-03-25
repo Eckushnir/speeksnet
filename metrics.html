@@ -37,14 +37,35 @@
   .sidebar.collapsed .nav-link span { display: none; }
   .sidebar.collapsed .nav-link { justify-content: center; padding: 14px 0; }
 
+  /* FLOATING ARROW TOGGLE */
+  .sidebar-toggle {
+    position: fixed;
+    left: 244px; /* Sits right on the border */
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    background: var(--slate-charcoal);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 105;
+    border: 4px solid var(--bg-app); /* Creates the cutout illusion */
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s, background 0.2s;
+    font-size: 12px;
+  }
+  .sidebar-toggle:hover { background: var(--sage-professional); }
+  .sidebar-toggle.collapsed { left: 60px; transform: translateY(-50%) rotate(180deg); }
+
   /* MAIN CONTENT & CARDS */
   .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
   .main-content.expanded { margin-left: 76px; }
   
   .page-header { margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-end; }
   .title-wrapper { display: flex; align-items: center; gap: 15px; margin-bottom: 5px; }
-  .menu-toggle { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--slate-charcoal); transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; }
-  .menu-toggle:hover { color: var(--sage-professional); transform: scale(1.1); }
   .page-header h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin: 0;}
   .page-header p { color: #888; font-size: 14px; font-weight: 500; margin-top: 5px; }
   
@@ -110,12 +131,13 @@
   </nav>
 </aside>
 
+<div class="sidebar-toggle" onclick="toggleSidebar()">◀</div>
+
 <main class="main-content">
     <div class="page-header">
         <div>
             <div class="title-wrapper">
-                <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
-                <h2>Performance Metrics</h2>
+                <h2 style="margin: 0;">Performance Metrics</h2>
             </div>
             <p>Real-time KPI tracking and store leaderboards</p>
         </div>
@@ -192,9 +214,11 @@
 function toggleSidebar() {
     const sidebar = document.querySelector('.sidebar');
     const mainContent = document.querySelector('.main-content');
+    const toggleBtn = document.querySelector('.sidebar-toggle');
     
     sidebar.classList.toggle('collapsed');
     mainContent.classList.toggle('expanded');
+    toggleBtn.classList.toggle('collapsed');
     
     // Save their preference to the browser
     localStorage.setItem('speeksSidebar', sidebar.classList.contains('collapsed') ? 'collapsed' : 'expanded');
@@ -205,6 +229,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (localStorage.getItem('speeksSidebar') === 'collapsed') {
         document.querySelector('.sidebar').classList.add('collapsed');
         document.querySelector('.main-content').classList.add('expanded');
+        document.querySelector('.sidebar-toggle').classList.add('collapsed');
     }
 });
 
