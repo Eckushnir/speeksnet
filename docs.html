@@ -5,7 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SPEEKSNET | Processes & Policies</title>
 <style>
-  :root { --slate-charcoal: #1a1c1e; --sage-professional: #5a8d3b; --text-dark: #2d2d2d; --bg-app: #f4f7f9; }
+  :root {
+    --slate-charcoal: #1a1c1e; 
+    --sage-professional: #5a8d3b; 
+    --text-dark: #2d2d2d; 
+    --bg-app: #f4f7f9;
+  }
+  
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg-app); color: var(--text-dark); line-height: 1.6; display: flex; min-height: 100vh; overflow-x: hidden; }
 
@@ -19,7 +25,7 @@
   .nav-link { text-decoration: none; color: #a0aab2; padding: 14px 20px; font-weight: 600; font-size: 13px; letter-spacing: 1px; border-radius: 10px; transition: all 0.2s; display: flex; align-items: center; gap: 12px; }
   .nav-link:hover { background: rgba(255,255,255,0.05); color: white; transform: translateX(3px); }
   .nav-link.active { background: var(--sage-professional); color: white; box-shadow: 0 4px 12px rgba(90, 141, 59, 0.3); }
-  .nav-link i { font-style: normal; font-size: 16px; width: 20px; text-align: center; }
+  .nav-link i { font-style: normal; font-size: 16px; width: 20px; text-align: center; display: inline-block; }
 
   /* COLLAPSED STATE */
   .sidebar.collapsed { width: 76px; }
@@ -109,6 +115,15 @@ function toggleSidebar() {
     localStorage.setItem('speeksSidebar', sidebar.classList.contains('collapsed') ? 'collapsed' : 'expanded');
 }
 
+// Check Sidebar Memory & Load Data
+document.addEventListener("DOMContentLoaded", () => {
+    if (localStorage.getItem('speeksSidebar') === 'collapsed') {
+        document.querySelector('.sidebar').classList.add('collapsed');
+        document.querySelector('.main-content').classList.add('expanded');
+    }
+    loadDocs();
+});
+
 // Google Sheet Data Fetch
 const DOCS_URL = 'https://script.google.com/macros/s/AKfycbzW261BITTpanD3Sn6ZDJjcFJAmpT7VMTRN9qAtqqgoKDzQqc4BYsEq5e4JcWonOuUtuA/exec';
 
@@ -197,15 +212,6 @@ function filterDocs() {
         noResults.classList.remove('hidden');
     }
 }
-
-// Check Sidebar Memory & Load Data
-document.addEventListener("DOMContentLoaded", () => {
-    if (localStorage.getItem('speeksSidebar') === 'collapsed') {
-        document.querySelector('.sidebar').classList.add('collapsed');
-        document.querySelector('.main-content').classList.add('expanded');
-    }
-    loadDocs();
-});
 </script>
 </body>
 </html>
