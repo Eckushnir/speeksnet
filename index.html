@@ -29,9 +29,9 @@
   .nav-link.active { background: var(--sage-professional); color: white; box-shadow: 0 4px 12px rgba(90, 141, 59, 0.3); }
   .nav-link i { font-style: normal; font-size: 16px; width: 20px; text-align: center; display: inline-block; }
 
-  /* NEW: SIDEBAR BOTTOM CTA */
+  /* SIDEBAR BOTTOM CTA */
   .sidebar-bottom { margin-top: auto; padding: 20px 15px; border-top: 1px solid rgba(255,255,255,0.05); }
-  .idea-btn { text-decoration: none; color: white; background: linear-gradient(135deg, var(--idea-gold), #d97706); padding: 14px 20px; font-weight: 700; font-size: 13px; letter-spacing: 0.5px; border-radius: 10px; transition: all 0.2s; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); }
+  .idea-btn { text-decoration: none; color: white; background: linear-gradient(135deg, var(--idea-gold), #d97706); padding: 14px 20px; font-weight: 700; font-size: 13px; letter-spacing: 0.5px; border-radius: 10px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); }
   .idea-btn:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5); }
   .idea-btn i { font-style: normal; font-size: 18px; width: 20px; text-align: center; display: inline-block; }
 
@@ -98,8 +98,8 @@
   </nav>
   
   <div class="sidebar-bottom">
-    <a href="ideas.html" class="idea-btn">
-      <i>💡</i> <span>Have an Idea? Click Here</span>
+    <a href="https://docs.google.com/forms/d/e/1FAIpQLSfEm449owjdKiT_zp7ATB_oLvsy3x51bL38Q3nKNiM7UNUZFQ/viewform" target="_blank" class="idea-btn">
+      <i>💡</i> <span>Have an Idea?</span>
     </a>
   </div>
 </aside>
@@ -229,12 +229,15 @@ async function loadCMS() {
         annContainer.innerHTML = announcementsHtml;
         if (showBadge) badge.classList.add('active');
 
-        document.getElementById('active-container').innerHTML = data.active.length 
-          ? data.active.map(txt => `<div class="cms-item cms-active">${txt}</div>`).join('') 
+        // FIXED: Safe array checks for Active and Upcoming projects
+        const activeProjects = data.active || [];
+        document.getElementById('active-container').innerHTML = activeProjects.length > 0
+          ? activeProjects.map(txt => `<div class="cms-item cms-active">${txt}</div>`).join('') 
           : '<div class="cms-item">No active projects</div>';
           
-        document.getElementById('upcoming-container').innerHTML = data.upcoming.length 
-          ? data.upcoming.map(txt => `<div class="cms-item cms-upcoming">${txt}</div>`).join('') 
+        const upcomingProjects = data.upcoming || [];
+        document.getElementById('upcoming-container').innerHTML = upcomingProjects.length > 0
+          ? upcomingProjects.map(txt => `<div class="cms-item cms-upcoming">${txt}</div>`).join('') 
           : '<div class="cms-item">No upcoming projects</div>';
           
     } catch (e) { console.error("CMS Failed", e); }
