@@ -73,7 +73,6 @@
   .card:hover { box-shadow: 0 8px 25px rgba(0,0,0,0.05); }
   .card-title { font-size: 15px; font-weight: 800; text-transform: uppercase; color: var(--slate-charcoal); margin-bottom: 20px; letter-spacing: 0.5px; }
 
-  /* TOP CONTROLS */
   .sync-btn { background: var(--slate-charcoal); color: white; border: none; padding: 12px 24px; border-radius: 10px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 11px; transition: 0.2s; letter-spacing: 0.5px; }
   .sync-btn:hover { background: var(--sage-professional); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(90, 141, 59, 0.2); }
   .last-synced { font-size: 11px; color: #888; font-weight: 700; text-transform: uppercase; margin-right: 15px; }
@@ -202,7 +201,6 @@
 </main>
 
 <script>
-// SIDEBAR TOGGLE & MEMORY
 function toggleSidebar() {
     const sidebar = document.querySelector('.sidebar');
     const mainContent = document.querySelector('.main-content');
@@ -261,23 +259,14 @@ function cleanValue(val, isPercentage = false) {
     return num;
 }
 
-// FETCH DATA FOR ALL STORES AT ONCE
 async function loadKpiData() {
     const loader = document.getElementById('chartLoading');
     if(loader) loader.style.display = 'flex';
-    
-    try { 
-        // We fetch OVL data first to get the structure (all stores are in the same spreadsheet)
-        const response = await fetch(`${KPI_URL}?store=OVL&time=${currentTimeframe}&v=${Date.now()}`); 
-        kpiRawData = await response.json(); 
-        updateKpiView();
-    } catch (e) { console.error("Comparison Data Load Failed", e); }
+    updateKpiView();
     if(loader) loader.style.display = 'none';
 }
 
 function updateKpiView() {
-    if (!kpiRawData || kpiRawData.length === 0) return;
-
     const metric = document.getElementById('metricSelector').value;
     const metricTitles = {
         'conversion': 'Customer Conversion %',
@@ -287,75 +276,31 @@ function updateKpiView() {
     };
     const searchTarget = metricTitles[metric];
     
-    let unit = '%', isPct = false, yMin = 0, yMax = 100;
-    if (metric === 'conversion') { isPct = true; yMin = 70; yMax = 100; } 
-    else if (metric === 'margin') { isPct = true; yMin = 35; yMax = 70; } 
-    else if (metric === 'nodeals') { unit = ''; yMin = 0; yMax = 30; } 
-    else if (metric === 'time') { unit = 'm'; yMin = 5; yMax = 35; }
-
-    // Locate the metric header block
-    let r = -1, c = -1;
-    for (let i = 0; i < kpiRawData.length; i++) {
-        for (let j = 0; j < kpiRawData[i].length; j++) {
-            if (kpiRawData[i][j] && String(kpiRawData[i][j]).trim() === searchTarget) {
-                r = i; c = j; break;
-            }
-        }
-        if (r !== -1) break;
+    let unit = '%', isPct = false, yMin = 0, yMax = 100, isFixedMax = false;
+    if (metric === 'conversion' || metric === 'margin') { 
+        isPct = true; yMin = 0; yMax = 100; isFixedMax = true; 
+    } else {
+        unit = (metric === 'time') ? 'm' : '';
+        isPct = false; yMin = 0; yMax = 30; isFixedMax = false;
     }
 
-    if (r === -1) return;
-
-    let labelCol = c - 1;
-    let namesRow = r + 1;
-    let startRow = r + 2; 
-
-    // Find the specific column indices for OVL, LEE, and WSP Store Averages
-    // These are identified by the word "Store" in the namesRow
-    // We assume the sheet structure is [Metric Header] then [Individual Columns...] [Store Column]
-    
     let stores = [
         { key: 'OVL', color: '#5a8d3b', label: 'OVL Average', data: [] },
         { key: 'LEE', color: '#0ea5e9', label: 'LEE Average', data: [] },
         { key: 'WSP', color: '#f97316', label: 'WSP Average', data: [] }
     ];
 
-    // Get time labels (X-Axis)
-    let labels = [];
-    for (let i = startRow; i < kpiRawData.length; i++) {
-        let label = String(kpiRawData[i][labelCol]).trim();
-        if (!label || label.includes('Store') || label.includes('%')) break; 
-        labels.push(label);
-    }
-
-    // Because the KPI_URL script logic is store-specific in your backend, 
-    // to compare all 3 on one chart, we rely on the fact that your Sheet 
-    // likely has these data blocks grouped.
-    // If your backend only returns ONE store's block per request, 
-    // we would need to fetch all 3. However, based on your sheet setup, 
-    // let's build the datasets assuming we have found the 'Store' column.
-
-    let storeCol = -1;
-    for (let j = c; j < kpiRawData[namesRow].length; j++) {
-        if (String(kpiRawData[namesRow][j]).toLowerCase() === 'store') {
-            storeCol = j; break;
-        }
-    }
-
-    // DATASET BUILDER
-    // NOTE: This assumes we are fetching the current store's data. 
-    // To do a TRUE 3-store comparison, the script below will now 
-    // trigger 3 parallel fetches to get all averages.
-
     Promise.all([
         fetch(`${KPI_URL}?store=OVL&time=${currentTimeframe}`).then(r => r.json()),
         fetch(`${KPI_URL}?store=LEE&time=${currentTimeframe}`).then(r => r.json()),
         fetch(`${KPI_URL}?store=WSP&time=${currentTimeframe}`).then(r => r.json())
     ]).then(allData => {
+        let labels = [];
         let finalDatasets = [];
+        let allNumericValues = [];
+
         allData.forEach((data, idx) => {
             let storeData = [];
-            // Find metric in this specific store's data
             let sr=-1, sc=-1;
             for(let i=0; i<data.length; i++) {
                 for(let j=0; j<data[i].length; j++) {
@@ -363,15 +308,26 @@ function updateKpiView() {
                 }
                 if(sr!==-1) break;
             }
-            
-            // Find store col in this block
+            if(sr === -1) return;
+
             let sCol = -1;
             for(let j=sc; j<data[sr+1].length; j++){
                 if(String(data[sr+1][j]).toLowerCase() === 'store'){ sCol=j; break; }
             }
 
+            // Sync labels across stores from the first successful block
+            if(labels.length === 0) {
+                for (let i = sr + 2; i < data.length; i++) {
+                    let lbl = String(data[i][sc - 1]).trim();
+                    if (!lbl || lbl.includes('Store') || lbl.includes('%')) break; 
+                    labels.push(lbl);
+                }
+            }
+
             for(let i=0; i<labels.length; i++){
-                storeData.push(cleanValue(data[sr+2+i][sCol], isPct));
+                let val = cleanValue(data[sr+2+i][sCol], isPct);
+                storeData.push(val);
+                if(val !== null) allNumericValues.push(val);
             }
 
             finalDatasets.push({
@@ -380,9 +336,17 @@ function updateKpiView() {
                 borderColor: stores[idx].color,
                 backgroundColor: stores[idx].color,
                 tension: 0.4,
-                pointRadius: 5
+                pointRadius: 5,
+                spanGaps: true
             });
         });
+
+        // DYNAMIC Y-AXIS CALCULATION
+        if (!isFixedMax && allNumericValues.length > 0) {
+            let maxVal = Math.max(...allNumericValues);
+            yMax = Math.ceil(maxVal * 1.2); // Add 20% breathing room
+            if (yMax < 10) yMax = 10; // Minimum scale of 10
+        }
 
         const ctx = document.getElementById('mainKpiChart').getContext('2d');
         if (mainChartInstance) mainChartInstance.destroy();
@@ -392,11 +356,17 @@ function updateKpiView() {
             options: { 
                 responsive: true, maintainAspectRatio: false, 
                 plugins: { 
-                    legend: { position: 'top', labels: { font: { weight: '600' } } },
-                    datalabels: { align: 'top', anchor: 'end', formatter: v => v !== null ? (Math.round(v*10)/10 + unit) : '' }
+                    legend: { position: 'top', labels: { font: { weight: '600', family: 'Inter' } } },
+                    datalabels: { align: 'top', anchor: 'end', font: { weight: '700' }, formatter: v => v !== null ? (Math.round(v*10)/10 + unit) : '' }
                 },
                 scales: { 
-                    y: { min: yMin, max: yMax, ticks: { callback: v => v + unit } }
+                    y: { 
+                        min: yMin, 
+                        max: yMax, 
+                        ticks: { font: { weight: '600' }, callback: v => v + unit },
+                        grid: { borderDash: [4, 4], color: '#f0f0f0' }
+                    },
+                    x: { ticks: { font: { weight: '600' } }, grid: { display: false } }
                 }
             }
         });
