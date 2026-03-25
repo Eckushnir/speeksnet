@@ -276,13 +276,9 @@ function updateKpiView() {
     };
     const searchTarget = metricTitles[metric];
     
-    let unit = '%', isPct = false, yMin = 0, yMax = 100, isFixedMax = false;
-    if (metric === 'conversion' || metric === 'margin') { 
-        isPct = true; yMin = 0; yMax = 100; isFixedMax = true; 
-    } else {
-        unit = (metric === 'time') ? 'm' : '';
-        isPct = false; yMin = 0; yMax = 30; isFixedMax = false;
-    }
+    let unit = '%', isPct = false, yMin = 0, yMax = 100;
+    if (metric === 'conversion' || metric === 'margin') { isPct = true; unit = '%'; } 
+    else { unit = (metric === 'time') ? 'm' : ''; isPct = false; }
 
     let stores = [
         { key: 'OVL', color: '#5a8d3b', label: 'OVL Average', data: [] },
@@ -315,7 +311,6 @@ function updateKpiView() {
                 if(String(data[sr+1][j]).toLowerCase() === 'store'){ sCol=j; break; }
             }
 
-            // Sync labels across stores from the first successful block
             if(labels.length === 0) {
                 for (let i = sr + 2; i < data.length; i++) {
                     let lbl = String(data[i][sc - 1]).trim();
@@ -341,11 +336,21 @@ function updateKpiView() {
             });
         });
 
-        // DYNAMIC Y-AXIS CALCULATION
-        if (!isFixedMax && allNumericValues.length > 0) {
+        // SMART ZOOM LOGIC
+        if (allNumericValues.length > 0) {
             let maxVal = Math.max(...allNumericValues);
-            yMax = Math.ceil(maxVal * 1.2); // Add 20% breathing room
-            if (yMax < 10) yMax = 10; // Minimum scale of 10
+            let minVal = Math.min(...allNumericValues);
+
+            if (isPct) {
+                yMin = Math.floor(minVal / 10) * 10 - 10; 
+                if (yMin < 0) yMin = 0;
+                yMax = Math.ceil(maxVal / 10) * 10 + 10;
+                if (yMax > 100) yMax = 100;
+            } else {
+                yMin = 0;
+                yMax = Math.ceil(maxVal * 1.2); 
+                if (yMax < 10) yMax = 10; 
+            }
         }
 
         const ctx = document.getElementById('mainKpiChart').getContext('2d');
