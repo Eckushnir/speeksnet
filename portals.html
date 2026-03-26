@@ -42,55 +42,59 @@
   .sidebar.collapsed .brand-area { padding: 40px 10px; }
   .sidebar.collapsed .brand-area h1 { font-size: 12px; letter-spacing: 1px; }
   .sidebar.collapsed .badge { opacity: 0; height: 0; margin: 0; padding: 0; pointer-events: none; }
-  .sidebar.collapsed .nav-link span { display: none; }
-  .sidebar.collapsed .nav-link { justify-content: center; padding: 14px 0; }
+  .sidebar.collapsed .nav-link span, .sidebar.collapsed .idea-btn span { display: none; }
+  .sidebar.collapsed .nav-link, .sidebar.collapsed .idea-btn { justify-content: center; padding: 14px 0; }
 
   /* FLOATING ARROW TOGGLE */
-  .sidebar-toggle {
-    position: fixed;
-    left: 244px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 32px;
-    height: 32px;
-    background: var(--slate-charcoal);
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    z-index: 105;
-    border: 4px solid var(--bg-app); 
-    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s, background 0.2s;
-    font-size: 12px;
-  }
+  .sidebar-toggle { position: fixed; left: 244px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; background: var(--slate-charcoal); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 105; border: 4px solid var(--bg-app); transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s, background 0.2s; font-size: 12px; }
   .sidebar-toggle:hover { background: var(--sage-professional); }
   .sidebar-toggle.collapsed { left: 60px; transform: translateY(-50%) rotate(180deg); }
 
-  /* NOTIFICATION UI */
-  .top-actions { position: fixed; top: 30px; right: 50px; z-index: 200; }
+  /* =========================================================
+     NOTIFICATIONS & MODAL UI
+     ========================================================= */
+  .top-actions { position: fixed; top: 30px; right: 50px; z-index: 200; display: flex; gap: 15px; }
+  
   .notif-container { position: relative; }
-  .notif-bell { background: white; border: 1px solid #ddd; width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 22px; transition: 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+  .notif-bell { background: white; border: 1px solid #ddd; width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 26px; transition: 0.2s; box-shadow: 0 6px 16px rgba(0,0,0,0.06); }
   .notif-bell:hover { border-color: var(--sage-professional); transform: translateY(-2px); }
   
-  .notif-dot { position: absolute; top: -4px; right: -4px; width: 14px; height: 14px; background: #ef4444; border-radius: 50%; border: 3px solid white; display: none; }
+  .notif-dot { position: absolute; top: -6px; right: -6px; width: 16px; height: 16px; background: #ef4444; border-radius: 50%; border: 3px solid white; display: none; }
   .notif-dot.active { display: block; animation: pulse 2s infinite; }
-
   @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
-  .notif-menu { position: absolute; top: 60px; right: 0; width: 340px; background: white; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.12); border: 1px solid #eee; display: none; z-index: 300; overflow: hidden; }
-  .notif-menu.show { display: block; }
-  .notif-header { padding: 15px 20px; background: #f9fafb; border-bottom: 1px solid #eee; font-size: 13px; font-weight: 800; text-transform: uppercase; color: #666; letter-spacing: 0.5px; }
-  .notif-content { max-height: 400px; overflow-y: auto; }
-  .notif-item { padding: 15px 20px; border-bottom: 1px solid #f5f5f5; font-size: 13px; color: var(--text-dark); line-height: 1.5; text-align: left; }
-  .notif-item small { display: block; color: #999; margin-top: 5px; font-weight: 600; font-size: 11px; }
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.22); backdrop-filter: blur(6px); display: none; z-index: 9998; }
+  .overlay.show { display: block; }
+
+  .modal-menu { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 1260px; max-width: calc(100% - 40px); background: white; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.12); border: 1px solid #eee; display: none; z-index: 10000; overflow: hidden; }
+  .modal-menu.show { display: block; }
+  
+  .notif-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: #f9fafb; border-bottom: 1px solid #eee; }
+  .notif-header h3 { margin: 0; font-size: 13px; font-weight: 800; text-transform: uppercase; color: #666; letter-spacing: 0.5px; }
+  .notif-tabs { display: flex; gap: 8px; }
+  .tab-btn { background: transparent; border: none; font-size: 11px; font-weight: 700; color: #999; cursor: pointer; padding: 6px 12px; border-radius: 6px; transition: 0.2s; text-transform: uppercase; letter-spacing: 0.5px;}
+  .tab-btn:hover { color: var(--slate-charcoal); }
+  .tab-btn.active { background: #e2e8f0; color: var(--slate-charcoal); }
+
+  .notif-content { max-height: 60vh; overflow-y: auto; overscroll-behavior: contain; }
+  .notif-content::-webkit-scrollbar { width: 8px; }
+  .notif-content::-webkit-scrollbar-track { background: #f9fafb; border-radius: 8px; }
+  .notif-content::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 8px; }
+  .notif-content::-webkit-scrollbar-thumb:hover { background: var(--sage-professional); }
+
+  .notif-item { font-size: 16px; padding: 20px; border-bottom: 1px solid #f5f5f5; color: var(--text-dark); line-height: 1.5; text-align: left; }
+  .notif-item .ann-header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .notif-item .ann-author { font-weight: 800; font-size: 18px; color: var(--slate-charcoal); }
+  .notif-item .ann-date { color: #666; font-size: 13px; font-weight: 700; }
+  .notif-item hr { border: none; border-top: 1px solid #eee; margin: 10px 0; }
+  .notif-item .ann-text { margin-top: 8px; font-size: 15px; color: var(--text-dark); }
 
   /* MAIN CONTENT */
-  .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s; }
+  .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
   .main-content.expanded { margin-left: 76px; }
   
   .page-header { margin-bottom: 40px; }
+  .title-wrapper { display: flex; align-items: center; gap: 15px; margin-bottom: 5px; }
   .page-header h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin: 0; }
   .page-header p { color: #888; font-size: 14px; font-weight: 500; margin-top: 5px;}
 
@@ -140,9 +144,22 @@
         <div class="notif-bell" onclick="toggleNotifs()">
             🔔 <div class="notif-dot" id="notifBadge"></div>
         </div>
-        <div class="notif-menu" id="notifDropdown">
-            <div class="notif-header">Announcements</div>
+        <div id="notifOverlay" class="overlay"></div>
+        
+        <div class="modal-menu" id="notifDropdown">
+            <div class="notif-header">
+                <h3>Announcements</h3>
+                <div class="notif-tabs">
+                    <button id="tab-recent" class="tab-btn active" onclick="switchAnnTab('recent')">Recent</button>
+                    <button id="tab-archive" class="tab-btn" onclick="switchAnnTab('archive')">Archived</button>
+                </div>
+            </div>
+            
             <div id="ann-container" class="notif-content">
+                <div style="padding: 20px; color:#999; font-size:12px; text-align:center;">Syncing...</div>
+            </div>
+            
+            <div id="archive-container" class="notif-content" style="display: none;">
                 <div style="padding: 20px; color:#999; font-size:12px; text-align:center;">Syncing...</div>
             </div>
         </div>
@@ -151,7 +168,9 @@
 
 <main class="main-content">
   <div class="page-header">
-    <h2>Store Portals & Resources</h2>
+    <div class="title-wrapper">
+        <h2>Store Portals & Resources</h2>
+    </div>
     <p>Secure access to location-specific tools, passwords, and databases.</p>
   </div>
 
@@ -196,7 +215,7 @@
 </main>
 
 <script>
-const CMS_URL = 'https://script.google.com/macros/s/AKfycby8cueKK9CLXVK_-7R5DhLccU5-nFjRjHqGRvPyGFx9MKSqFE6q3nTgYHeTqZouCS0/exec';
+const CMS_URL = 'https://script.google.com/macros/s/AKfycbxZviJiiQKcQYyp3SK4tcNBHrHXkID7cmwwuONStVPE9DHCSAMappqAs9dBns7ufECI/exec';
 
 function toggleSidebar() {
     const sidebar = document.querySelector('.sidebar');
@@ -208,38 +227,71 @@ function toggleSidebar() {
     localStorage.setItem('speeksSidebar', sidebar.classList.contains('collapsed') ? 'collapsed' : 'expanded');
 }
 
-function toggleNotifs() {
-    const dropdown = document.getElementById('notifDropdown');
-    dropdown.classList.toggle('show');
-    document.getElementById('notifBadge').classList.remove('active');
+function closeAllModals() {
+    document.getElementById('notifDropdown').classList.remove('show');
+    document.getElementById('globalOverlay').classList.remove('show');
+    document.body.classList.remove('no-scroll');
 }
 
-// Click outside to close notification menu
+function toggleNotifs() {
+  const dropdown = document.getElementById('notifDropdown');
+  const isOpen = dropdown.classList.contains('show');
+  closeAllModals(); 
+  if (!isOpen) {
+    dropdown.classList.add('show');
+    document.getElementById('globalOverlay').classList.add('show');
+    document.getElementById('notifBadge').classList.remove('active');
+    document.body.classList.add('no-scroll');
+  }
+}
+
+function switchAnnTab(tab) {
+  if (tab === 'recent') {
+      document.getElementById('ann-container').style.display = 'block';
+      document.getElementById('archive-container').style.display = 'none';
+      document.getElementById('tab-recent').classList.add('active');
+      document.getElementById('tab-archive').classList.remove('active');
+  } else {
+      document.getElementById('ann-container').style.display = 'none';
+      document.getElementById('archive-container').style.display = 'block';
+      document.getElementById('tab-archive').classList.add('active');
+      document.getElementById('tab-recent').classList.remove('active');
+  }
+}
+
 window.addEventListener('click', function(e) {
-    const container = document.getElementById('notifContainer');
-    const dropdown = document.getElementById('notifDropdown');
-    if (container && !container.contains(e.target)) {
-        dropdown.classList.remove('show');
-    }
+  const overlay = document.getElementById('globalOverlay');
+  if (overlay && e.target === overlay) {
+    closeAllModals();
+  }
+});
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeAllModals();
+  }
 });
 
 async function loadCMS() {
     try {
         const response = await fetch(`${CMS_URL}?v=${Date.now()}`);
         const data = await response.json();
+        
         const annContainer = document.getElementById('ann-container');
+        const archiveContainer = document.getElementById('archive-container');
         const badge = document.getElementById('notifBadge');
-        let showBadge = false;
+        
+        let showBadge = false, recentHtml = "", archiveHtml = "", recentCount = 0, archiveCount = 0;
 
         if (data.announcements && data.announcements.length > 0) {
             const sortedAnns = [...data.announcements].reverse();
             const now = new Date();
             const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-            annContainer.innerHTML = sortedAnns.map(item => {
-                const text = item.text || "";
-                const rawDate = item.date || "";
-                let displayDate = "";
+            sortedAnns.forEach(item => {
+                const text = item.text || "", rawDate = item.date || "", author = item.author || "";
+                let displayDate = "", isArchived = false;
+
                 if (rawDate) {
                   const annDate = new Date(rawDate);
                   if (!isNaN(annDate.getTime())) {
@@ -247,15 +299,24 @@ async function loadCMS() {
                     const annDateOnly = new Date(annDate.getFullYear(), annDate.getMonth(), annDate.getDate());
                     const diffDays = (today - annDateOnly) / (1000 * 60 * 60 * 24);
                     if (diffDays <= 1 && diffDays >= 0) showBadge = true;
+                    if (diffDays > 2) isArchived = true;
                   }
                 }
-                return `<div class="notif-item"><div>${text}</div>${displayDate ? `<small>Posted: ${displayDate}</small>` : ''}</div>`;
-            }).join('');
+
+                const htmlSnippet = `<div class="notif-item"><div class="ann-header"><span class="ann-author">${author || 'Announcement'}</span>${displayDate ? `<small class="ann-date">${displayDate}</small>` : ''}</div><hr /><div class="ann-text">${text}</div></div>`;
+                if (isArchived) { archiveHtml += htmlSnippet; archiveCount++; } else { recentHtml += htmlSnippet; recentCount++; }
+            });
+            if (recentCount === 0) recentHtml = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No recent announcements</div>';
+            if (archiveCount === 0) archiveHtml = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No archived announcements</div>';
         } else {
-            annContainer.innerHTML = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No announcements</div>';
+            recentHtml = archiveHtml = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No announcements</div>';
         }
-        if (showBadge) badge.classList.add('active');
-    } catch (e) { console.error(e); }
+        
+        if(annContainer) annContainer.innerHTML = recentHtml;
+        if(archiveContainer) archiveContainer.innerHTML = archiveHtml;
+        if(showBadge && badge) badge.classList.add('active');
+        
+    } catch (e) { console.error("CMS Failed", e); }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
