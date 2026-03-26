@@ -335,7 +335,7 @@ async function loadDocs() {
             groupedDocs[doc.category].push(doc);
         });
 
-        // NEW LOGIC: Sort categories so "Pinned" is always first, and the rest are alphabetical
+        // Sort categories so "Pinned" is always first, and the rest are alphabetical
         const sortedCategories = Object.keys(groupedDocs).sort((a, b) => {
             if (a.toLowerCase().includes('pinned')) return -1;
             if (b.toLowerCase().includes('pinned')) return 1;
@@ -344,11 +344,9 @@ async function loadDocs() {
 
         let htmlContent = '';
         
-        // Build the HTML using our newly sorted categories
         for (const category of sortedCategories) {
             const items = groupedDocs[category];
             
-            // If the category is Pinned, give the title a gold color
             const isPinned = category.toLowerCase().includes('pinned');
             const titleStyle = isPinned ? 'color: var(--idea-gold); border-bottom-color: var(--idea-gold);' : '';
             
@@ -357,10 +355,25 @@ async function loadDocs() {
             items.forEach(item => {
                 const searchKeywords = `${item.title} ${item.desc} ${category}`.toLowerCase();
                 
-                // If it's a Pinned item, give the card a gold border so it stands out
-                const cardStyle = isPinned ? 'border: 1px solid var(--idea-gold); box-shadow: 0 4px 10px rgba(245, 158, 11, 0.08);' : '';
+                // ADDED: "position: relative;" to the card so the pin knows where the corners are
+                const cardStyle = isPinned 
+                    ? 'position: relative; border: 1px solid var(--idea-gold); box-shadow: 0 4px 10px rgba(245, 158, 11, 0.08);' 
+                    : 'position: relative;';
                 
-                htmlContent += `<a href="${item.link}" target="_blank" class="doc-card" style="${cardStyle}" data-search="${searchKeywords}"><div class="doc-icon">${item.icon}</div><div class="doc-info"><div class="doc-title">${item.title}</div><div class="doc-desc">${item.desc}</div></div></a>`;
+                // NEW: The pin emoji HTML, set to float 12px from the top and 15px from the right
+                const pinHtml = isPinned 
+                    ? `<div style="position: absolute; top: 12px; right: 15px; font-size: 16px; filter: drop-shadow(0 2px 4px rgba(245,158,11,0.3));">📌</div>` 
+                    : '';
+                
+                htmlContent += `
+                    <a href="${item.link}" target="_blank" class="doc-card" style="${cardStyle}" data-search="${searchKeywords}">
+                        ${pinHtml}
+                        <div class="doc-icon">${item.icon}</div>
+                        <div class="doc-info">
+                            <div class="doc-title">${item.title}</div>
+                            <div class="doc-desc">${item.desc}</div>
+                        </div>
+                    </a>`;
             });
             htmlContent += `</div></div>`;
         }
