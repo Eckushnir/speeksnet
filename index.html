@@ -16,6 +16,9 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg-app); color: var(--text-dark); line-height: 1.6; display: flex; min-height: 100vh; overflow-x: hidden; }
 
+  /* PREVENTS BACKGROUND SCROLLING WHEN POPUP IS OPEN */
+  body.no-scroll { overflow: hidden; }
+
   /* SIDEBAR STYLES */
   .sidebar { width: 260px; background: var(--slate-charcoal); color: white; position: fixed; top: 0; bottom: 0; left: 0; display: flex; flex-direction: column; box-shadow: 4px 0 15px rgba(0,0,0,0.05); z-index: 100; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); white-space: nowrap; overflow: hidden; }
   .brand-area { padding: 40px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); margin-bottom: 20px; }
@@ -60,9 +63,9 @@
   
   /* SCROLLABLE CONTENT AREA */
   .notif-content { 
-    max-height: 60vh; /* Limits height to 60% of the screen */
-    overflow-y: auto; /* Adds the scrollbar when needed */
-    overscroll-behavior: contain; /* Stops main page scrolling */
+    max-height: 60vh; 
+    overflow-y: auto; 
+    overscroll-behavior: contain; 
   }
 
   /* CUSTOM SCROLLBAR STYLING */
