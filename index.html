@@ -49,27 +49,36 @@
 
   @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
-  .notif-menu { position: absolute; top: 60px; right: 0; width: 340px; background: white; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.12); border: 1px solid #eee; display: none; z-index: 300; overflow: hidden; }
-  .notif-menu.show { display: block; }
-
   /* Modal overlay that blurs the background when notifications open */
   .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.22); backdrop-filter: blur(6px); display: none; z-index: 240; }
   .overlay.show { display: block; }
 
   /* Center notif menu as a modal */
-  .notif-menu { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 1260px; max-width: calc(100% - 40px); }
+  .notif-menu { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 1260px; max-width: calc(100% - 40px); background: white; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.12); border: 1px solid #eee; display: none; z-index: 300; overflow: hidden; }
+  .notif-menu.show { display: block; }
   .notif-header { padding: 15px 20px; background: #f9fafb; border-bottom: 1px solid #eee; font-size: 13px; font-weight: 800; text-transform: uppercase; color: #666; letter-spacing: 0.5px; }
-  .notif-content { max-height: 600px; overflow-y: auto; }
-  .notif-item { padding: 15px 20px; border-bottom: 1px solid #f5f5f5; font-size: 13px; color: var(--text-dark); line-height: 1.5; text-align: left; }
-  .notif-item small { display: block; color: #999; margin-top: 5px; font-weight: 600; font-size: 11px; }
+  
+  /* SCROLLABLE CONTENT AREA */
+  .notif-content { 
+    max-height: 60vh; /* Limits height to 60% of the screen */
+    overflow-y: auto; /* Adds the scrollbar when needed */
+    overscroll-behavior: contain; /* Stops main page scrolling */
+  }
+
+  /* CUSTOM SCROLLBAR STYLING */
+  .notif-content::-webkit-scrollbar { width: 8px; }
+  .notif-content::-webkit-scrollbar-track { background: #f9fafb; border-radius: 8px; }
+  .notif-content::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 8px; }
+  .notif-content::-webkit-scrollbar-thumb:hover { background: var(--sage-professional); }
 
   /* Larger announcement card styling */
-  .notif-item { font-size: 16px; padding: 20px; }
+  .notif-item { font-size: 16px; padding: 20px; border-bottom: 1px solid #f5f5f5; color: var(--text-dark); line-height: 1.5; text-align: left; }
   .notif-item .ann-header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
   .notif-item .ann-author { font-weight: 800; font-size: 18px; color: var(--slate-charcoal); }
   .notif-item .ann-date { color: #666; font-size: 13px; font-weight: 700; }
   .notif-item hr { border: none; border-top: 1px solid #eee; margin: 10px 0; }
   .notif-item .ann-text { margin-top: 8px; font-size: 15px; color: var(--text-dark); }
+  .notif-item small { display: block; color: #999; margin-top: 5px; font-weight: 600; font-size: 11px; }
 
   /* MAIN HUB CANVAS */
   .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s; }
