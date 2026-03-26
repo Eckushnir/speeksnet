@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SPEEKSNET | Processes & Policies</title>
+<title>SPEEKSNET | Portals</title>
 <style>
   :root {
     --slate-charcoal: #1a1c1e; 
@@ -45,8 +45,9 @@
   .sidebar.collapsed .nav-link span, .sidebar.collapsed .idea-btn span { display: none; }
   .sidebar.collapsed .nav-link, .sidebar.collapsed .idea-btn { justify-content: center; padding: 14px 0; }
 
-  /* SIDEBAR TOGGLE */
-  .sidebar-toggle { position: fixed; left: 244px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; background: var(--slate-charcoal); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 105; border: 4px solid var(--bg-app); transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s; font-size: 12px; }
+  /* FLOATING ARROW TOGGLE */
+  .sidebar-toggle { position: fixed; left: 244px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; background: var(--slate-charcoal); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 105; border: 4px solid var(--bg-app); transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s, background 0.2s; font-size: 12px; }
+  .sidebar-toggle:hover { background: var(--sage-professional); }
   .sidebar-toggle.collapsed { left: 60px; transform: translateY(-50%) rotate(180deg); }
 
   /* =========================================================
@@ -54,9 +55,8 @@
      ========================================================= */
   .top-actions { position: fixed; top: 30px; right: 50px; z-index: 200; display: flex; gap: 15px; }
   
-  .notif-container { position: relative; }
-  .notif-bell { background: white; border: 1px solid #ddd; width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 26px; transition: 0.2s; box-shadow: 0 6px 16px rgba(0,0,0,0.06); }
-  .notif-bell:hover { border-color: var(--sage-professional); transform: translateY(-2px); }
+  .action-btn { background: white; border: 1px solid #ddd; width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 26px; transition: 0.2s; box-shadow: 0 6px 16px rgba(0,0,0,0.06); position: relative; }
+  .action-btn:hover { border-color: var(--sage-professional); transform: translateY(-2px); }
   
   .notif-dot { position: absolute; top: -6px; right: -6px; width: 16px; height: 16px; background: #ef4444; border-radius: 50%; border: 3px solid white; display: none; }
   .notif-dot.active { display: block; animation: pulse 2s infinite; }
@@ -68,8 +68,8 @@
   .modal-menu { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 1260px; max-width: calc(100% - 40px); background: white; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.12); border: 1px solid #eee; display: none; z-index: 10000; overflow: hidden; }
   .modal-menu.show { display: block; }
   
-  .notif-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: #f9fafb; border-bottom: 1px solid #eee; }
-  .notif-header h3 { margin: 0; font-size: 13px; font-weight: 800; text-transform: uppercase; color: #666; letter-spacing: 0.5px; }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: #f9fafb; border-bottom: 1px solid #eee; }
+  .modal-header h3 { margin: 0; font-size: 13px; font-weight: 800; text-transform: uppercase; color: #666; letter-spacing: 0.5px; }
   .notif-tabs { display: flex; gap: 8px; }
   .tab-btn { background: transparent; border: none; font-size: 11px; font-weight: 700; color: #999; cursor: pointer; padding: 6px 12px; border-radius: 6px; transition: 0.2s; text-transform: uppercase; letter-spacing: 0.5px;}
   .tab-btn:hover { color: var(--slate-charcoal); }
@@ -92,31 +92,26 @@
   .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
   .main-content.expanded { margin-left: 76px; }
   
-  .page-header { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 20px; padding-right: 80px; }
-  .header-text h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin: 0; }
-  .header-text p { color: #888; font-size: 14px; font-weight: 500; margin-top: 5px; }
-  
-  .search-container { flex-grow: 1; max-width: 500px; position: relative; }
-  .search-input { width: 100%; padding: 16px 20px 16px 45px; border-radius: 12px; border: 1px solid #ddd; font-size: 15px; outline: none; transition: 0.2s; font-family: 'Inter', sans-serif; box-shadow: 0 4px 15px rgba(0,0,0,0.02); }
-  .search-input:focus { border-color: var(--sage-professional); box-shadow: 0 0 0 4px rgba(90, 141, 59, 0.1); }
-  .search-icon { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 18px; }
+  .page-header { margin-bottom: 40px; }
+  .title-wrapper { display: flex; align-items: center; gap: 15px; margin-bottom: 5px; }
+  .page-header h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin: 0; }
+  .page-header p { color: #888; font-size: 14px; font-weight: 500; margin-top: 5px;}
 
-  .category-section { margin-bottom: 50px; }
-  .category-title { font-size: 16px; font-weight: 800; text-transform: uppercase; color: var(--slate-charcoal); margin-bottom: 20px; letter-spacing: 0.5px; border-bottom: 2px solid #eaeaea; padding-bottom: 10px; }
+  /* PORTALS GRID & CARDS */
+  .portals-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px; }
+  .card { background: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.04); padding: 30px; transition: transform 0.3s ease, box-shadow 0.3s ease; }
+  .card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.05); }
   
-  .docs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
-  .doc-card { background: white; border-radius: 12px; padding: 20px; display: flex; align-items: flex-start; gap: 15px; text-decoration: none; border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 4px 10px rgba(0,0,0,0.02); transition: all 0.2s ease; cursor: pointer; }
-  .doc-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.06); border-color: var(--sage-professional); }
+  .store-name { font-size: 20px; font-weight: 800; color: var(--slate-charcoal); border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
   
-  .doc-icon { font-size: 28px; background: var(--bg-app); width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 10px; flex-shrink: 0; }
-  .doc-info { display: flex; flex-direction: column; }
-  .doc-title { font-size: 15px; font-weight: 700; color: var(--slate-charcoal); margin-bottom: 4px; }
-  .doc-desc { font-size: 12px; color: #888; font-weight: 500; line-height: 1.4; }
-  
-  .hidden { display: none !important; }
-  .empty-state { text-align: center; padding: 50px; color: #888; font-weight: 600; font-size: 16px; background: white; border-radius: 12px; border: 1px dashed #ccc; }
-
-  @media (max-width: 1024px) { .top-actions { right: 20px; } .page-header { padding-right: 0; flex-direction: column; align-items: flex-start; } .search-container { max-width: 100%; width: 100%; } }
+  /* SLEEK BUTTONS */
+  .portal-btn { 
+    display: block; text-decoration: none; padding: 14px 16px; background: var(--bg-app); 
+    border-radius: 10px; color: var(--text-dark); font-size: 13px; font-weight: 600; 
+    margin-bottom: 10px; transition: 0.2s; border: 1px solid transparent;
+  }
+  .portal-btn:hover { background: var(--sage-professional); color: white; transform: translateX(6px); box-shadow: 0 4px 10px rgba(90, 141, 59, 0.2); }
+  @media (max-width: 1024px) { .top-actions { right: 20px; } }
 </style>
 </head>
 <body>
@@ -124,16 +119,16 @@
 <aside class="sidebar">
   <div class="brand-area">
     <h1>SPEEKS</h1>
-    <div class="badge">KNOWLEDGE BASE</div>
+    <div class="badge">STORE PORTALS</div>
   </div>
   <nav class="nav-bar">
     <a href="index.html" class="nav-link"><i>🏠</i> <span>SPEEKS Hub</span></a>
-    <a href="portals.html" class="nav-link"><i>🔗</i> <span>Portals</span></a>
+    <a href="portals.html" class="nav-link active"><i>🔗</i> <span>Portals</span></a>
     <a href="metrics.html" class="nav-link"><i>📊</i> <span>Metrics & Leaderboards</span></a>
-    <a href="docs.html" class="nav-link active"><i>📚</i> <span>Processes & Policies</span></a>
+    <a href="docs.html" class="nav-link"><i>📚</i> <span>Processes & Policies</span></a>
     <a href="managers.html" class="nav-link"><i>🛠️</i> <span>Manager Portal</span></a>
   </nav>
-
+  
   <div class="sidebar-bottom">
     <a href="https://docs.google.com/forms/d/e/1FAIpQLSfEm449owjdKiT_zp7ATB_oLvsy3x51bL38Q3nKNiM7UNUZFQ/viewform" target="_blank" class="idea-btn">
       <i>💡</i> <span>Have an Idea?</span>
@@ -144,16 +139,14 @@
 <div class="sidebar-toggle" onclick="toggleSidebar()">◀</div>
 
 <div class="top-actions">
-    <div class="notif-container" id="notifContainer">
-        <div class="notif-bell" onclick="toggleNotifs()">
-            🔔 <div class="notif-dot" id="notifBadge"></div>
-        </div>
+    <div class="action-btn" onclick="toggleNotifs()" title="Announcements">
+        🔔 <div class="notif-dot" id="notifBadge"></div>
     </div>
 </div>
 
 <div id="globalOverlay" class="overlay"></div>
 
-<div class="modal-menu" id="notifDropdown">
+<div class="modal-menu notif-menu" id="notifDropdown">
     <div class="modal-header">
         <h3>Announcements</h3>
         <div class="notif-tabs">
@@ -171,27 +164,56 @@
 
 <main class="main-content">
   <div class="page-header">
-    <div class="header-text">
-      <h2>Processes & Policies</h2>
-      <p>Your central library for company guidelines, procedures, and manuals.</p>
+    <div class="title-wrapper">
+        <h2>Store Portals & Resources</h2>
     </div>
-    <div class="search-container">
-      <span class="search-icon">🔍</span>
-      <input type="text" id="docSearch" class="search-input" placeholder="Search for documents..." onkeyup="filterDocs()">
-    </div>
+    <p>Secure access to location-specific tools, passwords, and databases.</p>
   </div>
 
-  <div id="content-container">
-      <div class="empty-state">Loading Documents...</div>
+  <div class="portals-grid">
+      <div class="card">
+        <div class="store-name">OVL <span>📍</span></div>
+        <a href="https://docs.google.com/spreadsheets/d/1Ze3z9iyDZZaXsOEjOekEEsrO7OqDpVeH6Bhk4t67K2I/edit" target="_blank" class="portal-btn">🔐 OVL Passwords</a>
+        <a href="https://docs.google.com/spreadsheets/d/1r2UfB926QvaSDuO7_mqOE8z4u6IWjgbIqg_N6rfFV9c/edit" target="_blank" class="portal-btn">📦 Marketplace</a>
+        <a href="https://docs.google.com/spreadsheets/d/1DhNRld28CSUKG-4B-dHU4o8gyREKtqLo2J2rI2IdT8M/edit" target="_blank" class="portal-btn">💳 Employee Purchases</a>
+        <a href="https://docs.google.com/spreadsheets/d/1RKMryoJ7BZgB5DjSUaTjCSvJQW8_OAkmnwXfBznlSX0/edit" target="_blank" class="portal-btn">⚙️ PC Parts/Repairs</a>
+      </div>
+      
+      <div class="card">
+        <div class="store-name">LEE <span>📍</span></div>
+        <a href="https://docs.google.com/spreadsheets/d/1BWWMPddxjoTTZL9ZRfgiH6-EiE5vaOczi-x_41Skaxk/edit" target="_blank" class="portal-btn">🔐 LEE Passwords</a>
+        <a href="https://docs.google.com/spreadsheets/d/130-aH4s8pNeggrqVSXSJ0R0JDnWkskXUfhNPxSAlPRg/edit" target="_blank" class="portal-btn">📦 Marketplace</a>
+        <a href="https://docs.google.com/spreadsheets/d/1qExWuMZKBD3DCm_i9m5kNnN4WhouHeJuA3gYWXLihrA/edit" target="_blank" class="portal-btn">💳 Employee Purchases</a>
+        <a href="https://docs.google.com/spreadsheets/d/1D9epYOeJ1OZADUniM4MovvUqaiPfoyKAnedCcbEeFbM/edit?usp=sharing" target="_blank" class="portal-btn">⚙️ PC Inventory</a>
+      </div>
+      
+      <div class="card">
+        <div class="store-name">WSP <span>📍</span></div>
+        <a href="https://docs.google.com/spreadsheets/d/14AYsHQ0R1IEXqgKqrGEuyURHGi3fFKrAglgu0dVFJPE/edit" target="_blank" class="portal-btn">🔐 WSP Passwords</a>
+        <a href="https://docs.google.com/spreadsheets/d/1V0TQ1cJXqUzt0mRnrjvPt_TLzlE8vE7MpxxIMQ9X2yE/edit" target="_blank" class="portal-btn">📦 Marketplace</a>
+        <a href="https://docs.google.com/spreadsheets/d/1tp5E1yQhx0j776N-1WMhTzXA_ltvPOPiltsYo65fyc0/edit" target="_blank" class="portal-btn">💳 Employee Purchases</a>
+      </div>
+      
+      <div class="card">
+        <div class="store-name">MPL <span>📍</span></div>
+        <a href="https://docs.google.com/spreadsheets/d/18VeWgGjoIfKRlJUtj0PTU1-uJJavKaPu3W2o_A4vyFs/edit" target="_blank" class="portal-btn">🔐 MPL Passwords</a>
+        <a href="https://docs.google.com/spreadsheets/d/1xVJ_JJD-wZUbzFfer4fF50CH6RkZ-sqzxe4bYRGqDtE/edit" target="_blank" class="portal-btn">📦 Marketplace</a>
+        <a href="https://docs.google.com/spreadsheets/d/10DiGbDO0tyHitLpltOiTix2TowoeMNzsp0a3MjOtTSY/edit" target="_blank" class="portal-btn">💳 Employee Purchases</a>
+      </div>
+      
+      <div class="card">
+        <div class="store-name">BAL <span>📍</span></div>
+        <a href="https://docs.google.com/spreadsheets/d/1SuXAQc66OzKOfXkPcp7pCCsccWFB4RbHG2N6YGt3wf0/edit" target="_blank" class="portal-btn">🔐 BAL Passwords</a>
+        <a href="https://docs.google.com/spreadsheets/d/192c0M5Mxe9oy5PR6JQelD_DPh4ebvJpCnK26kYGpnbk/edit" target="_blank" class="portal-btn">📦 Marketplace</a>
+        <a href="https://docs.google.com/spreadsheets/d/1RHnw3rK9kvNvmQznMFr6qkg82j0GpWEwUhDOIPDGfts/edit" target="_blank" class="portal-btn">💳 Employee Purchases</a>
+      </div>
   </div>
-  <div id="noResults" class="empty-state hidden">No documents found matching your search.</div>
-
 </main>
 
 <script>
 const CMS_URL = 'https://script.google.com/macros/s/AKfycbxZviJiiQKcQYyp3SK4tcNBHrHXkID7cmwwuONStVPE9DHCSAMappqAs9dBns7ufECI/exec';
-const DOCS_URL = 'https://script.google.com/macros/s/AKfycbzW261BITTpanD3Sn6ZDJjcFJAmpT7VMTRN9qAtqqgoKDzQqc4BYsEq5e4JcWonOuUtuA/exec';
 
+// --- SIDEBAR LOGIC ---
 function toggleSidebar() {
     const sidebar = document.querySelector('.sidebar');
     const mainContent = document.querySelector('.main-content');
@@ -248,7 +270,7 @@ document.addEventListener('keydown', function(e) {
   }
 });
 
-// --- DATA FETCHING ---
+// --- DATA FETCHING (CMS) ---
 async function loadCMS() {
     try {
         const response = await fetch(`${CMS_URL}?v=${Date.now()}`);
@@ -258,11 +280,7 @@ async function loadCMS() {
         const archiveContainer = document.getElementById('archive-container');
         const badge = document.getElementById('notifBadge');
         
-        let showBadge = false;
-        let recentHtml = "";
-        let archiveHtml = "";
-        let recentCount = 0;
-        let archiveCount = 0;
+        let showBadge = false, recentHtml = "", archiveHtml = "", recentCount = 0, archiveCount = 0;
 
         if (data.announcements && data.announcements.length > 0) {
             const sortedAnns = [...data.announcements].reverse();
@@ -270,11 +288,8 @@ async function loadCMS() {
             const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
             sortedAnns.forEach(item => {
-                const text = item.text || "";
-                const rawDate = item.date || "";
-                const author = item.author || "";
-                let displayDate = "";
-                let isArchived = false;
+                const text = item.text || "", rawDate = item.date || "", author = item.author || "";
+                let displayDate = "", isArchived = false;
 
                 if (rawDate) {
                   const annDate = new Date(rawDate);
@@ -282,134 +297,34 @@ async function loadCMS() {
                     displayDate = annDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
                     const annDateOnly = new Date(annDate.getFullYear(), annDate.getMonth(), annDate.getDate());
                     const diffDays = (today - annDateOnly) / (1000 * 60 * 60 * 24);
-                    
                     if (diffDays <= 1 && diffDays >= 0) showBadge = true;
                     if (diffDays > 2) isArchived = true;
                   }
                 }
 
-                const htmlSnippet = `
-                  <div class="notif-item">
-                    <div class="ann-header">
-                      <span class="ann-author">${author || 'Announcement'}</span>
-                      ${displayDate ? `<small class="ann-date">${displayDate}</small>` : ''}
-                    </div>
-                    <hr />
-                    <div class="ann-text">${text}</div>
-                  </div>`;
-
-                if (isArchived) { archiveHtml += htmlSnippet; archiveCount++; } 
-                else { recentHtml += htmlSnippet; recentCount++; }
+                const htmlSnippet = `<div class="notif-item"><div class="ann-header"><span class="ann-author">${author || 'Announcement'}</span>${displayDate ? `<small class="ann-date">${displayDate}</small>` : ''}</div><hr /><div class="ann-text">${text}</div></div>`;
+                if (isArchived) { archiveHtml += htmlSnippet; archiveCount++; } else { recentHtml += htmlSnippet; recentCount++; }
             });
-            
             if (recentCount === 0) recentHtml = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No recent announcements</div>';
             if (archiveCount === 0) archiveHtml = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No archived announcements</div>';
-
         } else {
-            recentHtml = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No announcements</div>';
-            archiveHtml = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No archived announcements</div>';
+            recentHtml = archiveHtml = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No announcements</div>';
         }
-
-        annContainer.innerHTML = recentHtml;
-        archiveContainer.innerHTML = archiveHtml;
         
-        if (showBadge) badge.classList.add('active');
-          
+        if(annContainer) annContainer.innerHTML = recentHtml;
+        if(archiveContainer) archiveContainer.innerHTML = archiveHtml;
+        if(showBadge && badge) badge.classList.add('active');
+        
     } catch (e) { console.error("CMS Failed", e); }
 }
 
-async function loadDocs() {
-    const container = document.getElementById('content-container');
-    try {
-        const response = await fetch(`${DOCS_URL}?v=${Date.now()}`);
-        const docs = await response.json();
-        if (!docs || docs.length === 0) {
-            container.innerHTML = '<div class="empty-state">No documents found.</div>';
-            return;
-        }
-        
-        const groupedDocs = {};
-        docs.forEach(doc => {
-            if (!groupedDocs[doc.category]) groupedDocs[doc.category] = [];
-            groupedDocs[doc.category].push(doc);
-        });
-
-        // FIXED: Stable Sort to prevent browser freezing
-        const sortedCategories = Object.keys(groupedDocs).sort((a, b) => {
-            const aPinned = a.toLowerCase().includes('pinned');
-            const bPinned = b.toLowerCase().includes('pinned');
-            
-            if (aPinned && !bPinned) return -1;
-            if (!aPinned && bPinned) return 1;
-            return a.localeCompare(b);
-        });
-
-        let htmlContent = '';
-        
-        for (const category of sortedCategories) {
-            const items = groupedDocs[category];
-            const isPinned = category.toLowerCase().includes('pinned');
-            const titleStyle = isPinned ? 'color: var(--idea-gold); border-bottom-color: var(--idea-gold);' : '';
-            
-            htmlContent += `<div class="category-section"><div class="category-title" style="${titleStyle}">${category}</div><div class="docs-grid">`;
-            
-            items.forEach(item => {
-                const searchKeywords = `${item.title} ${item.desc} ${category}`.toLowerCase();
-                
-                const cardStyle = isPinned 
-                    ? 'position: relative; border: 1px solid var(--idea-gold); box-shadow: 0 4px 10px rgba(245, 158, 11, 0.08);' 
-                    : 'position: relative;';
-                
-                const pinHtml = isPinned 
-                    ? `<div style="position: absolute; top: 12px; right: 15px; font-size: 16px; filter: drop-shadow(0 2px 4px rgba(245,158,11,0.3));">📌</div>` 
-                    : '';
-                
-                htmlContent += `
-                    <a href="${item.link}" target="_blank" class="doc-card" style="${cardStyle}" data-search="${searchKeywords}">
-                        ${pinHtml}
-                        <div class="doc-icon">${item.icon}</div>
-                        <div class="doc-info">
-                            <div class="doc-title">${item.title}</div>
-                            <div class="doc-desc">${item.desc}</div>
-                        </div>
-                    </a>`;
-            });
-            htmlContent += `</div></div>`;
-        }
-        container.innerHTML = htmlContent;
-    } catch (e) { 
-        console.error("Docs Failed", e); 
-        container.innerHTML = '<div class="empty-state">Failed to load documents.</div>'; 
-    }
-}
-
-function filterDocs() {
-    const searchInput = document.getElementById('docSearch').value.toLowerCase();
-    const docCards = document.querySelectorAll('.doc-card');
-    let hasVisibleCards = false;
-
-    docCards.forEach(card => {
-        const searchTerms = card.getAttribute('data-search');
-        const isMatch = searchTerms.includes(searchInput);
-        card.classList.toggle('hidden', !isMatch);
-        if (isMatch) hasVisibleCards = true;
-    });
-
-    document.querySelectorAll('.category-section').forEach(section => {
-        const visibleInGroup = section.querySelectorAll('.doc-card:not(.hidden)').length > 0;
-        section.classList.toggle('hidden', !visibleInGroup);
-    });
-
-    document.getElementById('noResults').classList.toggle('hidden', hasVisibleCards || searchInput === '');
-}
-
+// Initializers
 document.addEventListener("DOMContentLoaded", () => {
     if (localStorage.getItem('speeksSidebar') === 'collapsed') {
         document.querySelector('.sidebar').classList.add('collapsed');
         document.querySelector('.main-content').classList.add('expanded');
         document.querySelector('.sidebar-toggle').classList.add('collapsed');
     }
-    loadDocs();
     loadCMS();
 });
 </script>
