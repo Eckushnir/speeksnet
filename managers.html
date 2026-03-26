@@ -88,7 +88,7 @@
   .notif-item .ann-text { margin-top: 8px; font-size: 15px; color: var(--text-dark); }
 
   /* =========================================================
-     MAIN CONTENT 
+     MAIN CONTENT & MANAGER CARDS
      ========================================================= */
   .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
   .main-content.expanded { margin-left: 76px; }
@@ -97,7 +97,20 @@
   .header-text h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin: 0; }
   .header-text p { color: #888; font-size: 14px; font-weight: 500; margin-top: 5px; }
 
-  .card { background: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.04); padding: 30px; transition: 0.3s; margin-bottom: 30px; }
+  /* PORTALS GRID & CARDS */
+  .portals-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px; }
+  .card { background: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.04); padding: 30px; transition: transform 0.3s ease, box-shadow 0.3s ease; margin-bottom: 30px; }
+  .card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.05); }
+  
+  .card-title { font-size: 20px; font-weight: 800; color: var(--slate-charcoal); border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+  
+  /* SLEEK BUTTONS */
+  .portal-btn { 
+    display: block; text-decoration: none; padding: 14px 16px; background: var(--bg-app); 
+    border-radius: 10px; color: var(--text-dark); font-size: 13px; font-weight: 600; 
+    margin-bottom: 10px; transition: 0.2s; border: 1px solid transparent;
+  }
+  .portal-btn:hover { background: var(--sage-professional); color: white; transform: translateX(6px); box-shadow: 0 4px 10px rgba(90, 141, 59, 0.2); }
   
   @media (max-width: 1024px) { .top-actions { right: 20px; } .page-header { padding-right: 0; flex-direction: column; align-items: flex-start; } }
 </style>
@@ -154,13 +167,23 @@
   <div class="page-header">
     <div class="header-text">
       <h2>Store Manager Portal</h2>
-      <p>Exclusive tools, overrides, and administrative resources.</p>
+      <p>Secure portal for operational tracking, team performance metrics, and administrative documentation.</p>
     </div>
   </div>
 
-  <div class="card">
-      <div style="text-align: center; padding: 50px; color: #888; font-weight: 600; font-size: 16px; border: 1px dashed #ccc; border-radius: 12px;">
-          Manager modules coming soon...
+  <div class="portals-grid">
+      <div class="card">
+        <div class="card-title">Performance & Sales <span>📊</span></div>
+        <a href="https://docs.google.com/spreadsheets/d/1i_oV37lZXq8s91f9ymzwQlrM8WY2UlQQQ0qsRP3xLJ8/edit?usp=sharing" target="_blank" class="portal-btn">📈 Sales Summary 2026</a>
+        <a href="https://docs.google.com/spreadsheets/d/1oHOnA6wDwaLQ-EP4-CiDTkKpAdP2V7y8mOay416HDME/edit?usp=sharing" target="_blank" class="portal-btn">👥 Team Member KPIs</a>
+        <a href="https://docs.google.com/spreadsheets/d/1pubURplK66yC6oXmpz7P-r8zN07DWmDiLxrtTg0rmdk/edit?usp=sharing" target="_blank" class="portal-btn">🎯 Daily Listing Goals</a>
+      </div>
+      
+      <div class="card">
+        <div class="card-title">Operations & Admin <span>⚙️</span></div>
+        <a href="https://docs.google.com/spreadsheets/d/1KdQNDYfJT-Gt6wal6cgCbh6aqOUOHxey3PEsoeyztzQ/edit?usp=sharing" target="_blank" class="portal-btn">📦 SPEEKS Aging Inventory Tracker</a>
+        <a href="https://docs.google.com/spreadsheets/d/1zw-jcqpAnMY6PNofERbUz4pUHA3qnlnZx6O6C_XSmLY/edit?usp=sharing" target="_blank" class="portal-btn">🛡️ eBay & Shopify Insurance Cases</a>
+        <a href="https://docs.google.com/spreadsheets/d/1ar3tabN-bUqkjWqgy25MCHzSup2jhiaAKaGxLwZTeJ8/edit?usp=sharing" target="_blank" class="portal-btn">📍 Local Location Visits</a>
       </div>
   </div>
 
