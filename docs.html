@@ -10,10 +10,14 @@
     --sage-professional: #5a8d3b; 
     --text-dark: #2d2d2d; 
     --bg-app: #f4f7f9;
+    --idea-gold: #f59e0b;
   }
   
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg-app); color: var(--text-dark); line-height: 1.6; display: flex; min-height: 100vh; overflow-x: hidden; }
+
+  /* PREVENTS BACKGROUND SCROLLING WHEN POPUP IS OPEN */
+  body.no-scroll { overflow: hidden; }
 
   /* SIDEBAR STYLES */
   .sidebar { width: 260px; background: var(--slate-charcoal); color: white; position: fixed; top: 0; bottom: 0; left: 0; display: flex; flex-direction: column; box-shadow: 4px 0 15px rgba(0,0,0,0.05); z-index: 100; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); white-space: nowrap; overflow: hidden; }
@@ -26,6 +30,12 @@
   .nav-link:hover { background: rgba(255,255,255,0.05); color: white; transform: translateX(3px); }
   .nav-link.active { background: var(--sage-professional); color: white; box-shadow: 0 4px 12px rgba(90, 141, 59, 0.3); }
   .nav-link i { font-style: normal; font-size: 16px; width: 20px; text-align: center; display: inline-block; }
+
+  /* SIDEBAR BOTTOM CTA */
+  .sidebar-bottom { margin-top: auto; padding: 20px 15px; border-top: 1px solid rgba(255,255,255,0.05); }
+  .idea-btn { text-decoration: none; color: white; background: linear-gradient(135deg, var(--idea-gold), #d97706); padding: 14px 20px; font-weight: 700; font-size: 13px; letter-spacing: 0.5px; border-radius: 10px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); }
+  .idea-btn:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5); }
+  .idea-btn i { font-style: normal; font-size: 18px; width: 20px; text-align: center; display: inline-block; }
 
   /* COLLAPSED STATE */
   .sidebar.collapsed { width: 76px; }
@@ -61,7 +71,7 @@
   .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s; max-width: 1400px; }
   .main-content.expanded { margin-left: 76px; }
   
-  .page-header { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 20px; }
+  .page-header { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 20px; padding-right: 120px; /* Accounts for floating bell */ }
   .header-text h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin: 0; }
   .header-text p { color: #888; font-size: 14px; font-weight: 500; margin-top: 5px; }
   
@@ -90,6 +100,8 @@
   
   .hidden { display: none !important; }
   .empty-state { text-align: center; padding: 50px; color: #888; font-weight: 600; font-size: 16px; background: white; border-radius: 12px; border: 1px dashed #ccc; }
+
+  @media (max-width: 1024px) { .top-actions { right: 20px; } .page-header { padding-right: 0; flex-direction: column; align-items: flex-start; } .search-container { max-width: 100%; width: 100%; } }
 </style>
 </head>
 <body>
@@ -105,6 +117,12 @@
     <a href="metrics.html" class="nav-link"><i>📊</i> <span>Metrics & Leaderboards</span></a>
     <a href="docs.html" class="nav-link active"><i>📚</i> <span>Processes & Policies</span></a>
   </nav>
+
+  <div class="sidebar-bottom">
+    <a href="https://docs.google.com/forms/d/e/1FAIpQLSfEm449owjdKiT_zp7ATB_oLvsy3x51bL38Q3nKNiM7UNUZFQ/viewform" target="_blank" class="idea-btn">
+      <i>💡</i> <span>Have an Idea?</span>
+    </a>
+  </div>
 </aside>
 
 <div class="sidebar-toggle" onclick="toggleSidebar()">◀</div>
@@ -205,6 +223,7 @@ async function loadCMS() {
     } catch (e) { console.error(e); }
 }
 
+// --- DATA FETCHING (DOCS) ---
 async function loadDocs() {
     const container = document.getElementById('content-container');
     try {

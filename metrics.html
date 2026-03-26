@@ -18,6 +18,9 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg-app); color: var(--text-dark); line-height: 1.6; display: flex; min-height: 100vh; overflow-x: hidden; }
 
+  /* PREVENTS BACKGROUND SCROLLING WHEN POPUP IS OPEN */
+  body.no-scroll { overflow: hidden; }
+
   /* SIDEBAR STYLES */
   .sidebar { width: 260px; background: var(--slate-charcoal); color: white; position: fixed; top: 0; bottom: 0; left: 0; z-index: 100; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); overflow: hidden; white-space: nowrap; }
   .brand-area { padding: 40px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); margin-bottom: 20px; }
@@ -139,6 +142,12 @@
     <a href="metrics.html" class="nav-link active"><i>📊</i> <span>Metrics & Leaderboards</span></a>
     <a href="docs.html" class="nav-link"><i>📚</i> <span>Processes & Policies</span></a>
   </nav>
+  
+  <div class="sidebar-bottom">
+    <a href="https://docs.google.com/forms/d/e/1FAIpQLSfEm449owjdKiT_zp7ATB_oLvsy3x51bL38Q3nKNiM7UNUZFQ/viewform" target="_blank" class="idea-btn">
+      <i>💡</i> <span>Have an Idea?</span>
+    </a>
+  </div>
 </aside>
 
 <div class="sidebar-toggle" onclick="toggleSidebar()">◀</div>
