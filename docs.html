@@ -328,22 +328,47 @@ async function loadDocs() {
             container.innerHTML = '<div class="empty-state">No documents found.</div>';
             return;
         }
+        
         const groupedDocs = {};
         docs.forEach(doc => {
             if (!groupedDocs[doc.category]) groupedDocs[doc.category] = [];
             groupedDocs[doc.category].push(doc);
         });
+
+        // NEW LOGIC: Sort categories so "Pinned" is always first, and the rest are alphabetical
+        const sortedCategories = Object.keys(groupedDocs).sort((a, b) => {
+            if (a.toLowerCase().includes('pinned')) return -1;
+            if (b.toLowerCase().includes('pinned')) return 1;
+            return a.localeCompare(b);
+        });
+
         let htmlContent = '';
-        for (const [category, items] of Object.entries(groupedDocs)) {
-            htmlContent += `<div class="category-section"><div class="category-title">${category}</div><div class="docs-grid">`;
+        
+        // Build the HTML using our newly sorted categories
+        for (const category of sortedCategories) {
+            const items = groupedDocs[category];
+            
+            // If the category is Pinned, give the title a gold color
+            const isPinned = category.toLowerCase().includes('pinned');
+            const titleStyle = isPinned ? 'color: var(--idea-gold); border-bottom-color: var(--idea-gold);' : '';
+            
+            htmlContent += `<div class="category-section"><div class="category-title" style="${titleStyle}">${category}</div><div class="docs-grid">`;
+            
             items.forEach(item => {
                 const searchKeywords = `${item.title} ${item.desc} ${category}`.toLowerCase();
-                htmlContent += `<a href="${item.link}" target="_blank" class="doc-card" data-search="${searchKeywords}"><div class="doc-icon">${item.icon}</div><div class="doc-info"><div class="doc-title">${item.title}</div><div class="doc-desc">${item.desc}</div></div></a>`;
+                
+                // If it's a Pinned item, give the card a gold border so it stands out
+                const cardStyle = isPinned ? 'border: 1px solid var(--idea-gold); box-shadow: 0 4px 10px rgba(245, 158, 11, 0.08);' : '';
+                
+                htmlContent += `<a href="${item.link}" target="_blank" class="doc-card" style="${cardStyle}" data-search="${searchKeywords}"><div class="doc-icon">${item.icon}</div><div class="doc-info"><div class="doc-title">${item.title}</div><div class="doc-desc">${item.desc}</div></div></a>`;
             });
             htmlContent += `</div></div>`;
         }
         container.innerHTML = htmlContent;
-    } catch (e) { console.error("Docs Failed", e); container.innerHTML = '<div class="empty-state">Failed to load documents.</div>'; }
+    } catch (e) { 
+        console.error("Docs Failed", e); 
+        container.innerHTML = '<div class="empty-state">Failed to load documents.</div>'; 
+    }
 }
 
 function filterDocs() {
