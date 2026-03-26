@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPEEKSNET | Manager Portal</title>
+<style>
+  :root {
+    --slate-charcoal: #1a1c1e; 
+    --sage-professional: #5a8d3b; 
+    --text-dark: #2d2d2d; 
+    --bg-app: #f4f7f9;
+    --idea-gold: #f59e0b;
+  }
+  
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg-app); color: var(--text-dark); line-height: 1.6; display: flex; min-height: 100vh; overflow-x: hidden; }
+
+  /* PREVENTS BACKGROUND SCROLLING WHEN POPUP IS OPEN */
+  body.no-scroll { overflow: hidden; }
+
+  /* SIDEBAR STYLES */
+  .sidebar { width: 260px; background: var(--slate-charcoal); color: white; position: fixed; top: 0; bottom: 0; left: 0; display: flex; flex-direction: column; box-shadow: 4px 0 15px rgba(0,0,0,0.05); z-index: 100; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); white-space: nowrap; overflow: hidden; }
+  .brand-area { padding: 40px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); margin-bottom: 20px; transition: padding 0.3s; }
+  .brand-area h1 { font-size: 28px; font-weight: 200; letter-spacing: 6px; margin: 0; color: white; transition: font-size 0.3s; }
+  .brand-area .badge { display: inline-block; background: var(--sage-professional); color: white; font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 12px; margin-top: 10px; letter-spacing: 1px; text-transform: uppercase; transition: opacity 0.3s; }
+
+  .nav-bar { display: flex; flex-direction: column; gap: 8px; padding: 0 15px; }
+  .nav-link { text-decoration: none; color: #a0aab2; padding: 14px 20px; font-weight: 600; font-size: 13px; letter-spacing: 1px; border-radius: 10px; transition: all 0.2s; display: flex; align-items: center; gap: 12px; }
+  .nav-link:hover { background: rgba(255,255,255,0.05); color: white; transform: translateX(3px); }
+  .nav-link.active { background: var(--sage-professional); color: white; box-shadow: 0 4px 12px rgba(90, 141, 59, 0.3); }
+  .nav-link i { font-style: normal; font-size: 16px; width: 20px; text-align: center; display: inline-block; }
+
+  /* SIDEBAR BOTTOM CTA */
+  .sidebar-bottom { margin-top: auto; padding: 20px 15px; border-top: 1px solid rgba(255,255,255,0.05); }
+  .idea-btn { text-decoration: none; color: white; background: linear-gradient(135deg, var(--idea-gold), #d97706); padding: 14px 20px; font-weight: 700; font-size: 13px; letter-spacing: 0.5px; border-radius: 10px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); }
+  .idea-btn:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5); }
+  .idea-btn i { font-style: normal; font-size: 18px; width: 20px; text-align: center; display: inline-block; }
+
+  /* COLLAPSED STATE */
+  .sidebar.collapsed { width: 76px; }
+  .sidebar.collapsed .brand-area { padding: 40px 10px; }
+  .sidebar.collapsed .brand-area h1 { font-size: 12px; letter-spacing: 1px; }
+  .sidebar.collapsed .badge { opacity: 0; pointer-events: none; height: 0; margin: 0; padding: 0; }
+  .sidebar.collapsed .nav-link span, .sidebar.collapsed .idea-btn span { display: none; }
+  .sidebar.collapsed .nav-link, .sidebar.collapsed .idea-btn { justify-content: center; padding: 14px 0; }
+
+  /* SIDEBAR TOGGLE */
+  .sidebar-toggle { position: fixed; left: 244px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; background: var(--slate-charcoal); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 105; border: 4px solid var(--bg-app); transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s; font-size: 12px; }
+  .sidebar-toggle.collapsed { left: 60px; transform: translateY(-50%) rotate(180deg); }
+
+  /* =========================================================
+     NOTIFICATIONS & MODAL UI (BELL ONLY)
+     ========================================================= */
+  .top-actions { position: fixed; top: 30px; right: 50px; z-index: 200; display: flex; gap: 15px; }
+  
+  .action-btn { background: white; border: 1px solid #ddd; width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 26px; transition: 0.2s; box-shadow: 0 6px 16px rgba(0,0,0,0.06); position: relative; }
+  .action-btn:hover { border-color: var(--sage-professional); transform: translateY(-2px); }
+  
+  .notif-dot { position: absolute; top: -6px; right: -6px; width: 16px; height: 16px; background: #ef4444; border-radius: 50%; border: 3px solid white; display: none; }
+  .notif-dot.active { display: block; animation: pulse 2s infinite; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.22); backdrop-filter: blur(6px); display: none; z-index: 9998; }
+  .overlay.show { display: block; }
+
+  .modal-menu { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.12); border: 1px solid #eee; display: none; z-index: 10000; overflow: hidden; width: 1260px; max-width: calc(100% - 40px); }
+  .modal-menu.show { display: block; }
+  
+  .notif-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: #f9fafb; border-bottom: 1px solid #eee; }
+  .notif-header h3 { margin: 0; font-size: 13px; font-weight: 800; text-transform: uppercase; color: #666; letter-spacing: 0.5px; }
+  .notif-tabs { display: flex; gap: 8px; }
+  .tab-btn { background: transparent; border: none; font-size: 11px; font-weight: 700; color: #999; cursor: pointer; padding: 6px 12px; border-radius: 6px; transition: 0.2s; text-transform: uppercase; letter-spacing: 0.5px;}
+  .tab-btn:hover { color: var(--slate-charcoal); }
+  .tab-btn.active { background: #e2e8f0; color: var(--slate-charcoal); }
+
+  .notif-content { max-height: 60vh; overflow-y: auto; overscroll-behavior: contain; }
+  .notif-content::-webkit-scrollbar { width: 8px; }
+  .notif-content::-webkit-scrollbar-track { background: #f9fafb; border-radius: 8px; }
+  .notif-content::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 8px; }
+  .notif-content::-webkit-scrollbar-thumb:hover { background: var(--sage-professional); }
+
+  .notif-item { font-size: 16px; padding: 20px; border-bottom: 1px solid #f5f5f5; color: var(--text-dark); line-height: 1.5; text-align: left; }
+  .notif-item .ann-header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .notif-item .ann-author { font-weight: 800; font-size: 18px; color: var(--slate-charcoal); }
+  .notif-item .ann-date { color: #666; font-size: 13px; font-weight: 700; }
+  .notif-item hr { border: none; border-top: 1px solid #eee; margin: 10px 0; }
+  .notif-item .ann-text { margin-top: 8px; font-size: 15px; color: var(--text-dark); }
+
+  /* =========================================================
+     MAIN CONTENT 
+     ========================================================= */
+  .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+  .main-content.expanded { margin-left: 76px; }
+  
+  .page-header { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 20px; padding-right: 80px; }
+  .header-text h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin: 0; }
+  .header-text p { color: #888; font-size: 14px; font-weight: 500; margin-top: 5px; }
+
+  .card { background: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.04); padding: 30px; transition: 0.3s; margin-bottom: 30px; }
+  
+  @media (max-width: 1024px) { .top-actions { right: 20px; } .page-header { padding-right: 0; flex-direction: column; align-items: flex-start; } }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="brand-area">
+    <h1>SPEEKS</h1>
+    <div class="badge">MANAGER PORTAL</div>
+  </div>
+  <nav class="nav-bar">
+    <a href="index.html" class="nav-link"><i>🏠</i> <span>SPEEKS Hub</span></a>
+    <a href="portals.html" class="nav-link"><i>🔗</i> <span>Portals</span></a>
+    <a href="metrics.html" class="nav-link"><i>📊</i> <span>Metrics & Leaderboards</span></a>
+    <a href="docs.html" class="nav-link"><i>📚</i> <span>Processes & Policies</span></a>
+    <a href="managers.html" class="nav-link active"><i>🛠️</i> <span>Manager Portal</span></a>
+  </nav>
+
+  <div class="sidebar-bottom">
+    <a href="https://docs.google.com/forms/d/e/1FAIpQLSfEm449owjdKiT_zp7ATB_oLvsy3x51bL38Q3nKNiM7UNUZFQ/viewform" target="_blank" class="idea-btn">
+      <i>💡</i> <span>Have an Idea?</span>
+    </a>
+  </div>
+</aside>
+
+<div class="sidebar-toggle" onclick="toggleSidebar()">◀</div>
+
+<div class="top-actions">
+    <div class="action-btn" onclick="toggleNotifs()" title="Announcements">
+        🔔 <div class="notif-dot" id="notifBadge"></div>
+    </div>
+</div>
+
+<div id="globalOverlay" class="overlay"></div>
+
+<div class="modal-menu notif-menu" id="notifDropdown">
+    <div class="modal-header">
+        <h3>Announcements</h3>
+        <div class="notif-tabs">
+            <button id="tab-recent" class="tab-btn active" onclick="switchAnnTab('recent')">Recent</button>
+            <button id="tab-archive" class="tab-btn" onclick="switchAnnTab('archive')">Archived</button>
+        </div>
+    </div>
+    <div id="ann-container" class="notif-content">
+        <div style="padding: 20px; color:#999; font-size:12px; text-align:center;">Syncing...</div>
+    </div>
+    <div id="archive-container" class="notif-content" style="display: none;">
+        <div style="padding: 20px; color:#999; font-size:12px; text-align:center;">Syncing...</div>
+    </div>
+</div>
+
+<main class="main-content">
+  <div class="page-header">
+    <div class="header-text">
+      <h2>Store Manager Portal</h2>
+      <p>Exclusive tools, overrides, and administrative resources.</p>
+    </div>
+  </div>
+
+  <div class="card">
+      <div style="text-align: center; padding: 50px; color: #888; font-weight: 600; font-size: 16px; border: 1px dashed #ccc; border-radius: 12px;">
+          Manager modules coming soon...
+      </div>
+  </div>
+
+</main>
+
+<script>
+// --- URL CONSTANTS ---
+const CMS_URL = 'https://script.google.com/macros/s/AKfycbxZviJiiQKcQYyp3SK4tcNBHrHXkID7cmwwuONStVPE9DHCSAMappqAs9dBns7ufECI/exec';
+
+// --- SIDEBAR LOGIC ---
+function toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const mainContent = document.querySelector('.main-content');
+    const toggleBtn = document.querySelector('.sidebar-toggle');
+    sidebar.classList.toggle('collapsed');
+    mainContent.classList.toggle('expanded');
+    toggleBtn.classList.toggle('collapsed');
+    localStorage.setItem('speeksSidebar', sidebar.classList.contains('collapsed') ? 'collapsed' : 'expanded');
+}
+
+// --- MODAL LOGIC ---
+function closeAllModals() {
+    document.getElementById('notifDropdown').classList.remove('show');
+    document.getElementById('globalOverlay').classList.remove('show');
+    document.body.classList.remove('no-scroll');
+}
+
+function toggleNotifs() {
+  const dropdown = document.getElementById('notifDropdown');
+  const isOpen = dropdown.classList.contains('show');
+  closeAllModals(); 
+  if (!isOpen) {
+    dropdown.classList.add('show');
+    document.getElementById('globalOverlay').classList.add('show');
+    document.getElementById('notifBadge').classList.remove('active');
+    document.body.classList.add('no-scroll');
+  }
+}
+
+function switchAnnTab(tab) {
+  if (tab === 'recent') {
+      document.getElementById('ann-container').style.display = 'block';
+      document.getElementById('archive-container').style.display = 'none';
+      document.getElementById('tab-recent').classList.add('active');
+      document.getElementById('tab-archive').classList.remove('active');
+  } else {
+      document.getElementById('ann-container').style.display = 'none';
+      document.getElementById('archive-container').style.display = 'block';
+      document.getElementById('tab-archive').classList.add('active');
+      document.getElementById('tab-recent').classList.remove('active');
+  }
+}
+
+window.addEventListener('click', function(e) {
+  const overlay = document.getElementById('globalOverlay');
+  if (overlay && e.target === overlay) {
+    closeAllModals();
+  }
+});
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeAllModals();
+  }
+});
+
+// --- DATA FETCHING (CMS) ---
+async function loadCMS() {
+    try {
+        const response = await fetch(`${CMS_URL}?v=${Date.now()}`);
+        const data = await response.json();
+        const annContainer = document.getElementById('ann-container');
+        const archiveContainer = document.getElementById('archive-container');
+        const badge = document.getElementById('notifBadge');
+        
+        let showBadge = false, recentHtml = "", archiveHtml = "", recentCount = 0, archiveCount = 0;
+
+        if (data.announcements && data.announcements.length > 0) {
+            const sortedAnns = [...data.announcements].reverse();
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+            sortedAnns.forEach(item => {
+                const text = item.text || "", rawDate = item.date || "", author = item.author || "";
+                let displayDate = "", isArchived = false;
+
+                if (rawDate) {
+                  const annDate = new Date(rawDate);
+                  if (!isNaN(annDate.getTime())) {
+                    displayDate = annDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                    const annDateOnly = new Date(annDate.getFullYear(), annDate.getMonth(), annDate.getDate());
+                    const diffDays = (today - annDateOnly) / (1000 * 60 * 60 * 24);
+                    if (diffDays <= 1 && diffDays >= 0) showBadge = true;
+                    if (diffDays > 2) isArchived = true;
+                  }
+                }
+
+                const htmlSnippet = `<div class="notif-item"><div class="ann-header"><span class="ann-author">${author || 'Announcement'}</span>${displayDate ? `<small class="ann-date">${displayDate}</small>` : ''}</div><hr /><div class="ann-text">${text}</div></div>`;
+                if (isArchived) { archiveHtml += htmlSnippet; archiveCount++; } else { recentHtml += htmlSnippet; recentCount++; }
+            });
+            if (recentCount === 0) recentHtml = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No recent announcements</div>';
+            if (archiveCount === 0) archiveHtml = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No archived announcements</div>';
+        } else {
+            recentHtml = archiveHtml = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No announcements</div>';
+        }
+        
+        if(annContainer) annContainer.innerHTML = recentHtml;
+        if(archiveContainer) archiveContainer.innerHTML = archiveHtml;
+        if(showBadge && badge) badge.classList.add('active');
+        
+    } catch (e) { console.error("CMS Failed", e); }
+}
+
+// Initializers
+document.addEventListener("DOMContentLoaded", () => {
+    if (localStorage.getItem('speeksSidebar') === 'collapsed') {
+        document.querySelector('.sidebar').classList.add('collapsed');
+        document.querySelector('.main-content').classList.add('expanded');
+        document.querySelector('.sidebar-toggle').classList.add('collapsed');
+    }
+    loadCMS();
+});
+</script>
+</body>
+</html>
