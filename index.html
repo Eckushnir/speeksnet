@@ -48,54 +48,54 @@
   .sidebar-toggle { position: fixed; left: 244px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; background: var(--slate-charcoal); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 105; border: 4px solid var(--bg-app); transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s; font-size: 12px; }
   .sidebar-toggle.collapsed { left: 60px; transform: translateY(-50%) rotate(180deg); }
 
-  /* NOTIFICATION UI */
-  .top-actions { position: fixed; top: 30px; right: 50px; z-index: 200; }
-  .notif-container { position: relative; }
-  .notif-bell { background: white; border: 1px solid #ddd; width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 26px; transition: 0.2s; box-shadow: 0 6px 16px rgba(0,0,0,0.06); }
-  .notif-bell:hover { border-color: var(--sage-professional); transform: translateY(-2px); }
+  /* =========================================================
+     TOP ACTIONS (CALENDAR & NOTIFICATIONS)
+     ========================================================= */
+  .top-actions { position: fixed; top: 30px; right: 50px; z-index: 200; display: flex; gap: 15px; }
+  
+  .action-btn { background: white; border: 1px solid #ddd; width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 26px; transition: 0.2s; box-shadow: 0 6px 16px rgba(0,0,0,0.06); position: relative; }
+  .action-btn:hover { border-color: var(--sage-professional); transform: translateY(-2px); }
   
   .notif-dot { position: absolute; top: -6px; right: -6px; width: 16px; height: 16px; background: #ef4444; border-radius: 50%; border: 3px solid white; display: none; }
   .notif-dot.active { display: block; animation: pulse 2s infinite; }
-
   @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
-  /* Modal overlay that blurs the background when notifications open */
-  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.22); backdrop-filter: blur(6px); display: none; z-index: 240; }
+  /* Modal overlay */
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.22); backdrop-filter: blur(6px); display: none; z-index: 9998; }
   .overlay.show { display: block; }
 
-  /* Center notif menu as a modal */
-  .notif-menu { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 1260px; max-width: calc(100% - 40px); background: white; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.12); border: 1px solid #eee; display: none; z-index: 300; overflow: hidden; }
-  .notif-menu.show { display: block; }
-  
-  /* UPDATED HEADER WITH TABS */
-  .notif-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: #f9fafb; border-bottom: 1px solid #eee; }
-  .notif-header h3 { margin: 0; font-size: 13px; font-weight: 800; text-transform: uppercase; color: #666; letter-spacing: 0.5px; }
+  /* Shared Modal Base */
+  .modal-menu { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.12); border: 1px solid #eee; display: none; z-index: 10000; overflow: hidden; }
+  .modal-menu.show { display: block; }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: #f9fafb; border-bottom: 1px solid #eee; }
+  .modal-header h3 { margin: 0; font-size: 13px; font-weight: 800; text-transform: uppercase; color: #666; letter-spacing: 0.5px; }
+
+  /* Notification Specific */
+  .notif-menu { width: 1260px; max-width: calc(100% - 40px); }
   .notif-tabs { display: flex; gap: 8px; }
   .tab-btn { background: transparent; border: none; font-size: 11px; font-weight: 700; color: #999; cursor: pointer; padding: 6px 12px; border-radius: 6px; transition: 0.2s; text-transform: uppercase; letter-spacing: 0.5px;}
   .tab-btn:hover { color: var(--slate-charcoal); }
   .tab-btn.active { background: #e2e8f0; color: var(--slate-charcoal); }
 
-  /* SCROLLABLE CONTENT AREA */
-  .notif-content { 
-    max-height: 60vh; 
-    overflow-y: auto; 
-    overscroll-behavior: contain; 
-  }
-
-  /* CUSTOM SCROLLBAR STYLING */
+  .notif-content { max-height: 60vh; overflow-y: auto; overscroll-behavior: contain; }
   .notif-content::-webkit-scrollbar { width: 8px; }
   .notif-content::-webkit-scrollbar-track { background: #f9fafb; border-radius: 8px; }
   .notif-content::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 8px; }
   .notif-content::-webkit-scrollbar-thumb:hover { background: var(--sage-professional); }
 
-  /* Larger announcement card styling */
   .notif-item { font-size: 16px; padding: 20px; border-bottom: 1px solid #f5f5f5; color: var(--text-dark); line-height: 1.5; text-align: left; }
   .notif-item .ann-header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
   .notif-item .ann-author { font-weight: 800; font-size: 18px; color: var(--slate-charcoal); }
   .notif-item .ann-date { color: #666; font-size: 13px; font-weight: 700; }
   .notif-item hr { border: none; border-top: 1px solid #eee; margin: 10px 0; }
   .notif-item .ann-text { margin-top: 8px; font-size: 15px; color: var(--text-dark); }
-  .notif-item small { display: block; color: #999; margin-top: 5px; font-weight: 600; font-size: 11px; }
+
+  /* Calendar Specific */
+  .calendar-menu { width: 1000px; max-width: calc(100% - 40px); }
+  .modal-close-btn { background: transparent; border: none; font-size: 18px; cursor: pointer; color: #999; transition: 0.2s; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; }
+  .modal-close-btn:hover { color: #ef4444; }
+  .calendar-content { height: 65vh; padding: 0; }
+  .calendar-content iframe { width: 100%; height: 100%; border: none; display: block; }
 
   /* MAIN HUB CANVAS */
   .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s; }
@@ -113,7 +113,6 @@
   .cms-active { border-left-color: var(--sage-professional); background: #f4f9f2; }
   .cms-upcoming { border-left-color: #3b82f6; background: #f0f7ff; }
 
-  iframe { width: 100%; border: none; border-radius: 8px; background: white; }
   @media (max-width: 1024px) { .project-grid { grid-template-columns: 1fr; } .top-actions { right: 20px; } }
 </style>
 </head>
@@ -141,29 +140,39 @@
 <div class="sidebar-toggle" onclick="toggleSidebar()">◀</div>
 
 <div class="top-actions">
-    <div class="notif-container" id="notifContainer">
-        <div class="notif-bell" onclick="toggleNotifs()">
-            🔔 <div class="notif-dot" id="notifBadge"></div>
+    <div class="action-btn" onclick="toggleCalendar()" title="Strategic Calendar">
+        📅
+    </div>
+    <div class="action-btn" onclick="toggleNotifs()" title="Announcements">
+        🔔 <div class="notif-dot" id="notifBadge"></div>
+    </div>
+</div>
+
+<div id="globalOverlay" class="overlay"></div>
+
+<div class="modal-menu notif-menu" id="notifDropdown">
+    <div class="modal-header">
+        <h3>Announcements</h3>
+        <div class="notif-tabs">
+            <button id="tab-recent" class="tab-btn active" onclick="switchAnnTab('recent')">Recent</button>
+            <button id="tab-archive" class="tab-btn" onclick="switchAnnTab('archive')">Archived</button>
         </div>
-      <div id="notifOverlay" class="overlay"></div>
-      
-      <div class="notif-menu" id="notifDropdown">
-            <div class="notif-header">
-                <h3>Announcements</h3>
-                <div class="notif-tabs">
-                    <button id="tab-recent" class="tab-btn active" onclick="switchAnnTab('recent')">Recent</button>
-                    <button id="tab-archive" class="tab-btn" onclick="switchAnnTab('archive')">Archived</button>
-                </div>
-            </div>
-            
-            <div id="ann-container" class="notif-content">
-                <div style="padding: 20px; color:#999; font-size:12px; text-align:center;">Syncing...</div>
-            </div>
-            
-            <div id="archive-container" class="notif-content" style="display: none;">
-                <div style="padding: 20px; color:#999; font-size:12px; text-align:center;">Syncing...</div>
-            </div>
-        </div>
+    </div>
+    <div id="ann-container" class="notif-content">
+        <div style="padding: 20px; color:#999; font-size:12px; text-align:center;">Syncing...</div>
+    </div>
+    <div id="archive-container" class="notif-content" style="display: none;">
+        <div style="padding: 20px; color:#999; font-size:12px; text-align:center;">Syncing...</div>
+    </div>
+</div>
+
+<div class="modal-menu calendar-menu" id="calendarDropdown">
+    <div class="modal-header">
+        <h3>Strategic Calendar</h3>
+        <button class="modal-close-btn" onclick="closeAllModals()">✖</button>
+    </div>
+    <div class="calendar-content">
+        <iframe src="https://calendar.google.com/calendar/embed?src=75d63f4495d48b06d2405686eb56d8dfe7fe74175f4dddc340588565a5545980%40group.calendar.google.com&ctz=America%2FChicago"></iframe>
     </div>
 </div>
 
@@ -199,15 +208,10 @@
             </table>
         </div>
     </div>
-
-    <div class="card">
-        <div class="card-title">📅 Strategic Calendar</div>
-        <iframe src="https://calendar.google.com/calendar/embed?src=75d63f4495d48b06d2405686eb56d8dfe7fe74175f4dddc340588565a5545980%40group.calendar.google.com&ctz=America%2FChicago" height="600"></iframe>
-    </div>
 </main>
 
 <script>
-// UPDATED CMS URL
+// URL CONSTANTS
 const CMS_URL = 'https://script.google.com/macros/s/AKfycbxZviJiiQKcQYyp3SK4tcNBHrHXkID7cmwwuONStVPE9DHCSAMappqAs9dBns7ufECI/exec';
 const HOTKEYS_URL = 'https://script.google.com/macros/s/AKfycbyLburcVWM8xAKwDt2RHAQhZBLb_rJjb2__EzhoAKx1KgkNFi-BchVetgaTKvwCwqZiRw/exec';
 
@@ -221,24 +225,39 @@ function toggleSidebar() {
     localStorage.setItem('speeksSidebar', sidebar.classList.contains('collapsed') ? 'collapsed' : 'expanded');
 }
 
+// --- MODAL LOGIC ---
+function closeAllModals() {
+    document.getElementById('notifDropdown').classList.remove('show');
+    document.getElementById('calendarDropdown').classList.remove('show');
+    document.getElementById('globalOverlay').classList.remove('show');
+    document.body.classList.remove('no-scroll');
+}
+
 function toggleNotifs() {
   const dropdown = document.getElementById('notifDropdown');
-  const overlay = document.getElementById('notifOverlay');
-  const badge = document.getElementById('notifBadge');
   const isOpen = dropdown.classList.contains('show');
-  if (isOpen) {
-    dropdown.classList.remove('show');
-    overlay.classList.remove('show');
-    document.body.classList.remove('no-scroll');
-  } else {
+  closeAllModals(); // Close any other open modals first
+  
+  if (!isOpen) {
     dropdown.classList.add('show');
-    overlay.classList.add('show');
-    badge.classList.remove('active');
+    document.getElementById('globalOverlay').classList.add('show');
+    document.getElementById('notifBadge').classList.remove('active');
     document.body.classList.add('no-scroll');
   }
 }
 
-// Function to handle switching between Recent and Archive views
+function toggleCalendar() {
+  const dropdown = document.getElementById('calendarDropdown');
+  const isOpen = dropdown.classList.contains('show');
+  closeAllModals(); // Close any other open modals first
+  
+  if (!isOpen) {
+    dropdown.classList.add('show');
+    document.getElementById('globalOverlay').classList.add('show');
+    document.body.classList.add('no-scroll');
+  }
+}
+
 function switchAnnTab(tab) {
   if (tab === 'recent') {
       document.getElementById('ann-container').style.display = 'block';
@@ -253,26 +272,22 @@ function switchAnnTab(tab) {
   }
 }
 
+// Close modals when clicking the background overlay
 window.addEventListener('click', function(e) {
-  const overlay = document.getElementById('notifOverlay');
-  const dropdown = document.getElementById('notifDropdown');
+  const overlay = document.getElementById('globalOverlay');
   if (overlay && e.target === overlay) {
-    dropdown.classList.remove('show');
-    overlay.classList.remove('show');
-    document.body.classList.remove('no-scroll');
+    closeAllModals();
   }
 });
 
+// Close modals when pressing the ESC key
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
-    const overlay = document.getElementById('notifOverlay');
-    const dropdown = document.getElementById('notifDropdown');
-    dropdown.classList.remove('show');
-    overlay.classList.remove('show');
-    document.body.classList.remove('no-scroll');
+    closeAllModals();
   }
 });
 
+// --- DATA FETCHING ---
 async function loadCMS() {
     try {
         const response = await fetch(`${CMS_URL}?v=${Date.now()}`);
@@ -307,10 +322,7 @@ async function loadCMS() {
                     const annDateOnly = new Date(annDate.getFullYear(), annDate.getMonth(), annDate.getDate());
                     const diffDays = (today - annDateOnly) / (1000 * 60 * 60 * 24);
                     
-                    // Show badge for brand new announcements
                     if (diffDays <= 1 && diffDays >= 0) showBadge = true;
-                    
-                    // If announcement is older than 2 days, move to archive
                     if (diffDays > 2) isArchived = true;
                   }
                 }
@@ -325,16 +337,10 @@ async function loadCMS() {
                     <div class="ann-text">${text}</div>
                   </div>`;
 
-                if (isArchived) {
-                    archiveHtml += htmlSnippet;
-                    archiveCount++;
-                } else {
-                    recentHtml += htmlSnippet;
-                    recentCount++;
-                }
+                if (isArchived) { archiveHtml += htmlSnippet; archiveCount++; } 
+                else { recentHtml += htmlSnippet; recentCount++; }
             });
             
-            // Empty states if one list is populated but the other isn't
             if (recentCount === 0) recentHtml = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No recent announcements</div>';
             if (archiveCount === 0) archiveHtml = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No archived announcements</div>';
 
