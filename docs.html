@@ -45,18 +45,18 @@
   .sidebar.collapsed .nav-link span, .sidebar.collapsed .idea-btn span { display: none; }
   .sidebar.collapsed .nav-link, .sidebar.collapsed .idea-btn { justify-content: center; padding: 14px 0; }
 
-  /* SIDEBAR TOGGLE */
-  .sidebar-toggle { position: fixed; left: 244px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; background: var(--slate-charcoal); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 105; border: 4px solid var(--bg-app); transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s; font-size: 12px; }
+  /* FLOATING ARROW TOGGLE */
+  .sidebar-toggle { position: fixed; left: 244px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; background: var(--slate-charcoal); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 105; border: 4px solid var(--bg-app); transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s, background 0.2s; font-size: 12px; }
+  .sidebar-toggle:hover { background: var(--sage-professional); }
   .sidebar-toggle.collapsed { left: 60px; transform: translateY(-50%) rotate(180deg); }
 
   /* =========================================================
-     NOTIFICATIONS & MODAL UI
+     TOP ACTIONS & MODALS (MATCHING INDEX.HTML EXACTLY)
      ========================================================= */
   .top-actions { position: fixed; top: 30px; right: 50px; z-index: 200; display: flex; gap: 15px; }
   
-  .notif-container { position: relative; }
-  .notif-bell { background: white; border: 1px solid #ddd; width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 26px; transition: 0.2s; box-shadow: 0 6px 16px rgba(0,0,0,0.06); }
-  .notif-bell:hover { border-color: var(--sage-professional); transform: translateY(-2px); }
+  .action-btn { background: white; border: 1px solid #ddd; width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 26px; transition: 0.2s; box-shadow: 0 6px 16px rgba(0,0,0,0.06); position: relative; }
+  .action-btn:hover { border-color: var(--sage-professional); transform: translateY(-2px); }
   
   .notif-dot { position: absolute; top: -6px; right: -6px; width: 16px; height: 16px; background: #ef4444; border-radius: 50%; border: 3px solid white; display: none; }
   .notif-dot.active { display: block; animation: pulse 2s infinite; }
@@ -65,11 +65,13 @@
   .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.22); backdrop-filter: blur(6px); display: none; z-index: 9998; }
   .overlay.show { display: block; }
 
-  .modal-menu { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 1260px; max-width: calc(100% - 40px); background: white; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.12); border: 1px solid #eee; display: none; z-index: 10000; overflow: hidden; }
+  .modal-menu { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.12); border: 1px solid #eee; display: none; z-index: 10000; overflow: hidden; }
   .modal-menu.show { display: block; }
   
-  .notif-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: #f9fafb; border-bottom: 1px solid #eee; }
-  .notif-header h3 { margin: 0; font-size: 13px; font-weight: 800; text-transform: uppercase; color: #666; letter-spacing: 0.5px; }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: #f9fafb; border-bottom: 1px solid #eee; }
+  .modal-header h3 { margin: 0; font-size: 13px; font-weight: 800; text-transform: uppercase; color: #666; letter-spacing: 0.5px; }
+
+  .notif-menu { width: 1260px; max-width: calc(100% - 40px); }
   .notif-tabs { display: flex; gap: 8px; }
   .tab-btn { background: transparent; border: none; font-size: 11px; font-weight: 700; color: #999; cursor: pointer; padding: 6px 12px; border-radius: 6px; transition: 0.2s; text-transform: uppercase; letter-spacing: 0.5px;}
   .tab-btn:hover { color: var(--slate-charcoal); }
@@ -146,10 +148,8 @@
 <div class="sidebar-toggle" onclick="toggleSidebar()">◀</div>
 
 <div class="top-actions">
-    <div class="notif-container" id="notifContainer">
-        <div class="notif-bell" onclick="toggleNotifs()">
-            🔔 <div class="notif-dot" id="notifBadge"></div>
-        </div>
+    <div class="action-btn" onclick="toggleNotifs()" title="Announcements">
+        🔔 <div class="notif-dot" id="notifBadge"></div>
     </div>
 </div>
 
@@ -298,7 +298,7 @@ async function loadCMS() {
     } catch (e) { console.error("CMS Failed", e); }
 }
 
-// --- DATA FETCHING (DOCS) ---
+// --- DATA FETCHING (DOCS WITH DUPLICATE PIN LOGIC) ---
 async function loadDocs() {
     const container = document.getElementById('content-container');
     try {
@@ -310,15 +310,30 @@ async function loadDocs() {
         }
         
         const groupedDocs = {};
+        
         docs.forEach(doc => {
-            if (!groupedDocs[doc.category]) groupedDocs[doc.category] = [];
-            groupedDocs[doc.category].push(doc);
+            let originalCategory = doc.category || "Uncategorized";
+            let isPinned = originalCategory.toLowerCase().includes('pinned');
+            
+            // Clean the word "Pinned" out of the category name (e.g. 'HR, "Pinned"' becomes 'HR')
+            let cleanCategory = originalCategory.replace(/,?\s*["']?pinned["']?/ig, '').trim();
+            if (!cleanCategory) cleanCategory = "General"; // Failsafe
+
+            // 1. Put the document in its normal, clean category
+            if (!groupedDocs[cleanCategory]) groupedDocs[cleanCategory] = [];
+            groupedDocs[cleanCategory].push(doc);
+
+            // 2. If it was marked as pinned, copy it to the special "📌 Pinned" category as well
+            if (isPinned) {
+                if (!groupedDocs['📌 Pinned']) groupedDocs['📌 Pinned'] = [];
+                groupedDocs['📌 Pinned'].push(doc);
+            }
         });
 
-        // Sort categories so "Pinned" is always first, and the rest are alphabetical
+        // Sort categories: "📌 Pinned" first, the rest alphabetical
         const sortedCategories = Object.keys(groupedDocs).sort((a, b) => {
-            if (a.toLowerCase().includes('pinned')) return -1;
-            if (b.toLowerCase().includes('pinned')) return 1;
+            if (a === '📌 Pinned') return -1;
+            if (b === '📌 Pinned') return 1;
             return a.localeCompare(b);
         });
 
@@ -326,19 +341,19 @@ async function loadDocs() {
         
         for (const category of sortedCategories) {
             const items = groupedDocs[category];
-            const isPinned = category.toLowerCase().includes('pinned');
-            const titleStyle = isPinned ? 'color: var(--idea-gold); border-bottom-color: var(--idea-gold);' : '';
+            const isPinnedCategory = category === '📌 Pinned';
+            const titleStyle = isPinnedCategory ? 'color: var(--idea-gold); border-bottom-color: var(--idea-gold);' : '';
             
             htmlContent += `<div class="category-section"><div class="category-title" style="${titleStyle}">${category}</div><div class="docs-grid">`;
             
             items.forEach(item => {
                 const searchKeywords = `${item.title} ${item.desc} ${category}`.toLowerCase();
                 
-                const cardStyle = isPinned 
+                const cardStyle = isPinnedCategory 
                     ? 'position: relative; border: 1px solid var(--idea-gold); box-shadow: 0 4px 10px rgba(245, 158, 11, 0.08);' 
                     : 'position: relative;';
                 
-                const pinHtml = isPinned 
+                const pinHtml = isPinnedCategory 
                     ? `<div style="position: absolute; top: 12px; right: 15px; font-size: 16px; filter: drop-shadow(0 2px 4px rgba(245,158,11,0.3));">📌</div>` 
                     : '';
                 
