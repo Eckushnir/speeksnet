@@ -94,7 +94,7 @@
   .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); width: 100%; max-width: 100%; } 
   .main-content.expanded { margin-left: 76px; }
   
-  .page-header { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 20px; padding-right: 150px; /* Increased to fit both buttons */ }
+  .page-header { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 20px; padding-right: 150px; }
   .header-text h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin: 0; }
   .header-text p { color: #888; font-size: 14px; font-weight: 500; margin-top: 5px; }
 
@@ -149,8 +149,25 @@
   .kpi-list-header { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; padding: 12px 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; color: #888; letter-spacing: 0.5px; background: #f9fafb; border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 10; border-top-left-radius: 12px; border-top-right-radius: 12px;}
   .kpi-list-header div:last-child { text-align: right; }
 
+  /* =========================================================
+     VARIANCE WIDGET STYLES 
+     ========================================================= */
+  .vw-controls { display: flex; gap: 10px; align-items: center; }
+  .vw-btn { padding: 8px 16px; border-radius: 8px; background: #f4f7f9; border: 1px solid #ddd; font-weight: 700; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 5px; color: var(--slate-charcoal); }
+  .vw-btn.active { background: var(--sage-professional); color: white; border-color: var(--sage-professional); }
+  
+  .vw-dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+  .vw-store-card { background: #f9fafb; border: 1px solid #eee; border-radius: 12px; padding: 20px; }
+  .vw-store-name { font-size: 16px; font-weight: 800; color: var(--slate-charcoal); margin-bottom: 5px; text-transform: uppercase; }
+  .vw-total-variance { font-size: 28px; font-weight: 900; margin-bottom: 15px; }
+  .vw-pos { color: #166534; }
+  .vw-neg { color: #ef4444; }
+  
+  .vw-emp-list { display: flex; flex-direction: column; gap: 8px; }
+  .vw-emp-row { display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px 15px; border-radius: 8px; border: 1px solid #eee; font-size: 13px; font-weight: 600; color: var(--slate-charcoal); }
+
   @media (max-width: 1200px) { .dashboard-layout { grid-template-columns: 1fr; } }
-  @media (max-width: 1024px) { .top-actions { right: 20px; } .page-header { padding-right: 0; flex-direction: column; align-items: flex-start; } }
+  @media (max-width: 1024px) { .top-actions { right: 20px; } .page-header { padding-right: 0; flex-direction: column; align-items: flex-start; } .vw-dashboard { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -224,46 +241,70 @@
 
   <div class="dashboard-layout">
       
-      <div class="card" style="padding: 25px;">
-        <div class="card-title" style="margin-bottom: 15px; border-bottom: none;">
-            <span>🧮 Monthly KPI Comparison</span>
-            <a href="https://docs.google.com/spreadsheets/d/1e4mW-pcwUMJjl2Pjry6PT180P8M8nkYL5Z4GcspQmEA/edit?usp=sharing" target="_blank" style="font-size: 11px; background: #f4f7f9; padding: 8px 14px; border-radius: 8px; color: var(--slate-charcoal); text-decoration: none; font-weight: 800; transition: 0.2s;">Open Full Sheet ↗</a>
-        </div>
-        
-        <div class="kpi-header-controls">
-            <div class="kpi-select-group">
-                <select id="kpiStoreSelect" class="kpi-select">
-                    <option value="OVL">OVL</option>
-                    <option value="LEE">LEE</option>
-                    <option value="WSP">WSP</option>
-                    <option value="MPL">MPL</option>
-                    <option value="BAL">BAL</option>
-                </select>
-            </div>
-            <div class="kpi-select-group" style="margin-left: auto;">
-                <select id="primaryMonthSelect" class="kpi-select" onchange="renderKPIDashboard()"></select>
-            </div>
-            <div class="kpi-select-group" style="color: #ccc;">vs</div>
-            <div class="kpi-select-group">
-                <select id="compareMonthSelect" class="kpi-select" onchange="renderKPIDashboard()"></select>
-            </div>
+      <div class="left-column">
+        <div class="card" style="padding: 25px;">
+          <div class="card-title" style="margin-bottom: 15px; border-bottom: none;">
+              <span>🧮 Monthly KPI Comparison</span>
+              <a href="https://docs.google.com/spreadsheets/d/1e4mW-pcwUMJjl2Pjry6PT180P8M8nkYL5Z4GcspQmEA/edit?usp=sharing" target="_blank" style="font-size: 11px; background: #f4f7f9; padding: 8px 14px; border-radius: 8px; color: var(--slate-charcoal); text-decoration: none; font-weight: 800; transition: 0.2s;">Open Full Sheet ↗</a>
+          </div>
+          
+          <div class="kpi-header-controls">
+              <div class="kpi-select-group">
+                  <select id="kpiStoreSelect" class="kpi-select">
+                      <option value="OVL">OVL</option>
+                      <option value="LEE">LEE</option>
+                      <option value="WSP">WSP</option>
+                      <option value="MPL">MPL</option>
+                      <option value="BAL">BAL</option>
+                  </select>
+              </div>
+              <div class="kpi-select-group" style="margin-left: auto;">
+                  <select id="primaryMonthSelect" class="kpi-select" onchange="renderKPIDashboard()"></select>
+              </div>
+              <div class="kpi-select-group" style="color: #ccc;">vs</div>
+              <div class="kpi-select-group">
+                  <select id="compareMonthSelect" class="kpi-select" onchange="renderKPIDashboard()"></select>
+              </div>
+          </div>
+
+          <div style="border: 1px solid #eee; border-radius: 12px; background: white; margin-bottom: 10px;">
+              <div class="kpi-list-header">
+                  <div>Metric & 12-Mo Trend</div>
+                  <div id="header-primary-label">Primary</div>
+                  <div id="header-compare-label">Compare</div>
+                  <div>Delta (+/-)</div>
+              </div>
+
+              <div id="kpiDashboardContainer" class="kpi-scroll-area">
+                  <div style="padding: 40px; text-align: center; color: #888; font-weight: 600;">Syncing KPI Data...</div>
+              </div>
+          </div>
         </div>
 
-        <div style="border: 1px solid #eee; border-radius: 12px; background: white; margin-bottom: 10px;">
-            <div class="kpi-list-header">
-                <div>Metric & 12-Mo Trend</div>
-                <div id="header-primary-label">Primary</div>
-                <div id="header-compare-label">Compare</div>
-                <div>Delta (+/-)</div>
+        <div class="card" style="padding: 25px;">
+          <div class="card-title" style="margin-bottom: 15px; border-bottom: none;">
+            <span>📊 Live Variance Reports</span>
+            <div class="vw-controls">
+              <select id="vw-primary" class="kpi-select" onchange="renderVariance()">
+                <option value="OVL">OVL</option>
+                <option value="LEE">LEE</option>
+                <option value="WSP">WSP</option>
+              </select>
+              <span style="color: #ccc; font-weight: 700; font-size: 13px;">vs</span>
+              <select id="vw-compare" class="kpi-select" onchange="renderVariance()">
+                <option value="NONE">None</option>
+                <option value="OVL">OVL</option>
+                <option value="LEE">LEE</option>
+                <option value="WSP">WSP</option>
+              </select>
+              <button id="vw-cycle-btn" class="vw-btn" onclick="toggleCycle()">▶ Auto</button>
             </div>
-
-            <div id="kpiDashboardContainer" class="kpi-scroll-area">
-                <div style="padding: 40px; text-align: center; color: #888; font-weight: 600;">Syncing KPI Data...</div>
+          </div>
+          
+          <div class="vw-dashboard" id="vw-dashboard-container">
             </div>
         </div>
-      </div>
-
-      <div>
+      </div> <div>
           <div class="portals-grid" style="grid-template-columns: 1fr;">
               <div class="card">
                 <div class="card-title">Performance & Sales <span>📈</span></div>
@@ -428,9 +469,6 @@ function toggleCategory(el) {
     el.parentElement.classList.toggle('collapsed');
 }
 
-// =================================================================================
-// SMART FORMATTING (Simplified since Apps Script is handling the heavy lifting)
-// =================================================================================
 function formatSmartValue(val, name) {
     if (val === null || val === undefined || String(val).trim() === '') return '-';
     let num = parseFloat(val);
@@ -481,16 +519,12 @@ function formatSmartValue(val, name) {
     return new Intl.NumberFormat('en-US').format(num);
 }
 
-// Get raw number for Delta calculation 
 function getRawNumber(v) {
     if(!v) return 0;
     let n = parseFloat(v);
     return isNaN(n) ? 0 : n;
 }
 
-// =================================================================================
-// BULLETPROOF GROUPING LOGIC
-// =================================================================================
 function groupKPIs(data) {
     const categories = {
         "Buying Metrics": [],
@@ -668,6 +702,85 @@ function renderKPIDashboard() {
     container.innerHTML = html;
 }
 
+// =========================================================
+// VARIANCE WIDGET LOGIC (DUMMY DATA - TO BE REPLACED WITH APPS SCRIPT)
+// =========================================================
+const dummyVarianceData = {
+  "OVL": { total: -45.50, employees: [{name: "John D.", val: -12.00}, {name: "Sarah M.", val: -33.50}, {name: "Mike T.", val: 0.00}] },
+  "LEE": { total: 12.25, employees: [{name: "Alex R.", val: 15.00}, {name: "Jessica B.", val: -2.75}] },
+  "WSP": { total: -105.00, employees: [{name: "David C.", val: -55.00}, {name: "Emily W.", val: -50.00}] }
+};
+
+let cycleInterval = null;
+const storesList = ["OVL", "LEE", "WSP"];
+let currentStoreIndex = 0;
+
+function formatVarianceMoney(num) {
+  const formatted = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Math.abs(num));
+  return num < 0 ? `-${formatted}` : `+${formatted}`;
+}
+
+function createVarianceStoreCard(storeKey) {
+  if (storeKey === "NONE" || !dummyVarianceData[storeKey]) return '';
+  
+  const data = dummyVarianceData[storeKey];
+  const totalClass = data.total < 0 ? 'vw-neg' : 'vw-pos';
+  
+  let empHtml = data.employees.map(emp => {
+    const empClass = emp.val < 0 ? 'vw-neg' : 'vw-pos';
+    return `
+      <div class="vw-emp-row">
+        <span>${emp.name}</span>
+        <span class="${empClass}">${formatVarianceMoney(emp.val)}</span>
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div class="vw-store-card">
+      <div class="vw-store-name">${storeKey} Recent Variance</div>
+      <div class="vw-total-variance ${totalClass}">${formatVarianceMoney(data.total)}</div>
+      <div class="vw-emp-list">
+        ${empHtml}
+      </div>
+    </div>
+  `;
+}
+
+function renderVariance() {
+  const primary = document.getElementById('vw-primary').value;
+  const compare = document.getElementById('vw-compare').value;
+  const container = document.getElementById('vw-dashboard-container');
+  
+  container.style.gridTemplateColumns = compare === "NONE" ? "1fr" : "1fr 1fr";
+  container.innerHTML = createVarianceStoreCard(primary) + createVarianceStoreCard(compare);
+}
+
+function toggleCycle() {
+  const btn = document.getElementById('vw-cycle-btn');
+  const compareSelect = document.getElementById('vw-compare');
+  const primarySelect = document.getElementById('vw-primary');
+
+  if (cycleInterval) {
+    clearInterval(cycleInterval);
+    cycleInterval = null;
+    btn.innerHTML = "▶ Auto";
+    btn.classList.remove('active');
+  } else {
+    btn.innerHTML = "⏸ Stop";
+    btn.classList.add('active');
+    compareSelect.value = "NONE"; 
+    
+    cycleInterval = setInterval(() => {
+      currentStoreIndex = (currentStoreIndex + 1) % storesList.length;
+      primarySelect.value = storesList[currentStoreIndex];
+      renderVariance();
+    }, 5000); 
+  }
+  renderVariance();
+}
+
+// Initializers
 document.getElementById('kpiStoreSelect').addEventListener('change', fetchKPIData);
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -678,6 +791,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     loadCMS();
     fetchKPIData();
+    renderVariance(); // Load dummy variance data on start
 });
 </script>
 </body>
