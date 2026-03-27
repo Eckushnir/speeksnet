@@ -88,15 +88,15 @@
   /* =========================================================
      MAIN CONTENT & GRID LAYOUT
      ========================================================= */
-  .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+  .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); width: 100%; max-width: 100%; } /* Changed max-width to allow full screen expansion */
   .main-content.expanded { margin-left: 76px; }
   
   .page-header { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 20px; padding-right: 80px; }
   .header-text h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin: 0; }
   .header-text p { color: #888; font-size: 14px; font-weight: 500; margin-top: 5px; }
 
-  /* DASHBOARD 2-COLUMN LAYOUT: Expanding Fluid Grid */
-  .dashboard-layout { display: grid; grid-template-columns: minmax(650px, 2fr) 1fr; gap: 30px; align-items: start; }
+  /* DASHBOARD 2-COLUMN LAYOUT: Reverted left widget to fixed 700px width */
+  .dashboard-layout { display: grid; grid-template-columns: 700px 1fr; gap: 30px; align-items: start; }
   
   .card { background: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.04); padding: 30px; transition: transform 0.3s ease, box-shadow 0.3s ease; margin-bottom: 30px; }
   .card:hover { box-shadow: 0 8px 25px rgba(0,0,0,0.05); }
@@ -382,10 +382,10 @@ async function loadCMS() {
     } catch (e) { console.error("CMS Failed", e); }
 }
 
-// Helper: Format Numbers
+// Helper: Format Numbers (Math logic removed so 50% stays 50%)
 function formatValue(val, type) {
     if (type === 'currency') return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(val);
-    if (type === 'percent') return `${(val * 100).toFixed(1)}%`; 
+    if (type === 'percent') return `${val.toFixed(1)}%`; 
     return new Intl.NumberFormat('en-US').format(val);
 }
 
@@ -414,7 +414,7 @@ function toggleCategory(el) {
 }
 
 // =================================================================================
-// SMART GROUPING LOGIC (Exact Dictionary Mapping)
+// SMART GROUPING LOGIC (Exactly mapped to your list)
 // =================================================================================
 function groupKPIs(data) {
     const categoryOrder = [
@@ -433,50 +433,7 @@ function groupKPIs(data) {
     const other = []; 
 
     // Hide eBay block
-    const ignoreList = ['ebay rank', 'defect rate', 'late shipment', 'case w/', 'resolution', 'tracking uploaded', 'top rated', 'cases closed'];
-
-    // Map exact row names from the spreadsheet to the exact Category they belong in
-    const exactMatches = {
-        "buying": "Customer & Buying Metrics",
-        "buying gm": "Customer & Buying Metrics",
-        "buy vs sell variance": "Customer & Buying Metrics",
-        "customer close rate": "Customer & Buying Metrics",
-        "device close rate": "Customer & Buying Metrics",
-        "# of customers": "Customer & Buying Metrics",
-        "buy value/customer": "Customer & Buying Metrics",
-        "# of items purchased": "Customer & Buying Metrics",
-        "returning customers": "Customer & Buying Metrics",
-        "avg transaction time": "Customer & Buying Metrics",
-        
-        "inventory cost": "Inventory Health",
-        "inventory cost <30": "Inventory Health",
-        
-        "gross sales": "Gross Sales & Returns",
-        "discounts": "Gross Sales & Returns",
-        "refunds": "Gross Sales & Returns",
-        "returns cancelled": "Gross Sales & Returns",
-        "return rate": "Gross Sales & Returns",
-        "true returns % of gross sales": "Gross Sales & Returns",
-        
-        "net sales": "Net Sales & Margins",
-        "cogs": "Net Sales & Margins",
-        "gross profit": "Net Sales & Margins",
-        "gross profit %": "Net Sales & Margins",
-        "cogs sold vs. cogs listed": "Net Sales & Margins",
-        
-        "sales at pos": "Sales Channels",
-        "sales online": "Sales Channels",
-        "sale draft order": "Sales Channels",
-        
-        "shipping label cost": "Shipping Costs",
-        
-        "paymore ranking": "Store Rankings & Reviews",
-        "google score": "Store Rankings & Reviews",
-        "google reviews": "Store Rankings & Reviews",
-        
-        "recycled inventory": "Recycled & Confiscated",
-        "inventory confiscation": "Recycled & Confiscated"
-    };
+    const ignoreList = ['ebay rank', 'defect rate', 'late shipment', 'case w/', 'resolution', 'tracking uploaded', 'top rated', 'cases closed', 'ebay sales'];
 
     let allMetrics = [];
     data.forEach(group => {
@@ -488,20 +445,51 @@ function groupKPIs(data) {
     allMetrics.forEach(metric => {
         let name = metric.name.toLowerCase().trim();
 
-        // 1. Ignore the bottom eBay block entirely
         if (ignoreList.some(ignoreWord => name.includes(ignoreWord))) return; 
 
-        // 2. Ignore ALL rows that contain "% of" EXCEPT "true returns % of gross sales" and "gross profit %"
-        if ((name.includes('% of ') || name.includes('cost % of sales')) && name !== 'true returns % of gross sales' && name !== 'gross profit %') {
-            return;
+        // 1. Customer & Buying
+        if (name === 'buying' || name === 'buying gm' || name === 'buy vs sell variance' || name === 'customer close rate' || name === 'device close rate' || name === '# of customers' || name === 'buy value/customer' || name === '# of items purchased' || name === 'returning customers' || name === '% of returning customers' || name === 'avg transaction time') {
+            categories["Customer & Buying Metrics"].push(metric);
         }
-
-        // 3. Strict assignment to exactly where it belongs
-        if (exactMatches[name]) {
-            categories[exactMatches[name]].push(metric);
-        } else {
-            // Failsafe for newly added rows
-            other.push(metric);
+        // 2. Inventory Health
+        else if (name === 'inventory cost' || name === 'inventory cost <30' || name === '% of inventory over 30 days' || name === 'inventory cost < 30') {
+            categories["Inventory Health"].push(metric);
+        }
+        // 3. Gross Sales & Returns
+        else if (name === 'gross sales' || name === 'discounts' || name === 'refunds' || name === 'returns cancelled' || name === 'return rate') {
+            categories["Gross Sales & Returns"].push(metric);
+        }
+        // 4. Net Sales & Margins
+        else if (name === 'net sales' || name === 'cogs' || name === 'gross profit' || name === 'gross profit %' || name === 'cogs sold vs. cogs listed') {
+            categories["Net Sales & Margins"].push(metric);
+        }
+        // 5. Sales Channels
+        else if (name === 'sales at pos' || name === '% of sales at pos' || name === 'sales online' || name === '% of sales online' || name === 'sale draft order' || name === '% of sales draft order' || name === '% of non ebay sales' || name === '% of non-ebay sales') {
+            categories["Sales Channels"].push(metric);
+        }
+        // 6. Shipping Costs
+        else if (name === 'shipping label cost' || name === 'shipping cost % of sales' || name.includes('shipping cost')) {
+            categories["Shipping Costs"].push(metric);
+        }
+        // 7. Store Rankings & Reviews
+        else if (name === 'paymore ranking' || name === 'google score' || name === 'google reviews') {
+            categories["Store Rankings & Reviews"].push(metric);
+        }
+        // 8. Recycled & Confiscated
+        else if (name === 'recycled inventory' || name === 'recycled % of inventory' || name === 'inventory confiscation') {
+            categories["Recycled & Confiscated"].push(metric);
+        }
+        // Failsafe for slight typos in spreadsheet vs list
+        else {
+            if (name.includes('buying') || name.includes('customer') || name.includes('transaction')) categories["Customer & Buying Metrics"].push(metric);
+            else if (name.includes('inventory cost') || name.includes('over 30 days')) categories["Inventory Health"].push(metric);
+            else if (name.includes('gross sales') || name.includes('discount') || name.includes('refund') || name.includes('return')) categories["Gross Sales & Returns"].push(metric);
+            else if (name.includes('net sales') || name.includes('cogs') || name.includes('gross profit')) categories["Net Sales & Margins"].push(metric);
+            else if (name.includes('pos') || name.includes('online') || name.includes('draft') || name.includes('non ebay')) categories["Sales Channels"].push(metric);
+            else if (name.includes('shipping')) categories["Shipping Costs"].push(metric);
+            else if (name.includes('paymore') || name.includes('google')) categories["Store Rankings & Reviews"].push(metric);
+            else if (name.includes('recycle') || name.includes('confiscat')) categories["Recycled & Confiscated"].push(metric);
+            else other.push(metric);
         }
     });
 
@@ -567,69 +555,4 @@ function renderKPIDashboard() {
             <div class="kpi-category">
                 <div class="kpi-category-header" onclick="toggleCategory(this)">
                     ${cat.category}
-                    <span class="chevron">▼</span>
-                </div>
-                <div class="kpi-category-content">
-        `;
-        
-        cat.metrics.forEach(metric => {
-            const primaryVal = metric.values[primaryIdx] || 0;
-            const compareVal = metric.values[compareIdx] || 0;
-            const delta = primaryVal - compareVal;
-            
-            let isPct = metric.format === 'percent';
-            
-            const primaryStr = isPct ? `${(primaryVal * 100).toFixed(1)}%` : formatValue(primaryVal, metric.format);
-            const compareStr = isPct ? `${(compareVal * 100).toFixed(1)}%` : formatValue(compareVal, metric.format);
-            let deltaStr = isPct ? `${(Math.abs(delta) * 100).toFixed(1)}%` : formatValue(Math.abs(delta), metric.format);
-            
-            let badgeClass = 'delta-neutral';
-            let sign = '';
-            
-            if (delta > 0) {
-                sign = '+';
-                badgeClass = metric.inverse ? 'delta-neg' : 'delta-pos'; 
-            } else if (delta < 0) {
-                sign = '-';
-                badgeClass = metric.inverse ? 'delta-pos' : 'delta-neg'; 
-            } else {
-                deltaStr = '0';
-            }
-
-            const sparklineSVG = generateSparklineSVG(metric.values);
-
-            html += `
-                <div class="kpi-row">
-                    <div class="kpi-name-col">
-                        <span class="kpi-name">${metric.name}</span>
-                        ${sparklineSVG}
-                    </div>
-                    <div class="kpi-value-col kpi-primary-val">${primaryStr}</div>
-                    <div class="kpi-value-col" style="color: #888;">${compareStr}</div>
-                    <div class="kpi-delta-col">
-                        <span class="delta-badge ${badgeClass}">${sign}${deltaStr}</span>
-                    </div>
-                </div>
-            `;
-        });
-        
-        html += `</div></div>`;
-    });
-
-    container.innerHTML = html;
-}
-
-document.getElementById('kpiStoreSelect').addEventListener('change', fetchKPIData);
-
-document.addEventListener("DOMContentLoaded", () => {
-    if (localStorage.getItem('speeksSidebar') === 'collapsed') {
-        document.querySelector('.sidebar').classList.add('collapsed');
-        document.querySelector('.main-content').classList.add('expanded');
-        document.querySelector('.sidebar-toggle').classList.add('collapsed');
-    }
-    loadCMS();
-    fetchKPIData();
-});
-</script>
-</body>
-</html>
+                    <span class="chevron">▼
