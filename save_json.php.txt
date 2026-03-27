@@ -1,0 +1,22 @@
+<?php
+// 1. Get the raw POST data (the JSON string)
+$jsonData = file_get_contents('php://input');
+
+// 2. Validate that it's actually JSON
+if (json_decode($jsonData) === null) {
+    http_response_code(400);
+    echo json_encode(["status" => "error", "message" => "Invalid JSON data"]);
+    exit();
+}
+
+// 3. Define the path to your JSON file
+$filePath = './json/process_documents.json';
+
+// 4. Attempt to write the file
+if (file_put_contents($filePath, $jsonData)) {
+    echo json_encode(["status" => "success", "message" => "File updated successfully"]);
+} else {
+    http_response_code(500);
+    echo json_encode(["status" => "error", "message" => "Failed to write to file. Check folder permissions."]);
+}
+?>
