@@ -404,31 +404,29 @@ function formatSmartValue(val, name) {
     let strVal = String(val).trim();
     let isStringPct = strVal.includes('%');
     let num = parseFloat(strVal.replace(/[$,%]/g, ''));
-    if (isNaN(num)) return strVal; // If it's pure text, return text
+    if (isNaN(num)) return strVal;
 
-    let isPctName = name.includes('%') || name.toLowerCase().includes('rate') || name.toLowerCase().includes('variance') || name.toLowerCase().includes('margin');
+    let nameLower = name.toLowerCase();
+    let isPctName = nameLower.includes('%') || nameLower.includes('rate') || nameLower.includes('variance') || nameLower.includes('margin');
 
     if (isPctName || isStringPct) {
-        // Fix for Google Sheets JSON API giving decimals (0.5) instead of 50
         if (!isStringPct && Math.abs(num) > 0 && Math.abs(num) <= 2.0) {
             num = num * 100;
-        } 
-        // Fix for when a multiplier ran wild (5000)
-        else if (!isStringPct && Math.abs(num) >= 1000) {
+        } else if (!isStringPct && Math.abs(num) >= 1000) {
             num = num / 100;
         }
-        return `${num.toFixed(2).replace('.00', '')}%`;
+        return `${num.toFixed(2).replace(/\.00$/, '')}%`;
     }
 
-    let isCurrency = name.toLowerCase().includes('sales') || name.toLowerCase().includes('cost') || name.toLowerCase().includes('refund') || name.toLowerCase().includes('discount') || name.toLowerCase().includes('profit') || name.toLowerCase().includes('cogs') || name.toLowerCase().includes('value') || strVal.includes('$') || name.toLowerCase().includes('buying');
+    let isCurrency = nameLower.includes('sales') || nameLower.includes('cost') || nameLower.includes('refund') || nameLower.includes('discount') || nameLower.includes('profit') || nameLower.includes('cogs') || nameLower.includes('value') || strVal.includes('$') || nameLower.includes('buying');
 
     // Make sure rankings and customer counts don't get dollar signs
-    if (name.toLowerCase().includes('ranking') || name.toLowerCase().includes('score') || name.toLowerCase().includes('reviews') || name.toLowerCase().includes('#') || name.toLowerCase().includes('returning customers') || name.toLowerCase().includes('time')) {
+    if (nameLower.includes('ranking') || nameLower.includes('score') || nameLower.includes('reviews') || nameLower.includes('#') || nameLower.includes('returning customers') || nameLower.includes('time')) {
          isCurrency = false;
     }
 
     if (isCurrency) {
-        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num).replace('.00', '');
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num).replace(/\.00$/, '');
     }
 
     return new Intl.NumberFormat('en-US').format(num);
@@ -441,76 +439,87 @@ function getRawNumber(v, name) {
     let isPct = str.includes('%') || name.includes('%') || name.toLowerCase().includes('rate') || name.toLowerCase().includes('variance');
     let n = parseFloat(str.replace(/[$,%]/g, ''));
     if(isNaN(n)) return 0;
-    if(!str.includes('%') && isPct && Math.abs(n) <= 2.0) n = n * 100;
+    if(!str.includes('%') && isPct && Math.abs(n) <= 2.0 && Math.abs(n) > 0) n = n * 100;
     else if (!str.includes('%') && isPct && Math.abs(n) >= 1000) n = n / 100;
     return n;
 }
 
 // =================================================================================
-// SMART GROUPING LOGIC (Using .includes to catch ALL rows)
+// BULLETPROOF GROUPING LOGIC (Exactly mapped to your screenshot blocks)
 // =================================================================================
 function groupKPIs(data) {
-    const categoryOrder = [
-        "Customer & Buying Metrics",
-        "Inventory Health",
-        "Gross Sales & Returns",
-        "Net Sales & Margins",
-        "Sales Channels",
-        "Shipping Costs",
-        "Store Rankings & Reviews",
-        "Recycled & Confiscated",
-        "Other Metrics"
-    ];
+    const categories = {
+        "Buying Metrics": [],
+        "Inventory": [],
+        "Gross Sales": [],
+        "Net Sales & Margins": [],
+        "Sales Channels": [],
+        "Shipping Costs": [],
+        "Rankings & Reviews": [],
+        "Recycled & Confiscated": [],
+        "Other Metrics": []
+    };
 
-    const categories = {};
-    categoryOrder.forEach(cat => categories[cat] = []);
-
-    // Explicitly hide the bottom eBay block
-    const ignoreList = ['ebay rank', 'defect rate', 'late shipment', 'case w/no resolution', 'tracking uploaded', 'top rated', 'ebay sales'];
+    // Explicitly hide the eBay block at the bottom
+    const ignoreList = ['ebay rank', 'defect rate', 'late shipment', 'case w/no resolution', 'tracking uploaded', 'top rated', 'ebay sales', 'cases closed'];
 
     let allMetrics = [];
-    data.forEach(group => {
-        if (group.metrics && Array.isArray(group.metrics)) {
-            allMetrics.push(...group.metrics);
-        }
-    });
+    
+    // Flatten logic handles nested OR flat arrays from Apps Script
+    if (Array.isArray(data)) {
+        data.forEach(item => {
+            if (item.metrics && Array.isArray(item.metrics)) allMetrics.push(...item.metrics);
+            else if (item.name) allMetrics.push(item);
+        });
+    }
 
     allMetrics.forEach(metric => {
         if (!metric || !metric.name) return;
-        let name = metric.name.toLowerCase().trim();
+        
+        // Normalize name: lowercase, remove weird spacing/line breaks
+        let name = metric.name.toLowerCase().replace(/\s+/g, ' ').trim();
 
         if (ignoreList.some(ignoreWord => name.includes(ignoreWord))) return; 
 
-        if (name.includes('buying') || name.includes('customer') || name.includes('transaction') || name.includes('variance') || name.includes('items purchased')) {
-            categories["Customer & Buying Metrics"].push(metric);
+        // Block 1: Buying (Rows 4-14)
+        if (["buying", "buying gm", "buy vs sell variance", "customer close rate", "device close rate", "# of customers", "buy value/customer", "# of items purchased", "returning customers", "% of returning customers", "avg transaction time"].includes(name)) {
+            categories["Buying Metrics"].push(metric);
         }
-        else if (name.includes('inventory cost') || name.includes('inventory over 30')) {
-            categories["Inventory Health"].push(metric);
+        // Block 2: Inventory (Rows 16-18)
+        else if (["inventory cost", "inventory cost <30", "% of inventory over 30 days"].includes(name) || name.includes('inventory cost')) {
+            categories["Inventory"].push(metric);
         }
-        else if (name.includes('gross sales') || name.includes('discount') || name.includes('refund') || name.includes('return')) {
-            categories["Gross Sales & Returns"].push(metric);
+        // Block 3: Gross Sales & Returns (Rows 20-24)
+        else if (["gross sales", "discounts", "refunds", "returns cancelled", "return rate"].includes(name)) {
+            categories["Gross Sales"].push(metric);
         }
-        else if (name.includes('net sales') || name.includes('cogs') || name.includes('gross profit')) {
+        // Block 4: Net Sales (Rows 26-30)
+        else if (["net sales", "cogs", "gross profit", "gross profit %", "cogs sold vs. cogs listed"].includes(name)) {
             categories["Net Sales & Margins"].push(metric);
         }
-        else if (name.includes('pos') || name.includes('online') || name.includes('draft') || name.includes('non ebay') || name.includes('non-ebay')) {
+        // Block 5: Sales Channels (Rows 32-38)
+        else if (["sales at pos", "% of sales at pos", "sales online", "% of sales online", "sale draft order", "% of sales draft order", "% of non ebay sales"].includes(name) || name.includes("draft order") || name.includes("pos") || name.includes("online")) {
             categories["Sales Channels"].push(metric);
         }
-        else if (name.includes('shipping')) {
+        // Block 6: Shipping (Rows 40-41)
+        else if (["shipping label cost", "shipping cost % of sales"].includes(name) || name.includes("shipping")) {
             categories["Shipping Costs"].push(metric);
         }
-        else if (name.includes('ranking') || name.includes('google') || name.includes('paymore')) {
-            categories["Store Rankings & Reviews"].push(metric);
+        // Block 7 & 8: Rankings (Rows 43-46)
+        else if (["paymore ranking", "google score", "google reviews"].includes(name) || name.includes("paymore") || name.includes("google")) {
+            categories["Rankings & Reviews"].push(metric);
         }
-        else if (name.includes('recycle') || name.includes('confiscat')) {
+        // Block 9: Recycled (Rows 48-50)
+        else if (["recycled inventory", "recycled % of inventory", "inventory confiscation"].includes(name) || name.includes("recycled") || name.includes("confiscation")) {
             categories["Recycled & Confiscated"].push(metric);
         }
+        // Catch-all
         else {
             categories["Other Metrics"].push(metric);
         }
     });
 
-    return categoryOrder
+    return Object.keys(categories)
         .map(cat => ({ category: cat, metrics: categories[cat] }))
         .filter(group => group.metrics.length > 0);
 }
@@ -589,7 +598,7 @@ function renderKPIDashboard() {
             const primaryStr = formatSmartValue(rawPrimary, metric.name);
             const compareStr = formatSmartValue(rawCompare, metric.name);
             
-            let deltaStr = isPct ? `${Math.abs(deltaNum).toFixed(2).replace('.00', '')}%` : formatSmartValue(Math.abs(deltaNum), metric.name);
+            let deltaStr = isPct ? `${Math.abs(deltaNum).toFixed(2).replace(/\.00$/, '')}%` : formatSmartValue(Math.abs(deltaNum), metric.name);
             
             let badgeClass = 'delta-neutral';
             let sign = '';
