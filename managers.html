@@ -96,13 +96,14 @@
   .header-text h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin: 0; }
   .header-text p { color: #888; font-size: 14px; font-weight: 500; margin-top: 5px; }
 
-  /* DASHBOARD 2-COLUMN LAYOUT */
-  .dashboard-layout { display: grid; grid-template-columns: 1fr 400px; gap: 30px; align-items: start; }
+  /* DASHBOARD 2-COLUMN LAYOUT (NARROW LEFT, WIDE RIGHT) */
+  .dashboard-layout { display: grid; grid-template-columns: 520px 1fr; gap: 30px; align-items: start; }
   
   .card { background: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.04); padding: 30px; transition: transform 0.3s ease, box-shadow 0.3s ease; margin-bottom: 30px; }
   .card:hover { box-shadow: 0 8px 25px rgba(0,0,0,0.05); }
   .card-title { font-size: 20px; font-weight: 800; color: var(--slate-charcoal); border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
   
+  .portals-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px; }
   .portal-btn { display: block; text-decoration: none; padding: 14px 16px; background: var(--bg-app); border-radius: 10px; color: var(--text-dark); font-size: 13px; font-weight: 600; margin-bottom: 10px; transition: 0.2s; border: 1px solid transparent; }
   .portal-btn:hover { background: var(--sage-professional); color: white; transform: translateX(6px); box-shadow: 0 4px 10px rgba(90, 141, 59, 0.2); }
 
@@ -114,36 +115,43 @@
   .kpi-select { padding: 8px 12px; border-radius: 8px; border: 1px solid #ddd; font-family: 'Inter', sans-serif; font-weight: 700; color: var(--slate-charcoal); outline: none; cursor: pointer; background: white; }
   .kpi-select:focus { border-color: var(--sage-professional); }
 
-  .kpi-category { margin-bottom: 20px; border: 1px solid #eee; border-radius: 12px; overflow: hidden; }
-  .kpi-category-header { background: #f9fafb; padding: 12px 20px; font-weight: 800; font-size: 14px; color: var(--slate-charcoal); cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; transition: background 0.2s; }
-  .kpi-category-header:hover { background: #f0f4f8; }
+  /* New scrollable area for the KPI rows */
+  .kpi-scroll-area { max-height: 500px; overflow-y: auto; overscroll-behavior: contain; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
+  .kpi-scroll-area::-webkit-scrollbar { width: 6px; }
+  .kpi-scroll-area::-webkit-scrollbar-track { background: transparent; }
+  .kpi-scroll-area::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+  .kpi-scroll-area::-webkit-scrollbar-thumb:hover { background: var(--sage-professional); }
+
+  .kpi-category { border-bottom: 1px solid #eee; overflow: hidden; }
+  .kpi-category-header { background: white; padding: 12px 20px; font-weight: 800; font-size: 14px; color: var(--slate-charcoal); cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; transition: background 0.2s; }
+  .kpi-category-header:hover { background: #f9fafb; }
   .kpi-category-content { display: block; }
   .kpi-category.collapsed .kpi-category-content { display: none; }
   .kpi-category.collapsed .chevron { transform: rotate(-90deg); }
   .chevron { transition: transform 0.2s; font-size: 12px; color: #888; }
 
   /* Row Layout */
-  .kpi-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; align-items: center; padding: 15px 20px; border-top: 1px solid #eee; background: white; transition: background 0.2s; }
-  .kpi-row:hover { background: #fafafa; }
+  .kpi-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; align-items: center; padding: 15px 20px; border-top: 1px solid #f5f5f5; background: white; transition: background 0.2s; }
+  .kpi-row:hover { background: #f9fafb; }
   
   .kpi-name-col { display: flex; flex-direction: column; gap: 4px; }
-  .kpi-name { font-weight: 700; font-size: 14px; color: var(--slate-charcoal); }
+  .kpi-name { font-weight: 700; font-size: 13px; color: var(--slate-charcoal); }
   
   /* The SVG Sparkline Container */
-  .sparkline { width: 80px; height: 24px; }
+  .sparkline { width: 70px; height: 20px; }
   .sparkline path { fill: none; stroke: #cbd5e1; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-  .kpi-value-col { font-size: 14px; font-weight: 600; color: #444; }
-  .kpi-primary-val { font-weight: 800; color: var(--slate-charcoal); font-size: 15px; }
+  .kpi-value-col { font-size: 13px; font-weight: 600; color: #444; }
+  .kpi-primary-val { font-weight: 800; color: var(--slate-charcoal); font-size: 14px; }
   
   .kpi-delta-col { text-align: right; }
-  .delta-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 800; letter-spacing: 0.5px; }
+  .delta-badge { display: inline-block; padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: 800; letter-spacing: 0.5px; }
   .delta-pos { background: #dcfce7; color: #166534; } /* Green */
   .delta-neg { background: #fee2e2; color: #991b1b; } /* Red */
   .delta-neutral { background: #f1f5f9; color: #475569; } /* Gray */
 
   /* Column Headers for Data */
-  .kpi-list-header { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; padding: 10px 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; color: #888; letter-spacing: 0.5px; }
+  .kpi-list-header { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; padding: 12px 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; color: #888; letter-spacing: 0.5px; background: #f9fafb; border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 10; border-top-left-radius: 12px; border-top-right-radius: 12px;}
   .kpi-list-header div:last-child { text-align: right; }
 
   @media (max-width: 1200px) { .dashboard-layout { grid-template-columns: 1fr; } }
@@ -216,7 +224,6 @@
         
         <div class="kpi-header-controls">
             <div class="kpi-select-group">
-                <label>Store:</label>
                 <select id="kpiStoreSelect" class="kpi-select">
                     <option value="OVL">OVL</option>
                     <option value="LEE">LEE</option>
@@ -226,40 +233,44 @@
                 </select>
             </div>
             <div class="kpi-select-group" style="margin-left: auto;">
-                <label>Primary:</label>
                 <select id="primaryMonthSelect" class="kpi-select" onchange="renderKPIDashboard()"></select>
             </div>
+            <div class="kpi-select-group" style="color: #ccc;">vs</div>
             <div class="kpi-select-group">
-                <label>Compare To:</label>
                 <select id="compareMonthSelect" class="kpi-select" onchange="renderKPIDashboard()"></select>
             </div>
         </div>
 
-        <div class="kpi-list-header">
-            <div>Metric & 12-Mo Trend</div>
-            <div id="header-primary-label">Primary</div>
-            <div id="header-compare-label">Compare</div>
-            <div>Delta (+/-)</div>
-        </div>
-
-        <div id="kpiDashboardContainer">
+        <div style="border: 1px solid #eee; border-radius: 12px; background: white; margin-bottom: 10px;">
+            <div class="kpi-list-header">
+                <div>Metric & 12-Mo Trend</div>
+                <div id="header-primary-label">Primary</div>
+                <div id="header-compare-label">Compare</div>
+                <div>Delta (+/-)</div>
             </div>
+
+            <div id="kpiDashboardContainer" class="kpi-scroll-area">
+                <div style="padding: 40px; text-align: center; color: #888; font-weight: 600;">Syncing KPI Data...</div>
+            </div>
+        </div>
       </div>
 
       <div>
-          <div class="card">
-            <div class="card-title">Performance & Sales <span>📈</span></div>
-            <a href="https://docs.google.com/spreadsheets/d/1i_oV37lZXq8s91f9ymzwQlrM8WY2UlQQQ0qsRP3xLJ8/edit?usp=sharing" target="_blank" class="portal-btn">📈 Sales Summary 2026</a>
-            <a href="https://docs.google.com/spreadsheets/d/1oHOnA6wDwaLQ-EP4-CiDTkKpAdP2V7y8mOay416HDME/edit?usp=sharing" target="_blank" class="portal-btn">👥 Team Member KPIs</a>
-            <a href="https://docs.google.com/spreadsheets/d/1pubURplK66yC6oXmpz7P-r8zN07DWmDiLxrtTg0rmdk/edit?usp=sharing" target="_blank" class="portal-btn">🎯 Daily Listing Goals</a>
-          </div>
-          
-          <div class="card">
-            <div class="card-title">Operations & Admin <span>⚙️</span></div>
-            <a href="https://drive.google.com/drive/folders/1N5okL6Lc11lgD5meZS-snncr3tyyoNH1?usp=sharing" target="_blank" class="portal-btn">📁 Variance Folder</a>
-            <a href="https://docs.google.com/spreadsheets/d/1KdQNDYfJT-Gt6wal6cgCbh6aqOUOHxey3PEsoeyztzQ/edit?usp=sharing" target="_blank" class="portal-btn">📦 SPEEKS Aging Inventory Tracker</a>
-            <a href="https://docs.google.com/spreadsheets/d/1zw-jcqpAnMY6PNofERbUz4pUHA3qnlnZx6O6C_XSmLY/edit?usp=sharing" target="_blank" class="portal-btn">🛡️ eBay & Shopify Insurance Cases</a>
-            <a href="https://docs.google.com/spreadsheets/d/1ar3tabN-bUqkjWqgy25MCHzSup2jhiaAKaGxLwZTeJ8/edit?usp=sharing" target="_blank" class="portal-btn">📍 Local Location Visits</a>
+          <div class="portals-grid">
+              <div class="card">
+                <div class="card-title">Performance & Sales <span>📈</span></div>
+                <a href="https://docs.google.com/spreadsheets/d/1i_oV37lZXq8s91f9ymzwQlrM8WY2UlQQQ0qsRP3xLJ8/edit?usp=sharing" target="_blank" class="portal-btn">📈 Sales Summary 2026</a>
+                <a href="https://docs.google.com/spreadsheets/d/1oHOnA6wDwaLQ-EP4-CiDTkKpAdP2V7y8mOay416HDME/edit?usp=sharing" target="_blank" class="portal-btn">👥 Team Member KPIs</a>
+                <a href="https://docs.google.com/spreadsheets/d/1pubURplK66yC6oXmpz7P-r8zN07DWmDiLxrtTg0rmdk/edit?usp=sharing" target="_blank" class="portal-btn">🎯 Daily Listing Goals</a>
+              </div>
+              
+              <div class="card">
+                <div class="card-title">Operations & Admin <span>⚙️</span></div>
+                <a href="https://drive.google.com/drive/folders/1N5okL6Lc11lgD5meZS-snncr3tyyoNH1?usp=sharing" target="_blank" class="portal-btn">📁 Variance Folder</a>
+                <a href="https://docs.google.com/spreadsheets/d/1KdQNDYfJT-Gt6wal6cgCbh6aqOUOHxey3PEsoeyztzQ/edit?usp=sharing" target="_blank" class="portal-btn">📦 SPEEKS Aging Inventory Tracker</a>
+                <a href="https://docs.google.com/spreadsheets/d/1zw-jcqpAnMY6PNofERbUz4pUHA3qnlnZx6O6C_XSmLY/edit?usp=sharing" target="_blank" class="portal-btn">🛡️ eBay & Shopify Insurance Cases</a>
+                <a href="https://docs.google.com/spreadsheets/d/1ar3tabN-bUqkjWqgy25MCHzSup2jhiaAKaGxLwZTeJ8/edit?usp=sharing" target="_blank" class="portal-btn">📍 Local Location Visits</a>
+              </div>
           </div>
       </div>
 
@@ -269,8 +280,6 @@
 <script>
 // --- APP SCRIPT URLS ---
 const CMS_URL = 'https://script.google.com/macros/s/AKfycbxZviJiiQKcQYyp3SK4tcNBHrHXkID7cmwwuONStVPE9DHCSAMappqAs9dBns7ufECI/exec';
-
-// NEW KPI SCRIPT URL UPDATED BELOW
 const MONTHLY_KPI_URL = 'https://script.google.com/macros/s/AKfycby0ihq9A4yUQvdZdeAF9euC5jih24hP2XGG-J_balNtxop2RHBuIuigw_mH3XTeCkkhow/exec';
 
 let dynamicMonths = [];
@@ -377,7 +386,7 @@ async function loadCMS() {
 // Helper: Format Numbers
 function formatValue(val, type) {
     if (type === 'currency') return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(val);
-    if (type === 'percent') return `${(val * 100).toFixed(1)}%`; // Assumes sheet data is raw decimal (0.05 = 5%)
+    if (type === 'percent') return `${(val * 100).toFixed(1)}%`; 
     return new Intl.NumberFormat('en-US').format(val);
 }
 
@@ -386,8 +395,8 @@ function generateSparklineSVG(dataArray) {
     if (!dataArray || dataArray.length === 0) return '';
     const min = Math.min(...dataArray);
     const max = Math.max(...dataArray);
-    const width = 80;
-    const height = 24;
+    const width = 70;
+    const height = 20;
     const padding = 2;
     
     const points = dataArray.map((val, i) => {
@@ -409,11 +418,6 @@ async function fetchKPIData() {
     const store = document.getElementById('kpiStoreSelect').value;
     const container = document.getElementById('kpiDashboardContainer');
     
-    if (MONTHLY_KPI_URL === 'PASTE_NEW_SCRIPT_URL_HERE') {
-        container.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--idea-gold); font-weight: 600;">Please paste your new Web App URL in the HTML code.</div>';
-        return;
-    }
-    
     container.innerHTML = '<div style="padding: 40px; text-align: center; color: #888; font-weight: 600;">Syncing Live Data...</div>';
     
     try {
@@ -428,7 +432,6 @@ async function fetchKPIData() {
         dynamicMonths = payload.months;
         dynamicKPIData = payload.data;
 
-        // Update Dropdowns dynamically
         const primarySelect = document.getElementById('primaryMonthSelect');
         const compareSelect = document.getElementById('compareMonthSelect');
         
@@ -477,9 +480,6 @@ function renderKPIDashboard() {
             const compareVal = metric.values[compareIdx] || 0;
             const delta = primaryVal - compareVal;
             
-            // Format the math
-            // If the script detected it was a percentage, we don't multiply by 100 for the delta display if the raw values were already whole numbers like 4.5. 
-            // The script stripped the '%', so the value is just 4.5.
             let isPct = metric.format === 'percent';
             
             const primaryStr = isPct ? `${primaryVal.toFixed(1)}%` : formatValue(primaryVal, metric.format);
@@ -522,7 +522,6 @@ function renderKPIDashboard() {
     container.innerHTML = html;
 }
 
-// Make sure changing store fetches new data
 document.getElementById('kpiStoreSelect').addEventListener('change', fetchKPIData);
 
 document.addEventListener("DOMContentLoaded", () => {
