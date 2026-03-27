@@ -88,15 +88,15 @@
   /* =========================================================
      MAIN CONTENT & GRID LAYOUT
      ========================================================= */
-  .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); max-width: 1800px; }
+  .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
   .main-content.expanded { margin-left: 76px; }
   
   .page-header { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 20px; padding-right: 80px; }
   .header-text h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin: 0; }
   .header-text p { color: #888; font-size: 14px; font-weight: 500; margin-top: 5px; }
 
-  /* DASHBOARD 2-COLUMN LAYOUT: Widened Left Column */
-  .dashboard-layout { display: grid; grid-template-columns: 700px 1fr; gap: 30px; align-items: start; }
+  /* DASHBOARD 2-COLUMN LAYOUT: Expanding Fluid Grid */
+  .dashboard-layout { display: grid; grid-template-columns: minmax(650px, 2fr) 1fr; gap: 30px; align-items: start; }
   
   .card { background: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.04); padding: 30px; transition: transform 0.3s ease, box-shadow 0.3s ease; margin-bottom: 30px; }
   .card:hover { box-shadow: 0 8px 25px rgba(0,0,0,0.05); }
@@ -414,7 +414,7 @@ function toggleCategory(el) {
 }
 
 // =================================================================================
-// SMART GROUPING LOGIC (Bulletproof Keyword Matching)
+// SMART GROUPING LOGIC (Exact Dictionary Mapping)
 // =================================================================================
 function groupKPIs(data) {
     const categoryOrder = [
@@ -430,48 +430,79 @@ function groupKPIs(data) {
 
     const categories = {};
     categoryOrder.forEach(cat => categories[cat] = []);
-    const other = [];
+    const other = []; 
 
-    // IGNORE these eBay rows entirely
-    const ignoreList = ['ebay rank', 'defect rate', 'late shipment', 'case w/no', 'resolution', 'tracking uploaded', 'top rated'];
+    // Hide eBay block
+    const ignoreList = ['ebay rank', 'defect rate', 'late shipment', 'case w/', 'resolution', 'tracking uploaded', 'top rated', 'cases closed'];
 
+    // Map exact row names from the spreadsheet to the exact Category they belong in
+    const exactMatches = {
+        "buying": "Customer & Buying Metrics",
+        "buying gm": "Customer & Buying Metrics",
+        "buy vs sell variance": "Customer & Buying Metrics",
+        "customer close rate": "Customer & Buying Metrics",
+        "device close rate": "Customer & Buying Metrics",
+        "# of customers": "Customer & Buying Metrics",
+        "buy value/customer": "Customer & Buying Metrics",
+        "# of items purchased": "Customer & Buying Metrics",
+        "returning customers": "Customer & Buying Metrics",
+        "avg transaction time": "Customer & Buying Metrics",
+        
+        "inventory cost": "Inventory Health",
+        "inventory cost <30": "Inventory Health",
+        
+        "gross sales": "Gross Sales & Returns",
+        "discounts": "Gross Sales & Returns",
+        "refunds": "Gross Sales & Returns",
+        "returns cancelled": "Gross Sales & Returns",
+        "return rate": "Gross Sales & Returns",
+        "true returns % of gross sales": "Gross Sales & Returns",
+        
+        "net sales": "Net Sales & Margins",
+        "cogs": "Net Sales & Margins",
+        "gross profit": "Net Sales & Margins",
+        "gross profit %": "Net Sales & Margins",
+        "cogs sold vs. cogs listed": "Net Sales & Margins",
+        
+        "sales at pos": "Sales Channels",
+        "sales online": "Sales Channels",
+        "sale draft order": "Sales Channels",
+        
+        "shipping label cost": "Shipping Costs",
+        
+        "paymore ranking": "Store Rankings & Reviews",
+        "google score": "Store Rankings & Reviews",
+        "google reviews": "Store Rankings & Reviews",
+        
+        "recycled inventory": "Recycled & Confiscated",
+        "inventory confiscation": "Recycled & Confiscated"
+    };
+
+    let allMetrics = [];
     data.forEach(group => {
-        group.metrics.forEach(metric => {
-            let name = metric.name.toLowerCase().trim();
+        if (group.metrics && Array.isArray(group.metrics)) {
+            allMetrics.push(...group.metrics);
+        }
+    });
 
-            if (ignoreList.some(ignoreWord => name.includes(ignoreWord))) {
-                return; 
-            }
+    allMetrics.forEach(metric => {
+        let name = metric.name.toLowerCase().trim();
 
-            // Bulletproof routing
-            if (name.includes('buy') || name.includes('walk in') || name.includes('close rate') || name.includes('item') || name.includes('customer')) {
-                categories["Customer & Buying Metrics"].push(metric);
-            }
-            else if (name.includes('inventory cost') || name.includes('30 days')) {
-                categories["Inventory Health"].push(metric);
-            }
-            else if (name.includes('gross sales') || name.includes('discount') || name.includes('refund') || name.includes('return')) {
-                categories["Gross Sales & Returns"].push(metric);
-            }
-            else if (name.includes('net sales') || name.includes('gross profit') || name.includes('cogs') || name.includes('margin')) {
-                categories["Net Sales & Margins"].push(metric);
-            }
-            else if (name.includes('pos') || name.includes('online') || name.includes('draft') || name.includes('non-ebay') || name.includes('non ebay')) {
-                categories["Sales Channels"].push(metric);
-            }
-            else if (name.includes('shipping')) {
-                categories["Shipping Costs"].push(metric);
-            }
-            else if (name.includes('paymore') || name.includes('google') || name.includes('rank')) {
-                categories["Store Rankings & Reviews"].push(metric);
-            }
-            else if (name.includes('recycled') || name.includes('confiscat')) {
-                categories["Recycled & Confiscated"].push(metric);
-            }
-            else {
-                other.push(metric); // Failsafe for anything new
-            }
-        });
+        // 1. Ignore the bottom eBay block entirely
+        if (ignoreList.some(ignoreWord => name.includes(ignoreWord))) return; 
+
+        // 2. Ignore ALL rows that contain "% of" EXCEPT "true returns % of gross sales" and "gross profit %"
+        if ((name.includes('% of ') || name.includes('cost % of sales')) && name !== 'true returns % of gross sales' && name !== 'gross profit %') {
+            return;
+        }
+
+        // 3. Strict assignment to exactly where it belongs
+        if (exactMatches[name]) {
+            categories[exactMatches[name]].push(metric);
+        } else {
+            // Failsafe for newly added rows
+            other.push(metric);
+        }
     });
 
     return categoryOrder
