@@ -241,49 +241,49 @@
 
   <div class="dashboard-layout">
       
-      <div class="left-column">
-        <div class="card" style="padding: 25px;">
-          <div class="card-title" style="margin-bottom: 15px; border-bottom: none;">
-              <span>🧮 Monthly KPI Comparison</span>
-              <a href="https://docs.google.com/spreadsheets/d/1e4mW-pcwUMJjl2Pjry6PT180P8M8nkYL5Z4GcspQmEA/edit?usp=sharing" target="_blank" style="font-size: 11px; background: #f4f7f9; padding: 8px 14px; border-radius: 8px; color: var(--slate-charcoal); text-decoration: none; font-weight: 800; transition: 0.2s;">Open Full Sheet ↗</a>
-          </div>
-          
-          <div class="kpi-header-controls">
-              <div class="kpi-select-group">
-                  <select id="kpiStoreSelect" class="kpi-select">
-                      <option value="OVL">OVL</option>
-                      <option value="LEE">LEE</option>
-                      <option value="WSP">WSP</option>
-                      <option value="MPL">MPL</option>
-                      <option value="BAL">BAL</option>
-                  </select>
-              </div>
-              <div class="kpi-select-group" style="margin-left: auto;">
-                  <select id="primaryMonthSelect" class="kpi-select" onchange="renderKPIDashboard()"></select>
-              </div>
-              <div class="kpi-select-group" style="color: #ccc;">vs</div>
-              <div class="kpi-select-group">
-                  <select id="compareMonthSelect" class="kpi-select" onchange="renderKPIDashboard()"></select>
-              </div>
-          </div>
-
-          <div style="border: 1px solid #eee; border-radius: 12px; background: white; margin-bottom: 10px;">
-              <div class="kpi-list-header">
-                  <div>Metric & 12-Mo Trend</div>
-                  <div id="header-primary-label">Primary</div>
-                  <div id="header-compare-label">Compare</div>
-                  <div>Delta (+/-)</div>
-              </div>
-
-              <div id="kpiDashboardContainer" class="kpi-scroll-area">
-                  <div style="padding: 40px; text-align: center; color: #888; font-weight: 600;">Syncing KPI Data...</div>
-              </div>
-          </div>
+      <div class="card" style="padding: 25px;">
+        <div class="card-title" style="margin-bottom: 15px; border-bottom: none;">
+            <span>🧮 Monthly KPI Comparison</span>
+            <a href="https://docs.google.com/spreadsheets/d/1e4mW-pcwUMJjl2Pjry6PT180P8M8nkYL5Z4GcspQmEA/edit?usp=sharing" target="_blank" style="font-size: 11px; background: #f4f7f9; padding: 8px 14px; border-radius: 8px; color: var(--slate-charcoal); text-decoration: none; font-weight: 800; transition: 0.2s;">Open Full Sheet ↗</a>
+        </div>
+        
+        <div class="kpi-header-controls">
+            <div class="kpi-select-group">
+                <select id="kpiStoreSelect" class="kpi-select">
+                    <option value="OVL">OVL</option>
+                    <option value="LEE">LEE</option>
+                    <option value="WSP">WSP</option>
+                    <option value="MPL">MPL</option>
+                    <option value="BAL">BAL</option>
+                </select>
+            </div>
+            <div class="kpi-select-group" style="margin-left: auto;">
+                <select id="primaryMonthSelect" class="kpi-select" onchange="renderKPIDashboard()"></select>
+            </div>
+            <div class="kpi-select-group" style="color: #ccc;">vs</div>
+            <div class="kpi-select-group">
+                <select id="compareMonthSelect" class="kpi-select" onchange="renderKPIDashboard()"></select>
+            </div>
         </div>
 
-        <div class="card" style="padding: 25px;">
+        <div style="border: 1px solid #eee; border-radius: 12px; background: white; margin-bottom: 10px;">
+            <div class="kpi-list-header">
+                <div>Metric & 12-Mo Trend</div>
+                <div id="header-primary-label">Primary</div>
+                <div id="header-compare-label">Compare</div>
+                <div>Delta (+/-)</div>
+            </div>
+
+            <div id="kpiDashboardContainer" class="kpi-scroll-area">
+                <div style="padding: 40px; text-align: center; color: #888; font-weight: 600;">Syncing KPI Data...</div>
+            </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card" style="padding: 25px; margin-bottom: 30px;">
           <div class="card-title" style="margin-bottom: 15px; border-bottom: none;">
-            <span>📊 Live Variance Reports</span>
+            <span>⚖️ Live Variance Reports</span>
             <div class="vw-controls">
               <select id="vw-primary" class="kpi-select" onchange="renderVariance()">
                 <option value="OVL">OVL</option>
@@ -304,23 +304,23 @@
           <div class="vw-dashboard" id="vw-dashboard-container">
             </div>
         </div>
-      </div> <div>
-          <div class="portals-grid" style="grid-template-columns: 1fr;">
-              <div class="card">
-                <div class="card-title">Performance & Sales <span>📈</span></div>
-                <a href="https://docs.google.com/spreadsheets/d/1i_oV37lZXq8s91f9ymzwQlrM8WY2UlQQQ0qsRP3xLJ8/edit?usp=sharing" target="_blank" class="portal-btn">📈 Sales Summary 2026</a>
-                <a href="https://docs.google.com/spreadsheets/d/1oHOnA6wDwaLQ-EP4-CiDTkKpAdP2V7y8mOay416HDME/edit?usp=sharing" target="_blank" class="portal-btn">👥 Team Member KPIs</a>
-                <a href="https://drive.google.com/drive/folders/1N5okL6Lc11lgD5meZS-snncr3tyyoNH1?usp=sharing" target="_blank" class="portal-btn">📁 Variance Folder</a>
-              </div>
-              
-              <div class="card">
-                <div class="card-title">Operations & Admin <span>⚙️</span></div>
-                <a href="https://docs.google.com/spreadsheets/d/1pubURplK66yC6oXmpz7P-r8zN07DWmDiLxrtTg0rmdk/edit?usp=sharing" target="_blank" class="portal-btn">🎯 Daily Listing Goals</a>
-                <a href="https://docs.google.com/spreadsheets/d/1KdQNDYfJT-Gt6wal6cgCbh6aqOUOHxey3PEsoeyztzQ/edit?usp=sharing" target="_blank" class="portal-btn">📦 SPEEKS Aging Inventory Tracker</a>
-                <a href="https://docs.google.com/spreadsheets/d/1zw-jcqpAnMY6PNofERbUz4pUHA3qnlnZx6O6C_XSmLY/edit?usp=sharing" target="_blank" class="portal-btn">🛡️ eBay & Shopify Insurance Cases</a>
-                <a href="https://docs.google.com/spreadsheets/d/1ar3tabN-bUqkjWqgy25MCHzSup2jhiaAKaGxLwZTeJ8/edit?usp=sharing" target="_blank" class="portal-btn">📍 Local Location Visits</a>
-              </div>
-          </div>
+
+        <div class="portals-grid" style="grid-template-columns: 1fr;">
+            <div class="card">
+              <div class="card-title">Performance & Sales <span>📈</span></div>
+              <a href="https://docs.google.com/spreadsheets/d/1i_oV37lZXq8s91f9ymzwQlrM8WY2UlQQQ0qsRP3xLJ8/edit?usp=sharing" target="_blank" class="portal-btn">📈 Sales Summary 2026</a>
+              <a href="https://docs.google.com/spreadsheets/d/1oHOnA6wDwaLQ-EP4-CiDTkKpAdP2V7y8mOay416HDME/edit?usp=sharing" target="_blank" class="portal-btn">👥 Team Member KPIs</a>
+              <a href="https://drive.google.com/drive/folders/1N5okL6Lc11lgD5meZS-snncr3tyyoNH1?usp=sharing" target="_blank" class="portal-btn">📁 Variance Folder</a>
+            </div>
+            
+            <div class="card">
+              <div class="card-title">Operations & Admin <span>⚙️</span></div>
+              <a href="https://docs.google.com/spreadsheets/d/1pubURplK66yC6oXmpz7P-r8zN07DWmDiLxrtTg0rmdk/edit?usp=sharing" target="_blank" class="portal-btn">🎯 Daily Listing Goals</a>
+              <a href="https://docs.google.com/spreadsheets/d/1KdQNDYfJT-Gt6wal6cgCbh6aqOUOHxey3PEsoeyztzQ/edit?usp=sharing" target="_blank" class="portal-btn">📦 SPEEKS Aging Inventory Tracker</a>
+              <a href="https://docs.google.com/spreadsheets/d/1zw-jcqpAnMY6PNofERbUz4pUHA3qnlnZx6O6C_XSmLY/edit?usp=sharing" target="_blank" class="portal-btn">🛡️ eBay & Shopify Insurance Cases</a>
+              <a href="https://docs.google.com/spreadsheets/d/1ar3tabN-bUqkjWqgy25MCHzSup2jhiaAKaGxLwZTeJ8/edit?usp=sharing" target="_blank" class="portal-btn">📍 Local Location Visits</a>
+            </div>
+        </div>
       </div>
 
   </div>
@@ -706,17 +706,17 @@ function renderKPIDashboard() {
 // VARIANCE WIDGET LOGIC (DUMMY DATA - TO BE REPLACED WITH APPS SCRIPT)
 // =========================================================
 const dummyVarianceData = {
-  "OVL": { total: -45.50, employees: [{name: "John D.", val: -12.00}, {name: "Sarah M.", val: -33.50}, {name: "Mike T.", val: 0.00}] },
-  "LEE": { total: 12.25, employees: [{name: "Alex R.", val: 15.00}, {name: "Jessica B.", val: -2.75}] },
-  "WSP": { total: -105.00, employees: [{name: "David C.", val: -55.00}, {name: "Emily W.", val: -50.00}] }
+  "OVL": { total: -1.25, employees: [{name: "John D.", val: -0.50}, {name: "Sarah M.", val: -0.75}, {name: "Mike T.", val: 0.00}] },
+  "LEE": { total: 0.45, employees: [{name: "Alex R.", val: 0.60}, {name: "Jessica B.", val: -0.15}] },
+  "WSP": { total: -2.10, employees: [{name: "David C.", val: -1.10}, {name: "Emily W.", val: -1.00}] }
 };
 
 let cycleInterval = null;
 const storesList = ["OVL", "LEE", "WSP"];
 let currentStoreIndex = 0;
 
-function formatVarianceMoney(num) {
-  const formatted = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Math.abs(num));
+function formatVariancePct(num) {
+  const formatted = Math.abs(num).toFixed(2) + '%';
   return num < 0 ? `-${formatted}` : `+${formatted}`;
 }
 
@@ -731,7 +731,7 @@ function createVarianceStoreCard(storeKey) {
     return `
       <div class="vw-emp-row">
         <span>${emp.name}</span>
-        <span class="${empClass}">${formatVarianceMoney(emp.val)}</span>
+        <span class="${empClass}">${formatVariancePct(emp.val)}</span>
       </div>
     `;
   }).join('');
@@ -739,7 +739,7 @@ function createVarianceStoreCard(storeKey) {
   return `
     <div class="vw-store-card">
       <div class="vw-store-name">${storeKey} Recent Variance</div>
-      <div class="vw-total-variance ${totalClass}">${formatVarianceMoney(data.total)}</div>
+      <div class="vw-total-variance ${totalClass}">${formatVariancePct(data.total)}</div>
       <div class="vw-emp-list">
         ${empHtml}
       </div>
