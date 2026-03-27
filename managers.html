@@ -96,8 +96,8 @@
   .header-text h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin: 0; }
   .header-text p { color: #888; font-size: 14px; font-weight: 500; margin-top: 5px; }
 
-  /* DASHBOARD 2-COLUMN LAYOUT (NARROW LEFT, WIDE RIGHT) */
-  .dashboard-layout { display: grid; grid-template-columns: 520px 1fr; gap: 30px; align-items: start; }
+  /* DASHBOARD 2-COLUMN LAYOUT: Widened Left Column */
+  .dashboard-layout { display: grid; grid-template-columns: 700px 1fr; gap: 30px; align-items: start; }
   
   .card { background: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.04); padding: 30px; transition: transform 0.3s ease, box-shadow 0.3s ease; margin-bottom: 30px; }
   .card:hover { box-shadow: 0 8px 25px rgba(0,0,0,0.05); }
@@ -115,8 +115,8 @@
   .kpi-select { padding: 8px 12px; border-radius: 8px; border: 1px solid #ddd; font-family: 'Inter', sans-serif; font-weight: 700; color: var(--slate-charcoal); outline: none; cursor: pointer; background: white; }
   .kpi-select:focus { border-color: var(--sage-professional); }
 
-  /* New scrollable area for the KPI rows */
-  .kpi-scroll-area { max-height: 500px; overflow-y: auto; overscroll-behavior: contain; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
+  /* Scrollable area for the KPI rows */
+  .kpi-scroll-area { max-height: 550px; overflow-y: auto; overscroll-behavior: contain; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
   .kpi-scroll-area::-webkit-scrollbar { width: 6px; }
   .kpi-scroll-area::-webkit-scrollbar-track { background: transparent; }
   .kpi-scroll-area::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
@@ -256,7 +256,7 @@
       </div>
 
       <div>
-          <div class="portals-grid">
+          <div class="portals-grid" style="grid-template-columns: 1fr;">
               <div class="card">
                 <div class="card-title">Performance & Sales <span>📈</span></div>
                 <a href="https://docs.google.com/spreadsheets/d/1i_oV37lZXq8s91f9ymzwQlrM8WY2UlQQQ0qsRP3xLJ8/edit?usp=sharing" target="_blank" class="portal-btn">📈 Sales Summary 2026</a>
@@ -283,7 +283,7 @@ const CMS_URL = 'https://script.google.com/macros/s/AKfycbxZviJiiQKcQYyp3SK4tcNB
 const MONTHLY_KPI_URL = 'https://script.google.com/macros/s/AKfycby0ihq9A4yUQvdZdeAF9euC5jih24hP2XGG-J_balNtxop2RHBuIuigw_mH3XTeCkkhow/exec';
 
 let dynamicMonths = [];
-let dynamicKPIData = [];
+let rawKPIData = [];
 
 function toggleSidebar() {
     const sidebar = document.querySelector('.sidebar');
@@ -414,6 +414,41 @@ function toggleCategory(el) {
     el.parentElement.classList.toggle('collapsed');
 }
 
+// CUSTOM GROUPING LOGIC based on your actual spreadsheet naming conventions
+function groupKPIs(data) {
+    const categories = {
+        "Sales & Margin": [],
+        "Customer & Store Operations": [],
+        "Inventory Health": [],
+        "Other Metrics": []
+    };
+
+    data.forEach(group => {
+        group.metrics.forEach(metric => {
+            let name = metric.name.toLowerCase();
+            
+            if (name.includes('sales') || name.includes('profit') || name.includes('cogs') || name.includes('discount')) {
+                categories["Sales & Margin"].push(metric);
+            } 
+            else if (name.includes('customer') || name.includes('return') || name.includes('google') || name.includes('paymore') || name.includes('ship') || name.includes('defect') || name.includes('track')) {
+                categories["Customer & Store Operations"].push(metric);
+            }
+            else if (name.includes('inventory') || name.includes('recycled') || name.includes('confiscation')) {
+                categories["Inventory Health"].push(metric);
+            }
+            else {
+                categories["Other Metrics"].push(metric);
+            }
+        });
+    });
+
+    // Remove empty categories
+    return Object.keys(categories)
+        .map(key => ({ category: key, metrics: categories[key] }))
+        .filter(group => group.metrics.length > 0);
+}
+
+
 async function fetchKPIData() {
     const store = document.getElementById('kpiStoreSelect').value;
     const container = document.getElementById('kpiDashboardContainer');
@@ -430,7 +465,8 @@ async function fetchKPIData() {
         }
 
         dynamicMonths = payload.months;
-        dynamicKPIData = payload.data;
+        // Run our custom grouping logic
+        rawKPIData = groupKPIs(payload.data);
 
         const primarySelect = document.getElementById('primaryMonthSelect');
         const compareSelect = document.getElementById('compareMonthSelect');
@@ -465,7 +501,7 @@ function renderKPIDashboard() {
 
     let html = '';
 
-    dynamicKPIData.forEach(cat => {
+    rawKPIData.forEach(cat => {
         html += `
             <div class="kpi-category">
                 <div class="kpi-category-header" onclick="toggleCategory(this)">
@@ -482,9 +518,9 @@ function renderKPIDashboard() {
             
             let isPct = metric.format === 'percent';
             
-            const primaryStr = isPct ? `${primaryVal.toFixed(1)}%` : formatValue(primaryVal, metric.format);
-            const compareStr = isPct ? `${compareVal.toFixed(1)}%` : formatValue(compareVal, metric.format);
-            let deltaStr = isPct ? `${Math.abs(delta).toFixed(1)}%` : formatValue(Math.abs(delta), metric.format);
+            const primaryStr = isPct ? `${(primaryVal * 100).toFixed(1)}%` : formatValue(primaryVal, metric.format);
+            const compareStr = isPct ? `${(compareVal * 100).toFixed(1)}%` : formatValue(compareVal, metric.format);
+            let deltaStr = isPct ? `${(Math.abs(delta) * 100).toFixed(1)}%` : formatValue(Math.abs(delta), metric.format);
             
             let badgeClass = 'delta-neutral';
             let sign = '';
