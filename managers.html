@@ -50,9 +50,7 @@
   .sidebar-toggle { position: fixed; left: 244px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; background: var(--slate-charcoal); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 105; border: 4px solid var(--bg-app); transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s; font-size: 12px; }
   .sidebar-toggle.collapsed { left: 60px; transform: translateY(-50%) rotate(180deg); }
 
-  /* =========================================================
-     TOP ACTIONS & MODALS 
-     ========================================================= */
+  /* TOP ACTIONS & MODALS */
   .top-actions { position: fixed; top: 30px; right: 50px; z-index: 200; display: flex; gap: 15px; }
   .action-btn { background: white; border: 1px solid #ddd; width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 26px; transition: 0.2s; box-shadow: 0 6px 16px rgba(0,0,0,0.06); position: relative; }
   .action-btn:hover { border-color: var(--sage-professional); transform: translateY(-2px); }
@@ -85,17 +83,14 @@
   .notif-item hr { border: none; border-top: 1px solid #eee; margin: 10px 0; }
   .notif-item .ann-text { margin-top: 8px; font-size: 15px; color: var(--text-dark); }
 
-  /* =========================================================
-     MAIN CONTENT & GRID LAYOUT
-     ========================================================= */
-  .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); width: 100%; max-width: 100%; } /* Changed max-width to allow full screen expansion */
+  /* MAIN CONTENT & GRID LAYOUT */
+  .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); width: 100%; max-width: 100%; } 
   .main-content.expanded { margin-left: 76px; }
   
   .page-header { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 20px; padding-right: 80px; }
   .header-text h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin: 0; }
   .header-text p { color: #888; font-size: 14px; font-weight: 500; margin-top: 5px; }
 
-  /* DASHBOARD 2-COLUMN LAYOUT: Reverted left widget to fixed 700px width */
   .dashboard-layout { display: grid; grid-template-columns: 700px 1fr; gap: 30px; align-items: start; }
   
   .card { background: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.04); padding: 30px; transition: transform 0.3s ease, box-shadow 0.3s ease; margin-bottom: 30px; }
@@ -106,15 +101,12 @@
   .portal-btn { display: block; text-decoration: none; padding: 14px 16px; background: var(--bg-app); border-radius: 10px; color: var(--text-dark); font-size: 13px; font-weight: 600; margin-bottom: 10px; transition: 0.2s; border: 1px solid transparent; }
   .portal-btn:hover { background: var(--sage-professional); color: white; transform: translateX(6px); box-shadow: 0 4px 10px rgba(90, 141, 59, 0.2); }
 
-  /* =========================================================
-     INTERACTIVE KPI COMPARISON DASHBOARD
-     ========================================================= */
+  /* INTERACTIVE KPI COMPARISON DASHBOARD */
   .kpi-header-controls { display: flex; gap: 15px; align-items: center; flex-wrap: wrap; background: #f9fafb; padding: 15px; border-radius: 12px; border: 1px solid #eee; margin-bottom: 20px; }
   .kpi-select-group { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #666; }
   .kpi-select { padding: 8px 12px; border-radius: 8px; border: 1px solid #ddd; font-family: 'Inter', sans-serif; font-weight: 700; color: var(--slate-charcoal); outline: none; cursor: pointer; background: white; }
   .kpi-select:focus { border-color: var(--sage-professional); }
 
-  /* Scrollable area for the KPI rows */
   .kpi-scroll-area { max-height: 550px; overflow-y: auto; overscroll-behavior: contain; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
   .kpi-scroll-area::-webkit-scrollbar { width: 6px; }
   .kpi-scroll-area::-webkit-scrollbar-track { background: transparent; }
@@ -129,14 +121,12 @@
   .kpi-category.collapsed .chevron { transform: rotate(-90deg); }
   .chevron { transition: transform 0.2s; font-size: 12px; color: #888; }
 
-  /* Row Layout */
   .kpi-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; align-items: center; padding: 15px 20px; border-top: 1px solid #f5f5f5; background: white; transition: background 0.2s; }
   .kpi-row:hover { background: #f9fafb; }
   
   .kpi-name-col { display: flex; flex-direction: column; gap: 4px; }
   .kpi-name { font-weight: 700; font-size: 13px; color: var(--slate-charcoal); }
   
-  /* The SVG Sparkline Container */
   .sparkline { width: 70px; height: 20px; }
   .sparkline path { fill: none; stroke: #cbd5e1; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
@@ -145,11 +135,10 @@
   
   .kpi-delta-col { text-align: right; }
   .delta-badge { display: inline-block; padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: 800; letter-spacing: 0.5px; }
-  .delta-pos { background: #dcfce7; color: #166534; } /* Green */
-  .delta-neg { background: #fee2e2; color: #991b1b; } /* Red */
-  .delta-neutral { background: #f1f5f9; color: #475569; } /* Gray */
+  .delta-pos { background: #dcfce7; color: #166534; } 
+  .delta-neg { background: #fee2e2; color: #991b1b; } 
+  .delta-neutral { background: #f1f5f9; color: #475569; }
 
-  /* Column Headers for Data */
   .kpi-list-header { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; padding: 12px 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; color: #888; letter-spacing: 0.5px; background: #f9fafb; border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 10; border-top-left-radius: 12px; border-top-right-radius: 12px;}
   .kpi-list-header div:last-child { text-align: right; }
 
@@ -277,7 +266,6 @@
 </main>
 
 <script>
-// --- APP SCRIPT URLS ---
 const CMS_URL = 'https://script.google.com/macros/s/AKfycbxZviJiiQKcQYyp3SK4tcNBHrHXkID7cmwwuONStVPE9DHCSAMappqAs9dBns7ufECI/exec';
 const MONTHLY_KPI_URL = 'https://script.google.com/macros/s/AKfycby0ihq9A4yUQvdZdeAF9euC5jih24hP2XGG-J_balNtxop2RHBuIuigw_mH3XTeCkkhow/exec';
 
@@ -382,24 +370,19 @@ async function loadCMS() {
     } catch (e) { console.error("CMS Failed", e); }
 }
 
-// Helper: Format Numbers (Math logic removed so 50% stays 50%)
-function formatValue(val, type) {
-    if (type === 'currency') return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(val);
-    if (type === 'percent') return `${val.toFixed(1)}%`; 
-    return new Intl.NumberFormat('en-US').format(val);
-}
-
 // Helper: Sparkline
 function generateSparklineSVG(dataArray) {
     if (!dataArray || dataArray.length === 0) return '';
-    const min = Math.min(...dataArray);
-    const max = Math.max(...dataArray);
+    const validData = dataArray.map(v => parseFloat(String(v).replace(/[$,%]/g, ''))).filter(n => !isNaN(n));
+    if (validData.length === 0) return '';
+    const min = Math.min(...validData);
+    const max = Math.max(...validData);
     const width = 70;
     const height = 20;
     const padding = 2;
     
-    const points = dataArray.map((val, i) => {
-        const x = padding + (i / (dataArray.length - 1)) * (width - padding * 2);
+    const points = validData.map((val, i) => {
+        const x = padding + (i / (validData.length - 1)) * (width - padding * 2);
         const range = max - min === 0 ? 1 : max - min; 
         const y = padding + (height - padding * 2) - ((val - min) / range) * (height - padding * 2);
         return `${x},${y}`;
@@ -414,7 +397,57 @@ function toggleCategory(el) {
 }
 
 // =================================================================================
-// SMART GROUPING LOGIC (Exactly mapped to your list)
+// SMART FORMATTING (Fixes the 5000% Bug)
+// =================================================================================
+function formatSmartValue(val, name) {
+    if (val === null || val === undefined || String(val).trim() === '') return '-';
+    let strVal = String(val).trim();
+    let isStringPct = strVal.includes('%');
+    let num = parseFloat(strVal.replace(/[$,%]/g, ''));
+    if (isNaN(num)) return strVal; // If it's pure text, return text
+
+    let isPctName = name.includes('%') || name.toLowerCase().includes('rate') || name.toLowerCase().includes('variance') || name.toLowerCase().includes('margin');
+
+    if (isPctName || isStringPct) {
+        // Fix for Google Sheets JSON API giving decimals (0.5) instead of 50
+        if (!isStringPct && Math.abs(num) > 0 && Math.abs(num) <= 2.0) {
+            num = num * 100;
+        } 
+        // Fix for when a multiplier ran wild (5000)
+        else if (!isStringPct && Math.abs(num) >= 1000) {
+            num = num / 100;
+        }
+        return `${num.toFixed(2).replace('.00', '')}%`;
+    }
+
+    let isCurrency = name.toLowerCase().includes('sales') || name.toLowerCase().includes('cost') || name.toLowerCase().includes('refund') || name.toLowerCase().includes('discount') || name.toLowerCase().includes('profit') || name.toLowerCase().includes('cogs') || name.toLowerCase().includes('value') || strVal.includes('$') || name.toLowerCase().includes('buying');
+
+    // Make sure rankings and customer counts don't get dollar signs
+    if (name.toLowerCase().includes('ranking') || name.toLowerCase().includes('score') || name.toLowerCase().includes('reviews') || name.toLowerCase().includes('#') || name.toLowerCase().includes('returning customers') || name.toLowerCase().includes('time')) {
+         isCurrency = false;
+    }
+
+    if (isCurrency) {
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num).replace('.00', '');
+    }
+
+    return new Intl.NumberFormat('en-US').format(num);
+}
+
+// Get raw number for Delta calculation
+function getRawNumber(v, name) {
+    if(!v) return 0;
+    let str = String(v);
+    let isPct = str.includes('%') || name.includes('%') || name.toLowerCase().includes('rate') || name.toLowerCase().includes('variance');
+    let n = parseFloat(str.replace(/[$,%]/g, ''));
+    if(isNaN(n)) return 0;
+    if(!str.includes('%') && isPct && Math.abs(n) <= 2.0) n = n * 100;
+    else if (!str.includes('%') && isPct && Math.abs(n) >= 1000) n = n / 100;
+    return n;
+}
+
+// =================================================================================
+// SMART GROUPING LOGIC (Using .includes to catch ALL rows)
 // =================================================================================
 function groupKPIs(data) {
     const categoryOrder = [
@@ -425,15 +458,15 @@ function groupKPIs(data) {
         "Sales Channels",
         "Shipping Costs",
         "Store Rankings & Reviews",
-        "Recycled & Confiscated"
+        "Recycled & Confiscated",
+        "Other Metrics"
     ];
 
     const categories = {};
     categoryOrder.forEach(cat => categories[cat] = []);
-    const other = []; 
 
-    // Hide eBay block
-    const ignoreList = ['ebay rank', 'defect rate', 'late shipment', 'case w/', 'resolution', 'tracking uploaded', 'top rated', 'cases closed', 'ebay sales'];
+    // Explicitly hide the bottom eBay block
+    const ignoreList = ['ebay rank', 'defect rate', 'late shipment', 'case w/no resolution', 'tracking uploaded', 'top rated', 'ebay sales'];
 
     let allMetrics = [];
     data.forEach(group => {
@@ -443,60 +476,43 @@ function groupKPIs(data) {
     });
 
     allMetrics.forEach(metric => {
+        if (!metric || !metric.name) return;
         let name = metric.name.toLowerCase().trim();
 
         if (ignoreList.some(ignoreWord => name.includes(ignoreWord))) return; 
 
-        // 1. Customer & Buying
-        if (name === 'buying' || name === 'buying gm' || name === 'buy vs sell variance' || name === 'customer close rate' || name === 'device close rate' || name === '# of customers' || name === 'buy value/customer' || name === '# of items purchased' || name === 'returning customers' || name === '% of returning customers' || name === 'avg transaction time') {
+        if (name.includes('buying') || name.includes('customer') || name.includes('transaction') || name.includes('variance') || name.includes('items purchased')) {
             categories["Customer & Buying Metrics"].push(metric);
         }
-        // 2. Inventory Health
-        else if (name === 'inventory cost' || name === 'inventory cost <30' || name === '% of inventory over 30 days' || name === 'inventory cost < 30') {
+        else if (name.includes('inventory cost') || name.includes('inventory over 30')) {
             categories["Inventory Health"].push(metric);
         }
-        // 3. Gross Sales & Returns
-        else if (name === 'gross sales' || name === 'discounts' || name === 'refunds' || name === 'returns cancelled' || name === 'return rate') {
+        else if (name.includes('gross sales') || name.includes('discount') || name.includes('refund') || name.includes('return')) {
             categories["Gross Sales & Returns"].push(metric);
         }
-        // 4. Net Sales & Margins
-        else if (name === 'net sales' || name === 'cogs' || name === 'gross profit' || name === 'gross profit %' || name === 'cogs sold vs. cogs listed') {
+        else if (name.includes('net sales') || name.includes('cogs') || name.includes('gross profit')) {
             categories["Net Sales & Margins"].push(metric);
         }
-        // 5. Sales Channels
-        else if (name === 'sales at pos' || name === '% of sales at pos' || name === 'sales online' || name === '% of sales online' || name === 'sale draft order' || name === '% of sales draft order' || name === '% of non ebay sales' || name === '% of non-ebay sales') {
+        else if (name.includes('pos') || name.includes('online') || name.includes('draft') || name.includes('non ebay') || name.includes('non-ebay')) {
             categories["Sales Channels"].push(metric);
         }
-        // 6. Shipping Costs
-        else if (name === 'shipping label cost' || name === 'shipping cost % of sales' || name.includes('shipping cost')) {
+        else if (name.includes('shipping')) {
             categories["Shipping Costs"].push(metric);
         }
-        // 7. Store Rankings & Reviews
-        else if (name === 'paymore ranking' || name === 'google score' || name === 'google reviews') {
+        else if (name.includes('ranking') || name.includes('google') || name.includes('paymore')) {
             categories["Store Rankings & Reviews"].push(metric);
         }
-        // 8. Recycled & Confiscated
-        else if (name === 'recycled inventory' || name === 'recycled % of inventory' || name === 'inventory confiscation') {
+        else if (name.includes('recycle') || name.includes('confiscat')) {
             categories["Recycled & Confiscated"].push(metric);
         }
-        // Failsafe for slight typos in spreadsheet vs list
         else {
-            if (name.includes('buying') || name.includes('customer') || name.includes('transaction')) categories["Customer & Buying Metrics"].push(metric);
-            else if (name.includes('inventory cost') || name.includes('over 30 days')) categories["Inventory Health"].push(metric);
-            else if (name.includes('gross sales') || name.includes('discount') || name.includes('refund') || name.includes('return')) categories["Gross Sales & Returns"].push(metric);
-            else if (name.includes('net sales') || name.includes('cogs') || name.includes('gross profit')) categories["Net Sales & Margins"].push(metric);
-            else if (name.includes('pos') || name.includes('online') || name.includes('draft') || name.includes('non ebay')) categories["Sales Channels"].push(metric);
-            else if (name.includes('shipping')) categories["Shipping Costs"].push(metric);
-            else if (name.includes('paymore') || name.includes('google')) categories["Store Rankings & Reviews"].push(metric);
-            else if (name.includes('recycle') || name.includes('confiscat')) categories["Recycled & Confiscated"].push(metric);
-            else other.push(metric);
+            categories["Other Metrics"].push(metric);
         }
     });
 
     return categoryOrder
         .map(cat => ({ category: cat, metrics: categories[cat] }))
-        .filter(group => group.metrics.length > 0)
-        .concat(other.length > 0 ? [{ category: "Other Metrics", metrics: other }] : []);
+        .filter(group => group.metrics.length > 0);
 }
 
 async function fetchKPIData() {
@@ -555,4 +571,74 @@ function renderKPIDashboard() {
             <div class="kpi-category">
                 <div class="kpi-category-header" onclick="toggleCategory(this)">
                     ${cat.category}
-                    <span class="chevron">▼
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="kpi-category-content">
+        `;
+        
+        cat.metrics.forEach(metric => {
+            const rawPrimary = metric.values[primaryIdx];
+            const rawCompare = metric.values[compareIdx];
+            
+            const primaryNum = getRawNumber(rawPrimary, metric.name);
+            const compareNum = getRawNumber(rawCompare, metric.name);
+            const deltaNum = primaryNum - compareNum;
+
+            const isPct = metric.name.includes('%') || metric.name.toLowerCase().includes('rate') || metric.name.toLowerCase().includes('variance') || metric.name.toLowerCase().includes('margin');
+            
+            const primaryStr = formatSmartValue(rawPrimary, metric.name);
+            const compareStr = formatSmartValue(rawCompare, metric.name);
+            
+            let deltaStr = isPct ? `${Math.abs(deltaNum).toFixed(2).replace('.00', '')}%` : formatSmartValue(Math.abs(deltaNum), metric.name);
+            
+            let badgeClass = 'delta-neutral';
+            let sign = '';
+            
+            // Adjust to 0 if the delta is basically 0
+            if (Math.abs(deltaNum) < 0.001) {
+                deltaStr = '0';
+            } else if (deltaNum > 0) {
+                sign = '+';
+                badgeClass = metric.inverse ? 'delta-neg' : 'delta-pos'; 
+            } else if (deltaNum < 0) {
+                sign = '-';
+                badgeClass = metric.inverse ? 'delta-pos' : 'delta-neg'; 
+            }
+
+            const sparklineSVG = generateSparklineSVG(metric.values);
+
+            html += `
+                <div class="kpi-row">
+                    <div class="kpi-name-col">
+                        <span class="kpi-name">${metric.name}</span>
+                        ${sparklineSVG}
+                    </div>
+                    <div class="kpi-value-col kpi-primary-val">${primaryStr}</div>
+                    <div class="kpi-value-col" style="color: #888;">${compareStr}</div>
+                    <div class="kpi-delta-col">
+                        <span class="delta-badge ${badgeClass}">${sign}${deltaStr}</span>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += `</div></div>`;
+    });
+
+    container.innerHTML = html;
+}
+
+document.getElementById('kpiStoreSelect').addEventListener('change', fetchKPIData);
+
+document.addEventListener("DOMContentLoaded", () => {
+    if (localStorage.getItem('speeksSidebar') === 'collapsed') {
+        document.querySelector('.sidebar').classList.add('collapsed');
+        document.querySelector('.main-content').classList.add('expanded');
+        document.querySelector('.sidebar-toggle').classList.add('collapsed');
+    }
+    loadCMS();
+    fetchKPIData();
+});
+</script>
+</body>
+</html>
