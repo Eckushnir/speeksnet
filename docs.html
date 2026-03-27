@@ -41,22 +41,22 @@
   .sidebar.collapsed { width: 76px; }
   .sidebar.collapsed .brand-area { padding: 40px 10px; }
   .sidebar.collapsed .brand-area h1 { font-size: 12px; letter-spacing: 1px; }
-  .sidebar.collapsed .badge { opacity: 0; height: 0; margin: 0; padding: 0; pointer-events: none; }
+  .sidebar.collapsed .badge { opacity: 0; pointer-events: none; height: 0; margin: 0; padding: 0; }
   .sidebar.collapsed .nav-link span, .sidebar.collapsed .idea-btn span { display: none; }
   .sidebar.collapsed .nav-link, .sidebar.collapsed .idea-btn { justify-content: center; padding: 14px 0; }
 
-  /* SIDEBAR TOGGLE */
-  .sidebar-toggle { position: fixed; left: 244px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; background: var(--slate-charcoal); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 105; border: 4px solid var(--bg-app); transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s; font-size: 12px; }
+  /* FLOATING ARROW TOGGLE */
+  .sidebar-toggle { position: fixed; left: 244px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; background: var(--slate-charcoal); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 105; border: 4px solid var(--bg-app); transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s, background 0.2s; font-size: 12px; }
+  .sidebar-toggle:hover { background: var(--sage-professional); }
   .sidebar-toggle.collapsed { left: 60px; transform: translateY(-50%) rotate(180deg); }
 
   /* =========================================================
-     NOTIFICATIONS & MODAL UI
+     TOP ACTIONS & MODALS (MATCHING INDEX.HTML EXACTLY)
      ========================================================= */
   .top-actions { position: fixed; top: 30px; right: 50px; z-index: 200; display: flex; gap: 15px; }
   
-  .notif-container { position: relative; }
-  .notif-bell { background: white; border: 1px solid #ddd; width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 26px; transition: 0.2s; box-shadow: 0 6px 16px rgba(0,0,0,0.06); }
-  .notif-bell:hover { border-color: var(--sage-professional); transform: translateY(-2px); }
+  .action-btn { background: white; border: 1px solid #ddd; width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 26px; transition: 0.2s; box-shadow: 0 6px 16px rgba(0,0,0,0.06); position: relative; }
+  .action-btn:hover { border-color: var(--sage-professional); transform: translateY(-2px); }
   
   .notif-dot { position: absolute; top: -6px; right: -6px; width: 16px; height: 16px; background: #ef4444; border-radius: 50%; border: 3px solid white; display: none; }
   .notif-dot.active { display: block; animation: pulse 2s infinite; }
@@ -65,11 +65,13 @@
   .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.22); backdrop-filter: blur(6px); display: none; z-index: 9998; }
   .overlay.show { display: block; }
 
-  .modal-menu { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.12); border: 1px solid #eee; display: none; z-index: 10000; overflow: hidden; width: 1260px; max-width: calc(100% - 40px); }
+  .modal-menu { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.12); border: 1px solid #eee; display: none; z-index: 10000; overflow: hidden; }
   .modal-menu.show { display: block; }
   
-  .notif-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: #f9fafb; border-bottom: 1px solid #eee; }
-  .notif-header h3 { margin: 0; font-size: 13px; font-weight: 800; text-transform: uppercase; color: #666; letter-spacing: 0.5px; }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: #f9fafb; border-bottom: 1px solid #eee; }
+  .modal-header h3 { margin: 0; font-size: 13px; font-weight: 800; text-transform: uppercase; color: #666; letter-spacing: 0.5px; }
+
+  .notif-menu { width: 1260px; max-width: calc(100% - 40px); }
   .notif-tabs { display: flex; gap: 8px; }
   .tab-btn { background: transparent; border: none; font-size: 11px; font-weight: 700; color: #999; cursor: pointer; padding: 6px 12px; border-radius: 6px; transition: 0.2s; text-transform: uppercase; letter-spacing: 0.5px;}
   .tab-btn:hover { color: var(--slate-charcoal); }
@@ -94,7 +96,7 @@
   .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
   .main-content.expanded { margin-left: 76px; }
   
-  .page-header { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 20px; padding-right: 80px; /* Accounts for floating bell */ }
+  .page-header { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 20px; padding-right: 80px; }
   .header-text h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin: 0; }
   .header-text p { color: #888; font-size: 14px; font-weight: 500; margin-top: 5px; }
   
@@ -133,6 +135,7 @@
     <a href="portals.html" class="nav-link"><i>🔗</i> <span>Portals</span></a>
     <a href="metrics.html" class="nav-link"><i>📊</i> <span>Metrics & Leaderboards</span></a>
     <a href="docs.html" class="nav-link active"><i>📚</i> <span>Processes & Policies</span></a>
+    <a href="managers.html" class="nav-link"><i>🛠️</i> <span>Manager Portal</span></a>
   </nav>
 
   <div class="sidebar-bottom">
@@ -145,16 +148,14 @@
 <div class="sidebar-toggle" onclick="toggleSidebar()">◀</div>
 
 <div class="top-actions">
-    <div class="notif-container" id="notifContainer">
-        <div class="notif-bell" onclick="toggleNotifs()">
-            🔔 <div class="notif-dot" id="notifBadge"></div>
-        </div>
+    <div class="action-btn" onclick="toggleNotifs()" title="Announcements">
+        🔔 <div class="notif-dot" id="notifBadge"></div>
     </div>
 </div>
 
 <div id="globalOverlay" class="overlay"></div>
 
-<div class="modal-menu" id="notifDropdown">
+<div class="modal-menu notif-menu" id="notifDropdown">
     <div class="modal-header">
         <h3>Announcements</h3>
         <div class="notif-tabs">
@@ -249,7 +250,7 @@ document.addEventListener('keydown', function(e) {
   }
 });
 
-// --- DATA FETCHING ---
+// --- DATA FETCHING (CMS) ---
 async function loadCMS() {
     try {
         const response = await fetch(`${CMS_URL}?v=${Date.now()}`);
@@ -259,11 +260,7 @@ async function loadCMS() {
         const archiveContainer = document.getElementById('archive-container');
         const badge = document.getElementById('notifBadge');
         
-        let showBadge = false;
-        let recentHtml = "";
-        let archiveHtml = "";
-        let recentCount = 0;
-        let archiveCount = 0;
+        let showBadge = false, recentHtml = "", archiveHtml = "", recentCount = 0, archiveCount = 0;
 
         if (data.announcements && data.announcements.length > 0) {
             const sortedAnns = [...data.announcements].reverse();
@@ -271,11 +268,8 @@ async function loadCMS() {
             const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
             sortedAnns.forEach(item => {
-                const text = item.text || "";
-                const rawDate = item.date || "";
-                const author = item.author || "";
-                let displayDate = "";
-                let isArchived = false;
+                const text = item.text || "", rawDate = item.date || "", author = item.author || "";
+                let displayDate = "", isArchived = false;
 
                 if (rawDate) {
                   const annDate = new Date(rawDate);
@@ -283,42 +277,28 @@ async function loadCMS() {
                     displayDate = annDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
                     const annDateOnly = new Date(annDate.getFullYear(), annDate.getMonth(), annDate.getDate());
                     const diffDays = (today - annDateOnly) / (1000 * 60 * 60 * 24);
-                    
                     if (diffDays <= 1 && diffDays >= 0) showBadge = true;
                     if (diffDays > 2) isArchived = true;
                   }
                 }
 
-                const htmlSnippet = `
-                  <div class="notif-item">
-                    <div class="ann-header">
-                      <span class="ann-author">${author || 'Announcement'}</span>
-                      ${displayDate ? `<small class="ann-date">${displayDate}</small>` : ''}
-                    </div>
-                    <hr />
-                    <div class="ann-text">${text}</div>
-                  </div>`;
-
-                if (isArchived) { archiveHtml += htmlSnippet; archiveCount++; } 
-                else { recentHtml += htmlSnippet; recentCount++; }
+                const htmlSnippet = `<div class="notif-item"><div class="ann-header"><span class="ann-author">${author || 'Announcement'}</span>${displayDate ? `<small class="ann-date">${displayDate}</small>` : ''}</div><hr /><div class="ann-text">${text}</div></div>`;
+                if (isArchived) { archiveHtml += htmlSnippet; archiveCount++; } else { recentHtml += htmlSnippet; recentCount++; }
             });
-            
             if (recentCount === 0) recentHtml = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No recent announcements</div>';
             if (archiveCount === 0) archiveHtml = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No archived announcements</div>';
-
         } else {
-            recentHtml = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No announcements</div>';
-            archiveHtml = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No archived announcements</div>';
+            recentHtml = archiveHtml = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No announcements</div>';
         }
-
-        annContainer.innerHTML = recentHtml;
-        archiveContainer.innerHTML = archiveHtml;
         
-        if (showBadge) badge.classList.add('active');
-          
+        if(annContainer) annContainer.innerHTML = recentHtml;
+        if(archiveContainer) archiveContainer.innerHTML = archiveHtml;
+        if(showBadge && badge) badge.classList.add('active');
+        
     } catch (e) { console.error("CMS Failed", e); }
 }
 
+// --- DATA FETCHING (DOCS WITH DUPLICATE PIN LOGIC) ---
 async function loadDocs() {
     const container = document.getElementById('content-container');
     try {
@@ -330,15 +310,30 @@ async function loadDocs() {
         }
         
         const groupedDocs = {};
+        
         docs.forEach(doc => {
-            if (!groupedDocs[doc.category]) groupedDocs[doc.category] = [];
-            groupedDocs[doc.category].push(doc);
+            let originalCategory = doc.category || "Uncategorized";
+            let isPinned = originalCategory.toLowerCase().includes('pinned');
+            
+            // Clean the word "Pinned" out of the category name (e.g. 'HR, "Pinned"' becomes 'HR')
+            let cleanCategory = originalCategory.replace(/,?\s*["']?pinned["']?/ig, '').trim();
+            if (!cleanCategory) cleanCategory = "General"; // Failsafe
+
+            // 1. Put the document in its normal, clean category
+            if (!groupedDocs[cleanCategory]) groupedDocs[cleanCategory] = [];
+            groupedDocs[cleanCategory].push(doc);
+
+            // 2. If it was marked as pinned, copy it to the special "📌 Pinned" category as well
+            if (isPinned) {
+                if (!groupedDocs['📌 Pinned']) groupedDocs['📌 Pinned'] = [];
+                groupedDocs['📌 Pinned'].push(doc);
+            }
         });
 
-        // Sort categories so "Pinned" is always first, and the rest are alphabetical
+        // Sort categories: "📌 Pinned" first, the rest alphabetical
         const sortedCategories = Object.keys(groupedDocs).sort((a, b) => {
-            if (a.toLowerCase().includes('pinned')) return -1;
-            if (b.toLowerCase().includes('pinned')) return 1;
+            if (a === '📌 Pinned') return -1;
+            if (b === '📌 Pinned') return 1;
             return a.localeCompare(b);
         });
 
@@ -346,22 +341,19 @@ async function loadDocs() {
         
         for (const category of sortedCategories) {
             const items = groupedDocs[category];
-            
-            const isPinned = category.toLowerCase().includes('pinned');
-            const titleStyle = isPinned ? 'color: var(--idea-gold); border-bottom-color: var(--idea-gold);' : '';
+            const isPinnedCategory = category === '📌 Pinned';
+            const titleStyle = isPinnedCategory ? 'color: var(--idea-gold); border-bottom-color: var(--idea-gold);' : '';
             
             htmlContent += `<div class="category-section"><div class="category-title" style="${titleStyle}">${category}</div><div class="docs-grid">`;
             
             items.forEach(item => {
                 const searchKeywords = `${item.title} ${item.desc} ${category}`.toLowerCase();
                 
-                // ADDED: "position: relative;" to the card so the pin knows where the corners are
-                const cardStyle = isPinned 
+                const cardStyle = isPinnedCategory 
                     ? 'position: relative; border: 1px solid var(--idea-gold); box-shadow: 0 4px 10px rgba(245, 158, 11, 0.08);' 
                     : 'position: relative;';
                 
-                // NEW: The pin emoji HTML, set to float 12px from the top and 15px from the right
-                const pinHtml = isPinned 
+                const pinHtml = isPinnedCategory 
                     ? `<div style="position: absolute; top: 12px; right: 15px; font-size: 16px; filter: drop-shadow(0 2px 4px rgba(245,158,11,0.3));">📌</div>` 
                     : '';
                 
