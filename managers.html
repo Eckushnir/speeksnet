@@ -58,7 +58,6 @@
   .action-btn:hover { border-color: var(--sage-professional); transform: translateY(-2px); }
   .notif-dot { position: absolute; top: -6px; right: -6px; width: 16px; height: 16px; background: var(--red-alert); border-radius: 50%; border: 3px solid white; display: none; }
   .notif-dot.active { display: block; animation: pulse 2s infinite; }
-  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
   .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.22); backdrop-filter: blur(6px); display: none; z-index: 9998; }
   .overlay.show { display: block; }
@@ -414,40 +413,75 @@ function toggleCategory(el) {
     el.parentElement.classList.toggle('collapsed');
 }
 
-// CUSTOM GROUPING LOGIC based on your actual spreadsheet naming conventions
+// =================================================================================
+// SMART GROUPING LOGIC (Exactly matching your Spreadsheet's empty row breaks)
+// =================================================================================
 function groupKPIs(data) {
-    const categories = {
-        "Sales & Margin": [],
-        "Customer & Store Operations": [],
-        "Inventory Health": [],
-        "Other Metrics": []
-    };
+    // 1. Define the exact order of the categories we want to build
+    const categoryOrder = [
+        "Customer & Buying Metrics",
+        "Inventory Health",
+        "Gross Sales & Returns",
+        "Net Sales & Margins",
+        "Sales Channels",
+        "Shipping Costs",
+        "Store Rankings & Reviews",
+        "Recycled & Confiscated"
+    ];
+
+    const categories = {};
+    categoryOrder.forEach(cat => categories[cat] = []);
+    const other = []; // Failsafe for unmapped items
+
+    // 2. These words trigger the bottom eBay section that we want to completely hide
+    const ignoreList = ['ebay rank', 'defect rate', 'late shipment', 'case w/no', 'resolution', 'tracking uploaded', 'top rated'];
 
     data.forEach(group => {
         group.metrics.forEach(metric => {
-            let name = metric.name.toLowerCase();
-            
-            if (name.includes('sales') || name.includes('profit') || name.includes('cogs') || name.includes('discount')) {
-                categories["Sales & Margin"].push(metric);
-            } 
-            else if (name.includes('customer') || name.includes('return') || name.includes('google') || name.includes('paymore') || name.includes('ship') || name.includes('defect') || name.includes('track')) {
-                categories["Customer & Store Operations"].push(metric);
+            let name = metric.name.toLowerCase().trim();
+
+            // Skip the eBay bottom section entirely
+            if (ignoreList.some(ignoreWord => name.includes(ignoreWord))) {
+                return; 
             }
-            else if (name.includes('inventory') || name.includes('recycled') || name.includes('confiscation')) {
+
+            // Route each metric to its exact category based on keywords
+            if (name.includes('buy') || name.includes('close rate') || name.includes('customer') || name.includes('transaction') || name.includes('items purchased')) {
+                categories["Customer & Buying Metrics"].push(metric);
+            }
+            else if ((name.includes('inventory cost') || name.includes('over 30 days')) && !name.includes('recycled') && !name.includes('confiscat')) {
                 categories["Inventory Health"].push(metric);
             }
+            else if (name.includes('gross sales') || name.includes('discount') || name.includes('refund') || name.includes('return')) {
+                categories["Gross Sales & Returns"].push(metric);
+            }
+            else if (name.includes('net sales') || name.includes('cogs') || name.includes('gross profit')) {
+                categories["Net Sales & Margins"].push(metric);
+            }
+            else if (name.includes('pos') || name.includes('online') || name.includes('draft order') || name.includes('non ebay') || name.includes('non-ebay')) {
+                categories["Sales Channels"].push(metric);
+            }
+            else if (name.includes('shipping')) {
+                categories["Shipping Costs"].push(metric);
+            }
+            else if (name.includes('paymore ranking') || name.includes('google')) {
+                categories["Store Rankings & Reviews"].push(metric);
+            }
+            else if (name.includes('recycled') || name.includes('confiscation')) {
+                categories["Recycled & Confiscated"].push(metric);
+            }
             else {
-                categories["Other Metrics"].push(metric);
+                other.push(metric);
             }
         });
     });
 
-    // Remove empty categories
-    return Object.keys(categories)
-        .map(key => ({ category: key, metrics: categories[key] }))
-        .filter(group => group.metrics.length > 0);
+    // 3. Rebuild the final array enforcing the exact categoryOrder
+    return categoryOrder
+        .map(cat => ({ category: cat, metrics: categories[cat] }))
+        .filter(group => group.metrics.length > 0)
+        .concat(other.length > 0 ? [{ category: "Other Metrics", metrics: other }] : []);
 }
-
 
 async function fetchKPIData() {
     const store = document.getElementById('kpiStoreSelect').value;
@@ -465,7 +499,8 @@ async function fetchKPIData() {
         }
 
         dynamicMonths = payload.months;
-        // Run our custom grouping logic
+        
+        // Pass the raw data through our smart grouper before rendering
         rawKPIData = groupKPIs(payload.data);
 
         const primarySelect = document.getElementById('primaryMonthSelect');
