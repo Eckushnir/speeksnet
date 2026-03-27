@@ -290,7 +290,8 @@
           </div>
           
           <div class="vw-dashboard" id="vw-dashboard-container">
-            </div>
+            <div style="padding: 40px; text-align: center; color: #888; font-weight: 600; grid-column: 1 / -1;">Syncing Variance Data...</div>
+          </div>
         </div>
 
         <div class="portals-grid" style="grid-template-columns: 1fr;">
@@ -317,9 +318,11 @@
 <script>
 const CMS_URL = 'https://script.google.com/macros/s/AKfycbxZviJiiQKcQYyp3SK4tcNBHrHXkID7cmwwuONStVPE9DHCSAMappqAs9dBns7ufECI/exec';
 const MONTHLY_KPI_URL = 'https://script.google.com/macros/s/AKfycby0ihq9A4yUQvdZdeAF9euC5jih24hP2XGG-J_balNtxop2RHBuIuigw_mH3XTeCkkhow/exec';
+const VARIANCE_API_URL = 'https://script.google.com/macros/s/AKfycbxFO_W-PW4ZT4e5mXlQOhlYl2ccpZ9by8MZ6rF-RJ6x3lryCjbi5XxY7c57vLgfx7k/exec';
 
 let dynamicMonths = [];
 let rawKPIData = [];
+let liveVarianceDataCache = {};
 
 function toggleSidebar() {
     const sidebar = document.querySelector('.sidebar');
@@ -691,29 +694,25 @@ function renderKPIDashboard() {
 }
 
 // =========================================================
-// VARIANCE WIDGET LOGIC (DUMMY DATA - TO BE REPLACED WITH APPS SCRIPT)
+// LIVE VARIANCE REPORTS LOGIC
 // =========================================================
-const dummyVarianceData = {
-  "OVL": { total: -1.25, employees: [{name: "John D.", val: -0.50}, {name: "Sarah M.", val: -0.75}, {name: "Mike T.", val: 0.00}] },
-  "LEE": { total: 0.45, employees: [{name: "Alex R.", val: 0.60}, {name: "Jessica B.", val: -0.15}] },
-  "WSP": { total: -2.10, employees: [{name: "David C.", val: -1.10}, {name: "Emily W.", val: -1.00}] }
-};
 
 function formatVariancePct(num) {
   const formatted = Math.abs(num).toFixed(2) + '%';
+  if (Math.abs(num) < 0.001) return '0.00%';
   return num < 0 ? `-${formatted}` : `+${formatted}`;
 }
 
 function createVarianceStoreCard(storeKey) {
-  if (storeKey === "NONE" || !dummyVarianceData[storeKey]) return '';
+  if (storeKey === "NONE" || !liveVarianceDataCache[storeKey] || !liveVarianceDataCache[storeKey].employees) return '';
   
-  const data = dummyVarianceData[storeKey];
-  const totalColor = data.total < 0 ? '#991b1b' : '#166534';
+  const data = liveVarianceDataCache[storeKey];
+  const totalClass = data.total < 0 ? 'delta-neg' : (data.total > 0 ? 'delta-pos' : 'delta-neutral');
   
   let empHtml = data.employees.map(emp => {
     const badgeClass = emp.val < 0 ? 'delta-neg' : (emp.val > 0 ? 'delta-pos' : 'delta-neutral');
     return `
-      <div class="kpi-row" style="padding: 10px 15px; grid-template-columns: 1fr auto; border-top: 1px solid #f5f5f5; border-radius: 0; border-left: none; border-right: none; margin: 0; background: white;">
+      <div class="kpi-row" style="padding: 10px 20px; grid-template-columns: 1fr auto; border-top: 1px solid #f5f5f5; border-radius: 0; border-left: none; border-right: none; margin: 0; background: white;">
         <span class="kpi-name">${emp.name}</span>
         <span class="delta-badge ${badgeClass}">${formatVariancePct(emp.val)}</span>
       </div>
@@ -723,8 +722,8 @@ function createVarianceStoreCard(storeKey) {
   return `
     <div style="border: 1px solid #eee; border-radius: 12px; background: white; overflow: hidden;">
       <div style="background: #f9fafb; padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
-        <span style="font-size: 14px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase;">${storeKey} Total</span>
-        <span style="font-size: 18px; font-weight: 900; color: ${totalColor};">${formatVariancePct(data.total)}</span>
+        <span style="font-size: 14px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase;">${storeKey} Total Variance</span>
+        <span class="delta-badge ${totalClass}" style="font-size: 13px; padding: 6px 12px;">${formatVariancePct(data.total)}</span>
       </div>
       <div style="display: flex; flex-direction: column;">
         ${empHtml}
@@ -742,6 +741,27 @@ function renderVariance() {
   container.innerHTML = createVarianceStoreCard(primary) + createVarianceStoreCard(compare);
 }
 
+async function fetchVarianceData() {
+    const container = document.getElementById('vw-dashboard-container');
+    container.innerHTML = '<div style="padding: 40px; text-align: center; color: #888; font-weight: 600; grid-column: 1 / -1;">Syncing Variance Data...</div>';
+    
+    try {
+        const response = await fetch(`${VARIANCE_API_URL}?v=${Date.now()}`);
+        const data = await response.json();
+        
+        if (data.error) {
+            container.innerHTML = `<div style="padding: 40px; text-align: center; color: #dc2626; font-weight: 600; grid-column: 1 / -1;">Error: ${data.error}</div>`;
+            return;
+        }
+
+        liveVarianceDataCache = data;
+        renderVariance();
+        
+    } catch (e) { 
+        console.error("Variance Sync Failed", e); 
+        container.innerHTML = '<div style="padding: 40px; text-align: center; color: #dc2626; font-weight: 600; grid-column: 1 / -1;">Failed to sync Variance data. Check Apps Script.</div>'; 
+    }
+}
 
 // Initializers
 document.getElementById('kpiStoreSelect').addEventListener('change', fetchKPIData);
@@ -754,7 +774,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     loadCMS();
     fetchKPIData();
-    renderVariance(); // Load dummy variance data on start
+    fetchVarianceData();
 });
 </script>
 </body>
