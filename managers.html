@@ -11,6 +11,7 @@
     --text-dark: #2d2d2d; 
     --bg-app: #f4f7f9;
     --idea-gold: #f59e0b;
+    --red-alert: #ef4444;
   }
   
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -53,23 +54,20 @@
      TOP ACTIONS & MODALS 
      ========================================================= */
   .top-actions { position: fixed; top: 30px; right: 50px; z-index: 200; display: flex; gap: 15px; }
-  
   .action-btn { background: white; border: 1px solid #ddd; width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 26px; transition: 0.2s; box-shadow: 0 6px 16px rgba(0,0,0,0.06); position: relative; }
   .action-btn:hover { border-color: var(--sage-professional); transform: translateY(-2px); }
-  
-  .notif-dot { position: absolute; top: -6px; right: -6px; width: 16px; height: 16px; background: #ef4444; border-radius: 50%; border: 3px solid white; display: none; }
+  .notif-dot { position: absolute; top: -6px; right: -6px; width: 16px; height: 16px; background: var(--red-alert); border-radius: 50%; border: 3px solid white; display: none; }
   .notif-dot.active { display: block; animation: pulse 2s infinite; }
   @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
   .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.22); backdrop-filter: blur(6px); display: none; z-index: 9998; }
   .overlay.show { display: block; }
 
-  .modal-menu { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.12); border: 1px solid #eee; display: none; z-index: 10000; overflow: hidden; }
+  .modal-menu { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.12); border: 1px solid #eee; display: none; z-index: 10000; overflow: hidden; width: 1260px; max-width: calc(100% - 40px); }
   .modal-menu.show { display: block; }
+  
   .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: #f9fafb; border-bottom: 1px solid #eee; }
   .modal-header h3 { margin: 0; font-size: 13px; font-weight: 800; text-transform: uppercase; color: #666; letter-spacing: 0.5px; }
-
-  .notif-menu { width: 1260px; max-width: calc(100% - 40px); }
   .notif-tabs { display: flex; gap: 8px; }
   .tab-btn { background: transparent; border: none; font-size: 11px; font-weight: 700; color: #999; cursor: pointer; padding: 6px 12px; border-radius: 6px; transition: 0.2s; text-transform: uppercase; letter-spacing: 0.5px;}
   .tab-btn:hover { color: var(--slate-charcoal); }
@@ -89,30 +87,66 @@
   .notif-item .ann-text { margin-top: 8px; font-size: 15px; color: var(--text-dark); }
 
   /* =========================================================
-     MAIN CONTENT & MANAGER CARDS
+     MAIN CONTENT & GRID LAYOUT
      ========================================================= */
-  .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+  .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); max-width: 1800px; }
   .main-content.expanded { margin-left: 76px; }
   
   .page-header { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 20px; padding-right: 80px; }
   .header-text h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin: 0; }
   .header-text p { color: #888; font-size: 14px; font-weight: 500; margin-top: 5px; }
 
-  /* PORTALS GRID & CARDS */
-  .portals-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px; }
-  .card { background: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.04); padding: 30px; transition: transform 0.3s ease, box-shadow 0.3s ease; margin-bottom: 30px; }
-  .card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.05); }
+  /* DASHBOARD 2-COLUMN LAYOUT */
+  .dashboard-layout { display: grid; grid-template-columns: 1fr 400px; gap: 30px; align-items: start; }
   
+  .card { background: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.04); padding: 30px; transition: transform 0.3s ease, box-shadow 0.3s ease; margin-bottom: 30px; }
+  .card:hover { box-shadow: 0 8px 25px rgba(0,0,0,0.05); }
   .card-title { font-size: 20px; font-weight: 800; color: var(--slate-charcoal); border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
   
-  /* SLEEK BUTTONS */
-  .portal-btn { 
-    display: block; text-decoration: none; padding: 14px 16px; background: var(--bg-app); 
-    border-radius: 10px; color: var(--text-dark); font-size: 13px; font-weight: 600; 
-    margin-bottom: 10px; transition: 0.2s; border: 1px solid transparent;
-  }
+  .portal-btn { display: block; text-decoration: none; padding: 14px 16px; background: var(--bg-app); border-radius: 10px; color: var(--text-dark); font-size: 13px; font-weight: 600; margin-bottom: 10px; transition: 0.2s; border: 1px solid transparent; }
   .portal-btn:hover { background: var(--sage-professional); color: white; transform: translateX(6px); box-shadow: 0 4px 10px rgba(90, 141, 59, 0.2); }
+
+  /* =========================================================
+     INTERACTIVE KPI COMPARISON DASHBOARD
+     ========================================================= */
+  .kpi-header-controls { display: flex; gap: 15px; align-items: center; flex-wrap: wrap; background: #f9fafb; padding: 15px; border-radius: 12px; border: 1px solid #eee; margin-bottom: 20px; }
+  .kpi-select-group { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #666; }
+  .kpi-select { padding: 8px 12px; border-radius: 8px; border: 1px solid #ddd; font-family: 'Inter', sans-serif; font-weight: 700; color: var(--slate-charcoal); outline: none; cursor: pointer; background: white; }
+  .kpi-select:focus { border-color: var(--sage-professional); }
+
+  .kpi-category { margin-bottom: 20px; border: 1px solid #eee; border-radius: 12px; overflow: hidden; }
+  .kpi-category-header { background: #f9fafb; padding: 12px 20px; font-weight: 800; font-size: 14px; color: var(--slate-charcoal); cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; transition: background 0.2s; }
+  .kpi-category-header:hover { background: #f0f4f8; }
+  .kpi-category-content { display: block; }
+  .kpi-category.collapsed .kpi-category-content { display: none; }
+  .kpi-category.collapsed .chevron { transform: rotate(-90deg); }
+  .chevron { transition: transform 0.2s; font-size: 12px; color: #888; }
+
+  /* Row Layout */
+  .kpi-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; align-items: center; padding: 15px 20px; border-top: 1px solid #eee; background: white; transition: background 0.2s; }
+  .kpi-row:hover { background: #fafafa; }
   
+  .kpi-name-col { display: flex; flex-direction: column; gap: 4px; }
+  .kpi-name { font-weight: 700; font-size: 14px; color: var(--slate-charcoal); }
+  
+  /* The SVG Sparkline Container */
+  .sparkline { width: 80px; height: 24px; }
+  .sparkline path { fill: none; stroke: #cbd5e1; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  .kpi-value-col { font-size: 14px; font-weight: 600; color: #444; }
+  .kpi-primary-val { font-weight: 800; color: var(--slate-charcoal); font-size: 15px; }
+  
+  .kpi-delta-col { text-align: right; }
+  .delta-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 800; letter-spacing: 0.5px; }
+  .delta-pos { background: #dcfce7; color: #166534; } /* Green */
+  .delta-neg { background: #fee2e2; color: #991b1b; } /* Red */
+  .delta-neutral { background: #f1f5f9; color: #475569; } /* Gray */
+
+  /* Column Headers for Data */
+  .kpi-list-header { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; padding: 10px 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; color: #888; letter-spacing: 0.5px; }
+  .kpi-list-header div:last-child { text-align: right; }
+
+  @media (max-width: 1200px) { .dashboard-layout { grid-template-columns: 1fr; } }
   @media (max-width: 1024px) { .top-actions { right: 20px; } .page-header { padding-right: 0; flex-direction: column; align-items: flex-start; } }
 </style>
 </head>
@@ -172,31 +206,76 @@
     </div>
   </div>
 
-  <div class="portals-grid">
-      <div class="card">
-        <div class="card-title">Performance & Sales <span>📊</span></div>
-        <a href="https://docs.google.com/spreadsheets/d/1i_oV37lZXq8s91f9ymzwQlrM8WY2UlQQQ0qsRP3xLJ8/edit?usp=sharing" target="_blank" class="portal-btn">📈 Sales Summary 2026</a>
-        <a href="https://docs.google.com/spreadsheets/d/1Ja5_c7Eh9S5mrj4_v8-ObcwOwZLhQzWR/edit?usp=sharing&ouid=116907114505796663130&rtpof=true&sd=true" target="_blank" class="portal-btn">📊 Monthly KPI Sheet</a>
-        <a href="https://docs.google.com/spreadsheets/d/1oHOnA6wDwaLQ-EP4-CiDTkKpAdP2V7y8mOay416HDME/edit?usp=sharing" target="_blank" class="portal-btn">👥 Team Member KPIs</a>
-        <a href="https://docs.google.com/spreadsheets/d/1pubURplK66yC6oXmpz7P-r8zN07DWmDiLxrtTg0rmdk/edit?usp=sharing" target="_blank" class="portal-btn">🎯 Daily Listing Goals</a>
-      </div>
+  <div class="dashboard-layout">
       
-      <div class="card">
-        <div class="card-title">Operations & Admin <span>⚙️</span></div>
-        <a href="https://drive.google.com/drive/folders/1N5okL6Lc11lgD5meZS-snncr3tyyoNH1?usp=sharing" target="_blank" class="portal-btn">📁 Variance Folder</a>
-        <a href="https://docs.google.com/spreadsheets/d/1KdQNDYfJT-Gt6wal6cgCbh6aqOUOHxey3PEsoeyztzQ/edit?usp=sharing" target="_blank" class="portal-btn">📦 SPEEKS Aging Inventory Tracker</a>
-        <a href="https://docs.google.com/spreadsheets/d/1zw-jcqpAnMY6PNofERbUz4pUHA3qnlnZx6O6C_XSmLY/edit?usp=sharing" target="_blank" class="portal-btn">🛡️ eBay & Shopify Insurance Cases</a>
-        <a href="https://docs.google.com/spreadsheets/d/1ar3tabN-bUqkjWqgy25MCHzSup2jhiaAKaGxLwZTeJ8/edit?usp=sharing" target="_blank" class="portal-btn">📍 Local Location Visits</a>
-      </div>
-  </div>
+      <div class="card" style="padding: 25px;">
+        <div class="card-title" style="margin-bottom: 15px; border-bottom: none;">
+            <span>📊 Live KPI Comparison</span>
+            <a href="https://docs.google.com/spreadsheets/d/1e4mW-pcwUMJjl2Pjry6PT180P8M8nkYL5Z4GcspQmEA/edit?usp=sharing" target="_blank" style="font-size: 11px; background: #f4f7f9; padding: 8px 14px; border-radius: 8px; color: var(--slate-charcoal); text-decoration: none; font-weight: 800; transition: 0.2s;">Open Full Sheet ↗</a>
+        </div>
+        
+        <div class="kpi-header-controls">
+            <div class="kpi-select-group">
+                <label>Store:</label>
+                <select id="kpiStoreSelect" class="kpi-select">
+                    <option value="OVL">OVL</option>
+                    <option value="LEE">LEE</option>
+                    <option value="WSP">WSP</option>
+                    <option value="MPL">MPL</option>
+                    <option value="BAL">BAL</option>
+                </select>
+            </div>
+            <div class="kpi-select-group" style="margin-left: auto;">
+                <label>Primary:</label>
+                <select id="primaryMonthSelect" class="kpi-select" onchange="renderKPIDashboard()"></select>
+            </div>
+            <div class="kpi-select-group">
+                <label>Compare To:</label>
+                <select id="compareMonthSelect" class="kpi-select" onchange="renderKPIDashboard()"></select>
+            </div>
+        </div>
 
+        <div class="kpi-list-header">
+            <div>Metric & 12-Mo Trend</div>
+            <div id="header-primary-label">Primary</div>
+            <div id="header-compare-label">Compare</div>
+            <div>Delta (+/-)</div>
+        </div>
+
+        <div id="kpiDashboardContainer">
+            </div>
+      </div>
+
+      <div>
+          <div class="card">
+            <div class="card-title">Performance & Sales <span>📈</span></div>
+            <a href="https://docs.google.com/spreadsheets/d/1i_oV37lZXq8s91f9ymzwQlrM8WY2UlQQQ0qsRP3xLJ8/edit?usp=sharing" target="_blank" class="portal-btn">📈 Sales Summary 2026</a>
+            <a href="https://docs.google.com/spreadsheets/d/1oHOnA6wDwaLQ-EP4-CiDTkKpAdP2V7y8mOay416HDME/edit?usp=sharing" target="_blank" class="portal-btn">👥 Team Member KPIs</a>
+            <a href="https://docs.google.com/spreadsheets/d/1pubURplK66yC6oXmpz7P-r8zN07DWmDiLxrtTg0rmdk/edit?usp=sharing" target="_blank" class="portal-btn">🎯 Daily Listing Goals</a>
+          </div>
+          
+          <div class="card">
+            <div class="card-title">Operations & Admin <span>⚙️</span></div>
+            <a href="https://drive.google.com/drive/folders/1N5okL6Lc11lgD5meZS-snncr3tyyoNH1?usp=sharing" target="_blank" class="portal-btn">📁 Variance Folder</a>
+            <a href="https://docs.google.com/spreadsheets/d/1KdQNDYfJT-Gt6wal6cgCbh6aqOUOHxey3PEsoeyztzQ/edit?usp=sharing" target="_blank" class="portal-btn">📦 SPEEKS Aging Inventory Tracker</a>
+            <a href="https://docs.google.com/spreadsheets/d/1zw-jcqpAnMY6PNofERbUz4pUHA3qnlnZx6O6C_XSmLY/edit?usp=sharing" target="_blank" class="portal-btn">🛡️ eBay & Shopify Insurance Cases</a>
+            <a href="https://docs.google.com/spreadsheets/d/1ar3tabN-bUqkjWqgy25MCHzSup2jhiaAKaGxLwZTeJ8/edit?usp=sharing" target="_blank" class="portal-btn">📍 Local Location Visits</a>
+          </div>
+      </div>
+
+  </div>
 </main>
 
 <script>
-// --- URL CONSTANTS ---
+// --- APP SCRIPT URLS ---
 const CMS_URL = 'https://script.google.com/macros/s/AKfycbxZviJiiQKcQYyp3SK4tcNBHrHXkID7cmwwuONStVPE9DHCSAMappqAs9dBns7ufECI/exec';
 
-// --- SIDEBAR LOGIC ---
+// NEW KPI SCRIPT URL UPDATED BELOW
+const MONTHLY_KPI_URL = 'https://script.google.com/macros/s/AKfycby0ihq9A4yUQvdZdeAF9euC5jih24hP2XGG-J_balNtxop2RHBuIuigw_mH3XTeCkkhow/exec';
+
+let dynamicMonths = [];
+let dynamicKPIData = [];
+
 function toggleSidebar() {
     const sidebar = document.querySelector('.sidebar');
     const mainContent = document.querySelector('.main-content');
@@ -207,7 +286,6 @@ function toggleSidebar() {
     localStorage.setItem('speeksSidebar', sidebar.classList.contains('collapsed') ? 'collapsed' : 'expanded');
 }
 
-// --- MODAL LOGIC ---
 function closeAllModals() {
     document.getElementById('notifDropdown').classList.remove('show');
     document.getElementById('globalOverlay').classList.remove('show');
@@ -242,18 +320,13 @@ function switchAnnTab(tab) {
 
 window.addEventListener('click', function(e) {
   const overlay = document.getElementById('globalOverlay');
-  if (overlay && e.target === overlay) {
-    closeAllModals();
-  }
+  if (overlay && e.target === overlay) { closeAllModals(); }
 });
 
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') {
-    closeAllModals();
-  }
+  if (e.key === 'Escape') { closeAllModals(); }
 });
 
-// --- DATA FETCHING (CMS) ---
 async function loadCMS() {
     try {
         const response = await fetch(`${CMS_URL}?v=${Date.now()}`);
@@ -301,7 +374,157 @@ async function loadCMS() {
     } catch (e) { console.error("CMS Failed", e); }
 }
 
-// Initializers
+// Helper: Format Numbers
+function formatValue(val, type) {
+    if (type === 'currency') return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(val);
+    if (type === 'percent') return `${(val * 100).toFixed(1)}%`; // Assumes sheet data is raw decimal (0.05 = 5%)
+    return new Intl.NumberFormat('en-US').format(val);
+}
+
+// Helper: Sparkline
+function generateSparklineSVG(dataArray) {
+    if (!dataArray || dataArray.length === 0) return '';
+    const min = Math.min(...dataArray);
+    const max = Math.max(...dataArray);
+    const width = 80;
+    const height = 24;
+    const padding = 2;
+    
+    const points = dataArray.map((val, i) => {
+        const x = padding + (i / (dataArray.length - 1)) * (width - padding * 2);
+        const range = max - min === 0 ? 1 : max - min; 
+        const y = padding + (height - padding * 2) - ((val - min) / range) * (height - padding * 2);
+        return `${x},${y}`;
+    });
+    
+    const pathD = `M ${points.join(' L ')}`;
+    return `<svg class="sparkline" viewBox="0 0 ${width} ${height}"><path d="${pathD}"></path></svg>`;
+}
+
+function toggleCategory(el) {
+    el.parentElement.classList.toggle('collapsed');
+}
+
+async function fetchKPIData() {
+    const store = document.getElementById('kpiStoreSelect').value;
+    const container = document.getElementById('kpiDashboardContainer');
+    
+    if (MONTHLY_KPI_URL === 'PASTE_NEW_SCRIPT_URL_HERE') {
+        container.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--idea-gold); font-weight: 600;">Please paste your new Web App URL in the HTML code.</div>';
+        return;
+    }
+    
+    container.innerHTML = '<div style="padding: 40px; text-align: center; color: #888; font-weight: 600;">Syncing Live Data...</div>';
+    
+    try {
+        const response = await fetch(`${MONTHLY_KPI_URL}?store=${store}&v=${Date.now()}`);
+        const payload = await response.json();
+        
+        if (payload.error) {
+            container.innerHTML = `<div style="padding: 40px; text-align: center; color: #dc2626; font-weight: 600;">${payload.error}</div>`;
+            return;
+        }
+
+        dynamicMonths = payload.months;
+        dynamicKPIData = payload.data;
+
+        // Update Dropdowns dynamically
+        const primarySelect = document.getElementById('primaryMonthSelect');
+        const compareSelect = document.getElementById('compareMonthSelect');
+        
+        primarySelect.innerHTML = '';
+        compareSelect.innerHTML = '';
+        
+        dynamicMonths.forEach((month, index) => {
+            primarySelect.add(new Option(month, index));
+            compareSelect.add(new Option(month, index));
+        });
+        
+        // Default to latest month vs previous month
+        primarySelect.value = dynamicMonths.length - 1; 
+        compareSelect.value = Math.max(0, dynamicMonths.length - 2); 
+        
+        renderKPIDashboard();
+        
+    } catch (e) { 
+        console.error("KPI Sync Failed", e); 
+        container.innerHTML = '<div style="padding: 40px; text-align: center; color: #dc2626; font-weight: 600;">Failed to sync KPI data. Check Apps Script.</div>'; 
+    }
+}
+
+function renderKPIDashboard() {
+    const primaryIdx = document.getElementById('primaryMonthSelect').value;
+    const compareIdx = document.getElementById('compareMonthSelect').value;
+    const container = document.getElementById('kpiDashboardContainer');
+    
+    document.getElementById('header-primary-label').innerText = dynamicMonths[primaryIdx];
+    document.getElementById('header-compare-label').innerText = dynamicMonths[compareIdx];
+
+    let html = '';
+
+    dynamicKPIData.forEach(cat => {
+        html += `
+            <div class="kpi-category">
+                <div class="kpi-category-header" onclick="toggleCategory(this)">
+                    ${cat.category}
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="kpi-category-content">
+        `;
+        
+        cat.metrics.forEach(metric => {
+            const primaryVal = metric.values[primaryIdx] || 0;
+            const compareVal = metric.values[compareIdx] || 0;
+            const delta = primaryVal - compareVal;
+            
+            // Format the math
+            // If the script detected it was a percentage, we don't multiply by 100 for the delta display if the raw values were already whole numbers like 4.5. 
+            // The script stripped the '%', so the value is just 4.5.
+            let isPct = metric.format === 'percent';
+            
+            const primaryStr = isPct ? `${primaryVal.toFixed(1)}%` : formatValue(primaryVal, metric.format);
+            const compareStr = isPct ? `${compareVal.toFixed(1)}%` : formatValue(compareVal, metric.format);
+            let deltaStr = isPct ? `${Math.abs(delta).toFixed(1)}%` : formatValue(Math.abs(delta), metric.format);
+            
+            let badgeClass = 'delta-neutral';
+            let sign = '';
+            
+            if (delta > 0) {
+                sign = '+';
+                badgeClass = metric.inverse ? 'delta-neg' : 'delta-pos'; 
+            } else if (delta < 0) {
+                sign = '-';
+                badgeClass = metric.inverse ? 'delta-pos' : 'delta-neg'; 
+            } else {
+                deltaStr = '0';
+            }
+
+            const sparklineSVG = generateSparklineSVG(metric.values);
+
+            html += `
+                <div class="kpi-row">
+                    <div class="kpi-name-col">
+                        <span class="kpi-name">${metric.name}</span>
+                        ${sparklineSVG}
+                    </div>
+                    <div class="kpi-value-col kpi-primary-val">${primaryStr}</div>
+                    <div class="kpi-value-col" style="color: #888;">${compareStr}</div>
+                    <div class="kpi-delta-col">
+                        <span class="delta-badge ${badgeClass}">${sign}${deltaStr}</span>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += `</div></div>`;
+    });
+
+    container.innerHTML = html;
+}
+
+// Make sure changing store fetches new data
+document.getElementById('kpiStoreSelect').addEventListener('change', fetchKPIData);
+
 document.addEventListener("DOMContentLoaded", () => {
     if (localStorage.getItem('speeksSidebar') === 'collapsed') {
         document.querySelector('.sidebar').classList.add('collapsed');
@@ -309,6 +532,7 @@ document.addEventListener("DOMContentLoaded", () => {
         document.querySelector('.sidebar-toggle').classList.add('collapsed');
     }
     loadCMS();
+    fetchKPIData();
 });
 </script>
 </body>
