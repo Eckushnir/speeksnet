@@ -105,6 +105,9 @@
 
   .dashboard-layout { display: grid; grid-template-columns: 700px 1fr; gap: 30px; align-items: start; }
   
+  /* Adding min-width:0 prevents grid blowouts when flex items expand */
+  .dashboard-layout > div { min-width: 0; }
+  
   .card { background: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.04); padding: 30px; transition: transform 0.3s ease, box-shadow 0.3s ease; margin-bottom: 30px; }
   .card:hover { box-shadow: 0 8px 25px rgba(0,0,0,0.05); }
   .card-title { font-size: 20px; font-weight: 800; color: var(--slate-charcoal); border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
@@ -119,7 +122,7 @@
   .kpi-select { padding: 8px 12px; border-radius: 8px; border: 1px solid #ddd; font-family: 'Inter', sans-serif; font-weight: 700; color: var(--slate-charcoal); outline: none; cursor: pointer; background: white; }
   .kpi-select:focus { border-color: var(--sage-professional); }
 
-  /* BALANCED HEIGHT FOR KPI LIST */
+  /* BALANCED HEIGHT FOR KPI LIST - EXACTLY 615px */
   .kpi-scroll-area { max-height: 615px; overflow-y: auto; overscroll-behavior: contain; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
   .kpi-scroll-area::-webkit-scrollbar { width: 6px; }
   .kpi-scroll-area::-webkit-scrollbar-track { background: transparent; }
@@ -294,9 +297,9 @@
       <div>
 
         <div class="card" style="padding: 25px; margin-bottom: 30px;">
-          <div class="card-title" style="margin-bottom: 15px; border-bottom: none;">
+          <div class="card-title" style="margin-bottom: 15px; border-bottom: none; flex-wrap: wrap; gap: 10px;">
             <span>🛒 Buying & Sales Summary</span>
-            <div style="display: flex; gap: 15px; align-items: center;">
+            <div style="display: flex; gap: 10px; align-items: center; margin-left: auto;">
               <select id="bsStoreSelect" class="kpi-select" onchange="renderBuyingSales()">
                 <option value="OVL">OVL</option>
                 <option value="LEE">LEE</option>
@@ -304,7 +307,7 @@
                 <option value="MPL">MPL</option>
                 <option value="BAL">BAL</option>
               </select>
-              <a href="https://docs.google.com/spreadsheets/d/1i_oV37lZXq8s91f9ymzwQlrM8WY2UlQQQ0qsRP3xLJ8/edit?usp=sharing" target="_blank" style="font-size: 11px; background: #f4f7f9; padding: 8px 14px; border-radius: 8px; color: var(--slate-charcoal); text-decoration: none; font-weight: 800; transition: 0.2s; border: 1px solid #ddd;">Open Full Sheet ↗</a>
+              <a href="https://docs.google.com/spreadsheets/d/1i_oV37lZXq8s91f9ymzwQlrM8WY2UlQQQ0qsRP3xLJ8/edit?usp=sharing" target="_blank" style="font-size: 11px; background: #f4f7f9; padding: 8px 14px; border-radius: 8px; color: var(--slate-charcoal); text-decoration: none; font-weight: 800; transition: 0.2s; border: 1px solid #ddd; white-space: nowrap;">Open Full Sheet ↗</a>
             </div>
           </div>
           
