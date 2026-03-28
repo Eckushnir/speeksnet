@@ -54,8 +54,13 @@
   .top-actions { position: fixed; top: 30px; right: 50px; z-index: 200; display: flex; gap: 15px; }
   .action-btn { background: white; border: 1px solid #ddd; width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 26px; transition: 0.2s; box-shadow: 0 6px 16px rgba(0,0,0,0.06); position: relative; }
   .action-btn:hover { border-color: var(--sage-professional); transform: translateY(-2px); }
+  
   .notif-dot { position: absolute; top: -6px; right: -6px; width: 16px; height: 16px; background: var(--red-alert); border-radius: 50%; border: 3px solid white; display: none; }
   .notif-dot.active { display: block; animation: pulse 2s infinite; }
+  
+  /* NEW WIDGET PULSE DOT */
+  .vw-pulse-dot { width: 10px; height: 10px; background: var(--red-alert); border-radius: 50%; display: inline-block; animation: pulse 2s infinite; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); margin-left: 8px; vertical-align: middle; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
   .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.22); backdrop-filter: blur(6px); display: none; z-index: 9998; }
   .overlay.show { display: block; }
@@ -709,6 +714,23 @@ function createVarianceStoreCard(storeKey) {
   const data = liveVarianceDataCache[storeKey];
   const totalClass = data.total < 0 ? 'delta-neg' : (data.total > 0 ? 'delta-pos' : 'delta-neutral');
   
+  // Extract Period from filename (Strips out OVL, LEE, WSP)
+  let periodText = "Current";
+  let isNew = false;
+  
+  if (data.fileName) {
+      // Regex to remove the store name and trim the extra space
+      periodText = data.fileName.replace(new RegExp(`${storeKey}\\s*`, 'i'), '').trim();
+  }
+  
+  // Calculate if the file is less than 7 days old
+  if (data.fileDate) {
+      const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
+      if ((Date.now() - data.fileDate) < oneWeekMs) {
+          isNew = true;
+      }
+  }
+  
   let empHtml = data.employees.map(emp => {
     const badgeClass = emp.val < 0 ? 'delta-neg' : (emp.val > 0 ? 'delta-pos' : 'delta-neutral');
     return `
@@ -719,10 +741,19 @@ function createVarianceStoreCard(storeKey) {
     `;
   }).join('');
 
+  // Add the pulsing dot only if isNew is true
+  const newBadgeHtml = isNew ? `<div class="vw-pulse-dot" title="New Report Added This Week"></div>` : '';
+
   return `
     <div style="border: 1px solid #eee; border-radius: 12px; background: white; overflow: hidden;">
       <div style="background: #f9fafb; padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
-        <span style="font-size: 14px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase;">${storeKey} Total Variance</span>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+            <div style="display: flex; align-items: center;">
+                <span style="font-size: 14px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase;">${storeKey} Total</span>
+                ${newBadgeHtml}
+            </div>
+            <span style="font-size: 11px; font-weight: 700; color: #888;">PERIOD: ${periodText}</span>
+        </div>
         <span class="delta-badge ${totalClass}" style="font-size: 13px; padding: 6px 12px;">${formatVariancePct(data.total)}</span>
       </div>
       <div style="display: flex; flex-direction: column;">
