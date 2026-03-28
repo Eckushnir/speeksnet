@@ -130,7 +130,7 @@
   .kpi-select:focus { border-color: var(--sage-professional); }
 
   /* BALANCED HEIGHT FOR KPI LIST - EXACTLY 618px */
-  .kpi-scroll-area { max-height: 615px; overflow-y: auto; overscroll-behavior: contain; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
+  .kpi-scroll-area { max-height: 618px; overflow-y: auto; overscroll-behavior: contain; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
   .kpi-scroll-area::-webkit-scrollbar { width: 6px; }
   .kpi-scroll-area::-webkit-scrollbar-track { background: transparent; }
   .kpi-scroll-area::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
@@ -187,11 +187,20 @@
   .vw-scroll-area::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
   .vw-scroll-area::-webkit-scrollbar-thumb:hover { background: var(--sage-professional); }
 
+  /* WEEKLY KPI SPECIFIC CLASSES */
+  .weekly-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 15px; }
+
   @media (max-width: 1200px) { 
       .dashboard-layout { grid-template-columns: 1fr; } 
       .checklist-grid { grid-template-columns: 1fr; }
+      .weekly-kpi-grid { grid-template-columns: repeat(2, 1fr); }
   }
-  @media (max-width: 1024px) { .top-actions { right: 20px; } .page-header { padding-right: 0; flex-direction: column; align-items: flex-start; } .vw-dashboard { grid-template-columns: 1fr; } }
+  @media (max-width: 1024px) { 
+      .top-actions { right: 20px; } 
+      .page-header { padding-right: 0; flex-direction: column; align-items: flex-start; } 
+      .vw-dashboard { grid-template-columns: 1fr; } 
+      .weekly-kpi-grid { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
@@ -266,29 +275,28 @@
   <div class="checklist-grid">
       <div class="card" style="margin-bottom: 0; padding: 25px;">
           <div class="checklist-header">⚡ Daily Checklist</div>
-          <label class="checklist-item"><input type="checkbox"> Set daily individual team member listing targets.</label>
-          <label class="checklist-item"><input type="checkbox"> Assign products to team members.</label>
+          <label class="checklist-item"><input type="checkbox"> Set daily team listing targets.</label>
+          <label class="checklist-item"><input type="checkbox"> Assign product workflows to team members.</label>
           <label class="checklist-item"><input type="checkbox"> Review & respond to all pending messages.</label>
-          <label class="checklist-item"><input type="checkbox"> Reply to new Google Reviews.</label>
-          <label class="checklist-item"><input type="checkbox"> Send any available WinBack messages.</label>
+          <label class="checklist-item"><input type="checkbox"> Monitor & reply to new Google Reviews.</label>
+          <label class="checklist-item"><input type="checkbox"> Dispatch available WinBack messages.</label>
       </div>
       <div class="card" style="margin-bottom: 0; padding: 25px;">
           <div class="checklist-header">🔄 Weekly Checklist</div>
-          <label class="checklist-item"><input type="checkbox"> Conduct weekly team meeting.</label>
-        <label class="checklist-item"><input type="checkbox"> Upload five new listings to Facebook Marketplace.</label>
+          <label class="checklist-item"><input type="checkbox"> Conduct weekly team sync meeting.</label>
           <label class="checklist-item"><input type="checkbox"> Complete and review Weekly KPI metrics.</label>
       </div>
       <div class="card" style="margin-bottom: 0; padding: 25px;">
           <div class="checklist-header">🎯 Monthly Checklist</div>
-          <label class="checklist-item"><input type="checkbox"> Complete and review Monthly KPI metrics.</label>
+          <label class="checklist-item"><input type="checkbox"> Finalize and submit Monthly KPI metrics.</label>
           <label class="checklist-item"><input type="checkbox"> Establish & communicate monthly store goals.</label>
-          <label class="checklist-item"><input type="checkbox"> Conduct 1-on-1 performance reviews with all team members.</label>
+          <label class="checklist-item"><input type="checkbox"> Conduct 1-on-1 performance reviews with staff.</label>
       </div>
   </div>
 
   <div class="dashboard-layout">
       
-      <div class="card" style="padding: 25px;">
+      <div class="card" style="padding: 25px; margin-bottom: 0;">
         <div class="card-title" style="margin-bottom: 15px; border-bottom: none;">
             <span>🧮 Monthly KPI Comparison</span>
             <a href="https://docs.google.com/spreadsheets/d/1e4mW-pcwUMJjl2Pjry6PT180P8M8nkYL5Z4GcspQmEA/edit?usp=sharing" target="_blank" style="font-size: 11px; background: #f4f7f9; padding: 8px 14px; border-radius: 8px; color: var(--slate-charcoal); text-decoration: none; font-weight: 800; transition: 0.2s;">Open Full Sheet ↗</a>
@@ -406,12 +414,12 @@
         </div>
 
         <div class="portals-grid" style="grid-template-columns: 1fr;">
-            <div class="card">
+            <div class="card" style="margin-bottom: 0;">
               <div class="card-title">Performance & Sales <span>📈</span></div>
               <a href="https://docs.google.com/spreadsheets/d/1oHOnA6wDwaLQ-EP4-CiDTkKpAdP2V7y8mOay416HDME/edit?usp=sharing" target="_blank" class="portal-btn">👥 Team Member KPIs</a>
             </div>
             
-            <div class="card">
+            <div class="card" style="margin-bottom: 0;">
               <div class="card-title">Operations & Admin <span>⚙️</span></div>
               <a href="https://docs.google.com/spreadsheets/d/1pubURplK66yC6oXmpz7P-r8zN07DWmDiLxrtTg0rmdk/edit?usp=sharing" target="_blank" class="portal-btn">🎯 Daily Listing Goals</a>
               <a href="https://docs.google.com/spreadsheets/d/1KdQNDYfJT-Gt6wal6cgCbh6aqOUOHxey3PEsoeyztzQ/edit?usp=sharing" target="_blank" class="portal-btn">📦 SPEEKS Aging Inventory Tracker</a>
@@ -419,6 +427,21 @@
               <a href="https://docs.google.com/spreadsheets/d/1ar3tabN-bUqkjWqgy25MCHzSup2jhiaAKaGxLwZTeJ8/edit?usp=sharing" target="_blank" class="portal-btn">📍 Local Location Visits</a>
             </div>
         </div>
+      </div>
+      
+      <div class="card" style="grid-column: 1 / -1; padding: 25px; margin-top: 30px;">
+          <div class="card-title" style="margin-bottom: 5px; border-bottom: none;">
+            <span>🗓️ Weekly KPI Breakdown</span>
+            <select id="weeklyKpiStoreSelect" class="kpi-select" onchange="renderWeeklyKPIs()">
+                <option value="OVL">OVL</option>
+                <option value="LEE">LEE</option>
+                <option value="WSP">WSP</option>
+            </select>
+          </div>
+          
+          <div class="weekly-kpi-grid" id="weeklyKpiContainer">
+              <div style="padding: 40px; text-align: center; color: #888; font-weight: 600; grid-column: 1 / -1;">Initializing Weekly KPIs...</div>
+          </div>
       </div>
 
   </div>
@@ -833,7 +856,6 @@ function renderBuyingSales() {
     document.getElementById('bs-buy-margin').innerText = formattedBuyMargin;
     document.getElementById('bs-buy-proj').innerText = formattedBuyProj;
 
-
     // REAL DATA FOR SALES
     let p = Math.round(hubDataCache[`${store}Pct`] || 0);
     let goal = Math.round(hubDataCache[`${store}Goal`] || 0);
@@ -954,6 +976,85 @@ async function fetchVarianceData() {
     }
 }
 
+// =========================================================
+// WEEKLY KPI WIDGET LOGIC (DUMMY DATA FOR NOW)
+// =========================================================
+function renderWeeklyKPIs() {
+  const container = document.getElementById('weeklyKpiContainer');
+  const store = document.getElementById('weeklyKpiStoreSelect').value;
+
+  // DUMMY DATA: We will replace this with a real backend call later!
+  const data = {
+     storeAvg: { buyVal: "$15,240", buyMargin: "52.4", customers: 215, conversion: "64.2", noDeals: 18, listed: 412 },
+     employees: [
+       { name: "Alex M.", buyVal: "$6,100", buyMargin: "55.1", customers: 85, conversion: "68.5", noDeals: 4, listed: 150 },
+       { name: "Sam T.", buyVal: "$5,400", buyMargin: "51.2", customers: 70, conversion: "62.1", noDeals: 6, listed: 142 },
+       { name: "Jordan R.", buyVal: "$3,740", buyMargin: "49.8", customers: 60, conversion: "61.0", noDeals: 8, listed: 120 }
+     ]
+  };
+
+  // Helper function to build each of the 4 columns
+  const buildCol = (title, storeVal1, storeVal2, empKey1, empKey2, isPct2) => {
+     let empHtml = data.employees.map(emp => {
+        let val1 = emp[empKey1];
+        let val2 = empKey2 ? emp[empKey2] : '';
+        let badge2 = '';
+        if (empKey2) {
+           let num = parseFloat(val2);
+           let badgeClass = 'delta-neutral';
+           if (isPct2) {
+               // Dummy logic: Green if > 60%, Red if < 50%
+               badgeClass = num >= 60 ? 'delta-pos' : (num < 50 ? 'delta-neg' : 'delta-neutral'); 
+               val2 = val2 + '%';
+           }
+           badge2 = `<span class="delta-badge ${badgeClass}" style="width: 50px;">${val2}</span>`;
+        }
+
+        return `
+          <div class="kpi-row" style="padding: 10px 15px; display: flex; justify-content: space-between; border-top: 1px solid #f5f5f5; border-radius: 0; background: white; margin: 0;">
+            <span class="kpi-name" style="flex-grow: 1;">${emp.name}</span>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <span style="font-size: 12px; font-weight: 700; color: #555; width: 50px; text-align: right;">${val1}</span>
+                ${badge2}
+            </div>
+          </div>
+        `;
+     }).join('');
+
+     let storeBadge = '';
+     if(storeVal2) {
+         let badgeClass = 'delta-neutral';
+         if (isPct2) badgeClass = parseFloat(storeVal2) >= 60 ? 'delta-pos' : (parseFloat(storeVal2) < 50 ? 'delta-neg' : 'delta-neutral');
+         storeBadge = `<span class="delta-badge ${badgeClass}" style="font-size: 12px; width: 50px;">${storeVal2}${isPct2 ? '%' : ''}</span>`;
+     }
+
+     return `
+       <div style="border: 1px solid #eee; border-radius: 12px; background: white; overflow: hidden;">
+         <div style="background: #f9fafb; padding: 15px; border-bottom: 1px solid #eee; text-align: center;">
+            <h4 style="font-size: 12px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;">${title}</h4>
+            <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 8px 12px; border-radius: 8px; border: 1px solid #eee;">
+               <span style="font-size: 11px; font-weight: 800; color: #888;">STORE TOTAL</span>
+               <div style="display: flex; gap: 10px; align-items: center;">
+                   <span style="font-size: 13px; font-weight: 800; color: var(--slate-charcoal); width: 50px; text-align: right;">${storeVal1}</span>
+                   ${storeBadge}
+               </div>
+            </div>
+         </div>
+         <div style="display: flex; flex-direction: column;">
+           ${empHtml}
+         </div>
+       </div>
+     `;
+  };
+
+  container.innerHTML = `
+     ${buildCol('Buying Performance', data.storeAvg.buyVal, data.storeAvg.buyMargin, 'buyVal', 'buyMargin', true)}
+     ${buildCol('Customer Conversion', data.storeAvg.customers, data.storeAvg.conversion, 'customers', 'conversion', true)}
+     ${buildCol('No Deals', data.storeAvg.noDeals, '', 'noDeals', '', false)}
+     ${buildCol('Processed / Listed', data.storeAvg.listed, '', 'listed', '', false)}
+  `;
+}
+
 // Initializers
 document.getElementById('kpiStoreSelect').addEventListener('change', fetchKPIData);
 
@@ -964,9 +1065,10 @@ document.addEventListener("DOMContentLoaded", () => {
         document.querySelector('.sidebar-toggle').classList.add('collapsed');
     }
     loadCMS();
-    fetchHubData(); // Initializes the Buying & Sales Widget
+    fetchHubData(); 
     fetchKPIData();
     fetchVarianceData();
+    renderWeeklyKPIs(); // Renders the dummy Weekly KPI data
 });
 </script>
 </body>
