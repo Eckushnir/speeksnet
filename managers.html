@@ -119,7 +119,7 @@
   .kpi-select { padding: 8px 12px; border-radius: 8px; border: 1px solid #ddd; font-family: 'Inter', sans-serif; font-weight: 700; color: var(--slate-charcoal); outline: none; cursor: pointer; background: white; }
   .kpi-select:focus { border-color: var(--sage-professional); }
 
-  /* BALANCED HEIGHT FOR KPI LIST - EXACTLY 618px */
+  /* BALANCED HEIGHT FOR KPI LIST */
   .kpi-scroll-area { max-height: 615px; overflow-y: auto; overscroll-behavior: contain; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
   .kpi-scroll-area::-webkit-scrollbar { width: 6px; }
   .kpi-scroll-area::-webkit-scrollbar-track { background: transparent; }
@@ -296,13 +296,16 @@
         <div class="card" style="padding: 25px; margin-bottom: 30px;">
           <div class="card-title" style="margin-bottom: 15px; border-bottom: none;">
             <span>🛒 Buying & Sales Summary</span>
-            <select id="bsStoreSelect" class="kpi-select" onchange="renderBuyingSales()">
-              <option value="OVL">OVL</option>
-              <option value="LEE">LEE</option>
-              <option value="WSP">WSP</option>
-              <option value="MPL">MPL</option>
-              <option value="BAL">BAL</option>
-            </select>
+            <div style="display: flex; gap: 15px; align-items: center;">
+              <select id="bsStoreSelect" class="kpi-select" onchange="renderBuyingSales()">
+                <option value="OVL">OVL</option>
+                <option value="LEE">LEE</option>
+                <option value="WSP">WSP</option>
+                <option value="MPL">MPL</option>
+                <option value="BAL">BAL</option>
+              </select>
+              <a href="https://docs.google.com/spreadsheets/d/1i_oV37lZXq8s91f9ymzwQlrM8WY2UlQQQ0qsRP3xLJ8/edit?usp=sharing" target="_blank" style="font-size: 11px; background: #f4f7f9; padding: 8px 14px; border-radius: 8px; color: var(--slate-charcoal); text-decoration: none; font-weight: 800; transition: 0.2s; border: 1px solid #ddd;">Open Full Sheet ↗</a>
+            </div>
           </div>
           
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: center; border: 1px solid #eee; border-radius: 12px; background: #f9fafb; padding: 20px;">
@@ -368,7 +371,6 @@
         <div class="portals-grid" style="grid-template-columns: 1fr;">
             <div class="card">
               <div class="card-title">Performance & Sales <span>📈</span></div>
-              <a href="https://docs.google.com/spreadsheets/d/1i_oV37lZXq8s91f9ymzwQlrM8WY2UlQQQ0qsRP3xLJ8/edit?usp=sharing" target="_blank" class="portal-btn">📈 Sales Summary 2026</a>
               <a href="https://docs.google.com/spreadsheets/d/1oHOnA6wDwaLQ-EP4-CiDTkKpAdP2V7y8mOay416HDME/edit?usp=sharing" target="_blank" class="portal-btn">👥 Team Member KPIs</a>
             </div>
             
