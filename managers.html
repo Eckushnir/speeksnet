@@ -115,7 +115,7 @@
   /* Adding min-width:0 prevents grid blowouts when flex items expand */
   .dashboard-layout > div { min-width: 0; }
   
-  .card { background: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.04); padding: 30px; transition: transform 0.3s ease, box-shadow 0.3s ease; }
+  .card { background: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.04); padding: 30px; transition: transform 0.3s ease, box-shadow 0.3s ease; margin-bottom: 30px; }
   .card:hover { box-shadow: 0 8px 25px rgba(0,0,0,0.05); }
   .card-title { font-size: 20px; font-weight: 800; color: var(--slate-charcoal); border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
   
@@ -129,8 +129,8 @@
   .kpi-select { padding: 8px 12px; border-radius: 8px; border: 1px solid #ddd; font-family: 'Inter', sans-serif; font-weight: 700; color: var(--slate-charcoal); outline: none; cursor: pointer; background: white; }
   .kpi-select:focus { border-color: var(--sage-professional); }
 
-  /* BALANCED HEIGHT FOR KPI LIST - EXACTLY 615px */
-  .kpi-scroll-area { max-height: 615px; overflow-y: auto; overscroll-behavior: contain; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
+  /* BALANCED HEIGHT FOR KPI LIST - EXACTLY 618px */
+  .kpi-scroll-area { max-height: 618px; overflow-y: auto; overscroll-behavior: contain; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
   .kpi-scroll-area::-webkit-scrollbar { width: 6px; }
   .kpi-scroll-area::-webkit-scrollbar-track { background: transparent; }
   .kpi-scroll-area::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
@@ -159,7 +159,7 @@
   .kpi-delta-col { text-align: right; }
   
   /* SHARED BADGE CLASSES (Used in both KPI & Variance widgets) */
-  .delta-badge { display: inline-flex; justify-content: center; padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: 800; letter-spacing: 0.5px; }
+  .delta-badge { display: inline-flex; justify-content: center; align-items: center; padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: 800; letter-spacing: 0.5px; height: 22px; line-height: 1;}
   .delta-pos { background: #dcfce7; color: #166534; } 
   .delta-neg { background: #fee2e2; color: #991b1b; } 
   .delta-neutral { background: #f1f5f9; color: #475569; }
@@ -296,46 +296,63 @@
 
   <div class="dashboard-layout">
       
-      <div class="card" style="padding: 25px; margin-bottom: 0;">
-        <div class="card-title" style="margin-bottom: 15px; border-bottom: none;">
-            <span>🧮 Monthly KPI Comparison</span>
-            <a href="https://docs.google.com/spreadsheets/d/1e4mW-pcwUMJjl2Pjry6PT180P8M8nkYL5Z4GcspQmEA/edit?usp=sharing" target="_blank" style="font-size: 11px; background: #f4f7f9; padding: 8px 14px; border-radius: 8px; color: var(--slate-charcoal); text-decoration: none; font-weight: 800; transition: 0.2s;">Open Full Sheet ↗</a>
-        </div>
-        
-        <div class="kpi-header-controls">
-            <div class="kpi-select-group">
-                <select id="kpiStoreSelect" class="kpi-select">
+      <div style="display: flex; flex-direction: column; gap: 30px;">
+          
+          <div class="card" style="padding: 25px; margin-bottom: 0;">
+            <div class="card-title" style="margin-bottom: 15px; border-bottom: none;">
+                <span>🧮 Monthly KPI Comparison</span>
+                <a href="https://docs.google.com/spreadsheets/d/1e4mW-pcwUMJjl2Pjry6PT180P8M8nkYL5Z4GcspQmEA/edit?usp=sharing" target="_blank" style="font-size: 11px; background: #f4f7f9; padding: 8px 14px; border-radius: 8px; color: var(--slate-charcoal); text-decoration: none; font-weight: 800; transition: 0.2s;">Open Full Sheet ↗</a>
+            </div>
+            
+            <div class="kpi-header-controls">
+                <div class="kpi-select-group">
+                    <select id="kpiStoreSelect" class="kpi-select">
+                        <option value="OVL">OVL</option>
+                        <option value="LEE">LEE</option>
+                        <option value="WSP">WSP</option>
+                        <option value="MPL">MPL</option>
+                        <option value="BAL">BAL</option>
+                    </select>
+                </div>
+                <div class="kpi-select-group" style="margin-left: auto;">
+                    <select id="primaryMonthSelect" class="kpi-select" onchange="renderKPIDashboard()"></select>
+                </div>
+                <div class="kpi-select-group" style="color: #ccc;">vs</div>
+                <div class="kpi-select-group">
+                    <select id="compareMonthSelect" class="kpi-select" onchange="renderKPIDashboard()"></select>
+                </div>
+            </div>
+
+            <div style="border: 1px solid #eee; border-radius: 12px; background: white; margin-bottom: 10px;">
+                <div class="kpi-list-header">
+                    <div>Metric & 12-Mo Trend</div>
+                    <div id="header-primary-label">Primary</div>
+                    <div id="header-compare-label">Compare</div>
+                    <div>Delta (+/-)</div>
+                </div>
+
+                <div id="kpiDashboardContainer" class="kpi-scroll-area">
+                    <div style="padding: 40px; text-align: center; color: #888; font-weight: 600;">Syncing KPI Data...</div>
+                </div>
+            </div>
+          </div>
+          
+          <div class="card" style="padding: 25px; margin-bottom: 0;">
+              <div class="card-title" style="margin-bottom: 5px; border-bottom: none;">
+                <span>🗓️ Weekly KPI Breakdown</span>
+                <select id="weeklyKpiStoreSelect" class="kpi-select" onchange="fetchWeeklyKPIs()">
                     <option value="OVL">OVL</option>
                     <option value="LEE">LEE</option>
                     <option value="WSP">WSP</option>
-                    <option value="MPL">MPL</option>
-                    <option value="BAL">BAL</option>
                 </select>
-            </div>
-            <div class="kpi-select-group" style="margin-left: auto;">
-                <select id="primaryMonthSelect" class="kpi-select" onchange="renderKPIDashboard()"></select>
-            </div>
-            <div class="kpi-select-group" style="color: #ccc;">vs</div>
-            <div class="kpi-select-group">
-                <select id="compareMonthSelect" class="kpi-select" onchange="renderKPIDashboard()"></select>
-            </div>
-        </div>
-
-        <div style="border: 1px solid #eee; border-radius: 12px; background: white; margin-bottom: 10px;">
-            <div class="kpi-list-header">
-                <div>Metric & 12-Mo Trend</div>
-                <div id="header-primary-label">Primary</div>
-                <div id="header-compare-label">Compare</div>
-                <div>Delta (+/-)</div>
-            </div>
-
-            <div id="kpiDashboardContainer" class="kpi-scroll-area">
-                <div style="padding: 40px; text-align: center; color: #888; font-weight: 600;">Syncing KPI Data...</div>
-            </div>
-        </div>
-      </div>
-
-      <div style="display: flex; flex-direction: column; gap: 30px;">
+              </div>
+              
+              <div class="weekly-kpi-grid" id="weeklyKpiContainer">
+                  <div style="padding: 40px; text-align: center; color: #888; font-weight: 600; grid-column: 1 / -1;">Syncing Live Data...</div>
+              </div>
+          </div>
+          
+      </div> <div style="display: flex; flex-direction: column; gap: 30px;">
 
         <div class="card" style="padding: 25px; margin-bottom: 0;">
           <div class="card-title" style="margin-bottom: 15px; border-bottom: none; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;">
@@ -412,22 +429,7 @@
           </div>
         </div>
         
-      </div> <div class="card" style="grid-column: 1 / -1; padding: 25px; margin-bottom: 0;">
-          <div class="card-title" style="margin-bottom: 5px; border-bottom: none;">
-            <span>🗓️ Weekly KPI Breakdown</span>
-            <select id="weeklyKpiStoreSelect" class="kpi-select" onchange="renderWeeklyKPIs()">
-                <option value="OVL">OVL</option>
-                <option value="LEE">LEE</option>
-                <option value="WSP">WSP</option>
-            </select>
-          </div>
-          
-          <div class="weekly-kpi-grid" id="weeklyKpiContainer">
-              <div style="padding: 40px; text-align: center; color: #888; font-weight: 600; grid-column: 1 / -1;">Initializing Weekly KPIs...</div>
-          </div>
-      </div>
-
-      <div class="portals-grid" style="grid-column: 1 / -1; grid-template-columns: 1fr 1fr; margin-bottom: 30px;">
+      </div> <div class="portals-grid" style="grid-column: 1 / -1; grid-template-columns: 1fr 1fr; margin-bottom: 30px;">
           <div class="card" style="margin-bottom: 0;">
             <div class="card-title">Performance & Sales <span>📈</span></div>
             <a href="https://docs.google.com/spreadsheets/d/1oHOnA6wDwaLQ-EP4-CiDTkKpAdP2V7y8mOay416HDME/edit?usp=sharing" target="_blank" class="portal-btn">👥 Team Member KPIs</a>
@@ -450,6 +452,7 @@ const CMS_URL = 'https://script.google.com/macros/s/AKfycbxZviJiiQKcQYyp3SK4tcNB
 const MONTHLY_KPI_URL = 'https://script.google.com/macros/s/AKfycby0ihq9A4yUQvdZdeAF9euC5jih24hP2XGG-J_balNtxop2RHBuIuigw_mH3XTeCkkhow/exec';
 const VARIANCE_API_URL = 'https://script.google.com/macros/s/AKfycbxFO_W-PW4ZT4e5mXlQOhlYl2ccpZ9by8MZ6rF-RJ6x3lryCjbi5XxY7c57vLgfx7k/exec';
 const HUB_URL = 'https://script.google.com/macros/s/AKfycbw3Ms5nc2bhbrjVW-da3xbZ3vKhyBx2TpeR-eSd1L05ZhV-h2Yh0yLmIV_E7TWDmwM69A/exec';
+const WEEKLY_KPI_URL = 'https://script.google.com/macros/s/AKfycbyVBos-uJuhaqfLMBqoz9byNkvUG06igl4RX2_cs8hH15rbp7K4uFFEN-wpQgS2ChAU/exec'; // Your chart spreadsheet backend
 
 let dynamicMonths = [];
 let rawKPIData = [];
@@ -912,7 +915,7 @@ function createVarianceStoreCard(storeKey) {
   let empHtml = data.employees.map(emp => {
     const badgeClass = emp.val < 0 ? 'delta-neg' : (emp.val > 0 ? 'delta-pos' : 'delta-neutral');
     return `
-      <div class="kpi-row" style="padding: 10px 20px; grid-template-columns: 1fr auto; border-top: 1px solid #f5f5f5; border-radius: 0; border-left: none; border-right: none; margin: 0; background: white;">
+      <div class="kpi-row" style="padding: 0 20px; height: 48px; grid-template-columns: 1fr auto; border-top: 1px solid #f5f5f5; border-radius: 0; border-left: none; border-right: none; margin: 0; background: white;">
         <span class="kpi-name">${emp.name}</span>
         <span class="delta-badge ${badgeClass}">${formatVariancePct(emp.val)}</span>
       </div>
@@ -976,77 +979,132 @@ async function fetchVarianceData() {
 }
 
 // =========================================================
-// WEEKLY KPI WIDGET LOGIC (DUMMY DATA FOR NOW)
+// WEEKLY KPI WIDGET LOGIC (LIVE FETCHING)
 // =========================================================
-function renderWeeklyKPIs() {
+async function fetchWeeklyKPIs() {
   const container = document.getElementById('weeklyKpiContainer');
   const store = document.getElementById('weeklyKpiStoreSelect').value;
+  
+  container.innerHTML = '<div style="padding: 40px; text-align: center; color: #888; font-weight: 600; grid-column: 1 / -1;">Syncing Live Weekly Data...</div>';
 
-  // DUMMY DATA: We will replace this with a real backend call later!
-  const data = {
-     storeAvg: { buyVal: "$15,240", buyMargin: "52.4", customers: 215, conversion: "64.2", noDeals: 18, listed: 412 },
-     employees: [
-       { name: "Alex M.", buyVal: "$6,100", buyMargin: "55.1", customers: 85, conversion: "68.5", noDeals: 4, listed: 150 },
-       { name: "Sam T.", buyVal: "$5,400", buyMargin: "51.2", customers: 70, conversion: "62.1", noDeals: 6, listed: 142 },
-       { name: "Jordan R.", buyVal: "$3,740", buyMargin: "49.8", customers: 60, conversion: "61.0", noDeals: 8, listed: 120 }
-     ]
-  };
+  try {
+      // 1. Fetch the exact same URL the charts use for this store's 4-Week tab
+      const response = await fetch(`${WEEKLY_KPI_URL}?store=${store}&time=4-Week&v=${Date.now()}`);
+      const data = await response.json();
 
-  // Helper function to build each of the 4 columns with perfect uniform grid alignment
-  const buildCol = (title, storeVal1, storeVal2, empKey1, empKey2, isPct2) => {
-     let empHtml = data.employees.map(emp => {
-        let val1 = emp[empKey1];
-        let val2 = empKey2 ? emp[empKey2] : '';
-        let badge2 = '';
-        if (empKey2) {
-           let num = parseFloat(val2);
-           let badgeClass = 'delta-neutral';
-           if (isPct2) {
-               badgeClass = num >= 60 ? 'delta-pos' : (num < 50 ? 'delta-neg' : 'delta-neutral'); 
-               val2 = val2 + '%';
-           }
-           badge2 = `<span class="delta-badge ${badgeClass}">${val2}</span>`;
-        }
+      let storeAvg = {};
+      let employees = [];
 
-        return `
-          <div class="kpi-row" style="display: grid; grid-template-columns: 1fr 70px 60px; align-items: center; padding: 10px 15px; border-top: 1px solid #f5f5f5; border-radius: 0; background: white; margin: 0; border-left: none; border-right: none; gap: 10px;">
-            <span class="kpi-name" style="grid-column: 1;">${emp.name}</span>
-            <span style="grid-column: 2; text-align: right; font-size: 12px; font-weight: 700; color: #555;">${val1}</span>
-            <span style="grid-column: 3; display: flex; justify-content: flex-end;">${badge2}</span>
-          </div>
-        `;
-     }).join('');
+      // 2. Scan Column A (index 0) to find the "STORE TOTAL" row dynamically
+      let storeTotalRowIndex = -1;
+      for (let i = 0; i < data.length; i++) {
+          if (String(data[i][0]).toUpperCase().includes("STORE TOTAL") && String(data[i][2]).trim() !== "") {
+              storeTotalRowIndex = i;
+              break;
+          }
+      }
 
-     let storeBadge = '';
-     if(storeVal2) {
-         let badgeClass = 'delta-neutral';
-         if (isPct2) badgeClass = parseFloat(storeVal2) >= 60 ? 'delta-pos' : (parseFloat(storeVal2) < 50 ? 'delta-neg' : 'delta-neutral');
-         storeBadge = `<span class="delta-badge ${badgeClass}">${storeVal2}${isPct2 ? '%' : ''}</span>`;
-     }
+      if (storeTotalRowIndex !== -1) {
+          let stRow = data[storeTotalRowIndex];
+          storeAvg = {
+              buyVal: stRow[2],     // Column C
+              buyMargin: stRow[5],  // Column F
+              customers: stRow[6],  // Column G
+              conversion: stRow[8], // Column I
+              noDeals: stRow[14],   // Column O
+              listed: stRow[20]     // Column U
+          };
 
-     return `
-       <div style="border: 1px solid #eee; border-radius: 12px; background: white; overflow: hidden;">
-         <div style="background: #f9fafb; padding: 15px; border-bottom: 1px solid #eee; text-align: center;">
-            <h4 style="font-size: 12px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;">${title}</h4>
-            <div style="display: grid; grid-template-columns: 1fr 70px 60px; align-items: center; background: white; padding: 8px 12px; border-radius: 8px; border: 1px solid #eee; gap: 10px;">
-               <span style="font-size: 11px; font-weight: 800; color: #888; text-align: left;">STORE TOTAL</span>
-               <span style="font-size: 13px; font-weight: 800; color: var(--slate-charcoal); text-align: right;">${storeVal1}</span>
-               <span style="display: flex; justify-content: flex-end;">${storeBadge}</span>
-            </div>
-         </div>
-         <div style="display: flex; flex-direction: column;">
-           ${empHtml}
-         </div>
-       </div>
-     `;
-  };
+          // 3. Scan 5 rows above and below STORE TOTAL to scoop up the employee rows dynamically!
+          for (let i = Math.max(0, storeTotalRowIndex - 5); i <= Math.min(data.length - 1, storeTotalRowIndex + 5); i++) {
+              if (i === storeTotalRowIndex) continue;
+              let name = String(data[i][0]).trim();
+              let buyVal = String(data[i][2]).trim();
+              
+              // If we find a real name (and it's not a header) and there is buying value data, add them!
+              if (name && name.toLowerCase() !== "name" && name.toLowerCase() !== "employee" && buyVal) {
+                  employees.push({
+                      name: name,
+                      buyVal: buyVal,
+                      buyMargin: data[i][5],
+                      customers: data[i][6],
+                      conversion: data[i][8],
+                      noDeals: data[i][14],
+                      listed: data[i][20]
+                  });
+              }
+          }
+      }
 
-  container.innerHTML = `
-     ${buildCol('Buying Performance', data.storeAvg.buyVal, data.storeAvg.buyMargin, 'buyVal', 'buyMargin', true)}
-     ${buildCol('Customer Conversion', data.storeAvg.customers, data.storeAvg.conversion, 'customers', 'conversion', true)}
-     ${buildCol('No Deals', data.storeAvg.noDeals, '', 'noDeals', '', false)}
-     ${buildCol('Processed / Listed', data.storeAvg.listed, '', 'listed', '', false)}
-  `;
+      // Helper function to build each of the 4 columns with perfect uniform grid alignment (Height: 48px forced)
+      const buildCol = (title, storeVal1, storeVal2, empKey1, empKey2, isPct2) => {
+         let empHtml = employees.map(emp => {
+            let val1 = String(emp[empKey1]).trim();
+            let val2 = empKey2 ? String(emp[empKey2]).trim() : '';
+            let badge2 = '<span></span>'; // Empty placeholder ensures the grid doesn't collapse!
+            
+            if (empKey2 && val2 !== "") {
+               let num = parseFloat(val2.replace(/[^0-9.-]/g, ''));
+               let badgeClass = 'delta-neutral';
+               if (isPct2) {
+                   badgeClass = num >= 60 ? 'delta-pos' : (num < 50 ? 'delta-neg' : 'delta-neutral'); 
+                   if(!val2.includes('%')) val2 += '%';
+               }
+               badge2 = `<span class="delta-badge ${badgeClass}">${val2}</span>`;
+            }
+
+            return `
+              <div class="kpi-row" style="display: grid; grid-template-columns: 1fr 70px 60px; align-items: center; padding: 0 15px; height: 48px; border-top: 1px solid #f5f5f5; border-radius: 0; background: white; margin: 0; border-left: none; border-right: none; gap: 10px;">
+                <span class="kpi-name" style="grid-column: 1;">${emp.name}</span>
+                <span style="grid-column: 2; text-align: right; font-size: 12px; font-weight: 700; color: #555;">${val1}</span>
+                <span style="grid-column: 3; display: flex; justify-content: flex-end;">${badge2}</span>
+              </div>
+            `;
+         }).join('');
+
+         let storeBadge = '<span></span>';
+         if(storeVal2 && storeVal2 !== "") {
+             let badgeClass = 'delta-neutral';
+             if (isPct2) {
+                 let num = parseFloat(String(storeVal2).replace(/[^0-9.-]/g, ''));
+                 badgeClass = num >= 60 ? 'delta-pos' : (num < 50 ? 'delta-neg' : 'delta-neutral');
+             }
+             storeBadge = `<span class="delta-badge ${badgeClass}">${storeVal2}${isPct2 && !String(storeVal2).includes('%') ? '%' : ''}</span>`;
+         }
+
+         return `
+           <div style="border: 1px solid #eee; border-radius: 12px; background: white; overflow: hidden;">
+             <div style="background: #f9fafb; padding: 15px; border-bottom: 1px solid #eee; text-align: center;">
+                <h4 style="font-size: 12px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;">${title}</h4>
+                <div style="display: grid; grid-template-columns: 1fr 70px 60px; align-items: center; background: white; padding: 0 12px; height: 40px; border-radius: 8px; border: 1px solid #eee; gap: 10px;">
+                   <span style="font-size: 11px; font-weight: 800; color: #888; text-align: left;">STORE TOTAL</span>
+                   <span style="font-size: 13px; font-weight: 800; color: var(--slate-charcoal); text-align: right;">${storeVal1 || '0'}</span>
+                   <span style="display: flex; justify-content: flex-end;">${storeBadge}</span>
+                </div>
+             </div>
+             <div style="display: flex; flex-direction: column;">
+               ${empHtml}
+             </div>
+           </div>
+         `;
+      };
+
+      if (employees.length === 0) {
+          container.innerHTML = '<div style="padding: 40px; text-align: center; color: #dc2626; font-weight: 600; grid-column: 1 / -1;">No employee data found on the spreadsheet for this store.</div>';
+          return;
+      }
+
+      container.innerHTML = `
+         ${buildCol('Buying Performance', storeAvg.buyVal, storeAvg.buyMargin, 'buyVal', 'buyMargin', true)}
+         ${buildCol('Customer Conversion', storeAvg.customers, storeAvg.conversion, 'customers', 'conversion', true)}
+         ${buildCol('No Deals', storeAvg.noDeals, '', 'noDeals', '', false)}
+         ${buildCol('Processed / Listed', storeAvg.listed, '', 'listed', '', false)}
+      `;
+
+  } catch (error) {
+      console.error("Weekly KPI Sync Failed", error);
+      container.innerHTML = '<div style="padding: 40px; text-align: center; color: #dc2626; font-weight: 600; grid-column: 1 / -1;">Failed to load Weekly KPI data.</div>';
+  }
 }
 
 // Initializers
@@ -1062,7 +1120,7 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchHubData(); 
     fetchKPIData();
     fetchVarianceData();
-    renderWeeklyKPIs(); 
+    fetchWeeklyKPIs(); // Runs the LIVE fetch!
 });
 </script>
 </body>
