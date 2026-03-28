@@ -80,7 +80,7 @@
   .calendar-content { height: 65vh; padding: 0; }
   .calendar-content iframe { width: 100%; height: 100%; border: none; display: block; }
 
-  /* MAIN CONTENT */
+  /* MAIN CONTENT - FIXED TO PREVENT HORIZONTAL SCROLL BUT LEFT ALIGNED */
   .main-content { 
       flex-grow: 1; 
       margin-left: 260px; 
@@ -93,13 +93,6 @@
       width: calc(100% - 76px);
   }
   
-  /* NEW CONTENT WRAPPER TO CENTER AND CONSTRAIN WIDTH ON HUGE MONITORS */
-  .content-wrapper {
-      max-width: 1440px; 
-      margin: 0 auto; 
-      width: 100%;
-  }
-
   .page-header { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 20px; padding-right: 150px; }
   .header-text h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin: 0; }
   .header-text p { color: #888; font-size: 14px; font-weight: 500; margin-top: 5px; }
@@ -110,7 +103,7 @@
   .category-section { margin-bottom: 50px; }
   .category-title { font-size: 16px; font-weight: 800; text-transform: uppercase; color: var(--slate-charcoal); margin-bottom: 20px; letter-spacing: 0.5px; border-bottom: 2px solid #eaeaea; padding-bottom: 10px; }
   
-  /* CHANGED GRID TO AUTO-FILL TO PREVENT SINGLE CARDS FROM STRETCHING 100% WIDE */
+  /* GRID - SET TO AUTO-FILL. Leaves single cards left-aligned and normal width! */
   .docs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
   
   .doc-card { background: white; border-radius: 12px; padding: 20px; display: flex; align-items: flex-start; gap: 15px; text-decoration: none; border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 4px 10px rgba(0,0,0,0.02); transition: all 0.2s ease; cursor: pointer; }
@@ -222,22 +215,21 @@
 </div>
 
 <main class="main-content">
-  <div class="content-wrapper"> <div class="page-header">
-        <div class="header-text">
-          <h2>Processes & Policies</h2>
-          <p>Your central library for company guidelines, procedures, and manuals.</p>
-        </div>
-        <div class="search-container">
-          <span class="search-icon">🔍</span>
-          <input type="text" id="docSearch" class="search-input" placeholder="Search for documents..." onkeyup="filterDocs()">
-        </div>
-      </div>
-
-      <div id="content-container">
-          <div class="empty-state">Loading Documents...</div>
-      </div>
-      <div id="noResults" class="empty-state hidden">No documents found matching your search.</div>
+  <div class="page-header">
+    <div class="header-text">
+      <h2>Processes & Policies</h2>
+      <p>Your central library for company guidelines, procedures, and manuals.</p>
+    </div>
+    <div class="search-container">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="docSearch" class="search-input" placeholder="Search for documents..." onkeyup="filterDocs()">
+    </div>
   </div>
+
+  <div id="content-container">
+      <div class="empty-state">Loading Documents...</div>
+  </div>
+  <div id="noResults" class="empty-state hidden">No documents found matching your search.</div>
 </main>
 
 <script>
