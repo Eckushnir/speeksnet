@@ -119,7 +119,7 @@
   .kpi-select { padding: 8px 12px; border-radius: 8px; border: 1px solid #ddd; font-family: 'Inter', sans-serif; font-weight: 700; color: var(--slate-charcoal); outline: none; cursor: pointer; background: white; }
   .kpi-select:focus { border-color: var(--sage-professional); }
 
-  /* BALANCED HEIGHT FOR KPI LIST */
+  /* BALANCED HEIGHT FOR KPI LIST - EXACTLY 618px */
   .kpi-scroll-area { max-height: 615px; overflow-y: auto; overscroll-behavior: contain; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
   .kpi-scroll-area::-webkit-scrollbar { width: 6px; }
   .kpi-scroll-area::-webkit-scrollbar-track { background: transparent; }
@@ -309,7 +309,7 @@
             <div style="padding-right: 20px; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; justify-content: center; height: 100%;">
                <h4 style="font-size: 14px; font-weight: 800; color: var(--slate-charcoal); margin-bottom: 15px; text-align: center; text-transform: uppercase;">Buying (MTD)</h4>
                
-               <div style="margin-bottom: 12px;">
+               <div style="margin-bottom: 12px; text-align: center;">
                  <div style="font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase;">Value Purchased</div>
                  <div style="font-size: 22px; font-weight: 900; color: var(--slate-charcoal);" id="bs-buy-val">$0</div>
                </div>
@@ -320,7 +320,7 @@
                </div>
                
                <div style="display: flex; justify-content: space-between; align-items: center;">
-                 <span style="font-size: 12px; font-weight: 700; color: #666;">Projected</span>
+                 <span style="font-size: 12px; font-weight: 700; color: #666;">Tracking Buying Value</span>
                  <span style="font-size: 13px; font-weight: 800; color: var(--slate-charcoal);" id="bs-buy-proj">$0</span>
                </div>
             </div>
@@ -781,17 +781,21 @@ function renderBuyingSales() {
     // Get the currently selected store from the dropdown
     const store = document.getElementById('bsStoreSelect').value.toLowerCase(); // e.g. 'ovl'
     
-    // DUMMY DATA FOR BUYING (Replace these when your HUB_URL starts passing them)
-    let dummyBuyVal = "$15,420";
-    let dummyBuyMargin = "52.4%";
-    let dummyBuyProj = "$32,000";
+    // REAL DATA FOR BUYING
+    let buyVal = hubDataCache[`${store}BuyVal`] || 0;
+    let buyMargin = hubDataCache[`${store}BuyMargin`] || 0;
+    let buyProj = hubDataCache[`${store}BuyProj`] || 0;
 
-    document.getElementById('bs-buy-val').innerText = dummyBuyVal;
-    document.getElementById('bs-buy-margin').innerText = dummyBuyMargin;
-    document.getElementById('bs-buy-proj').innerText = dummyBuyProj;
+    let formattedBuyVal = `$${Math.round(buyVal).toLocaleString()}`;
+    let formattedBuyProj = `$${Math.round(buyProj).toLocaleString()}`;
+    let formattedBuyMargin = (buyMargin * 100).toFixed(1) + '%';
+
+    document.getElementById('bs-buy-val').innerText = formattedBuyVal;
+    document.getElementById('bs-buy-margin').innerText = formattedBuyMargin;
+    document.getElementById('bs-buy-proj').innerText = formattedBuyProj;
 
 
-    // REAL DATA FOR SALES (From your existing Hub API)
+    // REAL DATA FOR SALES
     let p = Math.round(hubDataCache[`${store}Pct`] || 0);
     let goal = Math.round(hubDataCache[`${store}Goal`] || 0);
     let trackGp = Math.round(hubDataCache[`${store}TrackGP`] || 0);
@@ -804,8 +808,6 @@ function renderBuyingSales() {
     // Update the Ring Math and Color Logic
     let bsBar = document.getElementById('bs-bar');
     bsBar.style.strokeDashoffset = 402 - (Math.min(p, 100)/100)*402;
-    
-    // Switch to Red if under 100%, Green if 100% or over
     bsBar.style.stroke = p < 100 ? "var(--red-alert)" : "var(--sage-professional)";
 }
 
