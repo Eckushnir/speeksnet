@@ -284,129 +284,172 @@ document.addEventListener('keydown', function(e) {
   }
 });
 
-// --- DATA FETCHING (CMS) ---
+// --- RENDER LOGIC (Extracted for Caching) ---
+function renderCMS(data) {
+    const annContainer = document.getElementById('ann-container');
+    const archiveContainer = document.getElementById('archive-container');
+    const badge = document.getElementById('notifBadge');
+    
+    let showBadge = false, recentHtml = "", archiveHtml = "", recentCount = 0, archiveCount = 0;
+
+    if (data && data.announcements && data.announcements.length > 0) {
+        const sortedAnns = [...data.announcements].reverse();
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+        sortedAnns.forEach(item => {
+            const text = item.text || "", rawDate = item.date || "", author = item.author || "";
+            let displayDate = "", isArchived = false;
+
+            if (rawDate) {
+                const annDate = new Date(rawDate);
+                if (!isNaN(annDate.getTime())) {
+                displayDate = annDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                const annDateOnly = new Date(annDate.getFullYear(), annDate.getMonth(), annDate.getDate());
+                const diffDays = (today - annDateOnly) / (1000 * 60 * 60 * 24);
+                if (diffDays <= 1 && diffDays >= 0) showBadge = true;
+                if (diffDays > 2) isArchived = true;
+                }
+            }
+
+            const htmlSnippet = `<div class="notif-item"><div class="ann-header"><span class="ann-author">${author || 'Announcement'}</span>${displayDate ? `<small class="ann-date">${displayDate}</small>` : ''}</div><hr /><div class="ann-text">${text}</div></div>`;
+            if (isArchived) { archiveHtml += htmlSnippet; archiveCount++; } else { recentHtml += htmlSnippet; recentCount++; }
+        });
+        if (recentCount === 0) recentHtml = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No recent announcements</div>';
+        if (archiveCount === 0) archiveHtml = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No archived announcements</div>';
+    } else {
+        recentHtml = archiveHtml = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No announcements</div>';
+    }
+    
+    if(annContainer) annContainer.innerHTML = recentHtml;
+    if(archiveContainer) archiveContainer.innerHTML = archiveHtml;
+    if(showBadge && badge) {
+        badge.classList.add('active');
+    } else if (badge) {
+        badge.classList.remove('active');
+    }
+}
+
+function renderDocs(docs) {
+    const container = document.getElementById('content-container');
+    if (!docs || docs.length === 0) {
+        container.innerHTML = '<div class="empty-state">No documents found.</div>';
+        return;
+    }
+    
+    const groupedDocs = {};
+    
+    docs.forEach(doc => {
+        let originalCategory = doc.category || "Uncategorized";
+        let isPinned = originalCategory.toLowerCase().includes('pinned');
+        
+        let cleanCategory = originalCategory.replace(/,?\s*["']?pinned["']?/ig, '').trim();
+        if (!cleanCategory) cleanCategory = "General"; 
+
+        if (!groupedDocs[cleanCategory]) groupedDocs[cleanCategory] = [];
+        groupedDocs[cleanCategory].push(doc);
+
+        if (isPinned) {
+            if (!groupedDocs['📌 Pinned']) groupedDocs['📌 Pinned'] = [];
+            groupedDocs['📌 Pinned'].push(doc);
+        }
+    });
+
+    const sortedCategories = Object.keys(groupedDocs).sort((a, b) => {
+        if (a === '📌 Pinned') return -1;
+        if (b === '📌 Pinned') return 1;
+        return a.localeCompare(b);
+    });
+
+    let htmlContent = '';
+    
+    for (const category of sortedCategories) {
+        const items = groupedDocs[category];
+        const isPinnedCategory = category === '📌 Pinned';
+        const titleStyle = isPinnedCategory ? 'color: var(--idea-gold); border-bottom-color: var(--idea-gold);' : '';
+        
+        htmlContent += `<div class="category-section"><div class="category-title" style="${titleStyle}">${category}</div><div class="docs-grid">`;
+        
+        items.forEach(item => {
+            const searchKeywords = `${item.title} ${item.desc} ${category}`.toLowerCase();
+            
+            const cardStyle = isPinnedCategory 
+                ? 'position: relative; border: 1px solid var(--idea-gold); box-shadow: 0 4px 10px rgba(245, 158, 11, 0.08);' 
+                : 'position: relative;';
+            
+            const pinHtml = isPinnedCategory 
+                ? `<div style="position: absolute; top: 12px; right: 15px; font-size: 16px; filter: drop-shadow(0 2px 4px rgba(245,158,11,0.3));">📌</div>` 
+                : '';
+            
+            htmlContent += `
+                <a href="${item.link}" target="_blank" class="doc-card" style="${cardStyle}" data-search="${searchKeywords}">
+                    ${pinHtml}
+                    <div class="doc-icon">${item.icon}</div>
+                    <div class="doc-info">
+                        <div class="doc-title">${item.title}</div>
+                        <div class="doc-desc">${item.desc}</div>
+                    </div>
+                </a>`;
+        });
+        htmlContent += `</div></div>`;
+    }
+    container.innerHTML = htmlContent;
+    filterDocs(); // Re-apply any active search logic after re-rendering
+}
+
+// --- DATA FETCHING (WITH LOCAL STORAGE) ---
 async function loadCMS() {
+    // 1. Instantly render cached data if available
+    const cachedCMS = localStorage.getItem('speeksCMSData');
+    if (cachedCMS) {
+        try {
+            renderCMS(JSON.parse(cachedCMS));
+        } catch (e) {
+            console.error("Failed to parse cached CMS", e);
+        }
+    }
+
+    // 2. Fetch fresh data quietly
     try {
         const response = await fetch(`${CMS_URL}?v=${Date.now()}`);
         const data = await response.json();
         
-        const annContainer = document.getElementById('ann-container');
-        const archiveContainer = document.getElementById('archive-container');
-        const badge = document.getElementById('notifBadge');
-        
-        let showBadge = false, recentHtml = "", archiveHtml = "", recentCount = 0, archiveCount = 0;
-
-        if (data.announcements && data.announcements.length > 0) {
-            const sortedAnns = [...data.announcements].reverse();
-            const now = new Date();
-            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-            sortedAnns.forEach(item => {
-                const text = item.text || "", rawDate = item.date || "", author = item.author || "";
-                let displayDate = "", isArchived = false;
-
-                if (rawDate) {
-                  const annDate = new Date(rawDate);
-                  if (!isNaN(annDate.getTime())) {
-                    displayDate = annDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-                    const annDateOnly = new Date(annDate.getFullYear(), annDate.getMonth(), annDate.getDate());
-                    const diffDays = (today - annDateOnly) / (1000 * 60 * 60 * 24);
-                    if (diffDays <= 1 && diffDays >= 0) showBadge = true;
-                    if (diffDays > 2) isArchived = true;
-                  }
-                }
-
-                const htmlSnippet = `<div class="notif-item"><div class="ann-header"><span class="ann-author">${author || 'Announcement'}</span>${displayDate ? `<small class="ann-date">${displayDate}</small>` : ''}</div><hr /><div class="ann-text">${text}</div></div>`;
-                if (isArchived) { archiveHtml += htmlSnippet; archiveCount++; } else { recentHtml += htmlSnippet; recentCount++; }
-            });
-            if (recentCount === 0) recentHtml = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No recent announcements</div>';
-            if (archiveCount === 0) archiveHtml = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No archived announcements</div>';
-        } else {
-            recentHtml = archiveHtml = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No announcements</div>';
-        }
-        
-        if(annContainer) annContainer.innerHTML = recentHtml;
-        if(archiveContainer) archiveContainer.innerHTML = archiveHtml;
-        if(showBadge && badge) badge.classList.add('active');
-        
-    } catch (e) { console.error("CMS Failed", e); }
+        // 3. Update cache and re-render
+        localStorage.setItem('speeksCMSData', JSON.stringify(data));
+        renderCMS(data);
+    } catch (e) { 
+        console.error("CMS Fetch Failed", e); 
+    }
 }
 
-// --- DATA FETCHING (DOCS WITH DUPLICATE PIN LOGIC) ---
 async function loadDocs() {
-    const container = document.getElementById('content-container');
+    // 1. Instantly render cached data if available
+    const cachedDocs = localStorage.getItem('speeksDocsData');
+    if (cachedDocs) {
+        try {
+            renderDocs(JSON.parse(cachedDocs));
+        } catch (e) {
+            console.error("Failed to parse cached Docs", e);
+        }
+    } else {
+        // Show loading only if no cache exists
+        document.getElementById('content-container').innerHTML = '<div class="empty-state">Loading Documents...</div>';
+    }
+
+    // 2. Fetch fresh data quietly
     try {
         const response = await fetch(`${DOCS_URL}?v=${Date.now()}`);
         const docs = await response.json();
-        if (!docs || docs.length === 0) {
-            container.innerHTML = '<div class="empty-state">No documents found.</div>';
-            return;
-        }
         
-        const groupedDocs = {};
-        
-        docs.forEach(doc => {
-            let originalCategory = doc.category || "Uncategorized";
-            let isPinned = originalCategory.toLowerCase().includes('pinned');
-            
-            // Clean the word "Pinned" out of the category name (e.g. 'HR, "Pinned"' becomes 'HR')
-            let cleanCategory = originalCategory.replace(/,?\s*["']?pinned["']?/ig, '').trim();
-            if (!cleanCategory) cleanCategory = "General"; // Failsafe
-
-            // 1. Put the document in its normal, clean category
-            if (!groupedDocs[cleanCategory]) groupedDocs[cleanCategory] = [];
-            groupedDocs[cleanCategory].push(doc);
-
-            // 2. If it was marked as pinned, copy it to the special "📌 Pinned" category as well
-            if (isPinned) {
-                if (!groupedDocs['📌 Pinned']) groupedDocs['📌 Pinned'] = [];
-                groupedDocs['📌 Pinned'].push(doc);
-            }
-        });
-
-        // Sort categories: "📌 Pinned" first, the rest alphabetical
-        const sortedCategories = Object.keys(groupedDocs).sort((a, b) => {
-            if (a === '📌 Pinned') return -1;
-            if (b === '📌 Pinned') return 1;
-            return a.localeCompare(b);
-        });
-
-        let htmlContent = '';
-        
-        for (const category of sortedCategories) {
-            const items = groupedDocs[category];
-            const isPinnedCategory = category === '📌 Pinned';
-            const titleStyle = isPinnedCategory ? 'color: var(--idea-gold); border-bottom-color: var(--idea-gold);' : '';
-            
-            htmlContent += `<div class="category-section"><div class="category-title" style="${titleStyle}">${category}</div><div class="docs-grid">`;
-            
-            items.forEach(item => {
-                const searchKeywords = `${item.title} ${item.desc} ${category}`.toLowerCase();
-                
-                const cardStyle = isPinnedCategory 
-                    ? 'position: relative; border: 1px solid var(--idea-gold); box-shadow: 0 4px 10px rgba(245, 158, 11, 0.08);' 
-                    : 'position: relative;';
-                
-                const pinHtml = isPinnedCategory 
-                    ? `<div style="position: absolute; top: 12px; right: 15px; font-size: 16px; filter: drop-shadow(0 2px 4px rgba(245,158,11,0.3));">📌</div>` 
-                    : '';
-                
-                htmlContent += `
-                    <a href="${item.link}" target="_blank" class="doc-card" style="${cardStyle}" data-search="${searchKeywords}">
-                        ${pinHtml}
-                        <div class="doc-icon">${item.icon}</div>
-                        <div class="doc-info">
-                            <div class="doc-title">${item.title}</div>
-                            <div class="doc-desc">${item.desc}</div>
-                        </div>
-                    </a>`;
-            });
-            htmlContent += `</div></div>`;
-        }
-        container.innerHTML = htmlContent;
+        // 3. Update cache and re-render
+        localStorage.setItem('speeksDocsData', JSON.stringify(docs));
+        renderDocs(docs);
     } catch (e) { 
-        console.error("Docs Failed", e); 
-        container.innerHTML = '<div class="empty-state">Failed to load documents.</div>'; 
+        console.error("Docs Fetch Failed", e); 
+        // Only show the error state if we didn't already render cached data
+        if (!cachedDocs) {
+            document.getElementById('content-container').innerHTML = '<div class="empty-state">Failed to load documents.</div>'; 
+        }
     }
 }
 
