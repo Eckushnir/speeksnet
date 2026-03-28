@@ -115,7 +115,7 @@
   /* Adding min-width:0 prevents grid blowouts when flex items expand */
   .dashboard-layout > div { min-width: 0; }
   
-  .card { background: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.04); padding: 30px; transition: transform 0.3s ease, box-shadow 0.3s ease; margin-bottom: 30px; }
+  .card { background: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.04); padding: 30px; transition: transform 0.3s ease, box-shadow 0.3s ease; }
   .card:hover { box-shadow: 0 8px 25px rgba(0,0,0,0.05); }
   .card-title { font-size: 20px; font-weight: 800; color: var(--slate-charcoal); border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
   
@@ -129,8 +129,8 @@
   .kpi-select { padding: 8px 12px; border-radius: 8px; border: 1px solid #ddd; font-family: 'Inter', sans-serif; font-weight: 700; color: var(--slate-charcoal); outline: none; cursor: pointer; background: white; }
   .kpi-select:focus { border-color: var(--sage-professional); }
 
-  /* BALANCED HEIGHT FOR KPI LIST - EXACTLY 618px */
-  .kpi-scroll-area { max-height: 618px; overflow-y: auto; overscroll-behavior: contain; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
+  /* BALANCED HEIGHT FOR KPI LIST - EXACTLY 615px */
+  .kpi-scroll-area { max-height: 615px; overflow-y: auto; overscroll-behavior: contain; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
   .kpi-scroll-area::-webkit-scrollbar { width: 6px; }
   .kpi-scroll-area::-webkit-scrollbar-track { background: transparent; }
   .kpi-scroll-area::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
@@ -195,7 +195,12 @@
       .checklist-grid { grid-template-columns: 1fr; }
       .weekly-kpi-grid { grid-template-columns: repeat(2, 1fr); }
   }
-  @media (max-width: 1024px) { .top-actions { right: 20px; } .page-header { padding-right: 0; flex-direction: column; align-items: flex-start; } .vw-dashboard { grid-template-columns: 1fr; } .weekly-kpi-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 1024px) { 
+      .top-actions { right: 20px; } 
+      .page-header { padding-right: 0; flex-direction: column; align-items: flex-start; } 
+      .vw-dashboard { grid-template-columns: 1fr; } 
+      .weekly-kpi-grid { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
@@ -291,7 +296,7 @@
 
   <div class="dashboard-layout">
       
-      <div class="card" style="padding: 25px;">
+      <div class="card" style="padding: 25px; margin-bottom: 0;">
         <div class="card-title" style="margin-bottom: 15px; border-bottom: none;">
             <span>🧮 Monthly KPI Comparison</span>
             <a href="https://docs.google.com/spreadsheets/d/1e4mW-pcwUMJjl2Pjry6PT180P8M8nkYL5Z4GcspQmEA/edit?usp=sharing" target="_blank" style="font-size: 11px; background: #f4f7f9; padding: 8px 14px; border-radius: 8px; color: var(--slate-charcoal); text-decoration: none; font-weight: 800; transition: 0.2s;">Open Full Sheet ↗</a>
@@ -329,26 +334,10 @@
             </div>
         </div>
       </div>
-      
-      <div class="card" style="padding: 25px; margin-bottom: 30px;">
-          <div class="card-title" style="margin-bottom: 5px; border-bottom: none;">
-            <span>🗓️ Weekly KPI Breakdown</span>
-            <select id="weeklyKpiStoreSelect" class="kpi-select" onchange="renderWeeklyKPIs()">
-                <option value="OVL">OVL</option>
-                <option value="LEE">LEE</option>
-                <option value="WSP">WSP</option>
-            </select>
-          </div>
-          
-          <div class="weekly-kpi-grid" id="weeklyKpiContainer">
-              <div style="padding: 40px; text-align: center; color: #888; font-weight: 600; grid-column: 1 / -1;">Initializing Weekly KPIs...</div>
-          </div>
-      </div>
 
-      <div style="grid-row: 1 / span 2;">
+      <div style="display: flex; flex-direction: column; gap: 30px;">
 
-        <div class="card" style="padding: 25px; margin-bottom: 30px;">
-          
+        <div class="card" style="padding: 25px; margin-bottom: 0;">
           <div class="card-title" style="margin-bottom: 15px; border-bottom: none; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;">
             <span>🛒 Buying & Sales</span>
             <div style="display: flex; gap: 10px; align-items: center;">
@@ -395,7 +384,7 @@
           </div>
         </div>
 
-        <div class="card" style="padding: 25px; margin-bottom: 30px;">
+        <div class="card" style="padding: 25px; margin-bottom: 0;">
           <div class="card-title" style="margin-bottom: 15px; border-bottom: none;">
             <span>⚖️ Live Variance Reports</span>
             <div class="vw-controls">
@@ -422,22 +411,37 @@
             <a href="https://drive.google.com/drive/folders/12Fjxp44sY6T-o6OlrG6n_YtrHow4bE2f?usp=sharing" target="_blank" class="portal-btn" style="margin-bottom: 0; text-align: center; background: #f9fafb; border: 1px solid #eee;">📁 Variance Replies</a>
           </div>
         </div>
-
-        <div class="portals-grid" style="grid-template-columns: 1fr;">
-            <div class="card" style="margin-bottom: 0;">
-              <div class="card-title">Performance & Sales <span>📈</span></div>
-              <a href="https://docs.google.com/spreadsheets/d/1oHOnA6wDwaLQ-EP4-CiDTkKpAdP2V7y8mOay416HDME/edit?usp=sharing" target="_blank" class="portal-btn">👥 Team Member KPIs</a>
-            </div>
-            
-            <div class="card" style="margin-bottom: 0;">
-              <div class="card-title">Operations & Admin <span>⚙️</span></div>
-              <a href="https://docs.google.com/spreadsheets/d/1pubURplK66yC6oXmpz7P-r8zN07DWmDiLxrtTg0rmdk/edit?usp=sharing" target="_blank" class="portal-btn">🎯 Daily Listing Goals</a>
-              <a href="https://docs.google.com/spreadsheets/d/1KdQNDYfJT-Gt6wal6cgCbh6aqOUOHxey3PEsoeyztzQ/edit?usp=sharing" target="_blank" class="portal-btn">📦 SPEEKS Aging Inventory Tracker</a>
-              <a href="https://docs.google.com/spreadsheets/d/1zw-jcqpAnMY6PNofERbUz4pUHA3qnlnZx6O6C_XSmLY/edit?usp=sharing" target="_blank" class="portal-btn">🛡️ eBay & Shopify Insurance Cases</a>
-              <a href="https://docs.google.com/spreadsheets/d/1ar3tabN-bUqkjWqgy25MCHzSup2jhiaAKaGxLwZTeJ8/edit?usp=sharing" target="_blank" class="portal-btn">📍 Local Location Visits</a>
-            </div>
-        </div>
+        
+      </div> <div class="card" style="grid-column: 1 / -1; padding: 25px; margin-bottom: 0;">
+          <div class="card-title" style="margin-bottom: 5px; border-bottom: none;">
+            <span>🗓️ Weekly KPI Breakdown</span>
+            <select id="weeklyKpiStoreSelect" class="kpi-select" onchange="renderWeeklyKPIs()">
+                <option value="OVL">OVL</option>
+                <option value="LEE">LEE</option>
+                <option value="WSP">WSP</option>
+            </select>
+          </div>
+          
+          <div class="weekly-kpi-grid" id="weeklyKpiContainer">
+              <div style="padding: 40px; text-align: center; color: #888; font-weight: 600; grid-column: 1 / -1;">Initializing Weekly KPIs...</div>
+          </div>
       </div>
+
+      <div class="portals-grid" style="grid-column: 1 / -1; grid-template-columns: 1fr 1fr; margin-bottom: 30px;">
+          <div class="card" style="margin-bottom: 0;">
+            <div class="card-title">Performance & Sales <span>📈</span></div>
+            <a href="https://docs.google.com/spreadsheets/d/1oHOnA6wDwaLQ-EP4-CiDTkKpAdP2V7y8mOay416HDME/edit?usp=sharing" target="_blank" class="portal-btn">👥 Team Member KPIs</a>
+          </div>
+          
+          <div class="card" style="margin-bottom: 0;">
+            <div class="card-title">Operations & Admin <span>⚙️</span></div>
+            <a href="https://docs.google.com/spreadsheets/d/1pubURplK66yC6oXmpz7P-r8zN07DWmDiLxrtTg0rmdk/edit?usp=sharing" target="_blank" class="portal-btn">🎯 Daily Listing Goals</a>
+            <a href="https://docs.google.com/spreadsheets/d/1KdQNDYfJT-Gt6wal6cgCbh6aqOUOHxey3PEsoeyztzQ/edit?usp=sharing" target="_blank" class="portal-btn">📦 SPEEKS Aging Inventory Tracker</a>
+            <a href="https://docs.google.com/spreadsheets/d/1zw-jcqpAnMY6PNofERbUz4pUHA3qnlnZx6O6C_XSmLY/edit?usp=sharing" target="_blank" class="portal-btn">🛡️ eBay & Shopify Insurance Cases</a>
+            <a href="https://docs.google.com/spreadsheets/d/1ar3tabN-bUqkjWqgy25MCHzSup2jhiaAKaGxLwZTeJ8/edit?usp=sharing" target="_blank" class="portal-btn">📍 Local Location Visits</a>
+          </div>
+      </div>
+
   </div>
 </main>
 
@@ -850,6 +854,7 @@ function renderBuyingSales() {
     document.getElementById('bs-buy-margin').innerText = formattedBuyMargin;
     document.getElementById('bs-buy-proj').innerText = formattedBuyProj;
 
+
     // REAL DATA FOR SALES
     let p = Math.round(hubDataCache[`${store}Pct`] || 0);
     let goal = Math.round(hubDataCache[`${store}Goal`] || 0);
@@ -987,7 +992,7 @@ function renderWeeklyKPIs() {
      ]
   };
 
-  // Helper function to build each of the 4 columns with perfect vertical alignment
+  // Helper function to build each of the 4 columns with perfect uniform grid alignment
   const buildCol = (title, storeVal1, storeVal2, empKey1, empKey2, isPct2) => {
      let empHtml = data.employees.map(emp => {
         let val1 = emp[empKey1];
@@ -1004,7 +1009,7 @@ function renderWeeklyKPIs() {
         }
 
         return `
-          <div class="kpi-row" style="display: grid; grid-template-columns: 1fr 60px 60px; align-items: center; padding: 10px 15px; border-top: 1px solid #f5f5f5; border-radius: 0; background: white; margin: 0; border-left: none; border-right: none;">
+          <div class="kpi-row" style="display: grid; grid-template-columns: 1fr 70px 60px; align-items: center; padding: 10px 15px; border-top: 1px solid #f5f5f5; border-radius: 0; background: white; margin: 0; border-left: none; border-right: none; gap: 10px;">
             <span class="kpi-name" style="grid-column: 1;">${emp.name}</span>
             <span style="grid-column: 2; text-align: right; font-size: 12px; font-weight: 700; color: #555;">${val1}</span>
             <span style="grid-column: 3; display: flex; justify-content: flex-end;">${badge2}</span>
@@ -1023,8 +1028,8 @@ function renderWeeklyKPIs() {
        <div style="border: 1px solid #eee; border-radius: 12px; background: white; overflow: hidden;">
          <div style="background: #f9fafb; padding: 15px; border-bottom: 1px solid #eee; text-align: center;">
             <h4 style="font-size: 12px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;">${title}</h4>
-            <div style="display: grid; grid-template-columns: 1fr 60px 60px; align-items: center; background: white; padding: 8px 12px; border-radius: 8px; border: 1px solid #eee;">
-               <span style="font-size: 11px; font-weight: 800; color: #888;">STORE TOTAL</span>
+            <div style="display: grid; grid-template-columns: 1fr 70px 60px; align-items: center; background: white; padding: 8px 12px; border-radius: 8px; border: 1px solid #eee; gap: 10px;">
+               <span style="font-size: 11px; font-weight: 800; color: #888; text-align: left;">STORE TOTAL</span>
                <span style="font-size: 13px; font-weight: 800; color: var(--slate-charcoal); text-align: right;">${storeVal1}</span>
                <span style="display: flex; justify-content: flex-end;">${storeBadge}</span>
             </div>
@@ -1057,7 +1062,7 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchHubData(); 
     fetchKPIData();
     fetchVarianceData();
-    renderWeeklyKPIs(); // Renders the aligned Weekly KPI data
+    renderWeeklyKPIs(); 
 });
 </script>
 </body>
