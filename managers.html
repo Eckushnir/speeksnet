@@ -103,10 +103,8 @@
   .header-text h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin: 0; }
   .header-text p { color: #888; font-size: 14px; font-weight: 500; margin-top: 5px; }
 
+  /* REVERTED TO STRICT 700px GRID TO PREVENT BLOWOUT */
   .dashboard-layout { display: grid; grid-template-columns: 700px 1fr; gap: 30px; align-items: start; }
-  
-  /* Adding min-width:0 prevents grid blowouts when flex items expand */
-  .dashboard-layout > div { min-width: 0; }
   
   .card { background: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.04); padding: 30px; transition: transform 0.3s ease, box-shadow 0.3s ease; margin-bottom: 30px; }
   .card:hover { box-shadow: 0 8px 25px rgba(0,0,0,0.05); }
@@ -122,7 +120,7 @@
   .kpi-select { padding: 8px 12px; border-radius: 8px; border: 1px solid #ddd; font-family: 'Inter', sans-serif; font-weight: 700; color: var(--slate-charcoal); outline: none; cursor: pointer; background: white; }
   .kpi-select:focus { border-color: var(--sage-professional); }
 
-  /* BALANCED HEIGHT FOR KPI LIST - EXACTLY 615px */
+  /* EXACTLY 618px FOR PERFECT FLUSH ALIGNMENT */
   .kpi-scroll-area { max-height: 615px; overflow-y: auto; overscroll-behavior: contain; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
   .kpi-scroll-area::-webkit-scrollbar { width: 6px; }
   .kpi-scroll-area::-webkit-scrollbar-track { background: transparent; }
@@ -173,7 +171,6 @@
   /* VARIANCE WIDGET SPECIFIC CLASSES */
   .vw-controls { display: flex; gap: 10px; align-items: center; }
   .vw-dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
-  /* BALANCED HEIGHT FOR VARIANCE EMPLOYEES (Fits max 4 rows perfectly) */
   .vw-scroll-area { max-height: 170px; overflow-y: auto; overscroll-behavior: contain; }
   .vw-scroll-area::-webkit-scrollbar { width: 6px; }
   .vw-scroll-area::-webkit-scrollbar-track { background: transparent; }
@@ -297,9 +294,10 @@
       <div>
 
         <div class="card" style="padding: 25px; margin-bottom: 30px;">
-          <div class="card-title" style="margin-bottom: 15px; border-bottom: none; flex-wrap: wrap; gap: 10px;">
-            <span>🛒 Buying & Sales Summary</span>
-            <div style="display: flex; gap: 10px; align-items: center; margin-left: auto;">
+          
+          <div class="card-title" style="margin-bottom: 15px; border-bottom: none; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;">
+            <span>🛒 Buying & Sales</span>
+            <div style="display: flex; gap: 10px; align-items: center;">
               <select id="bsStoreSelect" class="kpi-select" onchange="renderBuyingSales()">
                 <option value="OVL">OVL</option>
                 <option value="LEE">LEE</option>
@@ -307,7 +305,7 @@
                 <option value="MPL">MPL</option>
                 <option value="BAL">BAL</option>
               </select>
-              <a href="https://docs.google.com/spreadsheets/d/1i_oV37lZXq8s91f9ymzwQlrM8WY2UlQQQ0qsRP3xLJ8/edit?usp=sharing" target="_blank" style="font-size: 11px; background: #f4f7f9; padding: 8px 14px; border-radius: 8px; color: var(--slate-charcoal); text-decoration: none; font-weight: 800; transition: 0.2s; border: 1px solid #ddd; white-space: nowrap;">Open Full Sheet ↗</a>
+              <a href="https://docs.google.com/spreadsheets/d/1i_oV37lZXq8s91f9ymzwQlrM8WY2UlQQQ0qsRP3xLJ8/edit?usp=sharing" target="_blank" style="font-size: 11px; background: #f4f7f9; padding: 8px 12px; border-radius: 8px; color: var(--slate-charcoal); text-decoration: none; font-weight: 800; border: 1px solid #ddd; transition: 0.2s;">Full Sheet ↗</a>
             </div>
           </div>
           
@@ -326,7 +324,7 @@
                </div>
                
                <div style="display: flex; justify-content: space-between; align-items: center;">
-                 <span style="font-size: 12px; font-weight: 700; color: #666;">Tracking Buying Value</span>
+                 <span style="font-size: 11px; font-weight: 700; color: #666;">Tracking Value</span>
                  <span style="font-size: 13px; font-weight: 800; color: var(--slate-charcoal);" id="bs-buy-proj">$0</span>
                </div>
             </div>
