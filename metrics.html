@@ -14,6 +14,7 @@
     --bg-app: #f4f7f9;
     --gold-rank: #f59e0b;
     --idea-gold: #f59e0b;
+    --red-alert: #ef4444; /* Added red-alert for the progress rings */
   }
   
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -351,10 +352,14 @@ async function fetchLiveData() {
         const res = await fetch(`${HUB_URL}?v=${Date.now()}`); 
         const data = await res.json();
         ['ovl', 'lee', 'wsp'].forEach(id => {
-            let p = Math.round(data[`${id}Pct`] || 0); document.getElementById(`${id}-pct`).innerText = p + '%';
+            let p = Math.round(data[`${id}Pct`] || 0); 
+            document.getElementById(`${id}-pct`).innerText = p + '%';
             document.getElementById(`${id}-goal`).innerText = `Goal: $${Math.round(data[`${id}Goal`] || 0).toLocaleString()}`;
             document.getElementById(`${id}-t-gp`).innerText = `$${Math.round(data[`${id}TrackGP`] || 0).toLocaleString()}`;
-            document.getElementById(`${id}-bar`).style.strokeDashoffset = 402 - (Math.min(p, 100)/100)*402;
+            
+            let bar = document.getElementById(`${id}-bar`);
+            bar.style.strokeDashoffset = 402 - (Math.min(p, 100)/100)*402;
+            bar.style.stroke = p < 100 ? "var(--red-alert)" : "var(--sage-professional)";
         });
         const stores = [{n:'OVL', r:data.ovlRev, g:data.ovlGP}, {n:'LEE', r:data.leeRev, g:data.leeGP}, {n:'WSP', r:data.wspRev, g:data.wspGP}];
         
