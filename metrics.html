@@ -14,6 +14,7 @@
     --bg-app: #f4f7f9;
     --gold-rank: #f59e0b;
     --idea-gold: #f59e0b;
+    --red-alert: #ef4444; /* Added red-alert for the progress rings */
   }
   
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -104,7 +105,7 @@
   .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
   .main-content.expanded { margin-left: 76px; }
   
-  .page-header { margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-start; padding-right: 180px; /* Increased to fit both action buttons */ }
+  .page-header { margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-start; padding-right: 180px; }
   .page-header h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin: 0;}
   .page-header p { color: #888; font-size: 14px; font-weight: 500; margin-top: 5px; }
 
@@ -363,7 +364,7 @@ async function loadKpiData() {
             let storeData = [], sr=-1, sc=-1;
             for(let i=0; i<data.length; i++) { for(let j=0; j<data[i].length; j++) { if(data[i][j] && String(data[i][j]).trim() === searchTarget) { sr=i; sc=j; break; } } if(sr!==-1) break; }
             if(sr === -1) return;
-            let sCol = -1; for(let j=sc; j<data[sr+1].length; j++){ if(String(data[sr+1]).toLowerCase() === 'store'){ sCol=j; break; } }
+            let sCol = -1; for(let j=sc; j<data[sr+1].length; j++){ if(String(data[sr+1][j]).toLowerCase() === 'store'){ sCol=j; break; } }
             if(labels.length === 0) { for (let i = sr + 2; i < data.length; i++) { let lbl = String(data[i][sc - 1]).trim(); if (!lbl || lbl.includes('Store') || lbl.includes('%')) break; labels.push(lbl); } }
             for(let i=0; i<labels.length; i++){ let val = cleanValue(data[sr+2+i][sCol], isPct); storeData.push(val); if(val !== null) allNumericValues.push(val); }
             finalDatasets.push({ label: stores[idx].label, data: storeData, borderColor: stores[idx].color, backgroundColor: stores[idx].color, tension: 0.4, pointRadius: 5, spanGaps: true });
@@ -384,10 +385,14 @@ async function fetchLiveData() {
         const res = await fetch(`${HUB_URL}?v=${Date.now()}`); 
         const data = await res.json();
         ['ovl', 'lee', 'wsp'].forEach(id => {
-            let p = Math.round(data[`${id}Pct`] || 0); document.getElementById(`${id}-pct`).innerText = p + '%';
+            let p = Math.round(data[`${id}Pct`] || 0); 
+            document.getElementById(`${id}-pct`).innerText = p + '%';
             document.getElementById(`${id}-goal`).innerText = `Goal: $${Math.round(data[`${id}Goal`] || 0).toLocaleString()}`;
             document.getElementById(`${id}-t-gp`).innerText = `$${Math.round(data[`${id}TrackGP`] || 0).toLocaleString()}`;
-            document.getElementById(`${id}-bar`).style.strokeDashoffset = 402 - (Math.min(p, 100)/100)*402;
+            
+            let bar = document.getElementById(`${id}-bar`);
+            bar.style.strokeDashoffset = 402 - (Math.min(p, 100)/100)*402;
+            bar.style.stroke = p < 100 ? "var(--red-alert)" : "var(--sage-professional)";
         });
         const stores = [{n:'OVL', r:data.ovlRev, g:data.ovlGP}, {n:'LEE', r:data.leeRev, g:data.leeGP}, {n:'WSP', r:data.wspRev, g:data.wspGP}];
         
