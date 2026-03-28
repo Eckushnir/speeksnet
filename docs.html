@@ -63,6 +63,7 @@
   .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: #f9fafb; border-bottom: 1px solid #eee; }
   .modal-header h3 { margin: 0; font-size: 13px; font-weight: 800; text-transform: uppercase; color: #666; letter-spacing: 0.5px; }
 
+  /* NOTIFICATION STYLES */
   .notif-menu { width: 1260px; max-width: calc(100% - 40px); }
   .notif-tabs { display: flex; gap: 8px; }
   .tab-btn { background: transparent; border: none; font-size: 11px; font-weight: 700; color: #999; cursor: pointer; padding: 6px 12px; border-radius: 6px; transition: 0.2s; text-transform: uppercase; letter-spacing: 0.5px;}
@@ -70,6 +71,11 @@
   .tab-btn.active { background: #e2e8f0; color: var(--slate-charcoal); }
 
   .notif-content { max-height: 60vh; overflow-y: auto; overscroll-behavior: contain; }
+  .notif-content::-webkit-scrollbar { width: 8px; }
+  .notif-content::-webkit-scrollbar-track { background: #f9fafb; border-radius: 8px; }
+  .notif-content::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 8px; }
+  .notif-content::-webkit-scrollbar-thumb:hover { background: var(--sage-professional); }
+
   .notif-item { font-size: 16px; padding: 20px; border-bottom: 1px solid #f5f5f5; color: var(--text-dark); line-height: 1.5; text-align: left; }
   .notif-item .ann-header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
   .notif-item .ann-author { font-weight: 800; font-size: 18px; color: var(--slate-charcoal); }
@@ -77,9 +83,7 @@
   .notif-item hr { border: none; border-top: 1px solid #eee; margin: 10px 0; }
   .notif-item .ann-text { margin-top: 8px; font-size: 15px; color: var(--text-dark); }
 
-  /* =========================================================
-     MAIN CONTENT 
-     ========================================================= */
+  /* MAIN CONTENT */
   .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
   .main-content.expanded { margin-left: 76px; }
   
@@ -148,21 +152,11 @@
             <button id="tab-archive" class="tab-btn" onclick="switchAnnTab('archive')">Archived</button>
         </div>
     </div>
-    <div id="ann-container" class="notif-content"></div>
-    <div id="archive-container" class="notif-content" style="display: none;"></div>
-</div>
-
-<div class="modal-menu editor-menu" id="editorModal">
-    <div class="modal-header">
-        <h3>Manage Document Policies</h3>
-        <button class="primary-btn" onclick="addNewDocItem()">+ Add New Policy</button>
+    <div id="ann-container" class="notif-content">
+        <div style="padding: 20px; color:#999; font-size:12px; text-align:center;">Syncing...</div>
     </div>
-    <div id="editor-list-container" class="editor-content"></div>
-    <div class="editor-footer">
-        <div style="display:flex; gap:10px;">
-            <button class="secondary-btn" onclick="closeAllModals()">Cancel</button>
-            <button class="primary-btn" onclick="applyEditorChanges()">Apply</button>
-        </div>
+    <div id="archive-container" class="notif-content" style="display: none;">
+        <div style="padding: 20px; color:#999; font-size:12px; text-align:center;">Syncing...</div>
     </div>
 </div>
 
@@ -182,14 +176,12 @@
       <div class="empty-state">Loading Documents...</div>
   </div>
   <div id="noResults" class="empty-state hidden">No documents found matching your search.</div>
-
 </main>
 
-<button class="edit-fab" onclick="openEditor()">
-    <i>⚙️</i> Edit Policies
-</button>
-
 <script>
+// API URL CONSTANT
+const CMS_URL = 'https://script.google.com/macros/s/AKfycbxZviJiiQKcQYyp3SK4tcNBHrHXkID7cmwwuONStVPE9DHCSAMappqAs9dBns7ufECI/exec';
+
 let allDocsData = []; 
 
 function toggleSidebar() {
@@ -203,7 +195,6 @@ function toggleSidebar() {
 }
 
 function closeAllModals() {
-    document.querySelectorAll('.modal-menu').forEach(m => m.classList.remove('show'));
     document.getElementById('notifDropdown').classList.remove('show');
     document.getElementById('globalOverlay').classList.remove('show');
     document.body.classList.remove('no-scroll');
@@ -235,85 +226,77 @@ function switchAnnTab(tab) {
   }
 }
 
-function renderEditorList() {
-    const container = document.getElementById('editor-list-container');
-    container.innerHTML = '';
-    
-    allDocsData.forEach((doc, index) => {
-        const row = document.createElement('div');
-        row.className = 'editor-row';
-        row.innerHTML = `
-            <div><label>Icon</label><input type="text" class="editor-input" value="${doc.icon}" data-key="icon" data-index="${index}"></div>
-            <div><label>Category</label><input type="text" class="editor-input" value="${doc.category}" data-key="category" data-index="${index}"></div>
-            <div><label>Title</label><input type="text" class="editor-input" value="${doc.title}" data-key="title" data-index="${index}"></div>
-            <div><label>Description</label><input type="text" class="editor-input" value="${doc.desc}" data-key="desc" data-index="${index}"></div>
-            <div><label>Link</label><input type="text" class="editor-input" value="${doc.link}" data-key="link" data-index="${index}"></div>
-            <button class="delete-btn" onclick="deleteDocItem(${index})" title="Delete">&times;</button>
-        `;
-        container.appendChild(row);
-    });
-
-    container.querySelectorAll('.editor-input').forEach(input => {
-        input.addEventListener('change', (e) => {
-            const idx = e.target.dataset.index;
-            const key = e.target.dataset.key;
-            allDocsData[idx][key] = e.target.value;
-        });
-    });
-}
-
-function deleteDocItem(index) {
-    if(confirm('Are you sure you want to delete this policy?')) {
-        allDocsData.splice(index, 1);
-        renderEditorList();
-    }
-}
-
-function addNewDocItem() {
-    allDocsData.unshift({
-        category: "New Category",
-        icon: "📄",
-        title: "Untitled Policy",
-        desc: "Describe this document...",
-        link: "#"
-    });
-    renderEditorList();
-    document.getElementById('editor-list-container').scrollTop = 0;
-}
-
-async function applyEditorChanges() {
-    const saveBtn = document.querySelector('#editorModal .primary-btn:last-child');
-    const originalText = saveBtn.innerText;
-    
+// --- CMS LOADING LOGIC (MIRRORED FROM INDEX) ---
+async function loadCMS() {
     try {
-        saveBtn.innerText = "Saving...";
-        saveBtn.disabled = true;
+        const response = await fetch(`${CMS_URL}?v=${Date.now()}`);
+        const data = await response.json();
+        
+        const annContainer = document.getElementById('ann-container');
+        const archiveContainer = document.getElementById('archive-container');
+        const badge = document.getElementById('notifBadge');
+        
+        let showBadge = false;
+        let recentHtml = "";
+        let archiveHtml = "";
+        let recentCount = 0;
+        let archiveCount = 0;
 
-        const response = await fetch('save_json.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(allDocsData, null, 2)
-        });
+        if (data.announcements && data.announcements.length > 0) {
+            const sortedAnns = [...data.announcements].reverse();
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-        const result = await response.json();
+            sortedAnns.forEach(item => {
+                const text = item.text || "";
+                const rawDate = item.date || "";
+                const author = item.author || "";
+                let displayDate = "";
+                let isArchived = false;
 
-        if (result.status === 'success') {
-            renderDocsUI(allDocsData);
-            closeAllModals();
-            alert("Changes saved successfully!");
+                if (rawDate) {
+                  const annDate = new Date(rawDate);
+                  if (!isNaN(annDate.getTime())) {
+                    displayDate = annDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                    const annDateOnly = new Date(annDate.getFullYear(), annDate.getMonth(), annDate.getDate());
+                    const diffDays = (today - annDateOnly) / (1000 * 60 * 60 * 24);
+                    
+                    if (diffDays <= 1 && diffDays >= 0) showBadge = true;
+                    if (diffDays > 2) isArchived = true;
+                  }
+                }
+
+                const htmlSnippet = `
+                  <div class="notif-item">
+                    <div class="ann-header">
+                      <span class="ann-author">${author || 'Announcement'}</span>
+                      ${displayDate ? `<small class="ann-date">${displayDate}</small>` : ''}
+                    </div>
+                    <hr />
+                    <div class="ann-text">${text}</div>
+                  </div>`;
+
+                if (isArchived) { archiveHtml += htmlSnippet; archiveCount++; } 
+                else { recentHtml += htmlSnippet; recentCount++; }
+            });
+            
+            if (recentCount === 0) recentHtml = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No recent announcements</div>';
+            if (archiveCount === 0) archiveHtml = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No archived announcements</div>';
+
         } else {
-            throw new Error(result.message);
+            recentHtml = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No announcements</div>';
+            archiveHtml = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No archived announcements</div>';
         }
-    } catch (e) {
-        console.error("Save failed:", e);
-        alert("Error saving: " + e.message);
-    } finally {
-        saveBtn.innerText = originalText;
-        saveBtn.disabled = false;
-    }
+
+        annContainer.innerHTML = recentHtml;
+        archiveContainer.innerHTML = archiveHtml;
+        
+        if (showBadge) badge.classList.add('active');
+          
+    } catch (e) { console.error("CMS Failed", e); }
 }
 
-// --- RENDERING CORE ---
+// --- DOCUMENT LOADING ---
 async function loadDocs() {
     try {
         const response = await fetch(`./json/process_documents.json?v=${Date.now()}`);
@@ -335,37 +318,21 @@ function renderDocsUI(docs) {
     const groupedDocs = {};
     docs.forEach(doc => {
         let originalCategory = doc.category || "Uncategorized";
-        let isPinned = originalCategory.toLowerCase().includes('pinned');
         let cleanCategory = originalCategory.replace(/,?\s*["']?pinned["']?/ig, '').trim() || "General";
-
         if (!groupedDocs[cleanCategory]) groupedDocs[cleanCategory] = [];
         groupedDocs[cleanCategory].push(doc);
-
-        if (isPinned) {
-            if (!groupedDocs['📌 Pinned']) groupedDocs['📌 Pinned'] = [];
-            groupedDocs['📌 Pinned'].push(doc);
-        }
     });
 
-    const sortedCategories = Object.keys(groupedDocs).sort((a, b) => {
-        if (a === '📌 Pinned') return -1;
-        if (b === '📌 Pinned') return 1;
-        return a.localeCompare(b);
-    });
+    const sortedCategories = Object.keys(groupedDocs).sort();
 
     let htmlContent = '';
     sortedCategories.forEach(category => {
         const items = groupedDocs[category];
-        const isPinnedCategory = category === '📌 Pinned';
-        const titleStyle = isPinnedCategory ? 'color: var(--idea-gold); border-bottom-color: var(--idea-gold);' : '';
-        
-        htmlContent += `<div class="category-section"><div class="category-title" style="${titleStyle}">${category}</div><div class="docs-grid">`;
+        htmlContent += `<div class="category-section"><div class="category-title">${category}</div><div class="docs-grid">`;
         items.forEach(item => {
             const searchKeywords = `${item.title} ${item.desc} ${category}`.toLowerCase();
-            const cardStyle = isPinnedCategory ? 'position: relative; border: 1px solid var(--idea-gold); box-shadow: 0 4px 10px rgba(245, 158, 11, 0.08);' : 'position: relative;';
             htmlContent += `
-                <a href="${item.link}" target="_blank" class="doc-card" style="${cardStyle}" data-search="${searchKeywords}">
-                    ${isPinnedCategory ? `<div style="position: absolute; top: 12px; right: 15px; font-size: 16px;">📌</div>` : ''}
+                <a href="${item.link}" target="_blank" class="doc-card" data-search="${searchKeywords}">
                     <div class="doc-icon">${item.icon}</div>
                     <div class="doc-info"><div class="doc-title">${item.title}</div><div class="doc-desc">${item.desc}</div></div>
                 </a>`;
@@ -392,6 +359,7 @@ document.addEventListener("DOMContentLoaded", () => {
         document.querySelector('.main-content').classList.add('expanded');
     }
     loadDocs();
+    loadCMS(); // Load announcements on page load
 });
 
 window.addEventListener('click', e => { if (e.target.id === 'globalOverlay') closeAllModals(); });
