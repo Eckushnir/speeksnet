@@ -58,8 +58,25 @@
   .notif-dot { position: absolute; top: -6px; right: -6px; width: 16px; height: 16px; background: var(--red-alert); border-radius: 50%; border: 3px solid white; display: none; }
   .notif-dot.active { display: block; animation: pulse 2s infinite; }
   
-  /* NEW WIDGET PULSE DOT */
-  .vw-pulse-dot { width: 10px; height: 10px; background: var(--red-alert); border-radius: 50%; display: inline-block; animation: pulse 2s infinite; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); margin-left: 8px; vertical-align: middle; }
+  /* UPDATED WIDGET PULSE BADGE */
+  .vw-pulse-badge { 
+    background: var(--red-alert); 
+    color: white; 
+    padding: 3px 8px; 
+    border-radius: 6px; 
+    font-size: 10px; 
+    font-weight: 900; 
+    letter-spacing: 1px; 
+    text-transform: uppercase; 
+    animation: pulseBadge 2s infinite; 
+    margin-left: 10px;
+    display: inline-block;
+  }
+  @keyframes pulseBadge { 
+    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 
+    70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); } 
+    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } 
+  }
   @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
   .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.22); backdrop-filter: blur(6px); display: none; z-index: 9998; }
@@ -719,8 +736,21 @@ function createVarianceStoreCard(storeKey) {
   let isNew = false;
   
   if (data.fileName) {
-      // Regex to remove the store name and trim the extra space
+      // Remove store name prefix
       periodText = data.fileName.replace(new RegExp(`${storeKey}\\s*`, 'i'), '').trim();
+      
+      // Dictionary to expand month abbreviations to full words
+      const months = {
+          "Jan": "January", "Feb": "February", "Mar": "March", "Apr": "April",
+          "May": "May", "Jun": "June", "Jul": "July", "Aug": "August",
+          "Sep": "September", "Oct": "October", "Nov": "November", "Dec": "December"
+      };
+      
+      // Look for 3-letter months and replace them with the full name
+      periodText = periodText.replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/ig, match => {
+          const capitalized = match.charAt(0).toUpperCase() + match.slice(1).toLowerCase();
+          return months[capitalized] || match;
+      });
   }
   
   // Calculate if the file is less than 7 days old
@@ -741,20 +771,22 @@ function createVarianceStoreCard(storeKey) {
     `;
   }).join('');
 
-  // Add the pulsing dot only if isNew is true
-  const newBadgeHtml = isNew ? `<div class="vw-pulse-dot" title="New Report Added This Week"></div>` : '';
+  // Add the bold pulsing badge if the report is new
+  const newBadgeHtml = isNew ? `<span class="vw-pulse-badge" title="New Report Added This Week">🚨 NEW</span>` : '';
 
   return `
     <div style="border: 1px solid #eee; border-radius: 12px; background: white; overflow: hidden;">
-      <div style="background: #f9fafb; padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
-        <div style="display: flex; flex-direction: column; gap: 4px;">
+      <div style="background: #f9fafb; padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: flex-start;">
+        <div style="display: flex; flex-direction: column; gap: 8px;">
             <div style="display: flex; align-items: center;">
-                <span style="font-size: 14px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase;">${storeKey} Total</span>
+                <span style="font-size: 16px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase;">${storeKey} TOTAL</span>
                 ${newBadgeHtml}
             </div>
-            <span style="font-size: 11px; font-weight: 700; color: #888;">PERIOD: ${periodText}</span>
+            <div>
+                <span style="background: #e2e8f0; color: #334155; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">🗓️ ${periodText}</span>
+            </div>
         </div>
-        <span class="delta-badge ${totalClass}" style="font-size: 13px; padding: 6px 12px;">${formatVariancePct(data.total)}</span>
+        <span class="delta-badge ${totalClass}" style="font-size: 16px; padding: 8px 14px;">${formatVariancePct(data.total)}</span>
       </div>
       <div style="display: flex; flex-direction: column;">
         ${empHtml}
