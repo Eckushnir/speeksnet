@@ -99,9 +99,14 @@
   .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); width: 100%; max-width: 100%; } 
   .main-content.expanded { margin-left: 76px; }
   
-  .page-header { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 20px; padding-right: 150px; }
+  .page-header { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 20px; padding-right: 150px; }
   .header-text h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin: 0; }
   .header-text p { color: #888; font-size: 14px; font-weight: 500; margin-top: 5px; }
+
+  /* QUICK LINKS BAR */
+  .quick-links-bar { display: flex; gap: 15px; margin-bottom: 35px; flex-wrap: wrap; }
+  .quick-link-pill { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; background: white; border: 1px solid rgba(0,0,0,0.06); border-radius: 30px; font-size: 13px; font-weight: 700; color: var(--slate-charcoal); text-decoration: none; transition: all 0.2s ease; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
+  .quick-link-pill:hover { border-color: var(--sage-professional); color: var(--sage-professional); transform: translateY(-2px); box-shadow: 0 6px 15px rgba(90, 141, 59, 0.15); }
 
   /* CHECKLIST GRID STYLES */
   .checklist-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-bottom: 30px; }
@@ -118,10 +123,6 @@
   .card { background: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.04); padding: 30px; transition: transform 0.3s ease, box-shadow 0.3s ease; margin-bottom: 30px; }
   .card:hover { box-shadow: 0 8px 25px rgba(0,0,0,0.05); }
   .card-title { font-size: 20px; font-weight: 800; color: var(--slate-charcoal); border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-  
-  .portals-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px; }
-  .portal-btn { display: block; text-decoration: none; padding: 14px 16px; background: var(--bg-app); border-radius: 10px; color: var(--text-dark); font-size: 13px; font-weight: 600; margin-bottom: 10px; transition: 0.2s; border: 1px solid transparent; }
-  .portal-btn:hover { background: var(--sage-professional); color: white; transform: translateX(6px); box-shadow: 0 4px 10px rgba(90, 141, 59, 0.2); }
 
   /* INTERACTIVE KPI COMPARISON DASHBOARD */
   .kpi-header-controls { display: flex; gap: 15px; align-items: center; flex-wrap: wrap; background: #f9fafb; padding: 15px; border-radius: 12px; border: 1px solid #eee; margin-bottom: 20px; }
@@ -160,9 +161,9 @@
   
   /* SHARED BADGE CLASSES (Used in both KPI & Variance widgets) */
   .delta-badge { display: inline-flex; justify-content: center; align-items: center; padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: 800; letter-spacing: 0.5px; height: 22px; line-height: 1;}
+  .delta-pos { background: #dcfce7; color: #166534; } 
   .delta-neg { background: #fee2e2; color: #991b1b; } 
   .delta-neutral { background: #f1f5f9; color: #475569; }
-  /* Green delta-pos removed per request */
 
   .kpi-list-header { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; padding: 12px 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; color: #888; letter-spacing: 0.5px; background: #f9fafb; border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 10; border-top-left-radius: 12px; border-top-right-radius: 12px;}
   .kpi-list-header div:last-child { text-align: right; }
@@ -180,13 +181,14 @@
   /* VARIANCE WIDGET SPECIFIC CLASSES */
   .vw-controls { display: flex; gap: 10px; align-items: center; }
   .vw-dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+  /* BALANCED HEIGHT FOR VARIANCE EMPLOYEES (Fits max 4 rows perfectly) */
   .vw-scroll-area { max-height: 170px; overflow-y: auto; overscroll-behavior: contain; }
   .vw-scroll-area::-webkit-scrollbar { width: 6px; }
   .vw-scroll-area::-webkit-scrollbar-track { background: transparent; }
   .vw-scroll-area::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
   .vw-scroll-area::-webkit-scrollbar-thumb:hover { background: var(--sage-professional); }
 
-  /* WEEKLY KPI SPECIFIC CLASSES (Now accommodates 5 columns) */
+  /* WEEKLY KPI SPECIFIC CLASSES */
   .weekly-kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; margin-top: 15px; }
 
   @media (max-width: 1600px) { 
@@ -273,6 +275,13 @@
     </div>
   </div>
 
+  <div class="quick-links-bar">
+      <a href="https://docs.google.com/spreadsheets/d/1pubURplK66yC6oXmpz7P-r8zN07DWmDiLxrtTg0rmdk/edit?usp=sharing" target="_blank" class="quick-link-pill">🎯 Daily Listing Goals</a>
+      <a href="https://docs.google.com/spreadsheets/d/1KdQNDYfJT-Gt6wal6cgCbh6aqOUOHxey3PEsoeyztzQ/edit?usp=sharing" target="_blank" class="quick-link-pill">📦 SPEEKS Aging Inventory Tracker</a>
+      <a href="https://docs.google.com/spreadsheets/d/1zw-jcqpAnMY6PNofERbUz4pUHA3qnlnZx6O6C_XSmLY/edit?usp=sharing" target="_blank" class="quick-link-pill">🛡️ eBay & Shopify Insurance Cases</a>
+      <a href="https://docs.google.com/spreadsheets/d/1ar3tabN-bUqkjWqgy25MCHzSup2jhiaAKaGxLwZTeJ8/edit?usp=sharing" target="_blank" class="quick-link-pill">📍 Local Location Visits</a>
+  </div>
+
   <div class="checklist-grid">
       <div class="card" style="margin-bottom: 0; padding: 25px;">
           <div class="checklist-header">⚡ Daily Checklist</div>
@@ -285,7 +294,7 @@
       <div class="card" style="margin-bottom: 0; padding: 25px;">
           <div class="checklist-header">🔄 Weekly Checklist</div>
           <label class="checklist-item"><input type="checkbox"> Conduct weekly team sync meeting.</label>
-          <label class="checklist-item"><input type="checkbox"> upload five new listings to Facebook Marketplace.</label>
+          <label class="checklist-item"><input type="checkbox"> Upload five new listings to Facebook Marketplace.</label>
           <label class="checklist-item"><input type="checkbox"> Complete and review Weekly KPI metrics.</label>
       </div>
       <div class="card" style="margin-bottom: 0; padding: 25px;">
@@ -364,7 +373,7 @@
                
                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                  <span style="font-size: 12px; font-weight: 700; color: #666;">Margin</span>
-                 <span class="delta-badge delta-pos" id="bs-buy-margin" style="font-size: 12px;">0%</span>
+                 <span class="delta-badge delta-neutral" id="bs-buy-margin" style="font-size: 12px;">0%</span>
                </div>
                
                <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -414,7 +423,7 @@
         </div>
       </div>
 
-      <div class="card" style="grid-column: 1 / -1; padding: 25px; margin-bottom: 0;">
+      <div class="card" style="grid-column: 1 / -1; padding: 25px; margin-bottom: 30px;">
           <div class="card-title" style="margin-bottom: 5px; border-bottom: none; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 10px;">
             <div style="display: flex; flex-direction: column; gap: 8px;">
                 <span>🗓️ Weekly KPI Breakdown</span>
@@ -432,21 +441,6 @@
           
           <div class="weekly-kpi-grid" id="weeklyKpiContainer">
               <div style="padding: 40px; text-align: center; color: #888; font-weight: 600; grid-column: 1 / -1;">Syncing Live Weekly Data...</div>
-          </div>
-      </div>
-
-      <div class="portals-grid" style="grid-column: 1 / -1; grid-template-columns: 1fr 1fr; margin-bottom: 30px;">
-          <div class="card" style="margin-bottom: 0;">
-            <div class="card-title">Performance & Sales <span>📈</span></div>
-            <a href="https://docs.google.com/spreadsheets/d/1i_oV37lZXq8s91f9ymzwQlrM8WY2UlQQQ0qsRP3xLJ8/edit?usp=sharing" target="_blank" class="portal-btn">📈 Sales Summary 2026</a>
-          </div>
-          
-          <div class="card" style="margin-bottom: 0;">
-            <div class="card-title">Operations & Admin <span>⚙️</span></div>
-            <a href="https://docs.google.com/spreadsheets/d/1pubURplK66yC6oXmpz7P-r8zN07DWmDiLxrtTg0rmdk/edit?usp=sharing" target="_blank" class="portal-btn">🎯 Daily Listing Goals</a>
-            <a href="https://docs.google.com/spreadsheets/d/1KdQNDYfJT-Gt6wal6cgCbh6aqOUOHxey3PEsoeyztzQ/edit?usp=sharing" target="_blank" class="portal-btn">📦 SPEEKS Aging Inventory Tracker</a>
-            <a href="https://docs.google.com/spreadsheets/d/1zw-jcqpAnMY6PNofERbUz4pUHA3qnlnZx6O6C_XSmLY/edit?usp=sharing" target="_blank" class="portal-btn">🛡️ eBay & Shopify Insurance Cases</a>
-            <a href="https://docs.google.com/spreadsheets/d/1ar3tabN-bUqkjWqgy25MCHzSup2jhiaAKaGxLwZTeJ8/edit?usp=sharing" target="_blank" class="portal-btn">📍 Local Location Visits</a>
           </div>
       </div>
 
@@ -858,7 +852,13 @@ function renderBuyingSales() {
     let formattedBuyMargin = (buyMargin * 100).toFixed(1) + '%';
 
     document.getElementById('bs-buy-val').innerText = formattedBuyVal;
-    document.getElementById('bs-buy-margin').innerText = formattedBuyMargin;
+    
+    // Custom Red Logic for the Sales/Buying Summary Widget
+    let marginNum = parseFloat(buyMargin * 100);
+    let marginBadge = document.getElementById('bs-buy-margin');
+    marginBadge.innerText = formattedBuyMargin;
+    marginBadge.className = marginNum < 51 ? 'delta-badge delta-neg' : 'delta-badge delta-neutral';
+
     document.getElementById('bs-buy-proj').innerText = formattedBuyProj;
 
     let p = Math.round(hubDataCache[`${store}Pct`] || 0);
@@ -978,10 +978,6 @@ async function fetchVarianceData() {
     }
 }
 
-// =========================================================
-// WEEKLY KPI WIDGET LOGIC (LIVE FETCHING)
-// =========================================================
-
 // FORMATS WEIRD SPREADSHEET TIME OR DECIMALS INTO MM:SS
 function formatTime(val) {
     if (!val || val === "") return "";
@@ -1023,6 +1019,9 @@ function checkRule(ruleName, val) {
     return false;
 }
 
+// =========================================================
+// WEEKLY KPI WIDGET LOGIC (LIVE FETCHING)
+// =========================================================
 async function fetchWeeklyKPIs() {
   const container = document.getElementById('weeklyKpiContainer');
   const store = document.getElementById('weeklyKpiStoreSelect').value;
@@ -1138,12 +1137,13 @@ async function fetchWeeklyKPIs() {
       // PERFECTLY ALIGNED HELPER FUNCTION
       const buildCol = (title, storeVal1, storeBadgeVal, empKey1, empBadgeKey, ruleName, isPctBadge) => {
          let hasBadge = empBadgeKey !== '';
-         // Dynamic grid: Wide space for Value1 if no badge exists to prevent squishing
-         let gridCols = hasBadge ? '1fr 75px 55px' : '1fr 90px';
+         // Always use 3 columns so that text and badges ALWAYS align across all 5 boxes
+         let gridCols = '1fr 75px 55px';
 
          let empHtml = employees.map(emp => {
             let val1 = empKey1 ? String(emp[empKey1] || '').trim() : '';
-            let badge2Html = '';
+            let val1Style = 'text-align: right; font-size: 12px; font-weight: 700; color: #555; white-space: nowrap;';
+            let badge2Html = '<span></span>';
             
             if (hasBadge) {
                let val2 = String(emp[empBadgeKey] || '').trim();
@@ -1152,21 +1152,25 @@ async function fetchWeeklyKPIs() {
                    let badgeClass = isBad ? 'delta-neg' : 'delta-neutral'; 
                    if (isPctBadge && !val2.includes('%')) val2 += '%';
                    badge2Html = `<span style="display: flex; justify-content: flex-end;"><span class="delta-badge ${badgeClass}">${val2}</span></span>`;
-               } else {
-                   badge2Html = `<span></span>`;
                }
+            } else if (empKey1) {
+               // If there is NO badge, we apply the conditional rule directly to the text color!
+               let isBad = checkRule(ruleName, val1);
+               if (isBad) val1Style += ' color: var(--red-alert); font-weight: 900;';
             }
 
             return `
               <div class="kpi-row" style="display: grid; grid-template-columns: ${gridCols}; align-items: center; padding: 0 15px; height: 48px; border-top: 1px solid #f5f5f5; border-radius: 0; background: white; margin: 0; border-left: none; border-right: none; gap: 8px;">
                 <span class="kpi-name" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${emp.name}</span>
-                <span style="text-align: right; font-size: 12px; font-weight: 700; color: #555; white-space: nowrap;">${val1}</span>
-                ${hasBadge ? badge2Html : ''}
+                <span style="${val1Style}">${val1}</span>
+                ${badge2Html}
               </div>
             `;
          }).join('');
 
-         let storeBadgeHtml = '';
+         let storeBadgeHtml = '<span></span>';
+         let storeVal1Style = 'font-size: 13px; font-weight: 800; color: var(--slate-charcoal); text-align: right; white-space: nowrap;';
+         
          if (hasBadge) {
              if (storeBadgeVal && storeBadgeVal !== "") {
                  let isBad = checkRule(ruleName, storeBadgeVal);
@@ -1174,9 +1178,11 @@ async function fetchWeeklyKPIs() {
                  let finalVal = storeBadgeVal;
                  if (isPctBadge && !String(finalVal).includes('%')) finalVal += '%';
                  storeBadgeHtml = `<span style="display: flex; justify-content: flex-end;"><span class="delta-badge ${badgeClass}">${finalVal}</span></span>`;
-             } else {
-                 storeBadgeHtml = `<span></span>`;
              }
+         } else if (storeVal1 && storeVal1 !== "") {
+             // If there is NO badge, check the store value text directly
+             let isBad = checkRule(ruleName, storeVal1);
+             if (isBad) storeVal1Style += ' color: var(--red-alert); font-weight: 900;';
          }
 
          return `
@@ -1185,8 +1191,8 @@ async function fetchWeeklyKPIs() {
                 <h4 style="font-size: 12px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px; white-space: nowrap;">${title}</h4>
                 <div style="display: grid; grid-template-columns: ${gridCols}; align-items: center; background: white; padding: 0 12px; height: 40px; border-radius: 8px; border: 1px solid #eee; gap: 8px;">
                    <span style="font-size: 11px; font-weight: 800; color: #888; text-align: left;">STORE TOTAL</span>
-                   <span style="font-size: 13px; font-weight: 800; color: var(--slate-charcoal); text-align: right; white-space: nowrap;">${storeVal1 || ''}</span>
-                   ${hasBadge ? storeBadgeHtml : ''}
+                   <span style="${storeVal1Style}">${storeVal1 || ''}</span>
+                   ${storeBadgeHtml}
                 </div>
              </div>
              <div style="display: flex; flex-direction: column;">
