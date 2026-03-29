@@ -96,7 +96,7 @@
   .calendar-content iframe { width: 100%; height: 100%; border: none; display: block; }
 
   /* PIN OVERLAY STYLES */
-  .auth-overlay { position: fixed; inset: 0; background: rgba(244, 247, 249, 0.95); backdrop-filter: blur(10px); z-index: 100000; display: none; align-items: center; justify-content: center; }
+  .auth-overlay { position: fixed; inset: 0; background: rgba(244, 247, 249, 0.95); backdrop-filter: blur(10px); z-index: 100000; display: flex; align-items: center; justify-content: center; }
   .auth-box { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); text-align: center; width: 400px; max-width: 90%; border: 1px solid var(--grey-light-border); }
   .auth-box h2 { font-size: 22px; font-weight: 800; color: var(--slate-charcoal); margin-bottom: 10px; letter-spacing: -0.5px; }
   .auth-box p { font-size: 13px; color: #666; margin-bottom: 25px; line-height: 1.5; }
@@ -229,6 +229,7 @@
             <button onclick="checkPIN()">Unlock Portal</button>
             <div id="pinError" class="pin-error">Incorrect PIN. Please try again.</div>
         </div>
+        <a href="index.html" class="auth-back-link">← Return to SPEEKS Hub</a>
     </div>
 </div>
 
@@ -507,8 +508,9 @@ async function fetchAuthData() {
         document.getElementById('pinInputContainer').style.display = 'block';
     } catch(e) {
         console.error("Auth Fetch Error:", e);
-        document.getElementById('authSubtitle').innerText = "Error connecting to secure authentication server. Please refresh.";
-        document.getElementById('authSubtitle').style.color = "var(--red-alert)";
+        document.getElementById('authSubtitle').innerText = "Could not connect to live PIN server. You may still try logging in.";
+        document.getElementById('authSubtitle').style.color = "#888";
+        document.getElementById('pinInputContainer').style.display = 'block';
     }
 }
 
