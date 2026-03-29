@@ -130,8 +130,8 @@
   .kpi-select { padding: 8px 12px; border-radius: 8px; border: 1px solid #ddd; font-family: 'Inter', sans-serif; font-weight: 700; color: var(--slate-charcoal); outline: none; cursor: pointer; background: white; }
   .kpi-select:focus { border-color: var(--sage-professional); }
 
-  /* BALANCED HEIGHT FOR KPI LIST - EXACTLY 615px */
-  .kpi-scroll-area { max-height: 600px; overflow-y: auto; overscroll-behavior: contain; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
+  /* BALANCED HEIGHT FOR KPI LIST - EXACTLY 592px TO MATCH THE RIGHT COLUMN PERFECTLY */
+  .kpi-scroll-area { max-height: 592px; overflow-y: auto; overscroll-behavior: contain; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
   .kpi-scroll-area::-webkit-scrollbar { width: 6px; }
   .kpi-scroll-area::-webkit-scrollbar-track { background: transparent; }
   .kpi-scroll-area::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
@@ -159,11 +159,11 @@
   
   .kpi-delta-col { text-align: right; }
   
-  /* SHARED BADGE CLASSES */
+  /* SHARED BADGE CLASSES (Restored .delta-pos globally!) */
   .delta-badge { display: inline-flex; justify-content: center; align-items: center; padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: 800; letter-spacing: 0.5px; height: 22px; line-height: 1;}
+  .delta-pos { background: #dcfce7; color: #166534; } 
   .delta-neg { background: #fee2e2; color: #991b1b; } 
   .delta-neutral { background: #f1f5f9; color: #475569; }
-  /* Positive removed for Weekly KPIs as requested */
 
   .kpi-list-header { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; padding: 12px 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; color: #888; letter-spacing: 0.5px; background: #f9fafb; border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 10; border-top-left-radius: 12px; border-top-right-radius: 12px;}
   .kpi-list-header div:last-child { text-align: right; }
@@ -418,7 +418,7 @@
           </div>
 
           <div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;">
-            <a href="https://drive.google.com/drive/folders/12Fjxp44sY6T-o6OlrG6n_YtrHow4bE2f?usp=sharing" target="_blank" class="portal-btn" style="margin-bottom: 0; text-align: center; background: #f9fafb; border: 1px solid #eee;">📁 Variance Replies</a>
+            <a href="https://drive.google.com/drive/folders/12Fjxp44sY6T-o6OlrG6n_YtrHow4bE2f?usp=sharing" target="_blank" class="quick-link-pill" style="width: 100%; justify-content: center; padding: 12px; font-size: 14px;">📁 Variance Replies</a>
           </div>
         </div>
       </div>
@@ -840,7 +840,7 @@ async function fetchHubData() {
     try {
         const res = await fetch(`${HUB_URL}?v=${Date.now()}`);
         hubDataCache = await res.json();
-        renderBuyingSales(); // Render the rings once data arrives
+        renderBuyingSales(); 
     } catch(e) { 
         console.error("Hub fetch error", e); 
     }
@@ -996,10 +996,6 @@ async function fetchVarianceData() {
     }
 }
 
-// =========================================================
-// WEEKLY KPI WIDGET LOGIC (LIVE FETCHING)
-// =========================================================
-
 // FORMATS WEIRD SPREADSHEET TIME OR DECIMALS INTO MM:SS
 function formatTime(val) {
     if (!val || val === "") return "";
@@ -1044,6 +1040,9 @@ function checkRule(ruleName, val) {
     return false;
 }
 
+// =========================================================
+// WEEKLY KPI WIDGET LOGIC (LIVE FETCHING)
+// =========================================================
 async function fetchWeeklyKPIs() {
   const container = document.getElementById('weeklyKpiContainer');
   const store = document.getElementById('weeklyKpiStoreSelect').value;
@@ -1158,7 +1157,6 @@ async function fetchWeeklyKPIs() {
 
       // PERFECTLY ALIGNED HELPER FUNCTION
       const buildCol = (title, storeVal1, storeBadgeVal, empKey1, empBadgeKey, ruleName, isPctBadge) => {
-         // Even if the column doesn't have a secondary badge natively, we force a 3-column grid for perfect height & alignment.
          let hasBadge = empBadgeKey !== '';
          let gridCols = '1fr 75px 55px';
 
@@ -1176,7 +1174,7 @@ async function fetchWeeklyKPIs() {
                    badge2Html = `<span style="display: flex; justify-content: flex-end;"><span class="delta-badge ${badgeClass}">${val2}</span></span>`;
                }
             } else if (empKey1) {
-               // If there is NO badge column (like Processed or Time), we apply the rule directly to the text color!
+               // If there is NO badge column, we apply the rule directly to the text color!
                let isBad = checkRule(ruleName, val1);
                if (isBad) val1Style += ' color: var(--red-alert); font-weight: 900;';
             }
@@ -1202,7 +1200,6 @@ async function fetchWeeklyKPIs() {
                  storeBadgeHtml = `<span style="display: flex; justify-content: flex-end;"><span class="delta-badge ${badgeClass}">${finalVal}</span></span>`;
              }
          } else if (storeVal1 && storeVal1 !== "") {
-             // Check the store value text directly if no badge exists
              let isBad = checkRule(ruleName, storeVal1);
              if (isBad) storeVal1Style += ' color: var(--red-alert); font-weight: 900;';
          }
