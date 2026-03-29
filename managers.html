@@ -95,6 +95,18 @@
   .calendar-content { height: 65vh; padding: 0; }
   .calendar-content iframe { width: 100%; height: 100%; border: none; display: block; }
 
+  /* PIN OVERLAY STYLES */
+  .auth-overlay { position: fixed; inset: 0; background: rgba(244, 247, 249, 0.95); backdrop-filter: blur(10px); z-index: 100000; display: none; align-items: center; justify-content: center; }
+  .auth-box { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); text-align: center; width: 400px; max-width: 90%; border: 1px solid var(--grey-light-border); }
+  .auth-box h2 { font-size: 22px; font-weight: 800; color: var(--slate-charcoal); margin-bottom: 10px; letter-spacing: -0.5px; }
+  .auth-box p { font-size: 13px; color: #666; margin-bottom: 25px; line-height: 1.5; }
+  .auth-box input { width: 100%; padding: 15px; font-size: 28px; text-align: center; letter-spacing: 15px; border-radius: 10px; border: 2px solid #eee; margin-bottom: 15px; outline: none; transition: 0.2s; font-family: monospace; }
+  .auth-box input:focus { border-color: var(--sage-professional); }
+  .auth-box button { width: 100%; padding: 16px; background: var(--sage-professional); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 15px rgba(90, 141, 59, 0.2); }
+  .auth-box button:hover { background: #4a7530; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(90, 141, 59, 0.3); }
+  .pin-error { color: var(--red-alert); font-size: 13px; font-weight: 700; margin-top: 15px; display: none; animation: shake 0.4s ease-in-out; }
+  @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+
   /* MAIN CONTENT & GRID LAYOUT */
   .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); width: 100%; max-width: 100%; } 
   .main-content.expanded { margin-left: 76px; }
@@ -105,7 +117,7 @@
 
   /* QUICK LINKS BAR */
   .quick-links-bar { display: flex; gap: 15px; margin-bottom: 35px; flex-wrap: wrap; }
-  .quick-link-pill { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; background: white; border: 1px solid rgba(0,0,0,0.06); border-radius: 30px; font-size: 13px; font-weight: 700; color: var(--slate-charcoal); text-decoration: none; transition: all 0.2s ease; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
+  .quick-link-pill { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; background: white; border: 1px solid #ddd; border-radius: 30px; font-size: 12px; font-weight: 800; color: var(--slate-charcoal); text-decoration: none; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.2s ease; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
   .quick-link-pill:hover { border-color: var(--sage-professional); color: var(--sage-professional); transform: translateY(-2px); box-shadow: 0 6px 15px rgba(90, 141, 59, 0.15); }
 
   /* CHECKLIST GRID STYLES */
@@ -208,6 +220,18 @@
 </head>
 <body>
 
+<div id="authOverlay" class="auth-overlay">
+    <div class="auth-box">
+        <h2>Manager Portal Access</h2>
+        <p id="authSubtitle">Connecting to secure server...</p>
+        <div id="pinInputContainer" style="display: none;">
+            <input type="password" id="pinInput" maxlength="4" placeholder="••••" onkeypress="if(event.key === 'Enter') checkPIN()">
+            <button onclick="checkPIN()">Unlock Portal</button>
+            <div id="pinError" class="pin-error">Incorrect PIN. Please try again.</div>
+        </div>
+    </div>
+</div>
+
 <aside class="sidebar">
   <div class="brand-area">
     <h1>SPEEKS</h1>
@@ -286,20 +310,20 @@
       <div class="card" style="margin-bottom: 0; padding: 25px;">
           <div class="checklist-header">⚡ Daily Checklist</div>
           <label class="checklist-item"><input type="checkbox"> Set daily team listing targets.</label>
-          <label class="checklist-item"><input type="checkbox"> Assign products to team members.</label>
+          <label class="checklist-item"><input type="checkbox"> Assign product workflows to team members.</label>
           <label class="checklist-item"><input type="checkbox"> Review & respond to all pending messages.</label>
-          <label class="checklist-item"><input type="checkbox"> Reply to new Google Reviews.</label>
-          <label class="checklist-item"><input type="checkbox"> Send any available WinBack messages.</label>
+          <label class="checklist-item"><input type="checkbox"> Monitor & reply to new Google Reviews.</label>
+          <label class="checklist-item"><input type="checkbox"> Dispatch available WinBack messages.</label>
       </div>
       <div class="card" style="margin-bottom: 0; padding: 25px;">
           <div class="checklist-header">🔄 Weekly Checklist</div>
-          <label class="checklist-item"><input type="checkbox"> Conduct weekly team meeting.</label>
+          <label class="checklist-item"><input type="checkbox"> Conduct weekly team sync meeting.</label>
           <label class="checklist-item"><input type="checkbox"> Upload five new listings to Facebook Marketplace.</label>
           <label class="checklist-item"><input type="checkbox"> Complete and review Weekly KPI metrics.</label>
       </div>
       <div class="card" style="margin-bottom: 0; padding: 25px;">
           <div class="checklist-header">🎯 Monthly Checklist</div>
-          <label class="checklist-item"><input type="checkbox"> Complete and review Monthly KPI metrics.</label>
+          <label class="checklist-item"><input type="checkbox"> Finalize and submit Monthly KPI metrics.</label>
           <label class="checklist-item"><input type="checkbox"> Establish & communicate monthly store goals.</label>
           <label class="checklist-item"><input type="checkbox"> Conduct 1-on-1 performance reviews with staff.</label>
       </div>
@@ -394,7 +418,7 @@
           </div>
         </div>
 
-        <div class="card" style="padding: 25px; margin-bottom: 0;">
+        <div class="card" style="padding: 25px; margin-bottom: 0; display: flex; flex-direction: column;">
           <div class="card-title" style="margin-bottom: 15px; border-bottom: none;">
             <span>⚖️ Live Variance Reports</span>
             <div class="vw-controls">
@@ -413,11 +437,11 @@
             </div>
           </div>
           
-          <div class="vw-dashboard" id="vw-dashboard-container">
+          <div class="vw-dashboard" id="vw-dashboard-container" style="flex-grow: 1;">
             <div style="padding: 40px; text-align: center; color: #888; font-weight: 600; grid-column: 1 / -1;">Syncing Variance Data...</div>
           </div>
 
-          <div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;">
+          <div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px; text-align: center;">
             <a href="https://drive.google.com/drive/folders/12Fjxp44sY6T-o6OlrG6n_YtrHow4bE2f?usp=sharing" target="_blank" class="quick-link-pill" style="width: 100%; justify-content: center; padding: 12px; font-size: 14px;">📁 Variance Replies</a>
           </div>
         </div>
@@ -448,17 +472,70 @@
 </main>
 
 <script>
+// --- CORE API URLS ---
 const CMS_URL = 'https://script.google.com/macros/s/AKfycbxZviJiiQKcQYyp3SK4tcNBHrHXkID7cmwwuONStVPE9DHCSAMappqAs9dBns7ufECI/exec';
 const MONTHLY_KPI_URL = 'https://script.google.com/macros/s/AKfycby0ihq9A4yUQvdZdeAF9euC5jih24hP2XGG-J_balNtxop2RHBuIuigw_mH3XTeCkkhow/exec';
 const VARIANCE_API_URL = 'https://script.google.com/macros/s/AKfycbxFO_W-PW4ZT4e5mXlQOhlYl2ccpZ9by8MZ6rF-RJ6x3lryCjbi5XxY7c57vLgfx7k/exec';
 const HUB_URL = 'https://script.google.com/macros/s/AKfycbw3Ms5nc2bhbrjVW-da3xbZ3vKhyBx2TpeR-eSd1L05ZhV-h2Yh0yLmIV_E7TWDmwM69A/exec';
 const WEEKLY_KPI_URL = 'https://script.google.com/macros/s/AKfycbyVBos-uJuhaqfLMBqoz9byNkvUG06igl4RX2_cs8hH15rbp7K4uFFEN-wpQgS2ChAU/exec';
 
+// IMPORTANT: Replace this string with the URL of your new 'Auth' Apps Script!
+const AUTH_URL = 'https://script.google.com/macros/s/AKfycbzAOcIrKP-GmKTe9zydMYb6X4yKvkDB3YIPMPSrW8upzw3ci5DyDWq71xIHR3QXJkDh/exec'; 
+
 let dynamicMonths = [];
 let rawKPIData = [];
 let liveVarianceDataCache = {};
 let hubDataCache = null; 
+let validUsers = []; // Stores the hashes from the Google Sheet
 
+/* =======================================================
+   PIN SECURITY AUTHENTICATION LOGIC (SPREADSHEET SYNC)
+   ======================================================= */
+
+async function hashString(str) {
+    const msgBuffer = new TextEncoder().encode(str);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function fetchAuthData() {
+    try {
+        const res = await fetch(`${AUTH_URL}?v=${Date.now()}`);
+        validUsers = await res.json();
+        document.getElementById('authSubtitle').innerText = "Please enter your 4-digit manager PIN to unlock the dashboard.";
+        document.getElementById('pinInputContainer').style.display = 'block';
+    } catch(e) {
+        console.error("Auth Fetch Error:", e);
+        document.getElementById('authSubtitle').innerText = "Error connecting to secure authentication server. Please refresh.";
+        document.getElementById('authSubtitle').style.color = "var(--red-alert)";
+    }
+}
+
+async function checkPIN() {
+    const pinInput = document.getElementById('pinInput');
+    const pinError = document.getElementById('pinError');
+    const pin = pinInput.value;
+    
+    if(!pin) return;
+    
+    const hashed = await hashString(pin);
+    const matchedUser = validUsers.find(u => u.hash === hashed);
+    
+    if (matchedUser) {
+        sessionStorage.setItem('speeksManagerUnlocked', 'true');
+        sessionStorage.setItem('speeksActiveManager', matchedUser.name); // SAVES THE IDENTITY!
+        document.getElementById('authOverlay').style.display = 'none';
+        document.body.style.overflow = 'auto'; // allow scrolling again
+        initDashboardData(); // Fire up all the fetches only AFTER unlock!
+    } else {
+        pinError.style.display = 'block';
+        pinInput.value = '';
+        setTimeout(() => { pinError.style.display = 'none'; }, 2000);
+    }
+}
+
+// --- UI & MODAL LOGIC ---
 function toggleSidebar() {
     const sidebar = document.querySelector('.sidebar');
     const mainContent = document.querySelector('.main-content');
@@ -473,7 +550,9 @@ function closeAllModals() {
     document.getElementById('notifDropdown').classList.remove('show');
     document.getElementById('calendarDropdown').classList.remove('show');
     document.getElementById('globalOverlay').classList.remove('show');
-    document.body.classList.remove('no-scroll');
+    if (sessionStorage.getItem('speeksManagerUnlocked') === 'true') {
+        document.body.classList.remove('no-scroll');
+    }
 }
 
 function toggleNotifs() {
@@ -1235,7 +1314,15 @@ async function fetchWeeklyKPIs() {
   }
 }
 
-// Initializers
+// --- BOOTSTRAP: Only fetch dashboard data AFTER PIN unlock! ---
+function initDashboardData() {
+    loadCMS();
+    fetchHubData(); 
+    fetchKPIData();
+    fetchVarianceData();
+    fetchWeeklyKPIs(); 
+}
+
 document.getElementById('kpiStoreSelect').addEventListener('change', fetchKPIData);
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -1244,11 +1331,19 @@ document.addEventListener("DOMContentLoaded", () => {
         document.querySelector('.main-content').classList.add('expanded');
         document.querySelector('.sidebar-toggle').classList.add('collapsed');
     }
-    loadCMS();
-    fetchHubData(); 
-    fetchKPIData();
-    fetchVarianceData();
-    fetchWeeklyKPIs(); // Runs the LIVE fetch!
+    
+    // AUTHENTICATION CHECK
+    // Wait slightly to allow the fetchAuthData to hit before showing UI if possible
+    fetchAuthData().then(() => {
+        if (sessionStorage.getItem('speeksManagerUnlocked') === 'true') {
+            document.getElementById('authOverlay').style.display = 'none';
+            document.body.style.overflow = 'auto';
+            initDashboardData();
+        } else {
+            document.getElementById('authOverlay').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+    });
 });
 </script>
 </body>
