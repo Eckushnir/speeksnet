@@ -95,7 +95,7 @@
   .calendar-content { height: 65vh; padding: 0; }
   .calendar-content iframe { width: 100%; height: 100%; border: none; display: block; }
 
-  /* PIN OVERLAY STYLES */
+  /* PIN OVERLAY STYLES (Set to flex by default to prevent flashes!) */
   .auth-overlay { position: fixed; inset: 0; background: rgba(244, 247, 249, 0.95); backdrop-filter: blur(10px); z-index: 100000; display: flex; align-items: center; justify-content: center; }
   .auth-box { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); text-align: center; width: 400px; max-width: 90%; border: 1px solid var(--grey-light-border); }
   .auth-box h2 { font-size: 22px; font-weight: 800; color: var(--slate-charcoal); margin-bottom: 10px; letter-spacing: -0.5px; }
@@ -104,8 +104,13 @@
   .auth-box input:focus { border-color: var(--sage-professional); }
   .auth-box button { width: 100%; padding: 16px; background: var(--sage-professional); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 15px rgba(90, 141, 59, 0.2); }
   .auth-box button:hover { background: #4a7530; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(90, 141, 59, 0.3); }
+  
   .pin-error { color: var(--red-alert); font-size: 13px; font-weight: 700; margin-top: 15px; display: none; animation: shake 0.4s ease-in-out; }
   @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+  
+  /* STYLED RETURN BUTTON */
+  .auth-back-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; background: white; border: 1px solid #ddd; border-radius: 30px; font-size: 12px; font-weight: 800; color: var(--slate-charcoal); text-decoration: none; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.2s ease; margin-top: 25px; width: 100%; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
+  .auth-back-btn:hover { border-color: var(--sage-professional); color: var(--sage-professional); transform: translateY(-2px); box-shadow: 0 6px 15px rgba(90, 141, 59, 0.15); }
 
   /* MAIN CONTENT & GRID LAYOUT */
   .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); width: 100%; max-width: 100%; } 
@@ -171,7 +176,7 @@
   
   .kpi-delta-col { text-align: right; }
   
-  /* SHARED BADGE CLASSES (Restored .delta-pos globally!) */
+  /* SHARED BADGE CLASSES */
   .delta-badge { display: inline-flex; justify-content: center; align-items: center; padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: 800; letter-spacing: 0.5px; height: 22px; line-height: 1;}
   .delta-pos { background: #dcfce7; color: #166534; } 
   .delta-neg { background: #fee2e2; color: #991b1b; } 
@@ -193,7 +198,6 @@
   /* VARIANCE WIDGET SPECIFIC CLASSES */
   .vw-controls { display: flex; gap: 10px; align-items: center; }
   .vw-dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
-  /* BALANCED HEIGHT FOR VARIANCE EMPLOYEES (Fits max 4 rows perfectly) */
   .vw-scroll-area { max-height: 170px; overflow-y: auto; overscroll-behavior: contain; }
   .vw-scroll-area::-webkit-scrollbar { width: 6px; }
   .vw-scroll-area::-webkit-scrollbar-track { background: transparent; }
@@ -223,13 +227,13 @@
 <div id="authOverlay" class="auth-overlay">
     <div class="auth-box">
         <h2>Manager Portal Access</h2>
-        <p id="authSubtitle">Connecting to secure server...</p>
-        <div id="pinInputContainer" style="display: none;">
+        <p id="authSubtitle">Please enter your 4-digit manager PIN.</p>
+        <div id="pinInputContainer">
             <input type="password" id="pinInput" maxlength="4" placeholder="••••" onkeypress="if(event.key === 'Enter') checkPIN()">
-            <button onclick="checkPIN()">Unlock Portal</button>
+            <button id="unlockBtn" onclick="checkPIN()">Unlock Portal</button>
             <div id="pinError" class="pin-error">Incorrect PIN. Please try again.</div>
         </div>
-        <a href="index.html" class="auth-back-link">← Return to SPEEKS Hub</a>
+        <a href="index.html" class="auth-back-btn">← Return to SPEEKS Hub</a>
     </div>
 </div>
 
@@ -480,18 +484,31 @@ const VARIANCE_API_URL = 'https://script.google.com/macros/s/AKfycbxFO_W-PW4ZT4e
 const HUB_URL = 'https://script.google.com/macros/s/AKfycbw3Ms5nc2bhbrjVW-da3xbZ3vKhyBx2TpeR-eSd1L05ZhV-h2Yh0yLmIV_E7TWDmwM69A/exec';
 const WEEKLY_KPI_URL = 'https://script.google.com/macros/s/AKfycbyVBos-uJuhaqfLMBqoz9byNkvUG06igl4RX2_cs8hH15rbp7K4uFFEN-wpQgS2ChAU/exec';
 
-// IMPORTANT: Replace this string with the URL of your new 'Auth' Apps Script!
+// YOUR SECURE PIN AUTHENTICATION SCRIPT URL
 const AUTH_URL = 'https://script.google.com/macros/s/AKfycbzAOcIrKP-GmKTe9zydMYb6X4yKvkDB3YIPMPSrW8upzw3ci5DyDWq71xIHR3QXJkDh/exec'; 
 
 let dynamicMonths = [];
 let rawKPIData = [];
 let liveVarianceDataCache = {};
 let hubDataCache = null; 
-let validUsers = []; // Stores the hashes from the Google Sheet
 
 /* =======================================================
-   PIN SECURITY AUTHENTICATION LOGIC (SPREADSHEET SYNC)
+   PIN SECURITY AUTHENTICATION LOGIC (ZERO LOAD TIME)
    ======================================================= */
+let authFetchPromise = null;
+
+// Kicks off the fetch in the background immediately
+function startAuthFetch() {
+    authFetchPromise = fetch(`${AUTH_URL}?v=${Date.now()}`)
+        .then(res => {
+            if (!res.ok) throw new Error("Network response was not ok");
+            return res.json();
+        })
+        .catch(e => {
+            console.error("Auth fetch failed:", e);
+            return null; // Return null so the UI knows it failed
+        });
+}
 
 async function hashString(str) {
     const msgBuffer = new TextEncoder().encode(str);
@@ -500,41 +517,49 @@ async function hashString(str) {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-async function fetchAuthData() {
-    try {
-        const res = await fetch(`${AUTH_URL}?v=${Date.now()}`);
-        validUsers = await res.json();
-        document.getElementById('authSubtitle').innerText = "Please enter your 4-digit manager PIN to unlock the dashboard.";
-        document.getElementById('pinInputContainer').style.display = 'block';
-    } catch(e) {
-        console.error("Auth Fetch Error:", e);
-        document.getElementById('authSubtitle').innerText = "Could not connect to live PIN server. You may still try logging in.";
-        document.getElementById('authSubtitle').style.color = "#888";
-        document.getElementById('pinInputContainer').style.display = 'block';
-    }
-}
-
 async function checkPIN() {
     const pinInput = document.getElementById('pinInput');
     const pinError = document.getElementById('pinError');
+    const btn = document.getElementById('unlockBtn');
     const pin = pinInput.value;
     
     if(!pin) return;
     
+    // UI Feedback while checking
+    btn.innerText = "Verifying...";
+    btn.style.opacity = "0.7";
+    pinError.style.display = 'none';
+
+    // Wait for the background fetch to finish if it hasn't already
+    const validUsers = await authFetchPromise;
+    
+    if (!validUsers) {
+        pinError.innerText = "Connection Error. Ensure Apps Script is deployed to 'Anyone'.";
+        pinError.style.display = 'block';
+        btn.innerText = "Unlock Portal";
+        btn.style.opacity = "1";
+        return;
+    }
+
     const hashed = await hashString(pin);
-    const matchedUser = validUsers.find(u => u.hash === hashed);
+    
+    // Ignore case just to be safe
+    const matchedUser = validUsers.find(u => String(u.hash).toLowerCase() === hashed.toLowerCase());
     
     if (matchedUser) {
         sessionStorage.setItem('speeksManagerUnlocked', 'true');
-        sessionStorage.setItem('speeksActiveManager', matchedUser.name); // SAVES THE IDENTITY!
+        sessionStorage.setItem('speeksActiveManager', matchedUser.name); // SAVES IDENTITY FOR FUTURE CHECKLIST FEATURE!
         document.getElementById('authOverlay').style.display = 'none';
-        document.body.style.overflow = 'auto'; // allow scrolling again
-        initDashboardData(); // Fire up all the fetches only AFTER unlock!
+        document.body.style.overflow = 'auto'; // Allow scrolling again
+        initDashboardData(); // Fire up all the dashboard fetches only AFTER unlock!
     } else {
+        pinError.innerText = "Incorrect PIN. Please try again.";
         pinError.style.display = 'block';
         pinInput.value = '';
-        setTimeout(() => { pinError.style.display = 'none'; }, 2000);
     }
+    
+    btn.innerText = "Unlock Portal";
+    btn.style.opacity = "1";
 }
 
 // --- UI & MODAL LOGIC ---
@@ -1328,6 +1353,9 @@ function initDashboardData() {
 document.getElementById('kpiStoreSelect').addEventListener('change', fetchKPIData);
 
 document.addEventListener("DOMContentLoaded", () => {
+    // Start fetching PINs in the background immediately to kill load time!
+    startAuthFetch();
+
     if (localStorage.getItem('speeksSidebar') === 'collapsed') {
         document.querySelector('.sidebar').classList.add('collapsed');
         document.querySelector('.main-content').classList.add('expanded');
@@ -1335,17 +1363,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     
     // AUTHENTICATION CHECK
-    // Wait slightly to allow the fetchAuthData to hit before showing UI if possible
-    fetchAuthData().then(() => {
-        if (sessionStorage.getItem('speeksManagerUnlocked') === 'true') {
-            document.getElementById('authOverlay').style.display = 'none';
-            document.body.style.overflow = 'auto';
-            initDashboardData();
-        } else {
-            document.getElementById('authOverlay').style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-        }
-    });
+    if (sessionStorage.getItem('speeksManagerUnlocked') === 'true') {
+        document.getElementById('authOverlay').style.display = 'none';
+        document.body.style.overflow = 'auto';
+        initDashboardData();
+    } else {
+        document.getElementById('authOverlay').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        document.getElementById('pinInput').focus();
+    }
 });
 </script>
 </body>
