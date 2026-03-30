@@ -295,6 +295,9 @@
 </main>
 
 <script>
+// IMPORTANT: Paste your new Apps Script URL below!
+const RECORDS_URL = 'https://script.google.com/macros/s/AKfycbyyC7uf1WE34ImUVr-E5vX8MOMcoLdeiI4voj1pqAD3JTKAkJYMbx178Gd2MCAAOCsT/exec';
+
 const HUB_URL = 'https://script.google.com/macros/s/AKfycbw3Ms5nc2bhbrjVW-da3xbZ3vKhyBx2TpeR-eSd1L05ZhV-h2Yh0yLmIV_E7TWDmwM69A/exec';
 const KPI_URL = 'https://script.google.com/macros/s/AKfycbyVBos-uJuhaqfLMBqoz9byNkvUG06igl4RX2_cs8hH15rbp7K4uFFEN-wpQgS2ChAU/exec';
 const CMS_URL = 'https://script.google.com/macros/s/AKfycbxZviJiiQKcQYyp3SK4tcNBHrHXkID7cmwwuONStVPE9DHCSAMappqAs9dBns7ufECI/exec';
@@ -509,93 +512,119 @@ async function loadCMS() {
 }
 
 /* =========================================================
-   ALL-TIME RECORDS GENERATOR 
+   ALL-TIME RECORDS GENERATOR (LIVE SYNC)
    ========================================================= */
 async function fetchRecordsData() {
     const container = document.getElementById('recordsContainer');
+    container.innerHTML = '<div style="padding: 40px; text-align: center; color: #888; font-weight: 600;">Syncing Live Records...</div>';
     
-    // NOTE: When you are ready to make this auto-detect via your spreadsheet, 
-    // you will write a new Google Apps Script that parses the historical data,
-    // finds the MAX() for each column, formats it into JSON, and returns it.
-    // You would then fetch it here like this:
-    // const response = await fetch('YOUR_NEW_RECORDS_APPS_SCRIPT_URL');
-    // const data = await response.json();
-    
-    // For now, we are simulating the successful fetch using your exact data 
-    // so that the UI is perfectly built and ready to go!
-
-    const today = new Date();
-    const dateStr = `${(today.getMonth()+1).toString().padStart(2, '0')}/01/${today.getFullYear()}`;
-
-    let html = `
-        <div class="record-section-title">
-            Company Wide Records 
-            <span>As of ${dateStr}</span>
-        </div>
+    try {
+        const response = await fetch(`${RECORDS_URL}?v=${Date.now()}`);
+        const data = await response.json();
         
-        <div class="records-grid">
-            <div class="record-item">
-                <div class="record-label">Daily Buy Record:</div>
-                <div class="record-value">$18,086</div>
-                <div class="record-subtext">LEE, October 2025</div>
-            </div>
-            <div class="record-item">
-                <div class="record-label">Daily Sell Record:</div>
-                <div class="record-value">$15,995.81</div>
-                <div class="record-subtext">OVL, January 2026</div>
-            </div>
-            <div class="record-item">
-                <div class="record-label">Monthly Revenue Record:</div>
-                <div class="record-value">$135,733.89</div>
-                <div class="record-subtext">OVL, January 2026</div>
-            </div>
-        </div>
-
-        <hr class="record-divider">
-
-        <div class="record-section-title">
-            OVL Store Records 
-            <span>As of ${dateStr}</span>
-        </div>
+        if (data.error) {
+             container.innerHTML = `<div style="padding: 40px; text-align: center; color: #dc2626; font-weight: 600;">${data.error}</div>`;
+             return;
+        }
         
-        <div class="records-grid">
-            <div class="record-item">
-                <div class="record-label">Daily Buy Record:</div>
-                <div class="record-value">$16,947</div>
-                <div class="record-subtext">August, 2025</div>
-            </div>
-            <div class="record-item">
-                <div class="record-label">Daily Sell Record:</div>
-                <div class="record-value">$15,995.81</div>
-                <div class="record-subtext">January, 2026</div>
-            </div>
-            <div class="record-item">
-                <div class="record-label">Monthly Revenue Record:</div>
-                <div class="record-value">$135,733.89</div>
-                <div class="record-subtext">January, 2026</div>
-            </div>
-            <div class="record-item">
-                <div class="record-label">Monthly Gross Profit Record:</div>
-                <div class="record-value">$76,279.53</div>
-                <div class="record-subtext">December, 2025</div>
-            </div>
-            <div class="record-item">
-                <div class="record-label">Monthly Sell Margin Record:</div>
-                <div class="record-value">60.66%</div>
-                <div class="record-subtext">November, 2025</div>
-            </div>
-            <div class="record-item">
-                <div class="record-label">Monthly Cust. Conv. Record:</div>
-                <div class="record-value">93%</div>
-                <div class="record-subtext">February, 2026</div>
-            </div>
-        </div>
-    `;
+        // Helper formatting functions
+        const fmtCur = (num) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
+        const fmtPct = (num) => {
+            if (!num) return '0%';
+            let n = parseFloat(num);
+            if (n <= 1.2 && n > 0) n = n * 100; // Account for decimals vs whole numbers
+            return n.toFixed(2).replace(/\.00$/, '') + '%';
+        };
 
-    container.innerHTML = html;
-    recordsLoaded = true;
+        const today = new Date();
+        const dateStr = `${(today.getMonth()+1).toString().padStart(2, '0')}/${today.getDate().toString().padStart(2, '0')}/${today.getFullYear()}`;
+
+        // Top level company records
+        let html = `
+            <div class="record-section-title">
+                Company Wide Records 
+                <span>As of ${dateStr}</span>
+            </div>
+            
+            <div class="records-grid">
+                <div class="record-item">
+                    <div class="record-label">Daily Buy Record:</div>
+                    <div class="record-value">${fmtCur(data.company.dailyBuy.val)}</div>
+                    <div class="record-subtext">${data.company.dailyBuy.text || '-'}</div>
+                </div>
+                <div class="record-item">
+                    <div class="record-label">Daily Sell Record:</div>
+                    <div class="record-value">${fmtCur(data.company.dailySell.val)}</div>
+                    <div class="record-subtext">${data.company.dailySell.text || '-'}</div>
+                </div>
+                <div class="record-item">
+                    <div class="record-label">Monthly Revenue Record:</div>
+                    <div class="record-value">${fmtCur(data.company.monthlyRev.val)}</div>
+                    <div class="record-subtext">${data.company.monthlyRev.text || '-'}</div>
+                </div>
+            </div>
+        `;
+
+        // Store loop to generate all remaining grids dynamically
+        const stores = [
+            { key: 'ovl', name: 'OVL' },
+            { key: 'lee', name: 'LEE' },
+            { key: 'wsp', name: 'WSP' }
+        ];
+
+        stores.forEach(s => {
+            let sd = data[s.key];
+            if (!sd) return;
+
+            html += `
+            <hr class="record-divider">
+            <div class="record-section-title">
+                ${s.name} Store Records 
+                <span>As of ${dateStr}</span>
+            </div>
+            
+            <div class="records-grid">
+                <div class="record-item">
+                    <div class="record-label">Daily Buy Record:</div>
+                    <div class="record-value">${fmtCur(sd.dailyBuy?.val || 0)}</div>
+                    <div class="record-subtext">${sd.dailyBuy?.text || '-'}</div>
+                </div>
+                <div class="record-item">
+                    <div class="record-label">Daily Sell Record:</div>
+                    <div class="record-value">${fmtCur(sd.dailySell?.val || 0)}</div>
+                    <div class="record-subtext">${sd.dailySell?.text || '-'}</div>
+                </div>
+                <div class="record-item">
+                    <div class="record-label">Monthly Revenue Record:</div>
+                    <div class="record-value">${fmtCur(sd.monthlyRev?.val || 0)}</div>
+                    <div class="record-subtext">${sd.monthlyRev?.text || '-'}</div>
+                </div>
+                <div class="record-item">
+                    <div class="record-label">Monthly Gross Profit Record:</div>
+                    <div class="record-value">${fmtCur(sd.monthlyGp?.val || 0)}</div>
+                    <div class="record-subtext">${sd.monthlyGp?.text || '-'}</div>
+                </div>
+                <div class="record-item">
+                    <div class="record-label">Monthly Sell Margin Record:</div>
+                    <div class="record-value">${fmtPct(sd.monthlyMargin?.val || 0)}</div>
+                    <div class="record-subtext">${sd.monthlyMargin?.text || '-'}</div>
+                </div>
+                <div class="record-item">
+                    <div class="record-label">Monthly Cust. Conv. Record:</div>
+                    <div class="record-value">${fmtPct(sd.monthlyConv?.val || 0)}</div>
+                    <div class="record-subtext">${sd.monthlyConv?.text || '-'}</div>
+                </div>
+            </div>`;
+        });
+
+        container.innerHTML = html;
+        recordsLoaded = true;
+
+    } catch (e) {
+        console.error("Records Fetch Failed", e);
+        container.innerHTML = '<div style="padding: 40px; text-align: center; color: #dc2626; font-weight: 600;">Failed to sync records. Check Apps Script URL and permissions.</div>';
+    }
 }
-
 
 function syncAllData() { 
     loadKpiData(); 
