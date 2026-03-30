@@ -100,7 +100,8 @@
   .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
   .main-content.expanded { margin-left: 76px; }
   
-  .page-header { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-start; padding-right: 120px; }
+  /* Increased padding-right to 220px to prevent overlap with the Calendar and Bell icons */
+  .page-header { margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-start; padding-right: 220px; }
   .page-header h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin: 0;}
   .page-header p { color: #888; font-size: 14px; font-weight: 500; margin-top: 5px; }
 
@@ -170,7 +171,8 @@
 
   @media (max-width: 1024px) { 
     .metrics-grid, .leaderboard-container, .records-grid { grid-template-columns: 1fr; } 
-    .page-header { padding-right: 0; flex-direction: column; gap: 20px; }
+    .top-actions { right: 20px; }
+    .page-header { padding-right: 0; flex-direction: column; gap: 20px; align-items: flex-start; }
   }
 </style>
 </head>
@@ -295,7 +297,7 @@
 </main>
 
 <script>
-// IMPORTANT: Paste your new Apps Script URL below!
+// The URL you provided for your custom records backend
 const RECORDS_URL = 'https://script.google.com/macros/s/AKfycbwPMcs33YfH84ewJyg3ikqIKZtOJByEI9X2PD3cONtavJk7oJCUnGYbP6sESBE6-j2RSA/exec';
 
 const HUB_URL = 'https://script.google.com/macros/s/AKfycbw3Ms5nc2bhbrjVW-da3xbZ3vKhyBx2TpeR-eSd1L05ZhV-h2Yh0yLmIV_E7TWDmwM69A/exec';
@@ -303,7 +305,7 @@ const KPI_URL = 'https://script.google.com/macros/s/AKfycbyVBos-uJuhaqfLMBqoz9by
 const CMS_URL = 'https://script.google.com/macros/s/AKfycbxZviJiiQKcQYyp3SK4tcNBHrHXkID7cmwwuONStVPE9DHCSAMappqAs9dBns7ufECI/exec';
 
 let mainChartInstance = null, currentTimeframe = '4-Week'; 
-let recordsLoaded = false;
+let recordsCache = null; // Holds the fetched record data for instant loading
 
 function toggleSidebar() {
     const s = document.querySelector('.sidebar');
@@ -585,33 +587,6 @@ function syncAllData() {
     fetchLiveData(); 
     loadCMS(); 
     fetchRecordsData(); // Kicks off the background fetch instantly!
-}
-window.onload = syncAllData;
-
-document.addEventListener("DOMContentLoaded", () => {
-    if (localStorage.getItem('speeksSidebar') === 'collapsed') {
-        document.querySelector('.sidebar').classList.add('collapsed');
-        document.querySelector('.main-content').classList.add('expanded');
-        document.querySelector('.sidebar-toggle').classList.add('collapsed');
-    }
-});
-
-        container.innerHTML = html;
-        recordsLoaded = true;
-
-    } catch (e) {
-        console.error("Records Fetch Failed", e);
-        container.innerHTML = '<div style="padding: 40px; text-align: center; color: #dc2626; font-weight: 600;">Failed to sync records. Check Apps Script URL and permissions.</div>';
-    }
-}
-
-function syncAllData() { 
-    loadKpiData(); 
-    fetchLiveData(); 
-    loadCMS(); 
-    if (document.getElementById('pane-records').classList.contains('active')) {
-        fetchRecordsData();
-    }
 }
 window.onload = syncAllData;
 
