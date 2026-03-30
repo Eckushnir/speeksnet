@@ -296,7 +296,7 @@
 
 <script>
 // IMPORTANT: Paste your new Apps Script URL below!
-const RECORDS_URL = 'https://script.google.com/macros/s/AKfycbyyC7uf1WE34ImUVr-E5vX8MOMcoLdeiI4voj1pqAD3JTKAkJYMbx178Gd2MCAAOCsT/exec';
+const RECORDS_URL = 'https://script.google.com/macros/s/AKfycbwPMcs33YfH84ewJyg3ikqIKZtOJByEI9X2PD3cONtavJk7oJCUnGYbP6sESBE6-j2RSA/exec';
 
 const HUB_URL = 'https://script.google.com/macros/s/AKfycbw3Ms5nc2bhbrjVW-da3xbZ3vKhyBx2TpeR-eSd1L05ZhV-h2Yh0yLmIV_E7TWDmwM69A/exec';
 const KPI_URL = 'https://script.google.com/macros/s/AKfycbyVBos-uJuhaqfLMBqoz9byNkvUG06igl4RX2_cs8hH15rbp7K4uFFEN-wpQgS2ChAU/exec';
@@ -355,9 +355,9 @@ function switchPageTab(tab) {
     document.getElementById('pane-' + tab).classList.add('active');
     document.getElementById('tab-btn-' + tab).classList.add('active');
 
-    // Load records only when the tab is clicked the first time
-    if (tab === 'records' && !recordsLoaded) {
-        fetchRecordsData();
+    // Instantly render from the cache!
+    if (tab === 'records') {
+        renderRecords();
     }
 }
 
@@ -512,110 +512,89 @@ async function loadCMS() {
 }
 
 /* =========================================================
-   ALL-TIME RECORDS GENERATOR (LIVE SYNC)
+   ALL-TIME RECORDS GENERATOR (MANUAL SPREADSHEET SYNC)
    ========================================================= */
 async function fetchRecordsData() {
-    const container = document.getElementById('recordsContainer');
-    container.innerHTML = '<div style="padding: 40px; text-align: center; color: #888; font-weight: 600;">Syncing Live Records...</div>';
-    
     try {
         const response = await fetch(`${RECORDS_URL}?v=${Date.now()}`);
-        const data = await response.json();
+        recordsCache = await response.json();
         
-        if (data.error) {
-             container.innerHTML = `<div style="padding: 40px; text-align: center; color: #dc2626; font-weight: 600;">${data.error}</div>`;
-             return;
+        // If the user is currently looking at the records tab, update it live
+        if (document.getElementById('pane-records').classList.contains('active')) {
+            renderRecords();
         }
+    } catch (e) {
+        console.error("Records Fetch Failed", e);
+        document.getElementById('recordsContainer').innerHTML = '<div style="padding: 40px; text-align: center; color: #dc2626; font-weight: 600;">Failed to sync records. Check Apps Script.</div>';
+    }
+}
+
+function renderRecords() {
+    const container = document.getElementById('recordsContainer');
+    
+    if (!recordsCache) {
+        container.innerHTML = '<div style="padding: 40px; text-align: center; color: #888; font-weight: 600;">Syncing Live Records...</div>';
+        return;
+    }
+
+    const today = new Date();
+    const dateStr = `${(today.getMonth()+1).toString().padStart(2, '0')}/${today.getDate().toString().padStart(2, '0')}/${today.getFullYear()}`;
+
+    // Group the data by section (Company, OVL, LEE, WSP)
+    const sections = { "COMPANY": [], "OVL": [], "LEE": [], "WSP": [], "MPL": [], "BAL": [] };
+    recordsCache.forEach(rec => {
+        let sec = String(rec.section).toUpperCase().trim();
+        if (sections[sec]) sections[sec].push(rec);
+    });
+
+    let html = '';
+    const order = ["COMPANY", "OVL", "LEE", "WSP", "MPL", "BAL"];
+    
+    order.forEach((sec, idx) => {
+        if (sections[sec].length === 0) return; // Skip if no records for this store
         
-        // Helper formatting functions
-        const fmtCur = (num) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
-        const fmtPct = (num) => {
-            if (!num) return '0%';
-            let n = parseFloat(num);
-            if (n <= 1.2 && n > 0) n = n * 100; // Account for decimals vs whole numbers
-            return n.toFixed(2).replace(/\.00$/, '') + '%';
-        };
-
-        const today = new Date();
-        const dateStr = `${(today.getMonth()+1).toString().padStart(2, '0')}/${today.getDate().toString().padStart(2, '0')}/${today.getFullYear()}`;
-
-        // Top level company records
-        let html = `
+        if (idx > 0) html += `<hr class="record-divider">`;
+        
+        let titleText = sec === "COMPANY" ? "Company Wide" : sec + " Store";
+        html += `
             <div class="record-section-title">
-                Company Wide Records 
+                ${titleText} Records 
                 <span>As of ${dateStr}</span>
             </div>
-            
             <div class="records-grid">
-                <div class="record-item">
-                    <div class="record-label">Daily Buy Record:</div>
-                    <div class="record-value">${fmtCur(data.company.dailyBuy.val)}</div>
-                    <div class="record-subtext">${data.company.dailyBuy.text || '-'}</div>
-                </div>
-                <div class="record-item">
-                    <div class="record-label">Daily Sell Record:</div>
-                    <div class="record-value">${fmtCur(data.company.dailySell.val)}</div>
-                    <div class="record-subtext">${data.company.dailySell.text || '-'}</div>
-                </div>
-                <div class="record-item">
-                    <div class="record-label">Monthly Revenue Record:</div>
-                    <div class="record-value">${fmtCur(data.company.monthlyRev.val)}</div>
-                    <div class="record-subtext">${data.company.monthlyRev.text || '-'}</div>
-                </div>
-            </div>
         `;
-
-        // Store loop to generate all remaining grids dynamically
-        const stores = [
-            { key: 'ovl', name: 'OVL' },
-            { key: 'lee', name: 'LEE' },
-            { key: 'wsp', name: 'WSP' }
-        ];
-
-        stores.forEach(s => {
-            let sd = data[s.key];
-            if (!sd) return;
-
+        
+        sections[sec].forEach(rec => {
             html += `
-            <hr class="record-divider">
-            <div class="record-section-title">
-                ${s.name} Store Records 
-                <span>As of ${dateStr}</span>
-            </div>
-            
-            <div class="records-grid">
                 <div class="record-item">
-                    <div class="record-label">Daily Buy Record:</div>
-                    <div class="record-value">${fmtCur(sd.dailyBuy?.val || 0)}</div>
-                    <div class="record-subtext">${sd.dailyBuy?.text || '-'}</div>
+                    <div class="record-label">${rec.label}</div>
+                    <div class="record-value">${rec.value || '-'}</div>
+                    <div class="record-subtext">${rec.subtext || ''}</div>
                 </div>
-                <div class="record-item">
-                    <div class="record-label">Daily Sell Record:</div>
-                    <div class="record-value">${fmtCur(sd.dailySell?.val || 0)}</div>
-                    <div class="record-subtext">${sd.dailySell?.text || '-'}</div>
-                </div>
-                <div class="record-item">
-                    <div class="record-label">Monthly Revenue Record:</div>
-                    <div class="record-value">${fmtCur(sd.monthlyRev?.val || 0)}</div>
-                    <div class="record-subtext">${sd.monthlyRev?.text || '-'}</div>
-                </div>
-                <div class="record-item">
-                    <div class="record-label">Monthly Gross Profit Record:</div>
-                    <div class="record-value">${fmtCur(sd.monthlyGp?.val || 0)}</div>
-                    <div class="record-subtext">${sd.monthlyGp?.text || '-'}</div>
-                </div>
-                <div class="record-item">
-                    <div class="record-label">Monthly Sell Margin Record:</div>
-                    <div class="record-value">${fmtPct(sd.monthlyMargin?.val || 0)}</div>
-                    <div class="record-subtext">${sd.monthlyMargin?.text || '-'}</div>
-                </div>
-                <div class="record-item">
-                    <div class="record-label">Monthly Cust. Conv. Record:</div>
-                    <div class="record-value">${fmtPct(sd.monthlyConv?.val || 0)}</div>
-                    <div class="record-subtext">${sd.monthlyConv?.text || '-'}</div>
-                </div>
-            </div>`;
+            `;
         });
+        
+        html += `</div>`;
+    });
+
+    container.innerHTML = html;
+}
+
+function syncAllData() { 
+    loadKpiData(); 
+    fetchLiveData(); 
+    loadCMS(); 
+    fetchRecordsData(); // Kicks off the background fetch instantly!
+}
+window.onload = syncAllData;
+
+document.addEventListener("DOMContentLoaded", () => {
+    if (localStorage.getItem('speeksSidebar') === 'collapsed') {
+        document.querySelector('.sidebar').classList.add('collapsed');
+        document.querySelector('.main-content').classList.add('expanded');
+        document.querySelector('.sidebar-toggle').classList.add('collapsed');
+    }
+});
 
         container.innerHTML = html;
         recordsLoaded = true;
