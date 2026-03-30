@@ -4,50 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SPEEKSNET | Processes & Policies</title>
+<link rel="stylesheet" href="styles.css">
 <style>
-  :root {
-    --slate-charcoal: #1a1c1e; 
-    --sage-professional: #5a8d3b; 
-    --text-dark: #2d2d2d; 
-    --bg-app: #f4f7f9;
-    --idea-gold: #f59e0b;
-  }
-  
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg-app); color: var(--text-dark); line-height: 1.6; display: flex; min-height: 100vh; overflow-x: hidden; }
-  body.no-scroll { overflow: hidden; }
 
-  /* SIDEBAR STYLES */
-  .sidebar { width: 260px; background: var(--slate-charcoal); color: white; position: fixed; top: 0; bottom: 0; left: 0; display: flex; flex-direction: column; box-shadow: 4px 0 15px rgba(0,0,0,0.05); z-index: 100; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); white-space: nowrap; overflow: hidden; }
-  .brand-area { padding: 40px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); margin-bottom: 20px; transition: padding 0.3s; }
-  .brand-area h1 { font-size: 28px; font-weight: 200; letter-spacing: 6px; margin: 0; color: white; transition: font-size 0.3s; }
-  .brand-area .badge { display: inline-block; background: var(--sage-professional); color: white; font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 12px; margin-top: 10px; letter-spacing: 1px; text-transform: uppercase; transition: opacity 0.3s; }
-  .nav-bar { display: flex; flex-direction: column; gap: 8px; padding: 0 15px; }
-  .nav-link { text-decoration: none; color: #a0aab2; padding: 14px 20px; font-weight: 600; font-size: 13px; letter-spacing: 1px; border-radius: 10px; transition: all 0.2s; display: flex; align-items: center; gap: 12px; }
-  .nav-link:hover { background: rgba(255,255,255,0.05); color: white; transform: translateX(3px); }
-  .nav-link.active { background: var(--sage-professional); color: white; box-shadow: 0 4px 12px rgba(90, 141, 59, 0.3); }
-  .nav-link i { font-style: normal; font-size: 16px; width: 20px; text-align: center; display: inline-block; }
-  .sidebar-bottom { margin-top: auto; padding: 20px 15px; border-top: 1px solid rgba(255,255,255,0.05); }
-  .idea-btn { text-decoration: none; color: white; background: linear-gradient(135deg, var(--idea-gold), #d97706); padding: 14px 20px; font-weight: 700; font-size: 13px; letter-spacing: 0.5px; border-radius: 10px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); }
-  .idea-btn:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5); }
-  .idea-btn i { font-style: normal; font-size: 18px; width: 20px; text-align: center; display: inline-block; }
-  .sidebar.collapsed { width: 76px; }
-  .sidebar.collapsed .brand-area { padding: 40px 10px; }
-  .sidebar.collapsed .brand-area h1 { font-size: 12px; letter-spacing: 1px; }
-  .sidebar.collapsed .badge { opacity: 0; pointer-events: none; height: 0; margin: 0; padding: 0; }
-  .sidebar.collapsed .nav-link span, .sidebar.collapsed .idea-btn span { display: none; }
-  .sidebar.collapsed .nav-link, .sidebar.collapsed .idea-btn { justify-content: center; padding: 14px 0; }
-  .sidebar-toggle { position: fixed; left: 244px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; background: var(--slate-charcoal); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 105; border: 4px solid var(--bg-app); transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s, background 0.2s; font-size: 12px; }
-  .sidebar-toggle:hover { background: var(--sage-professional); }
-  .sidebar-toggle.collapsed { left: 60px; transform: translateY(-50%) rotate(180deg); }
-
-  /* TOP ACTIONS & MODALS */
-  .top-actions { position: fixed; top: 30px; right: 50px; z-index: 200; display: flex; gap: 15px; }
-  .action-btn { background: white; border: 1px solid #ddd; width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 26px; transition: 0.2s; box-shadow: 0 6px 16px rgba(0,0,0,0.06); position: relative; }
-  .action-btn:hover { border-color: var(--sage-professional); transform: translateY(-2px); }
-  .notif-dot { position: absolute; top: -6px; right: -6px; width: 16px; height: 16px; background: #ef4444; border-radius: 50%; border: 3px solid white; display: none; }
-  .notif-dot.active { display: block; animation: pulse 2s infinite; }
-  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
   .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.22); backdrop-filter: blur(6px); display: none; z-index: 9998; }
   .overlay.show { display: block; }
