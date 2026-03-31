@@ -238,7 +238,8 @@ const CMS_URL = 'https://script.google.com/macros/s/AKfycbxZviJiiQKcQYyp3SK4tcNB
 
 let mainChartInstance = null, currentTimeframe = '4-Week'; 
 let recordsCache = JSON.parse(localStorage.getItem('speeksRecordsCache')) || null; 
-let kpiChartCache = JSON.parse(localStorage.getItem('speeksKpiChartCache')) || { '4-Week': null, 'Monthly': null }; // New Chart Cache
+let kpiChartCache = JSON.parse(localStorage.getItem('speeksKpiChartCache')) || { '4-Week': null, 'Monthly': null }; 
+let hubDataCache = JSON.parse(localStorage.getItem('speeksHubCache')) || null; // Cache for the top circles
 
 function toggleSidebar() {
     const s = document.querySelector('.sidebar');
@@ -427,38 +428,62 @@ function renderKpiChart(allData, metric) {
     });
 }
 
+/* =========================================================
+   LIVE HUB DATA (CIRCLES & LEADERBOARDS)
+   ========================================================= */
+function renderLiveData(data) {
+    if (!data) return;
+
+    ['ovl', 'lee', 'wsp'].forEach(id => {
+        let p = Math.round(data[`${id}Pct`] || 0); 
+        document.getElementById(`${id}-pct`).innerText = p + '%';
+        document.getElementById(`${id}-goal`).innerText = `Goal: $${Math.round(data[`${id}Goal`] || 0).toLocaleString()}`;
+        document.getElementById(`${id}-t-gp`).innerText = `$${Math.round(data[`${id}TrackGP`] || 0).toLocaleString()}`;
+        
+        // A microscopic 50ms delay forces the browser to play the smooth animation even when loading instantly!
+        setTimeout(() => {
+            let bar = document.getElementById(`${id}-bar`);
+            if (bar) {
+                bar.style.strokeDashoffset = 402 - (Math.min(p, 100)/100)*402;
+                bar.style.stroke = p < 100 ? "var(--red-alert)" : "var(--sage-professional)";
+            }
+        }, 50);
+    });
+
+    const stores = [{n:'OVL', r:data.ovlRev, g:data.ovlGP}, {n:'LEE', r:data.leeRev, g:data.leeGP}, {n:'WSP', r:data.wspRev, g:data.wspGP}];
+    
+    document.getElementById('rev-list').innerHTML = [...stores].sort((a,b)=>b.r-a.r).map((s,i)=>`
+        <div class="lb-row">
+            <div class="lb-rank ${i===0?'lb-gold':''}">#${i+1}</div>
+            <div class="lb-name">${s.n}</div>
+            <div class="lb-val">$${Math.round(s.r).toLocaleString()}</div>
+        </div>`).join('');
+        
+    document.getElementById('gp-list').innerHTML = [...stores].sort((a,b)=>b.g-a.g).map((s,i)=>`
+        <div class="lb-row">
+            <div class="lb-rank ${i===0?'lb-gold':''}">#${i+1}</div>
+            <div class="lb-name">${s.n}</div>
+            <div class="lb-val">$${Math.round(s.g).toLocaleString()}</div>
+        </div>`).join('');
+        
+    const n = new Date(); 
+    document.getElementById('lastSyncedText').innerText = `Last Synced: ${n.getHours()%12||12}:${String(n.getMinutes()).padStart(2,'0')} ${n.getHours()>=12?'PM':'AM'}`;
+}
+
 async function fetchLiveData() {
     try {
         const res = await fetch(`${HUB_URL}?v=${Date.now()}`); 
-        const data = await res.json();
-        ['ovl', 'lee', 'wsp'].forEach(id => {
-            let p = Math.round(data[`${id}Pct`] || 0); 
-            document.getElementById(`${id}-pct`).innerText = p + '%';
-            document.getElementById(`${id}-goal`).innerText = `Goal: $${Math.round(data[`${id}Goal`] || 0).toLocaleString()}`;
-            document.getElementById(`${id}-t-gp`).innerText = `$${Math.round(data[`${id}TrackGP`] || 0).toLocaleString()}`;
-            
-            let bar = document.getElementById(`${id}-bar`);
-            bar.style.strokeDashoffset = 402 - (Math.min(p, 100)/100)*402;
-            bar.style.stroke = p < 100 ? "var(--red-alert)" : "var(--sage-professional)";
-        });
-        const stores = [{n:'OVL', r:data.ovlRev, g:data.ovlGP}, {n:'LEE', r:data.leeRev, g:data.leeGP}, {n:'WSP', r:data.wspRev, g:data.wspGP}];
+        const freshData = await res.json();
         
-        document.getElementById('rev-list').innerHTML = [...stores].sort((a,b)=>b.r-a.r).map((s,i)=>`
-            <div class="lb-row">
-                <div class="lb-rank ${i===0?'lb-gold':''}">#${i+1}</div>
-                <div class="lb-name">${s.n}</div>
-                <div class="lb-val">$${Math.round(s.r).toLocaleString()}</div>
-            </div>`).join('');
-            
-        document.getElementById('gp-list').innerHTML = [...stores].sort((a,b)=>b.g-a.g).map((s,i)=>`
-            <div class="lb-row">
-                <div class="lb-rank ${i===0?'lb-gold':''}">#${i+1}</div>
-                <div class="lb-name">${s.n}</div>
-                <div class="lb-val">$${Math.round(s.g).toLocaleString()}</div>
-            </div>`).join('');
-            
-        const n = new Date(); document.getElementById('lastSyncedText').innerText = `Last Synced: ${n.getHours()%12||12}:${String(n.getMinutes()).padStart(2,'0')} ${n.getHours()>=12?'PM':'AM'}`;
-    } catch(e) { console.error("Fetch Error:", e); }
+        // Save the fresh data to the browser's Speed Cache
+        hubDataCache = freshData;
+        localStorage.setItem('speeksHubCache', JSON.stringify(freshData));
+        
+        // Silently redraw with the newest numbers
+        renderLiveData(freshData);
+    } catch(e) { 
+        console.error("Fetch Error:", e); 
+    }
 }
 
 async function loadCMS() {
@@ -643,10 +668,13 @@ function toggleBoard(id, btn) {
 }
 
 function syncAllData() { 
-    // 1. INSTANT RENDER: Draw the chart from memory instantly if we have it
+    // 1. INSTANT RENDER: Draw cached data instantly if we have it
     if (kpiChartCache[currentTimeframe]) {
         const metric = document.getElementById('metricSelector').value;
         renderKpiChart(kpiChartCache[currentTimeframe], metric);
+    }
+    if (hubDataCache) {
+        renderLiveData(hubDataCache);
     }
 
     // 2. BACKGROUND SYNC: Fire off all fetches silently to pull fresh data
