@@ -514,7 +514,7 @@ body.no-scroll { overflow: hidden; }
 .metric-dropdown { padding: 10px 15px; border-radius: 8px; border: 1px solid #ddd; font-weight: 600; color: var(--slate-charcoal); background: var(--bg-app); outline: none; font-size: 13px; cursor: pointer; }
 
 .chart-container { height: 450px; position: relative; }
-#chartLoading { position: absolute; top:0; left:0; width:100%; height:100%; display:flex; justify-content:center; align-items:center; background:rgba(255,255,255,0.8); z-index:10; font-weight:bold; color:#888; }
+#chartLoading { position: absolute; top:0; left:0; width:100%; height:100%; display:none; justify-content:center; align-items:center; background:rgba(255,255,255,0.8); z-index:10; font-weight:bold; color:#888; }
 
 /* =========================================================
    OVERLAYS & MODALS
@@ -574,4 +574,29 @@ body.no-scroll { overflow: hidden; }
   .dashboard-layout { grid-template-columns: 1fr; }
   .checklist-grid { grid-template-columns: 1fr; }
   .metrics-grid { grid-template-columns: 1fr; }
+}
+
+/* =========================================================
+   PRELOAD BLOCKER (STOPS ALL INITIAL JUMPING/FLASHING)
+   ========================================================= */
+/* Kill all transitions AND animations until the page is fully snapped into place */
+.preload, 
+.preload * {
+  -webkit-transition: none !important;
+  -moz-transition: none !important;
+  -ms-transition: none !important;
+  -o-transition: none !important;
+  transition: none !important;
+  animation: none !important;
+}
+/* THE GLITCH KILLER: Hides the jumpy layout for the first 50ms */
+body.preload {
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+/* Ensure no transitions happen during the snap */
+.preload * {
+  transition: none !important;
+  animation: none !important;
 }
