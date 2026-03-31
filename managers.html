@@ -417,33 +417,41 @@ async function checkPIN() {
     btn.style.opacity = "0.7";
     pinError.style.display = 'none';
 
-    const authPayload = await authFetchPromise;
-    
-    if (!authPayload || !authPayload.users) {
-        pinError.innerText = "Connection Error. Ensure Apps Script is deployed to 'Anyone'.";
+    try {
+        const authPayload = await authFetchPromise;
+        
+        if (!authPayload || !authPayload.users) {
+            throw new Error("Invalid payload. Did you deploy a New Version of the Apps Script?");
+        }
+
+        const hashed = await hashString(pin);
+        const matchedUser = authPayload.users.find(u => String(u.hash).toLowerCase() === hashed.toLowerCase());
+        
+        if (matchedUser) {
+            sessionStorage.setItem('speeksManagerUnlocked', 'true');
+            sessionStorage.setItem('speeksActiveManager', matchedUser.name);
+            document.getElementById('authOverlay').style.display = 'none';
+            document.body.style.overflow = 'auto';
+            initDashboardData();
+        } else {
+            pinError.innerText = "Incorrect PIN. Please try again.";
+            pinError.style.display = 'block';
+            pinInput.value = '';
+        }
+    } catch (err) {
+        console.error("Auth Crash:", err);
+        // Display a specific error depending on what caused the crash
+        if (err.message.includes('crypto')) {
+            pinError.innerText = "Security Error: You must host this file on a secure server (HTTPS) to unlock the portal.";
+        } else {
+            pinError.innerText = "Connection Error. Ensure Apps Script is deployed to 'Anyone'.";
+        }
         pinError.style.display = 'block';
+    } finally {
+        // This block runs NO MATTER WHAT, guaranteeing the button never gets stuck!
         btn.innerText = "Unlock Portal";
         btn.style.opacity = "1";
-        return;
     }
-
-    const hashed = await hashString(pin);
-    const matchedUser = authPayload.users.find(u => String(u.hash).toLowerCase() === hashed.toLowerCase());
-    
-    if (matchedUser) {
-        sessionStorage.setItem('speeksManagerUnlocked', 'true');
-        sessionStorage.setItem('speeksActiveManager', matchedUser.name);
-        document.getElementById('authOverlay').style.display = 'none';
-        document.body.style.overflow = 'auto';
-        initDashboardData();
-    } else {
-        pinError.innerText = "Incorrect PIN. Please try again.";
-        pinError.style.display = 'block';
-        pinInput.value = '';
-    }
-    
-    btn.innerText = "Unlock Portal";
-    btn.style.opacity = "1";
 }
 
 // --- UI & MODAL LOGIC ---
