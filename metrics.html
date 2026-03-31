@@ -5,11 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SPEEKSNET | Metrics</title>
 <link rel="stylesheet" href="styles.css">
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 
 </head>
-<body>
+<body class="preload">
 
 <aside class="sidebar">
   <div class="brand-area">
@@ -40,7 +41,7 @@
             🔔 <div class="notif-dot" id="notifBadge"></div>
         </div>
     </div>
-    <div id="notifOverlay" class="overlay"></div>
+    <div id="globalOverlay" class="overlay" style="display: none;"></div>
     
     <div class="modal-menu notif-menu" id="notifDropdown">
         <div class="modal-header">
@@ -153,13 +154,13 @@ function toggleSidebar() {
 function closeAllModals() {
     document.getElementById('notifDropdown').classList.remove('show');
     document.getElementById('calendarDropdown').classList.remove('show');
-    document.getElementById('notifOverlay').classList.remove('show');
+    document.getElementById('globalOverlay').classList.remove('show'); // Updated ID
     document.body.classList.remove('no-scroll');
 }
 
 function toggleNotifs() {
   const dropdown = document.getElementById('notifDropdown');
-  const overlay = document.getElementById('notifOverlay');
+  const overlay = document.getElementById('globalOverlay'); // Updated ID
   const badge = document.getElementById('notifBadge');
   const isOpen = dropdown.classList.contains('show');
   closeAllModals();
@@ -173,7 +174,7 @@ function toggleNotifs() {
 
 function toggleCalendar() {
   const dropdown = document.getElementById('calendarDropdown');
-  const overlay = document.getElementById('notifOverlay');
+  const overlay = document.getElementById('globalOverlay'); // Updated ID
   const isOpen = dropdown.classList.contains('show');
   closeAllModals(); 
   if (!isOpen) {
@@ -182,6 +183,11 @@ function toggleCalendar() {
     document.body.classList.add('no-scroll');
   }
 }
+
+window.addEventListener('click', function(e) {
+  const overlay = document.getElementById('globalOverlay'); // Updated ID
+  if (overlay && e.target === overlay) { closeAllModals(); }
+});
 
 function switchPageTab(tab) {
     document.getElementById('pane-trends').classList.remove('active');
@@ -244,22 +250,16 @@ function cleanValue(val, isPct = false) {
 function loadKpiData() {
     const metric = document.getElementById('metricSelector').value;
     
-    // If we already have the data, draw it instantly. NO background fetching!
     if (kpiChartCache[currentTimeframe]) {
         renderKpiChart(kpiChartCache[currentTimeframe], metric);
     } else {
-        // We only fetch if the cache is completely empty
+        // NO loading screen command here anymore!
         fetchChartData(currentTimeframe);
     }
 }
 
-// 2. ONLY talks to Google when we are missing data or hit the "Sync" button
+// 2. ONLY talks to Google.
 async function fetchChartData(timeframe) {
-    // SMART LOADING: Only show the "Updating..." overlay if the cache is completely empty!
-    if (!kpiChartCache[timeframe]) {
-        document.getElementById('chartLoading').style.display = 'flex';
-    }
-    
     try {
         const responses = await Promise.all([
             fetch(`${KPI_URL}?store=OVL&time=${timeframe}`),
@@ -269,19 +269,24 @@ async function fetchChartData(timeframe) {
         
         const allData = await Promise.all(responses.map(r => r.json()));
         
-        // Save the fresh data to memory
-        kpiChartCache[timeframe] = allData;
-        localStorage.setItem('speeksKpiChartCache', JSON.stringify(kpiChartCache));
+        // SMART COMPARE: Check if the new data is actually different from what we already have on screen
+        const isDataDifferent = JSON.stringify(kpiChartCache[timeframe]) !== JSON.stringify(allData);
         
-        // Silently redraw the chart with the fresh numbers
-        if (currentTimeframe === timeframe) {
+        // Save the fresh data to memory (with a failsafe)
+        kpiChartCache[timeframe] = allData;
+        try {
+            localStorage.setItem('speeksKpiChartCache', JSON.stringify(kpiChartCache));
+        } catch(e) { console.warn("Cache too large, skipping local save."); }
+        
+        // ONLY redraw the chart if the numbers actually changed!
+        if (isDataDifferent && currentTimeframe === timeframe) {
             const metric = document.getElementById('metricSelector').value;
             renderKpiChart(allData, metric);
         }
     } catch (e) {
         console.error("KPI Chart Sync Failed", e);
     } finally {
-        // Always hide the loading screen when finished
+        // Always force the loading screen OFF when finished, just in case
         document.getElementById('chartLoading').style.display = 'none';
     }
 }
@@ -568,12 +573,15 @@ function toggleBoard(id, btn) {
     }
 }
 
+// 3. Triggered on page load and by the Sync button
 function syncAllData() { 
     // 1. INSTANT RENDER: Draw cached data instantly if we have it
     if (kpiChartCache[currentTimeframe]) {
         const metric = document.getElementById('metricSelector').value;
         renderKpiChart(kpiChartCache[currentTimeframe], metric);
     }
+    // NO "else" loading screen command here anymore!
+
     if (hubDataCache) {
         renderLiveData(hubDataCache);
     }
@@ -585,25 +593,21 @@ function syncAllData() {
     fetchRecordsData(); 
 }
 
-// We completely removed window.onload so it doesn't wait for the calendar iframe!
-
 document.addEventListener("DOMContentLoaded", () => {
-    // Fire the sync instantly the millisecond the HTML is parsed
+    // 1. Check storage and SNAP the classes immediately
+    if (localStorage.getItem('speeksSidebar') === 'collapsed') {
+        document.querySelector('.sidebar').classList.add('collapsed');
+        document.querySelector('.main-content').classList.add('expanded');
+        document.querySelector('.sidebar-toggle').classList.add('collapsed');
+    }
+
+    // 2. NOW that it's snapped, wait 50ms and show the page
+    setTimeout(() => {
+        document.body.classList.remove('preload');
+    }, 50);
+
+    // 3. Run page-specific data (Metrics version)
     syncAllData();
-
-    if (localStorage.getItem('speeksSidebar') === 'collapsed') {
-        document.querySelector('.sidebar').classList.add('collapsed');
-        document.querySelector('.main-content').classList.add('expanded');
-        document.querySelector('.sidebar-toggle').classList.add('collapsed');
-    }
-});
-
-document.addEventListener("DOMContentLoaded", () => {
-    if (localStorage.getItem('speeksSidebar') === 'collapsed') {
-        document.querySelector('.sidebar').classList.add('collapsed');
-        document.querySelector('.main-content').classList.add('expanded');
-        document.querySelector('.sidebar-toggle').classList.add('collapsed');
-    }
 });
 </script>
 </body>

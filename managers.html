@@ -7,9 +7,9 @@
 <link rel="stylesheet" href="styles.css">
 
 </head>
-<body>
+<body class="preload">
 
-<div id="authOverlay" class="auth-overlay">
+<div id="authOverlay" class="auth-overlay" style="display: none;">
     <div class="auth-box">
         <h2>Manager Portal Access</h2>
         <p id="authSubtitle">Please enter your 4-digit manager PIN.</p>
@@ -53,7 +53,7 @@
     </div>
 </div>
 
-<div id="globalOverlay" class="overlay"></div>
+<div id="globalOverlay" class="overlay" style="display: none;"></div>
 
 <div class="modal-menu notif-menu" id="notifDropdown">
     <div class="modal-header">
@@ -1205,16 +1205,14 @@ function initDashboardData() {
 document.getElementById('kpiStoreSelect').addEventListener('change', fetchKPIData);
 
 document.addEventListener("DOMContentLoaded", () => {
-    // Start fetching PINs in the background immediately to kill load time!
-    startAuthFetch();
-
+    // 1. Sidebar Snap: Apply collapsed state immediately while the page is still invisible
     if (localStorage.getItem('speeksSidebar') === 'collapsed') {
         document.querySelector('.sidebar').classList.add('collapsed');
         document.querySelector('.main-content').classList.add('expanded');
         document.querySelector('.sidebar-toggle').classList.add('collapsed');
     }
-    
-    // AUTHENTICATION CHECK
+
+    // 2. Authentication Check: Decide whether to show the PIN box or the Dashboard
     if (sessionStorage.getItem('speeksManagerUnlocked') === 'true') {
         document.getElementById('authOverlay').style.display = 'none';
         document.body.style.overflow = 'auto';
@@ -1224,6 +1222,14 @@ document.addEventListener("DOMContentLoaded", () => {
         document.body.style.overflow = 'hidden';
         document.getElementById('pinInput').focus();
     }
+
+    // 3. The Big Reveal: Now that everything is snapped into place, show the page
+    setTimeout(() => {
+        document.body.classList.remove('preload');
+    }, 50);
+
+    // 4. Background Auth Fetch: Fire this off silently
+    startAuthFetch();
 });
 </script>
 </body>

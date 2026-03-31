@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="styles.css">
 
 </head>
-<body>
+<body class="preload">
 
 <aside class="sidebar">
   <div class="brand-area">
@@ -38,7 +38,7 @@
     </div>
 </div>
 
-<div id="globalOverlay" class="overlay"></div>
+<div id="globalOverlay" class="overlay" style="display: none;"></div>
 
 <div class="modal-menu notif-menu" id="notifDropdown">
     <div class="modal-header">
@@ -234,14 +234,21 @@ async function loadCMS() {
     } catch (e) { console.error("CMS Failed", e); }
 }
 
-// Initializers
 document.addEventListener("DOMContentLoaded", () => {
     if (localStorage.getItem('speeksSidebar') === 'collapsed') {
         document.querySelector('.sidebar').classList.add('collapsed');
         document.querySelector('.main-content').classList.add('expanded');
         document.querySelector('.sidebar-toggle').classList.add('collapsed');
     }
-    loadCMS();
+
+    setTimeout(() => {
+        document.body.classList.remove('preload');
+    }, 50);
+
+    // Page specific loads:
+    if (typeof loadCMS === "function") loadCMS();
+    if (typeof loadHotkeys === "function") loadHotkeys();
+    if (typeof loadDocs === "function") loadDocs();
 });
 </script>
 </body>
