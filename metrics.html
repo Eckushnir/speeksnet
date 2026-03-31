@@ -4,106 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SPEEKSNET | Metrics</title>
+<link rel="stylesheet" href="styles.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 <style>
-  :root {
-    --slate-charcoal: #1a1c1e; 
-    --sage-professional: #5a8d3b; 
-    --text-dark: #2d2d2d; 
-    --bg-app: #f4f7f9;
-    --gold-rank: #f59e0b;
-    --idea-gold: #f59e0b;
-    --red-alert: #ef4444; 
-  }
-  
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg-app); color: var(--text-dark); line-height: 1.6; display: flex; min-height: 100vh; overflow-x: hidden; }
-
-  /* PREVENTS BACKGROUND SCROLLING WHEN POPUP IS OPEN */
-  body.no-scroll { overflow: hidden; }
-
-  /* SIDEBAR STYLES */
-  .sidebar { width: 260px; background: var(--slate-charcoal); color: white; position: fixed; top: 0; bottom: 0; left: 0; z-index: 100; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; white-space: nowrap; overflow: hidden; }
-  .brand-area { padding: 40px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); margin-bottom: 20px; }
-  .brand-area h1 { font-size: 28px; font-weight: 200; letter-spacing: 6px; margin: 0; color: white; }
-  .brand-area .badge { display: inline-block; background: var(--sage-professional); color: white; font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 12px; margin-top: 10px; letter-spacing: 1px; text-transform: uppercase; }
-
-  .nav-bar { display: flex; flex-direction: column; gap: 8px; padding: 0 15px; }
-  .nav-link { text-decoration: none; color: #a0aab2; padding: 14px 20px; font-weight: 600; font-size: 13px; letter-spacing: 1px; border-radius: 10px; transition: all 0.2s; display: flex; align-items: center; gap: 12px; }
-  .nav-link:hover { background: rgba(255,255,255,0.05); color: white; transform: translateX(3px); }
-  .nav-link.active { background: var(--sage-professional); color: white; box-shadow: 0 4px 12px rgba(90, 141, 59, 0.3); }
-  .nav-link i { font-style: normal; font-size: 16px; width: 20px; text-align: center; display: inline-block; }
-
-  /* SIDEBAR BOTTOM CTA */
-  .sidebar-bottom { margin-top: auto; padding: 20px 15px; border-top: 1px solid rgba(255,255,255,0.05); }
-  .idea-btn { text-decoration: none; color: white; background: linear-gradient(135deg, var(--idea-gold), #d97706); padding: 14px 20px; font-weight: 700; font-size: 13px; letter-spacing: 0.5px; border-radius: 10px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); }
-  .idea-btn:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5); }
-  .idea-btn i { font-style: normal; font-size: 18px; width: 20px; text-align: center; display: inline-block; }
-
-  .sidebar.collapsed { width: 76px; }
-  .sidebar.collapsed .brand-area { padding: 40px 10px; }
-  .sidebar.collapsed .brand-area h1 { font-size: 12px; letter-spacing: 1px; }
-  .sidebar.collapsed .badge { opacity: 0; height: 0; margin: 0; padding: 0; pointer-events: none; }
-  .sidebar.collapsed .nav-link span, .sidebar.collapsed .idea-btn span { display: none; }
-  .sidebar.collapsed .nav-link, .sidebar.collapsed .idea-btn { justify-content: center; padding: 14px 0; }
-
-  .sidebar-toggle { position: fixed; left: 244px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; background: var(--slate-charcoal); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 105; border: 4px solid var(--bg-app); transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s; font-size: 12px; }
-  .sidebar-toggle.collapsed { left: 60px; transform: translateY(-50%) rotate(180deg); }
-
-  /* =========================================================
-     TOP ACTIONS & MODALS
-     ========================================================= */
-  .top-actions { position: fixed; top: 30px; right: 50px; z-index: 200; display: flex; gap: 15px; }
-  .action-btn { background: white; border: 1px solid #ddd; width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 26px; transition: 0.2s; box-shadow: 0 6px 16px rgba(0,0,0,0.06); position: relative; }
-  .action-btn:hover { border-color: var(--sage-professional); transform: translateY(-2px); }
-  .notif-dot { position: absolute; top: -6px; right: -6px; width: 16px; height: 16px; background: #ef4444; border-radius: 50%; border: 3px solid white; display: none; }
-  .notif-dot.active { display: block; animation: pulse 2s infinite; }
-  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-
-  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.22); backdrop-filter: blur(6px); display: none; z-index: 9998; }
-  .overlay.show { display: block; }
-
-  .modal-menu { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.12); border: 1px solid #eee; display: none; z-index: 10000; overflow: hidden; width: 1260px; max-width: calc(100% - 40px); }
-  .modal-menu.show { display: block; }
-  
-  .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: #f9fafb; border-bottom: 1px solid #eee; }
-  .modal-header h3 { margin: 0; font-size: 13px; font-weight: 800; text-transform: uppercase; color: #666; letter-spacing: 0.5px; }
-  .notif-tabs { display: flex; gap: 8px; }
-  .tab-btn { background: transparent; border: none; font-size: 11px; font-weight: 700; color: #999; cursor: pointer; padding: 6px 12px; border-radius: 6px; transition: 0.2s; text-transform: uppercase; letter-spacing: 0.5px;}
-  .tab-btn:hover { color: var(--slate-charcoal); }
-  .tab-btn.active { background: #e2e8f0; color: var(--slate-charcoal); }
-
-  .notif-content { max-height: 60vh; overflow-y: auto; overscroll-behavior: contain; }
-  .notif-content::-webkit-scrollbar { width: 8px; }
-  .notif-content::-webkit-scrollbar-track { background: #f9fafb; border-radius: 8px; }
-  .notif-content::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 8px; }
-  .notif-content::-webkit-scrollbar-thumb:hover { background: var(--sage-professional); }
-
-  .notif-item { font-size: 16px; padding: 20px; border-bottom: 1px solid #f5f5f5; color: var(--text-dark); line-height: 1.5; text-align: left; }
-  .notif-item .ann-header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
-  .notif-item .ann-author { font-weight: 800; font-size: 18px; color: var(--slate-charcoal); }
-  .notif-item .ann-date { color: #666; font-size: 13px; font-weight: 700; }
-  .notif-item hr { border: none; border-top: 1px solid #eee; margin: 10px 0; }
-  .notif-item .ann-text { margin-top: 8px; font-size: 15px; color: var(--text-dark); }
-
-  /* Calendar Specific */
-  .calendar-menu { width: 1000px; max-width: calc(100% - 40px); }
-  .modal-close-btn { background: transparent; border: none; font-size: 18px; cursor: pointer; color: #999; transition: 0.2s; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; }
-  .modal-close-btn:hover { color: #ef4444; }
-  .calendar-content { height: 65vh; padding: 0; }
-  .calendar-content iframe { width: 100%; height: 100%; border: none; display: block; }
-
-  /* =========================================================
-     MAIN CONTENT & SCROLLING HEADER
-     ========================================================= */
-  .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-  .main-content.expanded { margin-left: 76px; }
-  
-  /* Increased padding-right to 240px to ensure absolutely NO overlap with fixed icons */
-  .page-header { margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-start; padding-right: 240px; }
-  .page-header h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin: 0;}
-  .page-header p { color: #888; font-size: 14px; font-weight: 500; margin-top: 5px; }
+ 
 
   .sync-zone { display: flex; align-items: center; gap: 15px; }
   .last-synced-text { font-size: 11px; color: #888; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
@@ -157,46 +62,45 @@
   .lb-val { font-weight: 800; color: var(--sage-professional); font-size: 16px; }
 
   /* =========================================================
-     NEW METRIC-CENTRIC RECORDS UI STYLES
+     NEW METRIC-CENTRIC RECORDS UI STYLES (6 COLUMNS)
      ========================================================= */
-  /* =========================================================
-     NEW METRIC-CENTRIC RECORDS UI STYLES
-     ========================================================= */
-  /* Forces 3 columns, sets a max-width, and centers it perfectly on the screen */
-  .records-masonry-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin: 0 auto 40px auto; max-width: 1200px; }
+  .records-masonry-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 15px; margin-bottom: 40px; width: 100%; }
   
- .record-metric-card { background: white; border-radius: 16px; box-shadow: 0 6px 20px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.04); overflow: hidden; display: flex; flex-direction: column; transition: transform 0.3s ease; }
+  .record-metric-card { background: white; border-radius: 16px; box-shadow: 0 6px 20px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.04); overflow: hidden; display: flex; flex-direction: column; transition: transform 0.3s ease; }
   .record-metric-card:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(0,0,0,0.06); }
   
-  /* Added min-height, flex, and center alignment so 1-line and 2-line text always match height! */
-  .rmc-header { background: var(--slate-charcoal); color: white; padding: 10px 20px; font-weight: 800; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; text-align: center; min-height: 64px; display: flex; align-items: center; justify-content: center; line-height: 1.4; }
+  .rmc-header { background: var(--slate-charcoal); color: white; padding: 10px; font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; min-height: 50px; display: flex; align-items: center; justify-content: center; line-height: 1.3; }
   
-  .rmc-champion { padding: 30px 20px; text-align: center; border-bottom: 1px solid #eee; background: linear-gradient(to bottom, #ffffff, #fcfcfc); }
-  .rmc-crown { color: var(--idea-gold); font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 6px; }
-  .rmc-champ-val { font-size: 38px; font-weight: 900; color: var(--sage-professional); line-height: 1.1; margin-bottom: 5px; }
-  .rmc-champ-sub { font-size: 14px; font-weight: 700; color: #555; }
+  .rmc-champion { padding: 20px 15px; text-align: center; border-bottom: 1px solid #eee; background: linear-gradient(to bottom, #ffffff, #fcfcfc); }
+  .rmc-crown { color: var(--idea-gold); font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .rmc-champ-val { font-size: 24px; font-weight: 900; color: var(--sage-professional); line-height: 1.1; margin-bottom: 5px; }
+  .rmc-champ-sub { font-size: 11px; font-weight: 700; color: #555; }
   
-  /* Scrollable list for infinite scalability */
-  .rmc-list { padding: 10px 20px 20px; max-height: 250px; overflow-y: auto; overscroll-behavior: contain; flex-grow: 1; }
-  .rmc-list::-webkit-scrollbar { width: 6px; }
-  .rmc-list::-webkit-scrollbar-track { background: transparent; }
-  .rmc-list::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
-  .rmc-list::-webkit-scrollbar-thumb:hover { background: var(--sage-professional); }
+  .rmc-list { padding: 10px 15px 15px; flex-grow: 1; }
   
-  .rmc-list-item { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+  .rmc-list-item { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #f0f0f0; gap: 5px; }
   .rmc-list-item:last-child { border-bottom: none; }
-  .rmc-rank { width: 35px; font-weight: 900; color: #cbd5e1; font-size: 16px; text-align: center; }
-  .rmc-store { width: 55px; font-weight: 800; color: var(--slate-charcoal); font-size: 13px; text-transform: uppercase; }
+  .rmc-rank { width: 25px; font-weight: 900; color: #cbd5e1; font-size: 14px; text-align: center; }
+  .rmc-store { width: 40px; font-weight: 800; color: var(--slate-charcoal); font-size: 11px; text-transform: uppercase; }
   .rmc-score { flex-grow: 1; text-align: right; display: flex; flex-direction: column; justify-content: center; }
-  .rmc-score-val { font-weight: 800; color: var(--sage-professional); font-size: 14px; }
-  .rmc-score-date { font-size: 11px; font-weight: 600; color: #999; margin-top: 2px; }
+  .rmc-score-val { font-weight: 800; color: var(--sage-professional); font-size: 12px; }
+  .rmc-score-date { font-size: 10px; font-weight: 600; color: #999; margin-top: 2px; display: block; line-height: 1.2; }
 
-  /* Drops to 2 columns on medium screens (like laptops) */
-  @media (max-width: 1400px) {
-    .records-masonry-grid { grid-template-columns: repeat(2, 1fr); max-width: 800px; }
+  /* Expand Button Styles */
+  .rmc-expand-btn { width: 100%; background: #f4f7f9; border: 1px solid #eee; padding: 8px; font-size: 10px; font-weight: 800; color: #666; border-radius: 8px; cursor: pointer; margin-top: 10px; transition: 0.2s; text-transform: uppercase; letter-spacing: 0.5px; }
+  .rmc-expand-btn:hover { background: #e2e8f0; color: var(--slate-charcoal); border-color: #ddd; }
+
+/* Smooth Slide-Down Animation for Leaderboards */
+  .hidden-board { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-in-out; }
+  .hidden-board.open { max-height: 500px; }
+
+  /* Responsive breakpoints so it doesn't break on smaller screens! */
+  @media (max-width: 1700px) {
+    .records-masonry-grid { grid-template-columns: repeat(3, 1fr); }
   }
-
-  /* Drops to 1 column on tablets/phones */
+  @media (max-width: 1200px) {
+    .records-masonry-grid { grid-template-columns: repeat(2, 1fr); }
+  }
   @media (max-width: 1024px) { 
     .metrics-grid, .leaderboard-container, .records-masonry-grid { grid-template-columns: 1fr; } 
     .top-actions { right: 20px; }
@@ -566,42 +470,35 @@ function renderRecords() {
         return;
     }
 
-    // 1. Group the raw data by LABEL (e.g., "Daily Buy Record")
+    // 1. Group the raw data by LABEL
     const metricsMap = {};
-    
     recordsCache.forEach(rec => {
         let label = String(rec.label).trim();
         let section = String(rec.section).toUpperCase().trim();
+        if (!metricsMap[label]) metricsMap[label] = { company: null, stores: [] };
         
-        if (!metricsMap[label]) {
-            metricsMap[label] = { company: null, stores: [] };
-        }
-        
-        if (section === 'COMPANY' || section === 'COMPANY WIDE') {
-            metricsMap[label].company = rec;
-        } else {
-            metricsMap[label].stores.push(rec);
-        }
+        if (section === 'COMPANY' || section === 'COMPANY WIDE') metricsMap[label].company = rec;
+        else metricsMap[label].stores.push(rec);
     });
 
     let html = '<div class="records-masonry-grid">';
+    let boardCounter = 0; // Unique ID for each hidden leaderboard
 
     // 2. Build a Card for each Metric
     for (let label in metricsMap) {
         let data = metricsMap[label];
+        boardCounter++;
+        let overflowId = 'overflow-board-' + boardCounter;
         
-        // Sort stores numerically to create the leaderboard!
+        // Sort stores numerically descending
         data.stores.sort((a, b) => {
             let valA = parseFloat(String(a.value).replace(/[^0-9.-]/g, '')) || 0;
             let valB = parseFloat(String(b.value).replace(/[^0-9.-]/g, '')) || 0;
-            return valB - valA; // Descending order
+            return valB - valA; 
         });
 
-        // Fallback: If they forgot to type a "COMPANY" row in the sheet, use the #1 store
         let compRec = data.company;
-        if (!compRec && data.stores.length > 0) {
-            compRec = data.stores[0];
-        }
+        if (!compRec && data.stores.length > 0) compRec = data.stores[0];
 
         html += `<div class="record-metric-card">`;
         html += `<div class="rmc-header">${label}</div>`;
@@ -617,28 +514,60 @@ function renderRecords() {
 
         if (data.stores.length > 0) {
             html += `<div class="rmc-list">`;
-            data.stores.forEach((storeRec, idx) => {
+            
+            // Generate TOP 3
+            data.stores.slice(0, 3).forEach((storeRec, idx) => {
                 let rank = idx + 1;
-                let rankBadge = rank === 1 ? '🥇' : (rank === 2 ? '🥈' : (rank === 3 ? '🥉' : rank));
-                
+                let rankBadge = rank === 1 ? '🥇' : (rank === 2 ? '🥈' : '🥉');
                 html += `
                 <div class="rmc-list-item">
                     <div class="rmc-rank">${rankBadge}</div>
                     <div class="rmc-store">${storeRec.section}</div>
                     <div class="rmc-score">
                         <span class="rmc-score-val">${storeRec.value || '-'}</span>
-                        <span class="rmc-score-date">${storeRec.subtext || ''}</span>
+                        <span class="rmc-score-date" title="${storeRec.subtext || ''}">${storeRec.subtext || ''}</span>
                     </div>
                 </div>`;
             });
-            html += `</div>`;
+
+            // Generate 4th place and beyond (HIDDEN INITIALLY)
+            if (data.stores.length > 3) {
+                html += `<div id="${overflowId}" class="hidden-board">`;
+                data.stores.slice(3).forEach((storeRec, idx) => {
+                    let rank = idx + 4; // Start at #4
+                    html += `
+                    <div class="rmc-list-item">
+                        <div class="rmc-rank" style="font-size:11px; color:#999;">#${rank}</div>
+                        <div class="rmc-store">${storeRec.section}</div>
+                        <div class="rmc-score">
+                            <span class="rmc-score-val">${storeRec.value || '-'}</span>
+                            <span class="rmc-score-date" title="${storeRec.subtext || ''}">${storeRec.subtext || ''}</span>
+                        </div>
+                    </div>`;
+                });
+                html += `</div>`;
+                // Expand Button
+                html += `<button class="rmc-expand-btn" onclick="toggleBoard('${overflowId}', this)">See Full Leaderboard ▾</button>`;
+            }
+            
+            html += `</div>`; // End rmc-list
         }
-        
         html += `</div>`; // End Card
     }
     
     html += '</div>'; // End Grid
     container.innerHTML = html;
+}
+
+function toggleBoard(id, btn) {
+    const el = document.getElementById(id);
+    if (el.classList.contains('open')) {
+        el.classList.remove('open');
+        btn.innerText = 'See Full Leaderboard ▾';
+    } else {
+        el.classList.add('open');
+        btn.innerText = 'Hide Leaderboard ▴';
+    }
 }
 
 function syncAllData() { 

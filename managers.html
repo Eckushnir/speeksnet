@@ -4,96 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SPEEKSNET | Manager Portal</title>
+<link rel="stylesheet" href="styles.css">
 <style>
-  :root {
-    --slate-charcoal: #1a1c1e; 
-    --sage-professional: #5a8d3b; 
-    --text-dark: #2d2d2d; 
-    --bg-app: #f4f7f9;
-    --idea-gold: #f59e0b;
-    --red-alert: #ef4444;
-  }
-  
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg-app); color: var(--text-dark); line-height: 1.6; display: flex; min-height: 100vh; overflow-x: hidden; }
 
-  /* PREVENTS BACKGROUND SCROLLING WHEN POPUP IS OPEN */
-  body.no-scroll { overflow: hidden; }
-
-  /* SIDEBAR STYLES */
-  .sidebar { width: 260px; background: var(--slate-charcoal); color: white; position: fixed; top: 0; bottom: 0; left: 0; display: flex; flex-direction: column; box-shadow: 4px 0 15px rgba(0,0,0,0.05); z-index: 100; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); white-space: nowrap; overflow: hidden; }
-  .brand-area { padding: 40px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); margin-bottom: 20px; transition: padding 0.3s; }
-  .brand-area h1 { font-size: 28px; font-weight: 200; letter-spacing: 6px; margin: 0; color: white; transition: font-size 0.3s; }
-  .brand-area .badge { display: inline-block; background: var(--sage-professional); color: white; font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 12px; margin-top: 10px; letter-spacing: 1px; text-transform: uppercase; transition: opacity 0.3s; }
-
-  .nav-bar { display: flex; flex-direction: column; gap: 8px; padding: 0 15px; }
-  .nav-link { text-decoration: none; color: #a0aab2; padding: 14px 20px; font-weight: 600; font-size: 13px; letter-spacing: 1px; border-radius: 10px; transition: all 0.2s; display: flex; align-items: center; gap: 12px; }
-  .nav-link:hover { background: rgba(255,255,255,0.05); color: white; transform: translateX(3px); }
-  .nav-link.active { background: var(--sage-professional); color: white; box-shadow: 0 4px 12px rgba(90, 141, 59, 0.3); }
-  .nav-link i { font-style: normal; font-size: 16px; width: 20px; text-align: center; display: inline-block; }
-
-  /* SIDEBAR BOTTOM CTA */
-  .sidebar-bottom { margin-top: auto; padding: 20px 15px; border-top: 1px solid rgba(255,255,255,0.05); }
-  .idea-btn { text-decoration: none; color: white; background: linear-gradient(135deg, var(--idea-gold), #d97706); padding: 14px 20px; font-weight: 700; font-size: 13px; letter-spacing: 0.5px; border-radius: 10px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); }
-  .idea-btn:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5); }
-  .idea-btn i { font-style: normal; font-size: 18px; width: 20px; text-align: center; display: inline-block; }
-
-  /* COLLAPSED STATE */
-  .sidebar.collapsed { width: 76px; }
-  .sidebar.collapsed .brand-area { padding: 40px 10px; }
-  .sidebar.collapsed .brand-area h1 { font-size: 12px; letter-spacing: 1px; }
-  .sidebar.collapsed .badge { opacity: 0; pointer-events: none; height: 0; margin: 0; padding: 0; }
-  .sidebar.collapsed .nav-link span, .sidebar.collapsed .idea-btn span { display: none; }
-  .sidebar.collapsed .nav-link, .sidebar.collapsed .idea-btn { justify-content: center; padding: 14px 0; }
-
-  /* SIDEBAR TOGGLE */
-  .sidebar-toggle { position: fixed; left: 244px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; background: var(--slate-charcoal); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 105; border: 4px solid var(--bg-app); transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s; font-size: 12px; }
-  .sidebar-toggle.collapsed { left: 60px; transform: translateY(-50%) rotate(180deg); }
-
-  /* TOP ACTIONS & MODALS */
-  .top-actions { position: fixed; top: 30px; right: 50px; z-index: 200; display: flex; gap: 15px; }
-  .action-btn { background: white; border: 1px solid #ddd; width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 26px; transition: 0.2s; box-shadow: 0 6px 16px rgba(0,0,0,0.06); position: relative; }
-  .action-btn:hover { border-color: var(--sage-professional); transform: translateY(-2px); }
-  
-  .notif-dot { position: absolute; top: -6px; right: -6px; width: 16px; height: 16px; background: var(--red-alert); border-radius: 50%; border: 3px solid white; display: none; }
-  .notif-dot.active { display: block; animation: pulse 2s infinite; }
-  
   .vw-pulse-badge { background: var(--red-alert); color: white; padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; animation: pulseBadge 2s infinite; margin-left: 10px; display: inline-block; }
   @keyframes pulseBadge { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-
-  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.22); backdrop-filter: blur(6px); display: none; z-index: 9998; }
-  .overlay.show { display: block; }
-
-  .modal-menu { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.12); border: 1px solid #eee; display: none; z-index: 10000; overflow: hidden; width: 1260px; max-width: calc(100% - 40px); }
-  .modal-menu.show { display: block; }
-  
-  .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: #f9fafb; border-bottom: 1px solid #eee; }
-  .modal-header h3 { margin: 0; font-size: 13px; font-weight: 800; text-transform: uppercase; color: #666; letter-spacing: 0.5px; }
-  .notif-tabs { display: flex; gap: 8px; }
-  .tab-btn { background: transparent; border: none; font-size: 11px; font-weight: 700; color: #999; cursor: pointer; padding: 6px 12px; border-radius: 6px; transition: 0.2s; text-transform: uppercase; letter-spacing: 0.5px;}
-  .tab-btn:hover { color: var(--slate-charcoal); }
-  .tab-btn.active { background: #e2e8f0; color: var(--slate-charcoal); }
-
-  .notif-content { max-height: 60vh; overflow-y: auto; overscroll-behavior: contain; }
-  .notif-content::-webkit-scrollbar { width: 8px; }
-  .notif-content::-webkit-scrollbar-track { background: #f9fafb; border-radius: 8px; }
-  .notif-content::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 8px; }
-  .notif-content::-webkit-scrollbar-thumb:hover { background: var(--sage-professional); }
-
-  .notif-item { font-size: 16px; padding: 20px; border-bottom: 1px solid #f5f5f5; color: var(--text-dark); line-height: 1.5; text-align: left; }
-  .notif-item .ann-header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
-  .notif-item .ann-author { font-weight: 800; font-size: 18px; color: var(--slate-charcoal); }
-  .notif-item .ann-date { color: #666; font-size: 13px; font-weight: 700; }
-  .notif-item hr { border: none; border-top: 1px solid #eee; margin: 10px 0; }
-  .notif-item .ann-text { margin-top: 8px; font-size: 15px; color: var(--text-dark); }
-
-  /* Calendar Specific */
-  .calendar-menu { width: 1000px; max-width: calc(100% - 40px); }
-  .modal-close-btn { background: transparent; border: none; font-size: 18px; cursor: pointer; color: #999; transition: 0.2s; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; }
-  .modal-close-btn:hover { color: #ef4444; }
-  .calendar-content { height: 65vh; padding: 0; }
-  .calendar-content iframe { width: 100%; height: 100%; border: none; display: block; }
 
   /* PIN OVERLAY STYLES (Set to flex by default to prevent flashes!) */
   .auth-overlay { position: fixed; inset: 0; background: rgba(244, 247, 249, 0.95); backdrop-filter: blur(10px); z-index: 100000; display: flex; align-items: center; justify-content: center; }
@@ -111,14 +26,6 @@
   /* STYLED RETURN BUTTON */
   .auth-back-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; background: white; border: 1px solid #ddd; border-radius: 30px; font-size: 12px; font-weight: 800; color: var(--slate-charcoal); text-decoration: none; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.2s ease; margin-top: 25px; width: 100%; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
   .auth-back-btn:hover { border-color: var(--sage-professional); color: var(--sage-professional); transform: translateY(-2px); box-shadow: 0 6px 15px rgba(90, 141, 59, 0.15); }
-
-  /* MAIN CONTENT & GRID LAYOUT */
-  .main-content { flex-grow: 1; margin-left: 260px; padding: 40px 50px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); width: 100%; max-width: 100%; } 
-  .main-content.expanded { margin-left: 76px; }
-  
-  .page-header { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 20px; padding-right: 150px; }
-  .header-text h2 { font-size: 28px; font-weight: 800; color: var(--slate-charcoal); letter-spacing: -0.5px; margin: 0; }
-  .header-text p { color: #888; font-size: 14px; font-weight: 500; margin-top: 5px; }
 
   /* QUICK LINKS BAR */
   .quick-links-bar { display: flex; gap: 15px; margin-bottom: 35px; flex-wrap: wrap; }
@@ -298,9 +205,9 @@
 
 <main class="main-content">
   <div class="page-header">
-    <div class="header-text">
-      <h2>Store Manager Portal</h2>
-      <p>Secure portal for operational tracking, team performance metrics, and administrative documentation.</p>
+    <div>
+        <h2>Store Manager Portal</h2>
+        <p>Secure portal for operational tracking, team performance metrics, and administrative documentation.</p>
     </div>
   </div>
 
@@ -312,28 +219,8 @@
       <a href="https://docs.google.com/spreadsheets/d/1ar3tabN-bUqkjWqgy25MCHzSup2jhiaAKaGxLwZTeJ8/edit?usp=sharing" target="_blank" class="quick-link-pill">📍 Local Location Visits</a>
   </div>
 
-  <div class="checklist-grid">
-      <div class="card" style="margin-bottom: 0; padding: 25px;">
-          <div class="checklist-header">⚡ Daily Checklist</div>
-          <label class="checklist-item"><input type="checkbox" id="chk_daily_1"> Set daily team listing targets.</label>
-          <label class="checklist-item"><input type="checkbox" id="chk_daily_2"> Assign product workflows to team members.</label>
-          <label class="checklist-item"><input type="checkbox" id="chk_daily_3"> Review & respond to all pending messages.</label>
-          <label class="checklist-item"><input type="checkbox" id="chk_daily_4"> Monitor & reply to new Google Reviews.</label>
-          <label class="checklist-item"><input type="checkbox" id="chk_daily_5"> Dispatch available WinBack messages.</label>
+  <div class="checklist-grid" id="dynamicChecklistContainer">
       </div>
-      <div class="card" style="margin-bottom: 0; padding: 25px;">
-          <div class="checklist-header">🔄 Weekly Checklist</div>
-          <label class="checklist-item"><input type="checkbox" id="chk_weekly_1"> Conduct weekly team sync meeting.</label>
-          <label class="checklist-item"><input type="checkbox" id="chk_weekly_2"> Upload five new listings to Facebook Marketplace.</label>
-          <label class="checklist-item"><input type="checkbox" id="chk_weekly_3"> Complete and review Weekly KPI metrics.</label>
-      </div>
-      <div class="card" style="margin-bottom: 0; padding: 25px;">
-          <div class="checklist-header">🎯 Monthly Checklist</div>
-          <label class="checklist-item"><input type="checkbox" id="chk_monthly_1"> Finalize and submit Monthly KPI metrics.</label>
-          <label class="checklist-item"><input type="checkbox" id="chk_monthly_2"> Establish & communicate monthly store goals.</label>
-          <label class="checklist-item"><input type="checkbox" id="chk_monthly_3"> Conduct 1-on-1 performance reviews with staff.</label>
-      </div>
-  </div>
 
   <div class="dashboard-layout">
       
@@ -526,15 +413,13 @@ async function checkPIN() {
     
     if(!pin) return;
     
-    // UI Feedback while checking
     btn.innerText = "Verifying...";
     btn.style.opacity = "0.7";
     pinError.style.display = 'none';
 
-    // Wait for the background fetch to finish if it hasn't already
-    const validUsers = await authFetchPromise;
+    const authPayload = await authFetchPromise;
     
-    if (!validUsers) {
+    if (!authPayload || !authPayload.users) {
         pinError.innerText = "Connection Error. Ensure Apps Script is deployed to 'Anyone'.";
         pinError.style.display = 'block';
         btn.innerText = "Unlock Portal";
@@ -543,16 +428,14 @@ async function checkPIN() {
     }
 
     const hashed = await hashString(pin);
-    
-    // Ignore case just to be safe
-    const matchedUser = validUsers.find(u => String(u.hash).toLowerCase() === hashed.toLowerCase());
+    const matchedUser = authPayload.users.find(u => String(u.hash).toLowerCase() === hashed.toLowerCase());
     
     if (matchedUser) {
         sessionStorage.setItem('speeksManagerUnlocked', 'true');
-        sessionStorage.setItem('speeksActiveManager', matchedUser.name); // SAVES IDENTITY FOR FUTURE CHECKLIST FEATURE!
+        sessionStorage.setItem('speeksActiveManager', matchedUser.name);
         document.getElementById('authOverlay').style.display = 'none';
-        document.body.style.overflow = 'auto'; // Allow scrolling again
-        initDashboardData(); // Fire up all the dashboard fetches only AFTER unlock!
+        document.body.style.overflow = 'auto';
+        initDashboardData();
     } else {
         pinError.innerText = "Incorrect PIN. Please try again.";
         pinError.style.display = 'block';
@@ -1343,34 +1226,84 @@ async function fetchWeeklyKPIs() {
 }
 
 // =========================================================
-// MANAGER CHECKLIST LOGIC (LOCAL STORAGE SYNC)
+// DYNAMIC CHECKLIST LOGIC (HYBRID CACHE + SPREADSHEET)
 // =========================================================
-function initChecklists() {
+async function initChecklists() {
     const activeManager = sessionStorage.getItem('speeksActiveManager');
-    if (!activeManager) return; // Failsafe
+    if (!activeManager) return; 
 
-    // The key is unique to the manager (e.g., 'speeksChecklist_Ethan')
-    const storageKey = `speeksChecklist_${activeManager}`;
-    
-    // 1. Load saved data if it exists
-    const savedData = localStorage.getItem(storageKey);
-    let checkState = savedData ? JSON.parse(savedData) : {};
+    const cacheKeyTasks = `speeksTasksCache_${activeManager}`;
+    const cacheKeyState = `speeksCheckState_${activeManager}`;
+    const container = document.getElementById('dynamicChecklistContainer');
 
-    // 2. Grab all checkboxes on the page
-    const checkboxes = document.querySelectorAll('.checklist-item input[type="checkbox"]');
-    
-    checkboxes.forEach(box => {
-        // Restore checkmarks from previous session
-        if (checkState[box.id] === true) {
-            box.checked = true;
-        }
-        
-        // 3. Listen for clicks and save instantly
-        box.addEventListener('change', (e) => {
-            checkState[box.id] = e.target.checked;
-            localStorage.setItem(storageKey, JSON.stringify(checkState));
+    let myTasks = JSON.parse(localStorage.getItem(cacheKeyTasks) || '[]');
+    let checkState = JSON.parse(localStorage.getItem(cacheKeyState) || '{}');
+
+    // Helper Function: Generates the HTML Cards based on the tasks array
+    const renderTasks = (tasksToRender, state) => {
+        const dailyTasks = tasksToRender.filter(t => t.category === 'daily');
+        const weeklyTasks = tasksToRender.filter(t => t.category === 'weekly');
+        const monthlyTasks = tasksToRender.filter(t => t.category === 'monthly');
+
+        const buildCard = (title, icon, tasks) => {
+            let html = `<div class="card" style="margin-bottom: 0; padding: 25px;"><div class="checklist-header">${icon} ${title} Checklist</div>`;
+            if (tasks.length === 0) {
+                html += `<div style="color:#888; font-size:12px; font-weight:600;">No tasks assigned.</div>`;
+            } else {
+                tasks.forEach(t => {
+                    // Generates a unique ID by removing spaces from the task text
+                    let safeId = "chk_" + t.text.replace(/[^a-zA-Z0-9]/g, '');
+                    let isChecked = state[safeId] ? 'checked' : '';
+                    html += `<label class="checklist-item"><input type="checkbox" id="${safeId}" ${isChecked}> ${t.text}</label>`;
+                });
+            }
+            html += `</div>`;
+            return html;
+        };
+
+        container.innerHTML = buildCard('Daily', '⚡', dailyTasks) + buildCard('Weekly', '🔄', weeklyTasks) + buildCard('Monthly', '🎯', monthlyTasks);
+
+        // Attach the click listeners to save to the spreadsheet
+        container.querySelectorAll('input[type="checkbox"]').forEach(box => {
+            box.addEventListener('change', (e) => {
+                checkState[box.id] = e.target.checked;
+                localStorage.setItem(cacheKeyState, JSON.stringify(checkState)); // Instant local save
+                
+                // Background Spreadsheet sync
+                fetch(AUTH_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' }, 
+                    body: JSON.stringify({ name: activeManager, checkState: checkState })
+                }).catch(err => console.log(err));
+            });
         });
-    });
+    };
+
+    // 1. INSTANT RENDER: Draw the UI immediately using the cache
+    if (myTasks.length > 0) {
+        renderTasks(myTasks, checkState);
+    } else {
+        container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #888; padding: 20px;">Fetching your custom checklists...</div>';
+    }
+
+    // 2. BACKGROUND SYNC: Wait for the Google Sheet data
+    const authPayload = await authFetchPromise;
+    if (authPayload && authPayload.users && authPayload.tasks) {
+        
+        // Find this manager's saved checkmarks
+        const managerData = authPayload.users.find(u => String(u.name).toLowerCase() === activeManager.toLowerCase());
+        if (managerData && managerData.checkState) {
+            try { checkState = JSON.parse(managerData.checkState); } catch(e) {}
+            localStorage.setItem(cacheKeyState, JSON.stringify(checkState));
+        }
+
+        // Filter the tasks down to ONLY tasks assigned to "ALL" or this specific manager
+        myTasks = authPayload.tasks.filter(t => t.manager === 'all' || t.manager === activeManager.toLowerCase());
+        localStorage.setItem(cacheKeyTasks, JSON.stringify(myTasks));
+
+        // Silently redraw the UI with the fresh, accurate data from the server
+        renderTasks(myTasks, checkState);
+    }
 }
   
 // --- BOOTSTRAP: Only fetch dashboard data AFTER PIN unlock! ---
