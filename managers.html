@@ -219,28 +219,8 @@
       <a href="https://docs.google.com/spreadsheets/d/1ar3tabN-bUqkjWqgy25MCHzSup2jhiaAKaGxLwZTeJ8/edit?usp=sharing" target="_blank" class="quick-link-pill">📍 Local Location Visits</a>
   </div>
 
-  <div class="checklist-grid">
-      <div class="card" style="margin-bottom: 0; padding: 25px;">
-          <div class="checklist-header">⚡ Daily Checklist</div>
-          <label class="checklist-item"><input type="checkbox" id="chk_daily_1"> Set daily team listing targets.</label>
-          <label class="checklist-item"><input type="checkbox" id="chk_daily_2"> Assign product workflows to team members.</label>
-          <label class="checklist-item"><input type="checkbox" id="chk_daily_3"> Review & respond to all pending messages.</label>
-          <label class="checklist-item"><input type="checkbox" id="chk_daily_4"> Monitor & reply to new Google Reviews.</label>
-          <label class="checklist-item"><input type="checkbox" id="chk_daily_5"> Dispatch available WinBack messages.</label>
+  <div class="checklist-grid" id="dynamicChecklistContainer">
       </div>
-      <div class="card" style="margin-bottom: 0; padding: 25px;">
-          <div class="checklist-header">🔄 Weekly Checklist</div>
-          <label class="checklist-item"><input type="checkbox" id="chk_weekly_1"> Conduct weekly team sync meeting.</label>
-          <label class="checklist-item"><input type="checkbox" id="chk_weekly_2"> Upload five new listings to Facebook Marketplace.</label>
-          <label class="checklist-item"><input type="checkbox" id="chk_weekly_3"> Complete and review Weekly KPI metrics.</label>
-      </div>
-      <div class="card" style="margin-bottom: 0; padding: 25px;">
-          <div class="checklist-header">🎯 Monthly Checklist</div>
-          <label class="checklist-item"><input type="checkbox" id="chk_monthly_1"> Finalize and submit Monthly KPI metrics.</label>
-          <label class="checklist-item"><input type="checkbox" id="chk_monthly_2"> Establish & communicate monthly store goals.</label>
-          <label class="checklist-item"><input type="checkbox" id="chk_monthly_3"> Conduct 1-on-1 performance reviews with staff.</label>
-      </div>
-  </div>
 
   <div class="dashboard-layout">
       
@@ -433,15 +413,13 @@ async function checkPIN() {
     
     if(!pin) return;
     
-    // UI Feedback while checking
     btn.innerText = "Verifying...";
     btn.style.opacity = "0.7";
     pinError.style.display = 'none';
 
-    // Wait for the background fetch to finish if it hasn't already
-    const validUsers = await authFetchPromise;
+    const authPayload = await authFetchPromise;
     
-    if (!validUsers) {
+    if (!authPayload || !authPayload.users) {
         pinError.innerText = "Connection Error. Ensure Apps Script is deployed to 'Anyone'.";
         pinError.style.display = 'block';
         btn.innerText = "Unlock Portal";
@@ -450,16 +428,14 @@ async function checkPIN() {
     }
 
     const hashed = await hashString(pin);
-    
-    // Ignore case just to be safe
-    const matchedUser = validUsers.find(u => String(u.hash).toLowerCase() === hashed.toLowerCase());
+    const matchedUser = authPayload.users.find(u => String(u.hash).toLowerCase() === hashed.toLowerCase());
     
     if (matchedUser) {
         sessionStorage.setItem('speeksManagerUnlocked', 'true');
-        sessionStorage.setItem('speeksActiveManager', matchedUser.name); // SAVES IDENTITY FOR FUTURE CHECKLIST FEATURE!
+        sessionStorage.setItem('speeksActiveManager', matchedUser.name);
         document.getElementById('authOverlay').style.display = 'none';
-        document.body.style.overflow = 'auto'; // Allow scrolling again
-        initDashboardData(); // Fire up all the dashboard fetches only AFTER unlock!
+        document.body.style.overflow = 'auto';
+        initDashboardData();
     } else {
         pinError.innerText = "Incorrect PIN. Please try again.";
         pinError.style.display = 'block';
@@ -1250,34 +1226,84 @@ async function fetchWeeklyKPIs() {
 }
 
 // =========================================================
-// MANAGER CHECKLIST LOGIC (LOCAL STORAGE SYNC)
+// DYNAMIC CHECKLIST LOGIC (HYBRID CACHE + SPREADSHEET)
 // =========================================================
-function initChecklists() {
+async function initChecklists() {
     const activeManager = sessionStorage.getItem('speeksActiveManager');
-    if (!activeManager) return; // Failsafe
+    if (!activeManager) return; 
 
-    // The key is unique to the manager (e.g., 'speeksChecklist_Ethan')
-    const storageKey = `speeksChecklist_${activeManager}`;
-    
-    // 1. Load saved data if it exists
-    const savedData = localStorage.getItem(storageKey);
-    let checkState = savedData ? JSON.parse(savedData) : {};
+    const cacheKeyTasks = `speeksTasksCache_${activeManager}`;
+    const cacheKeyState = `speeksCheckState_${activeManager}`;
+    const container = document.getElementById('dynamicChecklistContainer');
 
-    // 2. Grab all checkboxes on the page
-    const checkboxes = document.querySelectorAll('.checklist-item input[type="checkbox"]');
-    
-    checkboxes.forEach(box => {
-        // Restore checkmarks from previous session
-        if (checkState[box.id] === true) {
-            box.checked = true;
-        }
-        
-        // 3. Listen for clicks and save instantly
-        box.addEventListener('change', (e) => {
-            checkState[box.id] = e.target.checked;
-            localStorage.setItem(storageKey, JSON.stringify(checkState));
+    let myTasks = JSON.parse(localStorage.getItem(cacheKeyTasks) || '[]');
+    let checkState = JSON.parse(localStorage.getItem(cacheKeyState) || '{}');
+
+    // Helper Function: Generates the HTML Cards based on the tasks array
+    const renderTasks = (tasksToRender, state) => {
+        const dailyTasks = tasksToRender.filter(t => t.category === 'daily');
+        const weeklyTasks = tasksToRender.filter(t => t.category === 'weekly');
+        const monthlyTasks = tasksToRender.filter(t => t.category === 'monthly');
+
+        const buildCard = (title, icon, tasks) => {
+            let html = `<div class="card" style="margin-bottom: 0; padding: 25px;"><div class="checklist-header">${icon} ${title} Checklist</div>`;
+            if (tasks.length === 0) {
+                html += `<div style="color:#888; font-size:12px; font-weight:600;">No tasks assigned.</div>`;
+            } else {
+                tasks.forEach(t => {
+                    // Generates a unique ID by removing spaces from the task text
+                    let safeId = "chk_" + t.text.replace(/[^a-zA-Z0-9]/g, '');
+                    let isChecked = state[safeId] ? 'checked' : '';
+                    html += `<label class="checklist-item"><input type="checkbox" id="${safeId}" ${isChecked}> ${t.text}</label>`;
+                });
+            }
+            html += `</div>`;
+            return html;
+        };
+
+        container.innerHTML = buildCard('Daily', '⚡', dailyTasks) + buildCard('Weekly', '🔄', weeklyTasks) + buildCard('Monthly', '🎯', monthlyTasks);
+
+        // Attach the click listeners to save to the spreadsheet
+        container.querySelectorAll('input[type="checkbox"]').forEach(box => {
+            box.addEventListener('change', (e) => {
+                checkState[box.id] = e.target.checked;
+                localStorage.setItem(cacheKeyState, JSON.stringify(checkState)); // Instant local save
+                
+                // Background Spreadsheet sync
+                fetch(AUTH_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' }, 
+                    body: JSON.stringify({ name: activeManager, checkState: checkState })
+                }).catch(err => console.log(err));
+            });
         });
-    });
+    };
+
+    // 1. INSTANT RENDER: Draw the UI immediately using the cache
+    if (myTasks.length > 0) {
+        renderTasks(myTasks, checkState);
+    } else {
+        container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #888; padding: 20px;">Fetching your custom checklists...</div>';
+    }
+
+    // 2. BACKGROUND SYNC: Wait for the Google Sheet data
+    const authPayload = await authFetchPromise;
+    if (authPayload && authPayload.users && authPayload.tasks) {
+        
+        // Find this manager's saved checkmarks
+        const managerData = authPayload.users.find(u => String(u.name).toLowerCase() === activeManager.toLowerCase());
+        if (managerData && managerData.checkState) {
+            try { checkState = JSON.parse(managerData.checkState); } catch(e) {}
+            localStorage.setItem(cacheKeyState, JSON.stringify(checkState));
+        }
+
+        // Filter the tasks down to ONLY tasks assigned to "ALL" or this specific manager
+        myTasks = authPayload.tasks.filter(t => t.manager === 'all' || t.manager === activeManager.toLowerCase());
+        localStorage.setItem(cacheKeyTasks, JSON.stringify(myTasks));
+
+        // Silently redraw the UI with the fresh, accurate data from the server
+        renderTasks(myTasks, checkState);
+    }
 }
   
 // --- BOOTSTRAP: Only fetch dashboard data AFTER PIN unlock! ---

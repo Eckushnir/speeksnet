@@ -62,46 +62,45 @@
   .lb-val { font-weight: 800; color: var(--sage-professional); font-size: 16px; }
 
   /* =========================================================
-     NEW METRIC-CENTRIC RECORDS UI STYLES
+     NEW METRIC-CENTRIC RECORDS UI STYLES (6 COLUMNS)
      ========================================================= */
-  /* =========================================================
-     NEW METRIC-CENTRIC RECORDS UI STYLES
-     ========================================================= */
-  /* Forces 3 columns, sets a max-width, and centers it perfectly on the screen */
-  .records-masonry-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin: 0 auto 40px auto; max-width: 1200px; }
+  .records-masonry-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 15px; margin-bottom: 40px; width: 100%; }
   
- .record-metric-card { background: white; border-radius: 16px; box-shadow: 0 6px 20px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.04); overflow: hidden; display: flex; flex-direction: column; transition: transform 0.3s ease; }
+  .record-metric-card { background: white; border-radius: 16px; box-shadow: 0 6px 20px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.04); overflow: hidden; display: flex; flex-direction: column; transition: transform 0.3s ease; }
   .record-metric-card:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(0,0,0,0.06); }
   
-  /* Added min-height, flex, and center alignment so 1-line and 2-line text always match height! */
-  .rmc-header { background: var(--slate-charcoal); color: white; padding: 10px 20px; font-weight: 800; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; text-align: center; min-height: 64px; display: flex; align-items: center; justify-content: center; line-height: 1.4; }
+  .rmc-header { background: var(--slate-charcoal); color: white; padding: 10px; font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; min-height: 50px; display: flex; align-items: center; justify-content: center; line-height: 1.3; }
   
-  .rmc-champion { padding: 30px 20px; text-align: center; border-bottom: 1px solid #eee; background: linear-gradient(to bottom, #ffffff, #fcfcfc); }
-  .rmc-crown { color: var(--idea-gold); font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 6px; }
-  .rmc-champ-val { font-size: 38px; font-weight: 900; color: var(--sage-professional); line-height: 1.1; margin-bottom: 5px; }
-  .rmc-champ-sub { font-size: 14px; font-weight: 700; color: #555; }
+  .rmc-champion { padding: 20px 15px; text-align: center; border-bottom: 1px solid #eee; background: linear-gradient(to bottom, #ffffff, #fcfcfc); }
+  .rmc-crown { color: var(--idea-gold); font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .rmc-champ-val { font-size: 24px; font-weight: 900; color: var(--sage-professional); line-height: 1.1; margin-bottom: 5px; }
+  .rmc-champ-sub { font-size: 11px; font-weight: 700; color: #555; }
   
-  /* Scrollable list for infinite scalability */
-  .rmc-list { padding: 10px 20px 20px; max-height: 250px; overflow-y: auto; overscroll-behavior: contain; flex-grow: 1; }
-  .rmc-list::-webkit-scrollbar { width: 6px; }
-  .rmc-list::-webkit-scrollbar-track { background: transparent; }
-  .rmc-list::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
-  .rmc-list::-webkit-scrollbar-thumb:hover { background: var(--sage-professional); }
+  .rmc-list { padding: 10px 15px 15px; flex-grow: 1; }
   
-  .rmc-list-item { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+  .rmc-list-item { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #f0f0f0; gap: 5px; }
   .rmc-list-item:last-child { border-bottom: none; }
-  .rmc-rank { width: 35px; font-weight: 900; color: #cbd5e1; font-size: 16px; text-align: center; }
-  .rmc-store { width: 55px; font-weight: 800; color: var(--slate-charcoal); font-size: 13px; text-transform: uppercase; }
+  .rmc-rank { width: 25px; font-weight: 900; color: #cbd5e1; font-size: 14px; text-align: center; }
+  .rmc-store { width: 40px; font-weight: 800; color: var(--slate-charcoal); font-size: 11px; text-transform: uppercase; }
   .rmc-score { flex-grow: 1; text-align: right; display: flex; flex-direction: column; justify-content: center; }
-  .rmc-score-val { font-weight: 800; color: var(--sage-professional); font-size: 14px; }
-  .rmc-score-date { font-size: 11px; font-weight: 600; color: #999; margin-top: 2px; }
+  .rmc-score-val { font-weight: 800; color: var(--sage-professional); font-size: 12px; }
+  .rmc-score-date { font-size: 10px; font-weight: 600; color: #999; margin-top: 2px; display: block; line-height: 1.2; }
 
-  /* Drops to 2 columns on medium screens (like laptops) */
-  @media (max-width: 1400px) {
-    .records-masonry-grid { grid-template-columns: repeat(2, 1fr); max-width: 800px; }
+  /* Expand Button Styles */
+  .rmc-expand-btn { width: 100%; background: #f4f7f9; border: 1px solid #eee; padding: 8px; font-size: 10px; font-weight: 800; color: #666; border-radius: 8px; cursor: pointer; margin-top: 10px; transition: 0.2s; text-transform: uppercase; letter-spacing: 0.5px; }
+  .rmc-expand-btn:hover { background: #e2e8f0; color: var(--slate-charcoal); border-color: #ddd; }
+
+/* Smooth Slide-Down Animation for Leaderboards */
+  .hidden-board { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-in-out; }
+  .hidden-board.open { max-height: 500px; }
+
+  /* Responsive breakpoints so it doesn't break on smaller screens! */
+  @media (max-width: 1700px) {
+    .records-masonry-grid { grid-template-columns: repeat(3, 1fr); }
   }
-
-  /* Drops to 1 column on tablets/phones */
+  @media (max-width: 1200px) {
+    .records-masonry-grid { grid-template-columns: repeat(2, 1fr); }
+  }
   @media (max-width: 1024px) { 
     .metrics-grid, .leaderboard-container, .records-masonry-grid { grid-template-columns: 1fr; } 
     .top-actions { right: 20px; }
@@ -471,42 +470,35 @@ function renderRecords() {
         return;
     }
 
-    // 1. Group the raw data by LABEL (e.g., "Daily Buy Record")
+    // 1. Group the raw data by LABEL
     const metricsMap = {};
-    
     recordsCache.forEach(rec => {
         let label = String(rec.label).trim();
         let section = String(rec.section).toUpperCase().trim();
+        if (!metricsMap[label]) metricsMap[label] = { company: null, stores: [] };
         
-        if (!metricsMap[label]) {
-            metricsMap[label] = { company: null, stores: [] };
-        }
-        
-        if (section === 'COMPANY' || section === 'COMPANY WIDE') {
-            metricsMap[label].company = rec;
-        } else {
-            metricsMap[label].stores.push(rec);
-        }
+        if (section === 'COMPANY' || section === 'COMPANY WIDE') metricsMap[label].company = rec;
+        else metricsMap[label].stores.push(rec);
     });
 
     let html = '<div class="records-masonry-grid">';
+    let boardCounter = 0; // Unique ID for each hidden leaderboard
 
     // 2. Build a Card for each Metric
     for (let label in metricsMap) {
         let data = metricsMap[label];
+        boardCounter++;
+        let overflowId = 'overflow-board-' + boardCounter;
         
-        // Sort stores numerically to create the leaderboard!
+        // Sort stores numerically descending
         data.stores.sort((a, b) => {
             let valA = parseFloat(String(a.value).replace(/[^0-9.-]/g, '')) || 0;
             let valB = parseFloat(String(b.value).replace(/[^0-9.-]/g, '')) || 0;
-            return valB - valA; // Descending order
+            return valB - valA; 
         });
 
-        // Fallback: If they forgot to type a "COMPANY" row in the sheet, use the #1 store
         let compRec = data.company;
-        if (!compRec && data.stores.length > 0) {
-            compRec = data.stores[0];
-        }
+        if (!compRec && data.stores.length > 0) compRec = data.stores[0];
 
         html += `<div class="record-metric-card">`;
         html += `<div class="rmc-header">${label}</div>`;
@@ -522,28 +514,60 @@ function renderRecords() {
 
         if (data.stores.length > 0) {
             html += `<div class="rmc-list">`;
-            data.stores.forEach((storeRec, idx) => {
+            
+            // Generate TOP 3
+            data.stores.slice(0, 3).forEach((storeRec, idx) => {
                 let rank = idx + 1;
-                let rankBadge = rank === 1 ? '🥇' : (rank === 2 ? '🥈' : (rank === 3 ? '🥉' : rank));
-                
+                let rankBadge = rank === 1 ? '🥇' : (rank === 2 ? '🥈' : '🥉');
                 html += `
                 <div class="rmc-list-item">
                     <div class="rmc-rank">${rankBadge}</div>
                     <div class="rmc-store">${storeRec.section}</div>
                     <div class="rmc-score">
                         <span class="rmc-score-val">${storeRec.value || '-'}</span>
-                        <span class="rmc-score-date">${storeRec.subtext || ''}</span>
+                        <span class="rmc-score-date" title="${storeRec.subtext || ''}">${storeRec.subtext || ''}</span>
                     </div>
                 </div>`;
             });
-            html += `</div>`;
+
+            // Generate 4th place and beyond (HIDDEN INITIALLY)
+            if (data.stores.length > 3) {
+                html += `<div id="${overflowId}" class="hidden-board">`;
+                data.stores.slice(3).forEach((storeRec, idx) => {
+                    let rank = idx + 4; // Start at #4
+                    html += `
+                    <div class="rmc-list-item">
+                        <div class="rmc-rank" style="font-size:11px; color:#999;">#${rank}</div>
+                        <div class="rmc-store">${storeRec.section}</div>
+                        <div class="rmc-score">
+                            <span class="rmc-score-val">${storeRec.value || '-'}</span>
+                            <span class="rmc-score-date" title="${storeRec.subtext || ''}">${storeRec.subtext || ''}</span>
+                        </div>
+                    </div>`;
+                });
+                html += `</div>`;
+                // Expand Button
+                html += `<button class="rmc-expand-btn" onclick="toggleBoard('${overflowId}', this)">See Full Leaderboard ▾</button>`;
+            }
+            
+            html += `</div>`; // End rmc-list
         }
-        
         html += `</div>`; // End Card
     }
     
     html += '</div>'; // End Grid
     container.innerHTML = html;
+}
+
+function toggleBoard(id, btn) {
+    const el = document.getElementById(id);
+    if (el.classList.contains('open')) {
+        el.classList.remove('open');
+        btn.innerText = 'See Full Leaderboard ▾';
+    } else {
+        el.classList.add('open');
+        btn.innerText = 'Hide Leaderboard ▴';
+    }
 }
 
 function syncAllData() { 
