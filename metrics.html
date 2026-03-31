@@ -138,7 +138,9 @@ const KPI_URL = 'https://script.google.com/macros/s/AKfycbyVBos-uJuhaqfLMBqoz9by
 const CMS_URL = 'https://script.google.com/macros/s/AKfycbxZviJiiQKcQYyp3SK4tcNBHrHXkID7cmwwuONStVPE9DHCSAMappqAs9dBns7ufECI/exec';
 
 let mainChartInstance = null, currentTimeframe = '4-Week'; 
-let recordsCache = null; // Holds the fetched record data for instant loading
+let recordsCache = JSON.parse(localStorage.getItem('speeksRecordsCache')) || null; 
+let kpiChartCache = JSON.parse(localStorage.getItem('speeksKpiChartCache')) || { '4-Week': null, 'Monthly': null }; 
+let hubDataCache = JSON.parse(localStorage.getItem('speeksHubCache')) || null; // Cache for the top circles
 
 function toggleSidebar() {
     const s = document.querySelector('.sidebar');
@@ -234,69 +236,155 @@ function cleanValue(val, isPct = false) {
     return (isPct && num <= 1.1 && num > 0) ? num * 100 : num;
 }
 
-async function loadKpiData() {
-    document.getElementById('chartLoading').style.display = 'flex';
+/* =========================================================
+   CHART LOGIC (DECOUPLED CACHE & RENDER TO PREVENT GLITCHES)
+   ========================================================= */
+
+// 1. Triggered instantly when you change the dropdown or switch timeframes
+function loadKpiData() {
     const metric = document.getElementById('metricSelector').value;
+    
+    // If we already have the data, draw it instantly. NO background fetching!
+    if (kpiChartCache[currentTimeframe]) {
+        renderKpiChart(kpiChartCache[currentTimeframe], metric);
+    } else {
+        // We only fetch if the cache is completely empty
+        fetchChartData(currentTimeframe);
+    }
+}
+
+// 2. ONLY talks to Google when we are missing data or hit the "Sync" button
+async function fetchChartData(timeframe) {
+    // SMART LOADING: Only show the "Updating..." overlay if the cache is completely empty!
+    if (!kpiChartCache[timeframe]) {
+        document.getElementById('chartLoading').style.display = 'flex';
+    }
+    
+    try {
+        const responses = await Promise.all([
+            fetch(`${KPI_URL}?store=OVL&time=${timeframe}`),
+            fetch(`${KPI_URL}?store=LEE&time=${timeframe}`),
+            fetch(`${KPI_URL}?store=WSP&time=${timeframe}`)
+        ]);
+        
+        const allData = await Promise.all(responses.map(r => r.json()));
+        
+        // Save the fresh data to memory
+        kpiChartCache[timeframe] = allData;
+        localStorage.setItem('speeksKpiChartCache', JSON.stringify(kpiChartCache));
+        
+        // Silently redraw the chart with the fresh numbers
+        if (currentTimeframe === timeframe) {
+            const metric = document.getElementById('metricSelector').value;
+            renderKpiChart(allData, metric);
+        }
+    } catch (e) {
+        console.error("KPI Chart Sync Failed", e);
+    } finally {
+        // Always hide the loading screen when finished
+        document.getElementById('chartLoading').style.display = 'none';
+    }
+}
+
+// 3. The visual builder (Exactly the same, just separated for safety)
+function renderKpiChart(allData, metric) {
     const metricTitles = { 'conversion': 'Customer Conversion %', 'margin': 'Buying Margin %', 'nodeals': 'Total No Deals', 'time': 'Transaction Time' };
     const searchTarget = metricTitles[metric];
     let unit = (metric === 'time') ? 'm' : (metric === 'nodeals' ? '' : '%');
     let isPct = (metric === 'conversion' || metric === 'margin');
     let stores = [ { key: 'OVL', color: '#5a8d3b', label: 'OVL Average' }, { key: 'LEE', color: '#0ea5e9', label: 'LEE Average' }, { key: 'WSP', color: '#f97316', label: 'WSP Average' } ];
 
-    Promise.all([ fetch(`${KPI_URL}?store=OVL&time=${currentTimeframe}`).then(r => r.json()), fetch(`${KPI_URL}?store=LEE&time=${currentTimeframe}`).then(r => r.json()), fetch(`${KPI_URL}?store=WSP&time=${currentTimeframe}`).then(r => r.json()) ]).then(allData => {
-        let labels = [], finalDatasets = [], allNumericValues = [];
-        allData.forEach((data, idx) => {
-            let storeData = [], sr=-1, sc=-1;
-            for(let i=0; i<data.length; i++) { for(let j=0; j<data[i].length; j++) { if(data[i][j] && String(data[i][j]).trim() === searchTarget) { sr=i; sc=j; break; } } if(sr!==-1) break; }
-            if(sr === -1) return;
-            let sCol = -1; for(let j=sc; j<data[sr+1].length; j++){ if(String(data[sr+1][j]).toLowerCase() === 'store'){ sCol=j; break; } }
-            if(labels.length === 0) { for (let i = sr + 2; i < data.length; i++) { let lbl = String(data[i][sc - 1]).trim(); if (!lbl || lbl.includes('Store') || lbl.includes('%')) break; labels.push(lbl); } }
-            for(let i=0; i<labels.length; i++){ let val = cleanValue(data[sr+2+i][sCol], isPct); storeData.push(val); if(val !== null) allNumericValues.push(val); }
-            finalDatasets.push({ label: stores[idx].label, data: storeData, borderColor: stores[idx].color, backgroundColor: stores[idx].color, tension: 0.4, pointRadius: 5, spanGaps: true });
-        });
-        let yMin = 0, yMax = 100;
-        if (allNumericValues.length > 0) {
-            let mx = Math.max(...allNumericValues), mn = Math.min(...allNumericValues);
-            if (isPct) { yMin = Math.max(0, Math.floor(mn/10)*10 - 10); yMax = Math.min(100, Math.ceil(mx/10)*10 + 10); } else { yMin = 0; yMax = Math.ceil(mx * 1.2); }
-        }
-        if (mainChartInstance) mainChartInstance.destroy();
-        mainChartInstance = new Chart(document.getElementById('mainKpiChart').getContext('2d'), { type: 'line', plugins: [ChartDataLabels], data: { labels: labels, datasets: finalDatasets }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' }, datalabels: { align: 'top', anchor: 'end', formatter: v => v !== null ? (Math.round(v*10)/10 + unit) : '' } }, scales: { y: { min: yMin, max: yMax, ticks: { callback: v => v + unit } }, x: { grid: { display: false } } } } });
-        document.getElementById('chartLoading').style.display = 'none';
+    let labels = [], finalDatasets = [], allNumericValues = [];
+    
+    allData.forEach((data, idx) => {
+        let storeData = [], sr=-1, sc=-1;
+        for(let i=0; i<data.length; i++) { for(let j=0; j<data[i].length; j++) { if(data[i][j] && String(data[i][j]).trim() === searchTarget) { sr=i; sc=j; break; } } if(sr!==-1) break; }
+        if(sr === -1) return;
+        let sCol = -1; for(let j=sc; j<data[sr+1].length; j++){ if(String(data[sr+1][j]).toLowerCase() === 'store'){ sCol=j; break; } }
+        if(labels.length === 0) { for (let i = sr + 2; i < data.length; i++) { let lbl = String(data[i][sc - 1]).trim(); if (!lbl || lbl.includes('Store') || lbl.includes('%')) break; labels.push(lbl); } }
+        for(let i=0; i<labels.length; i++){ let val = cleanValue(data[sr+2+i][sCol], isPct); storeData.push(val); if(val !== null) allNumericValues.push(val); }
+        finalDatasets.push({ label: stores[idx].label, data: storeData, borderColor: stores[idx].color, backgroundColor: stores[idx].color, tension: 0.4, pointRadius: 5, spanGaps: true });
     });
+    
+    let yMin = 0, yMax = 100;
+    if (allNumericValues.length > 0) {
+        let mx = Math.max(...allNumericValues), mn = Math.min(...allNumericValues);
+        if (isPct) { yMin = Math.max(0, Math.floor(mn/10)*10 - 10); yMax = Math.min(100, Math.ceil(mx/10)*10 + 10); } else { yMin = 0; yMax = Math.ceil(mx * 1.2); }
+    }
+    
+    // This is the line that was glitching previously! It is now safe.
+    if (mainChartInstance) mainChartInstance.destroy();
+    
+    mainChartInstance = new Chart(document.getElementById('mainKpiChart').getContext('2d'), { 
+        type: 'line', 
+        plugins: [ChartDataLabels], 
+        data: { labels: labels, datasets: finalDatasets }, 
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            animation: { duration: 400 }, 
+            plugins: { legend: { position: 'top' }, datalabels: { align: 'top', anchor: 'end', formatter: v => v !== null ? (Math.round(v*10)/10 + unit) : '' } }, 
+            scales: { y: { min: yMin, max: yMax, ticks: { callback: v => v + unit } }, x: { grid: { display: false } } } 
+        } 
+    });
+}
+
+/* =========================================================
+   LIVE HUB DATA (CIRCLES & LEADERBOARDS)
+   ========================================================= */
+function renderLiveData(data) {
+    if (!data) return;
+
+    ['ovl', 'lee', 'wsp'].forEach(id => {
+        let p = Math.round(data[`${id}Pct`] || 0); 
+        document.getElementById(`${id}-pct`).innerText = p + '%';
+        document.getElementById(`${id}-goal`).innerText = `Goal: $${Math.round(data[`${id}Goal`] || 0).toLocaleString()}`;
+        document.getElementById(`${id}-t-gp`).innerText = `$${Math.round(data[`${id}TrackGP`] || 0).toLocaleString()}`;
+        
+        // A microscopic 50ms delay forces the browser to play the smooth animation even when loading instantly!
+        setTimeout(() => {
+            let bar = document.getElementById(`${id}-bar`);
+            if (bar) {
+                bar.style.strokeDashoffset = 402 - (Math.min(p, 100)/100)*402;
+                bar.style.stroke = p < 100 ? "var(--red-alert)" : "var(--sage-professional)";
+            }
+        }, 50);
+    });
+
+    const stores = [{n:'OVL', r:data.ovlRev, g:data.ovlGP}, {n:'LEE', r:data.leeRev, g:data.leeGP}, {n:'WSP', r:data.wspRev, g:data.wspGP}];
+    
+    document.getElementById('rev-list').innerHTML = [...stores].sort((a,b)=>b.r-a.r).map((s,i)=>`
+        <div class="lb-row">
+            <div class="lb-rank ${i===0?'lb-gold':''}">#${i+1}</div>
+            <div class="lb-name">${s.n}</div>
+            <div class="lb-val">$${Math.round(s.r).toLocaleString()}</div>
+        </div>`).join('');
+        
+    document.getElementById('gp-list').innerHTML = [...stores].sort((a,b)=>b.g-a.g).map((s,i)=>`
+        <div class="lb-row">
+            <div class="lb-rank ${i===0?'lb-gold':''}">#${i+1}</div>
+            <div class="lb-name">${s.n}</div>
+            <div class="lb-val">$${Math.round(s.g).toLocaleString()}</div>
+        </div>`).join('');
+        
+    const n = new Date(); 
+    document.getElementById('lastSyncedText').innerText = `Last Synced: ${n.getHours()%12||12}:${String(n.getMinutes()).padStart(2,'0')} ${n.getHours()>=12?'PM':'AM'}`;
 }
 
 async function fetchLiveData() {
     try {
         const res = await fetch(`${HUB_URL}?v=${Date.now()}`); 
-        const data = await res.json();
-        ['ovl', 'lee', 'wsp'].forEach(id => {
-            let p = Math.round(data[`${id}Pct`] || 0); 
-            document.getElementById(`${id}-pct`).innerText = p + '%';
-            document.getElementById(`${id}-goal`).innerText = `Goal: $${Math.round(data[`${id}Goal`] || 0).toLocaleString()}`;
-            document.getElementById(`${id}-t-gp`).innerText = `$${Math.round(data[`${id}TrackGP`] || 0).toLocaleString()}`;
-            
-            let bar = document.getElementById(`${id}-bar`);
-            bar.style.strokeDashoffset = 402 - (Math.min(p, 100)/100)*402;
-            bar.style.stroke = p < 100 ? "var(--red-alert)" : "var(--sage-professional)";
-        });
-        const stores = [{n:'OVL', r:data.ovlRev, g:data.ovlGP}, {n:'LEE', r:data.leeRev, g:data.leeGP}, {n:'WSP', r:data.wspRev, g:data.wspGP}];
+        const freshData = await res.json();
         
-        document.getElementById('rev-list').innerHTML = [...stores].sort((a,b)=>b.r-a.r).map((s,i)=>`
-            <div class="lb-row">
-                <div class="lb-rank ${i===0?'lb-gold':''}">#${i+1}</div>
-                <div class="lb-name">${s.n}</div>
-                <div class="lb-val">$${Math.round(s.r).toLocaleString()}</div>
-            </div>`).join('');
-            
-        document.getElementById('gp-list').innerHTML = [...stores].sort((a,b)=>b.g-a.g).map((s,i)=>`
-            <div class="lb-row">
-                <div class="lb-rank ${i===0?'lb-gold':''}">#${i+1}</div>
-                <div class="lb-name">${s.n}</div>
-                <div class="lb-val">$${Math.round(s.g).toLocaleString()}</div>
-            </div>`).join('');
-            
-        const n = new Date(); document.getElementById('lastSyncedText').innerText = `Last Synced: ${n.getHours()%12||12}:${String(n.getMinutes()).padStart(2,'0')} ${n.getHours()>=12?'PM':'AM'}`;
-    } catch(e) { console.error("Fetch Error:", e); }
+        // Save the fresh data to the browser's Speed Cache
+        hubDataCache = freshData;
+        localStorage.setItem('speeksHubCache', JSON.stringify(freshData));
+        
+        // Silently redraw with the newest numbers
+        renderLiveData(freshData);
+    } catch(e) { 
+        console.error("Fetch Error:", e); 
+    }
 }
 
 async function loadCMS() {
@@ -347,19 +435,28 @@ async function loadCMS() {
 }
 
 /* =========================================================
-   ALL-TIME RECORDS GENERATOR (METRIC-CENTRIC PIVOT)
+   ALL-TIME RECORDS GENERATOR (HYBRID SPEED CACHE)
    ========================================================= */
 async function fetchRecordsData() {
     try {
+        // 1. Silently fetch the newest data in the background
         const response = await fetch(`${RECORDS_URL}?v=${Date.now()}`);
-        recordsCache = await response.json();
+        const freshData = await response.json();
         
+        // 2. Update our variables and save to the browser's Speed Cache
+        recordsCache = freshData;
+        localStorage.setItem('speeksRecordsCache', JSON.stringify(freshData));
+        
+        // 3. If the user is currently looking at the records tab, quietly update it
         if (document.getElementById('pane-records').classList.contains('active')) {
             renderRecords();
         }
     } catch (e) {
         console.error("Records Fetch Failed", e);
-        document.getElementById('recordsContainer').innerHTML = '<div style="padding: 40px; text-align: center; color: #dc2626; font-weight: 600;">Failed to sync records. Check Apps Script.</div>';
+        // Only show an error if they have absolutely nothing in their cache
+        if (!recordsCache) {
+            document.getElementById('recordsContainer').innerHTML = '<div style="padding: 40px; text-align: center; color: #dc2626; font-weight: 600;">Failed to sync records. Check Apps Script.</div>';
+        }
     }
 }
 
@@ -472,12 +569,34 @@ function toggleBoard(id, btn) {
 }
 
 function syncAllData() { 
-    loadKpiData(); 
+    // 1. INSTANT RENDER: Draw cached data instantly if we have it
+    if (kpiChartCache[currentTimeframe]) {
+        const metric = document.getElementById('metricSelector').value;
+        renderKpiChart(kpiChartCache[currentTimeframe], metric);
+    }
+    if (hubDataCache) {
+        renderLiveData(hubDataCache);
+    }
+
+    // 2. BACKGROUND SYNC: Fire off all fetches silently to pull fresh data
+    fetchChartData(currentTimeframe); 
     fetchLiveData(); 
     loadCMS(); 
-    fetchRecordsData(); // Kicks off the background fetch instantly!
+    fetchRecordsData(); 
 }
-window.onload = syncAllData;
+
+// We completely removed window.onload so it doesn't wait for the calendar iframe!
+
+document.addEventListener("DOMContentLoaded", () => {
+    // Fire the sync instantly the millisecond the HTML is parsed
+    syncAllData();
+
+    if (localStorage.getItem('speeksSidebar') === 'collapsed') {
+        document.querySelector('.sidebar').classList.add('collapsed');
+        document.querySelector('.main-content').classList.add('expanded');
+        document.querySelector('.sidebar-toggle').classList.add('collapsed');
+    }
+});
 
 document.addEventListener("DOMContentLoaded", () => {
     if (localStorage.getItem('speeksSidebar') === 'collapsed') {
