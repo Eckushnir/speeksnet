@@ -33,7 +33,8 @@ body {
 }
 
 /* PREVENTS BACKGROUND SCROLLING WHEN POPUP IS OPEN */
-body.no-scroll { overflow: hidden; }
+/* PREVENTS BACKGROUND SCROLLING WHEN POPUP IS OPEN */
+body.no-scroll { overflow: hidden !important; }
 
 /* =========================================================
    SIDEBAR STYLES
@@ -56,11 +57,18 @@ body.no-scroll { overflow: hidden; }
 }
 
 .brand-area { 
-  padding: 40px 20px; 
+  /* We are locking the height so it NEVER shrinks and pulls the nav links up */
+  height: 160px; 
+  padding: 40px 20px 0 20px; /* Adjusted padding to fit the fixed height perfectly */
   text-align: center; 
   border-bottom: 1px solid rgba(255,255,255,0.05); 
   margin-bottom: 20px; 
   transition: padding 0.3s; 
+  /* Flexbox keeps the title anchored beautifully to the top */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start; 
 }
 
 .brand-area h1 { 
@@ -69,7 +77,10 @@ body.no-scroll { overflow: hidden; }
   letter-spacing: 6px; 
   margin: 0; 
   color: white; 
-  transition: font-size 0.3s; 
+  white-space: nowrap;
+  /* Syncs the font size AND letter spacing perfectly with the sidebar's easing curve */
+  transition: font-size 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+              letter-spacing 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
 }
 
 .brand-area .badge { 
@@ -97,15 +108,18 @@ body.no-scroll { overflow: hidden; }
 .nav-link { 
   text-decoration: none; 
   color: #a0aab2; 
-  padding: 14px 20px; 
+  padding: 0 13px; /* Removed vertical padding */
+  height: 48px; /* Hardcoded height kills the vertical jumping! */
   font-weight: 600; 
   font-size: 13px; 
   letter-spacing: 1px; 
   border-radius: 10px; 
-  transition: all 0.2s; 
+  transition: background 0.2s, color 0.2s, transform 0.2s, box-shadow 0.2s; 
   display: flex; 
   align-items: center; 
+  justify-content: flex-start; 
   gap: 12px; 
+  white-space: nowrap;
 }
 
 .nav-link:hover { 
@@ -139,17 +153,38 @@ body.no-scroll { overflow: hidden; }
   text-decoration: none; 
   color: white; 
   background: linear-gradient(135deg, var(--idea-gold), #d97706); 
-  padding: 14px 20px; 
+  padding: 0 13px; /* Removed vertical padding */
+  height: 48px; /* Matches the nav-links perfectly */
   font-weight: 700; 
   font-size: 13px; 
   letter-spacing: 0.5px; 
   border-radius: 10px; 
-  transition: all 0.2s; 
+  transition: transform 0.2s, box-shadow 0.2s; 
   display: flex; 
   align-items: center; 
-  justify-content: center; 
-  gap: 8px; 
+  justify-content: flex-start; 
+  gap: 12px; 
   box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); 
+  white-space: nowrap;
+}
+
+/* Locks the emojis/icons perfectly in the center and stops them from squeezing */
+.nav-link i, 
+.idea-btn i { 
+  font-style: normal; 
+  font-size: 18px; 
+  width: 20px; 
+  text-align: center; 
+  display: inline-block; 
+  line-height: 1; /* Prevents emojis from throwing off the vertical alignment */
+  flex-shrink: 0; /* Prevents the icon from squishing when the sidebar moves */
+}
+
+/* Mathematically centers the text without moving the icon */
+.idea-btn span {
+  flex-grow: 1;
+  text-align: center;
+  padding-right: 32px; /* Offsets the exact width of the icon + gap */
 }
 
 .idea-btn:hover { 
@@ -165,13 +200,30 @@ body.no-scroll { overflow: hidden; }
   display: inline-block; 
 }
 
+/* Add a gentle fade to the text so it waits for the sidebar to open */
+.nav-link span, .idea-btn span {
+  opacity: 1;
+  /* Waits 0.15s for the sidebar to expand, then fades the text in smoothly */
+  transition: opacity 0.2s ease 0.15s; 
+}
+
 /* COLLAPSED SIDEBAR STATE */
 .sidebar.collapsed { width: 76px; }
 .sidebar.collapsed .brand-area { padding: 40px 10px; }
 .sidebar.collapsed .brand-area h1 { font-size: 12px; letter-spacing: 1px; }
-.sidebar.collapsed .badge { opacity: 0; pointer-events: none; height: 0; margin: 0; padding: 0; }
-.sidebar.collapsed .nav-link span, .sidebar.collapsed .idea-btn span { display: none; }
-.sidebar.collapsed .nav-link, .sidebar.collapsed .idea-btn { justify-content: center; padding: 14px 0; }
+/* Instantly removes the badge from existence to stop the squishing effect */
+.sidebar.collapsed .badge { 
+  display: none !important; 
+}
+
+/* Fade text out instantly, but keep it in the code so it doesn't glitch */
+.sidebar.collapsed .nav-link span, 
+.sidebar.collapsed .idea-btn span { 
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+  transition: opacity 0.1s ease 0s; /* Fades out instantly when closing */
+}
 
 /* SIDEBAR TOGGLE */
 .sidebar-toggle { 
@@ -227,17 +279,42 @@ body.no-scroll { overflow: hidden; }
   transform: translateY(-2px); 
 }
 
+/* =========================================================
+   PULSING NOTIFICATION DOT
+   ========================================================= */
 .notif-dot { 
   position: absolute; 
-  top: 14px; 
-  right: 14px; 
-  width: 10px; 
-  height: 10px; 
+  top: -4px;      /* Pushes it up out of the box */
+  right: -4px;    /* Pushes it right out of the box */
+  width: 14px; 
+  height: 14px; 
   background: var(--red-alert); 
   border-radius: 50%; 
   display: none; 
+  border: 2px solid white; /* Creates the premium cutout effect */
 }
-.notif-dot.active { display: block; }
+
+/* When active, make it visible and trigger the heartbeat */
+.notif-dot.active { 
+  display: block; 
+  animation: pulseNotif 2s infinite;
+}
+
+/* The expanding radar ring effect */
+@keyframes pulseNotif { 
+  0% { 
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); 
+    transform: scale(0.95); 
+  } 
+  70% { 
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); 
+    transform: scale(1); 
+  } 
+  100% { 
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); 
+    transform: scale(0.95); 
+  } 
+}
 
 /* MAIN CONTENT */
 .main-content { 
@@ -257,7 +334,7 @@ body.no-scroll { overflow: hidden; }
 }
 
 .page-header h2 { 
-  font-size: 32px; 
+  font-size: clamp(24px, 3vw, 32px); /* Scales smoothly based on screen width */
   font-weight: 800; 
   color: var(--slate-charcoal); 
   letter-spacing: -1px; 
@@ -265,9 +342,16 @@ body.no-scroll { overflow: hidden; }
 }
 
 .page-header p { 
-  font-size: 15px; 
+  font-size: clamp(13px, 1.5vw, 15px); 
   color: #666; 
   font-weight: 500; 
+}
+
+/* Unique styling specifically for the SPEEKSNET mission statement */
+.mission-statement {
+  color: var(--sage-professional) !important;
+  font-weight: 800 !important;
+  font-size: 16px;
 }
 
 /* =========================================================
@@ -287,8 +371,9 @@ body.no-scroll { overflow: hidden; }
   box-shadow: 0 8px 25px rgba(0,0,0,0.05); 
 }
 
-.card-title { 
-  font-size: 20px; 
+/* Condensing both Card Titles and Portal Store Names to share the exact same responsive logic */
+.card-title, .store-name { 
+  font-size: clamp(16px, 2vw, 20px); 
   font-weight: 800; 
   color: var(--slate-charcoal); 
   border-bottom: 2px solid #eee; 
@@ -389,8 +474,6 @@ body.no-scroll { overflow: hidden; }
    PORTALS SPECIFIC
    ========================================================= */
 .portals-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px; }
-
-.store-name { font-size: 20px; font-weight: 800; color: var(--slate-charcoal); border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
 
 .portal-btn { 
   display: block; text-decoration: none; padding: 14px 16px; background: var(--bg-app); 
@@ -561,19 +644,92 @@ body.no-scroll { overflow: hidden; }
 .modal-close-btn:hover { background: #eee; color: var(--red-alert); }
 
 /* SPECIFIC MODAL SIZES */
-.notif-menu { width: 450px; max-width: 90vw; }
+.notif-menu { width: 700px; max-width: 90vw; }
 .calendar-menu { width: 1000px; max-width: 95vw; }
 .calendar-content { height: 70vh; background: #fff; padding: 20px; }
 .calendar-content iframe { width: 100%; height: 100%; border: 0; border-radius: 12px; }
 
-/* RESPONSIVE DESIGN */
-@media (max-width: 1024px) { 
-  .project-grid { grid-template-columns: 1fr; } 
-  .top-actions { right: 20px; } 
-  .page-header { padding-right: 0; }
-  .dashboard-layout { grid-template-columns: 1fr; }
-  .checklist-grid { grid-template-columns: 1fr; }
-  .metrics-grid { grid-template-columns: 1fr; }
+/* =========================================================
+   NOTIFICATIONS & ANNOUNCEMENTS
+   ========================================================= */
+/* 1. This !important tag overpowers the HTML brick wall so the blur comes back! */
+.overlay.show { 
+  display: block !important; 
+  opacity: 1; 
+}
+
+/* 2. Restores the clean formatting for the Recent/Archive tabs */
+.notif-tabs {
+  display: flex;
+  gap: 10px;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 8px;
+}
+
+.tab-btn {
+  background: transparent;
+  border: none;
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab-btn.active {
+  background: white;
+  color: var(--slate-charcoal);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* 3. Restores the layout for the actual messages inside */
+.notif-content {
+  padding: 20px;
+  max-height: 65vh;
+  overflow-y: auto;
+}
+
+.notif-item {
+  margin-bottom: 20px;
+}
+
+.notif-item:last-child {
+  margin-bottom: 0;
+}
+
+.ann-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.ann-author {
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--sage-professional);
+}
+
+.ann-date {
+  font-size: 11px;
+  color: #888;
+  font-weight: 600;
+}
+
+.notif-item hr {
+  border: 0;
+  height: 1px;
+  background: #eee;
+  margin: 8px 0;
+}
+
+.ann-text {
+  font-size: 13px;
+  color: #444;
+  line-height: 1.5;
 }
 
 /* =========================================================
@@ -599,4 +755,209 @@ body.preload {
 .preload * {
   transition: none !important;
   animation: none !important;
+}
+
+/* =========================================================
+   METRICS: LIVE LEADERBOARDS (REVENUE & GP)
+   ========================================================= */
+.leaderboard-container { 
+  display: grid; 
+  grid-template-columns: 1fr 1fr; 
+  gap: 30px; 
+}
+
+.lb-row { 
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
+  padding: 12px 15px; 
+  border-bottom: 1px solid #f0f0f0; 
+  transition: background 0.2s; 
+}
+
+.lb-row:hover { background: #f9fafb; }
+.lb-row:last-child { border-bottom: none; }
+
+.lb-rank { font-weight: 800; color: #888; width: 30px; font-size: 13px; }
+.lb-gold { color: var(--idea-gold); font-size: 16px; text-shadow: 0 2px 4px rgba(245,158,11,0.2); }
+.lb-name { font-weight: 700; color: var(--slate-charcoal); flex-grow: 1; margin-left: 10px; font-size: 14px; }
+.lb-val { font-weight: 800; color: var(--sage-professional); font-size: 14px; }
+
+/* =========================================================
+   METRICS: ALL-TIME RECORDS GRID (FULLY RESPONSIVE)
+   ========================================================= */
+.records-masonry-grid { 
+  display: grid; 
+  /* Starts at 6 columns for large desktop monitors */
+  grid-template-columns: repeat(6, 1fr); 
+  gap: 15px; 
+  align-items: start; 
+}
+
+.record-metric-card { 
+  background: white; 
+  border-radius: 12px; 
+  border: 1px solid #eee; 
+  box-shadow: 0 4px 15px rgba(0,0,0,0.03); 
+  overflow: hidden; 
+  transition: transform 0.2s, box-shadow 0.2s; 
+  display: flex;
+  flex-direction: column;
+}
+
+.record-metric-card:hover { 
+  transform: translateY(-3px); 
+  box-shadow: 0 8px 25px rgba(0,0,0,0.08); 
+  border-color: #ddd; 
+}
+
+/* Dark Header - Uses clamp() to gently shrink text on smaller screens */
+.rmc-header { 
+  background: var(--slate-charcoal); 
+  color: white; 
+  height: 60px; 
+  padding: 5px 10px; 
+  font-weight: 800; 
+  font-size: clamp(9px, 1.2vw, 11px); 
+  text-transform: uppercase; 
+  letter-spacing: 0.5px; 
+  text-align: center; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.3;
+}
+
+/* The #1 Spot Formatting */
+.rmc-champion { 
+  background: #ffffff; 
+  padding: 20px 10px 15px 10px; 
+  text-align: center; 
+  border-bottom: 1px solid #f0f0f0; 
+}
+.rmc-crown { 
+  font-size: clamp(9px, 1vw, 11px); 
+  font-weight: 800; 
+  color: #f59e0b; 
+  text-transform: uppercase; 
+  letter-spacing: 1px; 
+  margin-bottom: 8px; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  gap: 6px; 
+}
+
+/* Champion Value - Rubber-bands perfectly between 18px and 26px */
+.rmc-champ-val { 
+  font-size: clamp(18px, 2.5vw, 26px); 
+  font-weight: 900; 
+  color: var(--sage-professional); 
+  margin-bottom: 2px; 
+  letter-spacing: -0.5px; 
+}
+.rmc-champ-sub { font-size: clamp(9px, 1vw, 10px); font-weight: 600; color: #888; text-transform: uppercase; }
+
+/* The Runner-Ups Formatting */
+.rmc-list { padding: 10px 15px 15px 15px; }
+.rmc-list-item { 
+  display: flex; 
+  align-items: flex-start; 
+  justify-content: space-between; 
+  padding: 12px 0; 
+  border-bottom: 1px dashed #eee; 
+}
+.rmc-list-item:last-child { border-bottom: none; }
+
+.rmc-rank { font-size: 14px; width: 22px; text-align: left; }
+.rmc-store { font-weight: 800; font-size: clamp(11px, 1.5vw, 13px); color: var(--slate-charcoal); flex-grow: 1; margin-top: 1px; }
+.rmc-score { text-align: right; display: flex; flex-direction: column; align-items: flex-end; }
+.rmc-score-val { font-weight: 800; font-size: clamp(11px, 1.5vw, 13px); color: var(--sage-professional); }
+.rmc-score-date { font-size: 9px; color: #aaa; font-weight: 600; margin-top: 2px; text-transform: uppercase; }
+
+/* The Expand/Collapse Button Logic */
+.hidden-board { 
+  max-height: 0; 
+  opacity: 0;
+  overflow: hidden; 
+  transition: max-height 0.4s ease, opacity 0.3s ease; 
+}
+.hidden-board.open { 
+  max-height: 600px; 
+  opacity: 1;
+}
+
+.rmc-expand-btn { 
+  width: 100%; 
+  background: #f8fafc; 
+  border: 1px solid #f0f0f0; 
+  border-radius: 8px; 
+  padding: 12px; 
+  font-size: 10px; 
+  font-weight: 800; 
+  color: #64748b; 
+  cursor: pointer; 
+  transition: all 0.2s; 
+  text-transform: uppercase; 
+  letter-spacing: 0.5px;
+  margin-top: 10px;
+}
+.rmc-expand-btn:hover { 
+  background: #e2e8f0; 
+  color: var(--slate-charcoal); 
+}
+
+/* =========================================================
+   UNIVERSAL RESPONSIVE COMMAND CENTER
+   ========================================================= */
+
+/* 1. Large Laptops (Max 1600px) */
+@media (max-width: 1600px) {
+  .records-masonry-grid { grid-template-columns: repeat(3, 1fr); gap: 20px; }
+}
+
+/* 2. Small Laptops & Tablets (Max 1100px) */
+@media (max-width: 1100px) {
+  /* Grids drop from 3 columns down to 2 */
+  .metrics-grid, .checklist-grid { grid-template-columns: repeat(2, 1fr); }
+  .records-masonry-grid { grid-template-columns: repeat(2, 1fr); gap: 15px; }
+  
+  /* Manager Dashboard stacks the main content under the checklist */
+  .dashboard-layout { grid-template-columns: 1fr; }
+  
+  /* Fixes the header sync buttons so they don't crash into the title */
+  .page-header { flex-direction: column; align-items: flex-start; gap: 15px; padding-right: 0; }
+  .sync-zone { width: 100%; justify-content: flex-start; }
+}
+
+/* 3. Mobile Devices & Small Tablets (Max 768px) */
+@media (max-width: 768px) {
+  /* Main content padding shrinks so it doesn't waste screen space */
+  .main-content { padding: 30px; }
+  
+  /* ALL grids drop to a single, easily scrollable column */
+  .project-grid, .metrics-grid, .checklist-grid, .leaderboard-container, .records-masonry-grid { 
+    grid-template-columns: 1fr; 
+  }
+  
+  /* Action buttons (Bell/Calendar) shrink and move over */
+  .top-actions { right: 20px; top: 20px; gap: 10px; }
+  .action-btn { width: 45px; height: 45px; font-size: 20px; }
+  
+  /* Modals take up almost the whole screen instead of a fixed width */
+  .notif-menu, .auth-box { width: 95vw; }
+  
+  /* Record headers release their fixed height to allow for extreme mobile text wrapping */
+  .rmc-header { height: auto; padding: 12px; }
+  
+  /* Forces wide tables (like the Manager row) to scroll sideways instead of breaking the page */
+  .manage-content { overflow-x: auto; }
+  .manage-row { min-width: 800px; } 
+}
+
+/* 4. Extremely Small Mobile Phones (Max 480px) */
+@media (max-width: 480px) {
+  .main-content { padding: 15px; }
+  /* Compresses the sidebar toggle so it doesn't cover up text */
+  .sidebar-toggle { width: 28px; height: 28px; font-size: 10px; }
 }

@@ -42,12 +42,15 @@
 
 <div class="modal-menu notif-menu" id="notifDropdown">
     <div class="modal-header">
-        <h3>Announcements</h3>
-        <div class="notif-tabs">
-            <button id="tab-recent" class="tab-btn active" onclick="switchAnnTab('recent')">Recent</button>
-            <button id="tab-archive" class="tab-btn" onclick="switchAnnTab('archive')">Archived</button>
+            <h3>Announcements</h3>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div class="notif-tabs">
+                    <button id="tab-recent" class="tab-btn active" onclick="switchAnnTab('recent')">Recent</button>
+                    <button id="tab-archive" class="tab-btn" onclick="switchAnnTab('archive')">Archived</button>
+                </div>
+                <button class="modal-close-btn" onclick="closeAllModals()">✖</button>
+            </div>
         </div>
-    </div>
     <div id="ann-container" class="notif-content">
         <div style="padding: 20px; color:#999; font-size:12px; text-align:center;">Syncing...</div>
     </div>
