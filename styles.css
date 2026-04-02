@@ -1078,6 +1078,28 @@ body.preload {
 }
 
 /* =========================================================
+   WEEKLY KPI GRID ALIGNMENT
+   ========================================================= */
+.weekly-kpi-grid {
+  display: grid;
+  /* Forces the 5 categories to sit side-by-side in perfect columns */
+  grid-template-columns: repeat(5, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+/* Fluid responsive drops so the 5 columns don't squish on laptops */
+@media (max-width: 1400px) {
+  .weekly-kpi-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 1100px) {
+  .weekly-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+  .weekly-kpi-grid { grid-template-columns: 1fr; }
+}
+
+/* =========================================================
    UNIVERSAL RESPONSIVE COMMAND CENTER
    ========================================================= */
 
@@ -1130,4 +1152,79 @@ body.preload {
   .main-content { padding: 15px; }
   /* Compresses the sidebar toggle so it doesn't cover up text */
   .sidebar-toggle { width: 28px; height: 28px; font-size: 10px; }
+}
+
+/* =========================================================
+   KPI CATEGORY ACCORDIONS (CLAMPS)
+   ========================================================= */
+/* Adds a border between each distinct category */
+.kpi-category { 
+  border-bottom: 1px solid #eee; 
+}
+.kpi-category:last-child { 
+  border-bottom: none; 
+}
+
+/* Formats the header into a clickable, premium bar */
+.kpi-category-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8fafc; 
+  padding: 12px 20px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--slate-charcoal);
+  cursor: pointer;
+  transition: background 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.kpi-category-header:hover {
+  background: #f1f5f9;
+}
+
+/* Styles the Down Arrow */
+.chevron {
+  font-size: 10px;
+  color: #888;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* =======================================
+   INTERACTIVE COLLAPSE LOGIC
+   ======================================= */
+/* Hides the metrics rows when the category is clicked */
+.kpi-category.collapsed .kpi-category-content {
+  display: none;
+}
+
+/* Rotates the arrow to point right (►) when collapsed */
+.kpi-category.collapsed .chevron {
+  transform: rotate(-90deg);
+}
+
+/* =========================================================
+   KPI 4-COLUMN HEADER ALIGNMENT
+   ========================================================= */
+.kpi-table-header {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  padding: 15px 20px 10px 20px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #f4f7f9;
+  background: white;
+}
+
+/* Centers the middle two dates, right-aligns the Delta */
+.kpi-table-header div:nth-child(2), 
+.kpi-table-header div:nth-child(3) { 
+  text-align: center; 
+}
+.kpi-table-header div:last-child { 
+  text-align: right; 
 }
