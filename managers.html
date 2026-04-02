@@ -105,7 +105,7 @@
 
   <div class="dashboard-layout">
       
-      <div class="card" style="padding: 25px; margin-bottom: 0; display: flex; flex-direction: column; height: 0; min-height: 100%;">
+      <div class="card kpi-master-card">
         <div class="card-title" style="margin-bottom: 15px; border-bottom: none;">
             <span>🧮 Monthly KPI Comparison</span>
             <a href="https://docs.google.com/spreadsheets/d/1e4mW-pcwUMJjl2Pjry6PT180P8M8nkYL5Z4GcspQmEA/edit?usp=sharing" target="_blank" style="font-size: 11px; background: #f4f7f9; padding: 8px 14px; border-radius: 8px; color: var(--slate-charcoal); text-decoration: none; font-weight: 800; transition: 0.2s;">Open Full Sheet ↗</a>
@@ -130,7 +130,7 @@
             </div>
         </div>
 
-        <div style="border: 1px solid #eee; border-radius: 12px; background: white; margin-bottom: 10px;">
+        <div class="kpi-inner-wrapper">
             <div class="kpi-table-header">
                 <div>Metric & 12-Mo Trend</div>
                 <div id="header-primary-label">Primary</div>
@@ -138,7 +138,7 @@
                 <div>Delta (+/-)</div>
             </div>
 
-            <div id="kpiDashboardContainer" class="kpi-scroll-area" style="flex-grow: 1; min-height: 0; overflow-y: auto;">
+            <div id="kpiDashboardContainer" class="kpi-scroll-area">
                 <div style="padding: 40px; text-align: center; color: #888; font-weight: 600;">Syncing KPI Data...</div>
             </div>
         </div>
