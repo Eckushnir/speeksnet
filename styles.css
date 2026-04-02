@@ -87,14 +87,19 @@ body.no-scroll { overflow: hidden !important; }
   display: inline-block; 
   background: var(--sage-professional); 
   color: white; 
-  font-size: 10px; 
+  /* Uses clamp to adapt to screen size just like the rest of the app */
+  font-size: clamp(7px, 1vw, 10px); 
   font-weight: 800; 
   padding: 4px 8px; 
   border-radius: 12px; 
   margin-top: 10px; 
   letter-spacing: 1px; 
   text-transform: uppercase; 
-  transition: opacity 0.3s; 
+  white-space: nowrap;
+  opacity: 1;
+  /* Syncs everything (size, fade, spacing) to the master curve */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+  transform-origin: top center;
 }
 
 /* NAVIGATION */
@@ -212,8 +217,14 @@ body.no-scroll { overflow: hidden !important; }
 .sidebar.collapsed .brand-area { padding: 40px 10px; }
 .sidebar.collapsed .brand-area h1 { font-size: 12px; letter-spacing: 1px; }
 /* Instantly removes the badge from existence to stop the squishing effect */
+/* Smoothly shrinks the text, padding, and spacing down to zero as it fades out */
 .sidebar.collapsed .badge { 
-  display: none !important; 
+  opacity: 0; 
+  font-size: 0px; 
+  padding: 0px; 
+  margin-top: 0px; 
+  letter-spacing: 0px; 
+  pointer-events: none; 
 }
 
 /* Fade text out instantly, but keep it in the code so it doesn't glitch */
@@ -505,84 +516,217 @@ body.no-scroll { overflow: hidden !important; }
 .auth-back-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; background: white; border: 1px solid #ddd; border-radius: 30px; font-size: 12px; font-weight: 800; color: var(--slate-charcoal); text-decoration: none; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.2s ease; margin-top: 25px; width: 100%; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
 .auth-back-btn:hover { border-color: var(--sage-professional); color: var(--sage-professional); transform: translateY(-2px); box-shadow: 0 6px 15px rgba(90, 141, 59, 0.15); }
 
-/* Quick Links Bar */
-.quick-links-bar { display: flex; gap: 15px; margin-bottom: 35px; flex-wrap: wrap; }
-.quick-link-pill { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; background: white; border: 1px solid #ddd; border-radius: 30px; font-size: 12px; font-weight: 800; color: var(--slate-charcoal); text-decoration: none; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.2s ease; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
-.quick-link-pill:hover { border-color: var(--sage-professional); color: var(--sage-professional); transform: translateY(-2px); box-shadow: 0 6px 15px rgba(90, 141, 59, 0.15); }
-
-/* Checklist Grid */
-.checklist-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-bottom: 30px; }
-.checklist-header { font-size: 14px; font-weight: 800; color: var(--slate-charcoal); border-bottom: 2px solid #eee; padding-bottom: 12px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; text-transform: uppercase; }
-.checklist-item { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; font-size: 13px; font-weight: 600; color: var(--text-dark); line-height: 1.4; cursor: pointer; user-select: none; }
-.checklist-item:hover { color: var(--sage-professional); }
-.checklist-item input[type="checkbox"] { margin-top: 2px; cursor: pointer; accent-color: var(--sage-professional); width: 16px; height: 16px; flex-shrink: 0; }
-
+/* =========================================================
+   MANAGERS DASHBOARD SPECIFIC
+   ========================================================= */
+/* 1. Main 2-Column Dashboard Layout (Matches Screenshot Proportions) */
 .dashboard-layout { 
   display: grid; 
-  grid-template-columns: 1fr 1fr; 
+  grid-template-columns: 1fr 1fr; /* 1fr 1fr forces a perfect 50/50 split */
   gap: 30px; 
-  align-items: stretch; /* CHANGE THIS FROM 'start' TO 'stretch' */
+  align-items: start; 
 }
 .dashboard-layout > div { min-width: 0; }
 
-/* Interactive KPI Dashboard */
-.kpi-header-controls { display: flex; gap: 15px; align-items: center; flex-wrap: wrap; background: #f9fafb; padding: 15px; border-radius: 12px; border: 1px solid #eee; margin-bottom: 20px; }
-.kpi-select-group { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #666; }
-.kpi-select { padding: 8px 12px; border-radius: 8px; border: 1px solid #ddd; font-family: 'Inter', sans-serif; font-weight: 700; color: var(--slate-charcoal); outline: none; cursor: pointer; background: white; }
-.kpi-select:focus { border-color: var(--sage-professional); }
+/* Quick Links Bar (Restored Pill Formatting) */
+.quick-links-bar { display: flex; gap: 15px; margin-bottom: 35px; flex-wrap: wrap; }
+.quick-link-pill { 
+  display: inline-flex; 
+  align-items: center; 
+  justify-content: center; 
+  gap: 8px; 
+  padding: 12px 20px; 
+  background: white; 
+  border: 1px solid #ddd; 
+  border-radius: 30px; /* Gives it the pill shape */
+  font-size: 12px; 
+  font-weight: 800; 
+  color: var(--slate-charcoal); 
+  text-decoration: none; 
+  text-transform: uppercase; 
+  letter-spacing: 0.5px; 
+  transition: all 0.2s ease; 
+  box-shadow: 0 4px 10px rgba(0,0,0,0.02); 
+}
+.quick-link-pill:hover { 
+  border-color: var(--sage-professional); 
+  color: var(--sage-professional); 
+  transform: translateY(-2px); 
+  box-shadow: 0 6px 15px rgba(90, 141, 59, 0.15); 
+}
 
+/* 2. Top Checklist Grid */
+.checklist-grid { 
+  display: grid; 
+  grid-template-columns: repeat(3, 1fr); 
+  gap: 20px; 
+  margin-bottom: 30px; 
+}
+.checklist-header { 
+  font-size: 13px; 
+  font-weight: 800; 
+  color: var(--slate-charcoal); 
+  border-bottom: 2px solid #f0f0f0; 
+  padding-bottom: 12px; 
+  margin-bottom: 15px; 
+  display: flex; 
+  align-items: center; 
+  gap: 8px; 
+  text-transform: uppercase; 
+  letter-spacing: 0.5px;
+}
+.checklist-item { 
+  display: flex; 
+  align-items: flex-start; 
+  gap: 12px; 
+  margin-bottom: 12px; 
+  font-size: 13px; 
+  font-weight: 600; 
+  color: var(--text-dark); 
+  line-height: 1.4; 
+  cursor: pointer; 
+  user-select: none; 
+}
+.checklist-item:hover { color: var(--sage-professional); }
+.checklist-item input[type="checkbox"] { 
+  margin-top: 2px; 
+  cursor: pointer; 
+  accent-color: var(--sage-professional); 
+  width: 16px; 
+  height: 16px; 
+  flex-shrink: 0; 
+}
+
+/* 3. Small Action Buttons (Open Full Sheet) */
+.kpi-btn-small {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--slate-charcoal);
+  cursor: pointer;
+  transition: 0.2s;
+}
+.kpi-btn-small:hover { background: #e2e8f0; }
+
+/* 4. Interactive KPI Dashboard (Left Column) */
+.kpi-header-controls { 
+  display: flex; 
+  justify-content: space-between;
+  align-items: center; 
+  background: white; 
+  padding: 15px 20px; 
+  border-bottom: 1px solid #f0f0f0;
+}
+.kpi-select-group { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #666; }
+.kpi-select { 
+  padding: 6px 10px; 
+  border-radius: 6px; 
+  border: 1px solid #ddd; 
+  font-family: 'Inter', sans-serif; 
+  font-weight: 700; 
+  font-size: 12px;
+  color: var(--slate-charcoal); 
+  outline: none; 
+  cursor: pointer; 
+}
+
+/* Caps the length of the box and makes the inside scrollable */
 .kpi-scroll-area { 
-  /* Delete the max-height: 620px; rule entirely! */
-  /* Add these two flexbox rules so it fills the available space perfectly */
-  flex-grow: 1;
-  min-height: 0; 
-  
+  max-height: 600px; 
   overflow-y: auto; 
   border-bottom-left-radius: 12px; 
   border-bottom-right-radius: 12px; 
 }
+/* Sleek custom scrollbar */
 .kpi-scroll-area::-webkit-scrollbar { width: 6px; }
 .kpi-scroll-area::-webkit-scrollbar-track { background: transparent; }
 .kpi-scroll-area::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
-.kpi-scroll-area::-webkit-scrollbar-thumb:hover { background: var(--sage-professional); }
 
-.kpi-category { border-bottom: 1px solid #eee; overflow: hidden; }
-.kpi-category-header { background: white; padding: 12px 20px; font-weight: 800; font-size: 14px; color: var(--slate-charcoal); cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; transition: background 0.2s; }
-.kpi-category-header:hover { background: #f9fafb; }
-.kpi-category-content { display: block; }
-.kpi-category.collapsed .kpi-category-content { display: none; }
-.kpi-category.collapsed .chevron { transform: rotate(-90deg); }
-.chevron { transition: transform 0.2s; font-size: 12px; color: #888; }
-
+/* The 4-Column Table Alignment (Fixed Header & Row matching) */
+.kpi-table-header {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  padding: 15px 20px 10px 20px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #f4f7f9;
+}
 .kpi-row { 
   display: grid; 
   grid-template-columns: 2fr 1fr 1fr 1fr; 
   align-items: center; 
   padding: 15px 20px; 
-  border-top: 1px solid #f5f5f5; 
-  background: white; 
+  border-bottom: 1px dashed #f0f0f0; 
   transition: background 0.2s; 
-  
-  /* THE SPEED UPGRADES: Tells the browser NOT to draw rows that are scrolled out of view! */
-  content-visibility: auto;
-  contain-intrinsic-size: 0 52px;
 }
 .kpi-row:hover { background: #f9fafb; }
+.kpi-row:last-child { border-bottom: none; }
 
+/* Centers the middle two numbers, right-aligns the Delta */
+.kpi-table-header div:nth-child(2), .kpi-table-header div:nth-child(3),
+.kpi-row div:nth-child(2), .kpi-row div:nth-child(3) { text-align: center; }
+.kpi-table-header div:last-child, .kpi-row div:last-child { text-align: right; }
+
+/* Formats the name and shrinks the graph significantly */
 .kpi-name-col { display: flex; flex-direction: column; gap: 4px; }
-.kpi-name { font-weight: 700; font-size: 13px; color: var(--slate-charcoal); }
+.kpi-name { font-weight: 700; font-size: 12px; color: var(--slate-charcoal); }
 
-.sparkline { width: 70px; height: 20px; }
-.sparkline path { fill: none; stroke: #cbd5e1; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.sparkline { width: 45px; height: 16px; margin-top: 2px; }
+.sparkline path { fill: none; stroke: #cbd5e1; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 
-.kpi-value-col { font-size: 13px; font-weight: 600; color: #444; }
-.kpi-primary-val { font-weight: 800; color: var(--slate-charcoal); font-size: 14px; }
+/* 5. Buying & Sales Split Card (Right Column Top) */
+.split-card-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+}
+.split-col {
+  padding: 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.split-col:first-child { border-right: 1px solid #f0f0f0; }
 
-.kpi-delta-col { text-align: right; }
+.metric-subtitle { font-size: 11px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+.metric-sublabel { font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase; margin-bottom: 5px; }
+.metric-massive-val { font-size: 28px; font-weight: 900; color: var(--slate-charcoal); margin-bottom: 20px; }
+
+/* Small layout rows inside the Buying card */
+.metric-mini-row { display: flex; justify-content: space-between; width: 100%; font-size: 11px; margin-bottom: 8px; border-bottom: 1px dashed #f0f0f0; padding-bottom: 4px; }
+.metric-mini-row:last-child { border-bottom: none; }
+.metric-mini-label { color: #888; font-weight: 600; }
+.metric-mini-val { color: var(--slate-charcoal); font-weight: 800; }
+
+/* 6. Live Variance Reports (Right Column Bottom) */
+.variance-list { padding: 10px 0; }
+.variance-row { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center;
+  padding: 12px 0; 
+  border-bottom: 1px dashed #eee; 
+  font-size: 13px; 
+  font-weight: 700; 
+  color: var(--slate-charcoal);
+}
+.variance-row:last-child { border-bottom: none; }
+
+/* Badges */
 .delta-badge { display: inline-flex; justify-content: center; align-items: center; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; gap: 4px; }
 .delta-pos { background: #dcfce7; color: #166534; }
 .delta-neg { background: #fee2e2; color: #991b1b; }
 .delta-neu { background: #f1f5f9; color: #475569; }
+
+/* (The Auth Box and Pulse Badge code stays exactly where you have it below this!) */
 
 /* =========================================================
    METRICS SPECIFIC
