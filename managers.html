@@ -105,7 +105,7 @@
 
   <div class="dashboard-layout">
       
-      <div class="card" style="padding: 25px; margin-bottom: 0;">
+      <div class="card" style="padding: 25px; margin-bottom: 0; display: flex; flex-direction: column; height: 0; min-height: 100%;">
         <div class="card-title" style="margin-bottom: 15px; border-bottom: none;">
             <span>🧮 Monthly KPI Comparison</span>
             <a href="https://docs.google.com/spreadsheets/d/1e4mW-pcwUMJjl2Pjry6PT180P8M8nkYL5Z4GcspQmEA/edit?usp=sharing" target="_blank" style="font-size: 11px; background: #f4f7f9; padding: 8px 14px; border-radius: 8px; color: var(--slate-charcoal); text-decoration: none; font-weight: 800; transition: 0.2s;">Open Full Sheet ↗</a>
@@ -130,15 +130,16 @@
             </div>
         </div>
 
-        <div style="border: 1px solid #eee; border-radius: 12px; background: white; margin-bottom: 10px;">
-            <div class="kpi-list-header">
+        <div style="border: 1px solid #eee; border-radius: 12px; background: white; margin-top: 20px; margin-bottom: 0; overflow: hidden; display: flex; flex-direction: column; flex-grow: 1; min-height: 0;">
+    
+            <div class="kpi-table-header">
                 <div>Metric & 12-Mo Trend</div>
                 <div id="header-primary-label">Primary</div>
                 <div id="header-compare-label">Compare</div>
                 <div>Delta (+/-)</div>
             </div>
 
-            <div id="kpiDashboardContainer" class="kpi-scroll-area">
+            <div id="kpiDashboardContainer" class="kpi-scroll-area" style="flex-grow: 1; min-height: 0; overflow-y: auto;">
                 <div style="padding: 40px; text-align: center; color: #888; font-weight: 600;">Syncing KPI Data...</div>
             </div>
         </div>
@@ -258,6 +259,8 @@ const AUTH_URL = 'https://script.google.com/macros/s/AKfycbzAOcIrKP-GmKTe9zydMYb
 
 let dynamicMonths = [];
 let rawKPIData = [];
+let monthlyKpiCache = {}; // Stores downloaded KPI data so switching is instant!
+let weeklyKpiCache = {}; // 🌟 NEW: Stores downloaded Weekly KPI data!
 let liveVarianceDataCache = {};
 let hubDataCache = null; 
 
@@ -592,11 +595,52 @@ function groupKPIs(data) {
         .filter(group => group.metrics.length > 0);
 }
 
-async function fetchKPIData() {
+async function fetchKPIData(isRetry = false) {
     const store = document.getElementById('kpiStoreSelect').value;
     const container = document.getElementById('kpiDashboardContainer');
     
-    container.innerHTML = '<div style="padding: 40px; text-align: center; color: #888; font-weight: 600;">Syncing Live Data...</div>';
+    // 1. INSTANT CACHE LOAD: If we already downloaded this store, load it from memory!
+    if (monthlyKpiCache[store]) {
+        dynamicMonths = monthlyKpiCache[store].months;
+        rawKPIData = monthlyKpiCache[store].data;
+        
+        const primarySelect = document.getElementById('primaryMonthSelect');
+        const compareSelect = document.getElementById('compareMonthSelect');
+        
+        // Save currently selected months so they don't reset when switching stores!
+        const currentPri = primarySelect.value;
+        const currentComp = compareSelect.value;
+        
+        primarySelect.innerHTML = ''; compareSelect.innerHTML = '';
+        
+        dynamicMonths.forEach((month, index) => {
+            primarySelect.add(new Option(month, index));
+            compareSelect.add(new Option(month, index));
+        });
+        
+        // Restore selection if valid, otherwise default to latest
+        primarySelect.value = currentPri ? currentPri : dynamicMonths.length - 1; 
+        compareSelect.value = currentComp ? currentComp : Math.max(0, dynamicMonths.length - 2); 
+        
+        renderKPIDashboard();
+        return; 
+    }
+
+    // 2. FETCH FROM GOOGLE (Only happens the FIRST time a store is clicked)
+    if (!isRetry) {
+        // Safely hide all current views instead of destroying them
+        Array.from(container.children).forEach(child => child.style.display = 'none');
+        
+        let fetchMsg = document.getElementById('kpi-fetch-msg');
+        if (!fetchMsg) {
+            fetchMsg = document.createElement('div');
+            fetchMsg.id = 'kpi-fetch-msg';
+            fetchMsg.style.cssText = 'padding: 40px; text-align: center; color: var(--sage-professional); font-weight: 600;';
+            container.appendChild(fetchMsg);
+        }
+        fetchMsg.innerText = 'Syncing Live Data from Google...';
+        fetchMsg.style.display = 'block';
+    }
     
     try {
         const response = await fetch(`${MONTHLY_KPI_URL}?store=${store}&v=${Date.now()}`);
@@ -607,14 +651,13 @@ async function fetchKPIData() {
             return;
         }
 
-        dynamicMonths = payload.months;
-        rawKPIData = groupKPIs(payload.data);
+        monthlyKpiCache[store] = { months: payload.months, data: groupKPIs(payload.data) };
+        dynamicMonths = monthlyKpiCache[store].months;
+        rawKPIData = monthlyKpiCache[store].data;
 
         const primarySelect = document.getElementById('primaryMonthSelect');
         const compareSelect = document.getElementById('compareMonthSelect');
-        
-        primarySelect.innerHTML = '';
-        compareSelect.innerHTML = '';
+        primarySelect.innerHTML = ''; compareSelect.innerHTML = '';
         
         dynamicMonths.forEach((month, index) => {
             primarySelect.add(new Option(month, index));
@@ -627,12 +670,19 @@ async function fetchKPIData() {
         renderKPIDashboard();
         
     } catch (e) { 
-        console.error("KPI Sync Failed", e); 
+        if (!isRetry) {
+            console.warn("Google throttled. Auto-Retrying...");
+            let fetchMsg = document.getElementById('kpi-fetch-msg');
+            if (fetchMsg) fetchMsg.innerText = 'Connection delayed. Retrying...';
+            setTimeout(() => fetchKPIData(true), 1500);
+            return;
+        }
         container.innerHTML = '<div style="padding: 40px; text-align: center; color: #dc2626; font-weight: 600;">Failed to sync KPI data. Check Apps Script.</div>'; 
     }
 }
 
 function renderKPIDashboard() {
+    const store = document.getElementById('kpiStoreSelect').value;
     const primaryIdx = document.getElementById('primaryMonthSelect').value;
     const compareIdx = document.getElementById('compareMonthSelect').value;
     const container = document.getElementById('kpiDashboardContainer');
@@ -640,68 +690,106 @@ function renderKPIDashboard() {
     document.getElementById('header-primary-label').innerText = dynamicMonths[primaryIdx];
     document.getElementById('header-compare-label').innerText = dynamicMonths[compareIdx];
 
-    let html = '';
+    // 1. CREATE A UNIQUE ID FOR THIS EXACT VIEW
+    const viewId = `kpi-view-${store}-${primaryIdx}-${compareIdx}`;
 
-    rawKPIData.forEach(cat => {
-        html += `
-            <div class="kpi-category">
-                <div class="kpi-category-header" onclick="toggleCategory(this)">
-                    ${cat.category}
-                    <span class="chevron">▼</span>
-                </div>
-                <div class="kpi-category-content">
-        `;
-        
-        cat.metrics.forEach(metric => {
-            const rawPrimary = metric.values[primaryIdx];
-            const rawCompare = metric.values[compareIdx];
-            
-            const primaryNum = getRawNumber(rawPrimary);
-            const compareNum = getRawNumber(rawCompare);
-            const deltaNum = primaryNum - compareNum;
-
-            let nameLower = metric.name.toLowerCase();
-            const isPct = nameLower.includes('%') || nameLower.includes('rate') || nameLower.includes('variance') || nameLower.includes('margin') || nameLower.includes('gm') || nameLower.includes('cogs sold vs');
-            
-            const primaryStr = formatSmartValue(rawPrimary, metric.name);
-            const compareStr = formatSmartValue(rawCompare, metric.name);
-            
-            let deltaStr = isPct ? `${Math.abs(deltaNum).toFixed(2).replace(/\.00$/, '')}%` : formatSmartValue(Math.abs(deltaNum), metric.name);
-            
-            let badgeClass = 'delta-neutral';
-            let sign = '';
-            
-            if (Math.abs(deltaNum) < 0.001) {
-                deltaStr = '0';
-            } else if (deltaNum > 0) {
-                sign = '+';
-                badgeClass = metric.inverse ? 'delta-neg' : 'delta-pos'; 
-            } else if (deltaNum < 0) {
-                sign = '-';
-                badgeClass = metric.inverse ? 'delta-pos' : 'delta-neg'; 
-            }
-
-            const sparklineSVG = generateSparklineSVG(metric.values);
-
-            html += `
-                <div class="kpi-row">
-                    <div class="kpi-name-col">
-                        <span class="kpi-name">${metric.name}</span>
-                        ${sparklineSVG}
-                    </div>
-                    <div class="kpi-value-col kpi-primary-val">${primaryStr}</div>
-                    <div class="kpi-value-col" style="color: #888;">${compareStr}</div>
-                    <div class="kpi-delta-col">
-                        <span class="delta-badge ${badgeClass}">${sign}${deltaStr}</span>
-                    </div>
-                </div>
-            `;
-        });
-        
-        html += `</div></div>`;
+    // 2. Hide everything in the container without deleting it
+    Array.from(container.children).forEach(child => {
+        child.style.display = 'none';
     });
 
-    container.innerHTML = html;
+    // 3. THE MAGIC: If this exact view was already built, just unhide it! (0 millisecond load time)
+    const existingView = document.getElementById(viewId);
+    if (existingView) {
+        existingView.style.display = 'block';
+        return; // STOP HERE! No drawing, no lag, no math!
+    }
+
+    // 4. If it hasn't been built yet, show a temporary drawing message
+    let drawMsg = document.getElementById('kpi-draw-msg');
+    if (!drawMsg) {
+        drawMsg = document.createElement('div');
+        drawMsg.id = 'kpi-draw-msg';
+        drawMsg.style.cssText = 'padding: 40px; text-align: center; color: #888; font-weight: 600;';
+        container.appendChild(drawMsg);
+    }
+    drawMsg.innerText = 'Drawing charts...';
+    drawMsg.style.display = 'block';
+
+    // 5. Build the HTML and save it permanently
+    setTimeout(() => {
+        let html = '';
+
+        rawKPIData.forEach(cat => {
+            const collapseClass = ''; // Fully expanded
+            html += `
+                <div class="kpi-category ${collapseClass}">
+                    <div class="kpi-category-header" onclick="toggleCategory(this)">
+                        ${cat.category}
+                        <span class="chevron">▼</span>
+                    </div>
+                    <div class="kpi-category-content">
+            `;
+            
+            cat.metrics.forEach(metric => {
+                const rawPrimary = metric.values[primaryIdx];
+                const rawCompare = metric.values[compareIdx];
+                
+                const primaryNum = getRawNumber(rawPrimary);
+                const compareNum = getRawNumber(rawCompare);
+                const deltaNum = primaryNum - compareNum;
+
+                let nameLower = metric.name.toLowerCase();
+                const isPct = nameLower.includes('%') || nameLower.includes('rate') || nameLower.includes('variance') || nameLower.includes('margin') || nameLower.includes('gm') || nameLower.includes('cogs sold vs');
+                
+                const primaryStr = formatSmartValue(rawPrimary, metric.name);
+                const compareStr = formatSmartValue(rawCompare, metric.name);
+                
+                let deltaStr = isPct ? `${Math.abs(deltaNum).toFixed(2).replace(/\.00$/, '')}%` : formatSmartValue(Math.abs(deltaNum), metric.name);
+                
+                let badgeClass = 'delta-neutral';
+                let sign = '';
+                
+                if (Math.abs(deltaNum) < 0.001) {
+                    deltaStr = '0';
+                } else if (deltaNum > 0) {
+                    sign = '+';
+                    badgeClass = metric.inverse ? 'delta-neg' : 'delta-pos'; 
+                } else if (deltaNum < 0) {
+                    sign = '-';
+                    badgeClass = metric.inverse ? 'delta-pos' : 'delta-neg'; 
+                }
+
+                const sparklineSVG = generateSparklineSVG(metric.values);
+
+                html += `
+                    <div class="kpi-row">
+                        <div class="kpi-name-col">
+                            <span class="kpi-name">${metric.name}</span>
+                            ${sparklineSVG}
+                        </div>
+                        <div class="kpi-value-col kpi-primary-val">${primaryStr}</div>
+                        <div class="kpi-value-col" style="color: #888;">${compareStr}</div>
+                        <div class="kpi-delta-col">
+                            <span class="delta-badge ${badgeClass}">${sign}${deltaStr}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `</div></div>`;
+        });
+
+        // Wrap the newly built HTML in a permanent Div
+        const newView = document.createElement('div');
+        newView.id = viewId;
+        newView.innerHTML = html;
+
+        // Hide the drawing message and append the finished view
+        drawMsg.style.display = 'none';
+        container.appendChild(newView);
+        
+    }, 10);
 }
 
 // =========================================================
@@ -920,13 +1008,40 @@ function checkRule(ruleName, val) {
 }
 
 // =========================================================
-// WEEKLY KPI WIDGET LOGIC (LIVE FETCHING)
+// WEEKLY KPI WIDGET LOGIC (LIVE FETCHING & CACHING)
 // =========================================================
 async function fetchWeeklyKPIs() {
   const container = document.getElementById('weeklyKpiContainer');
   const store = document.getElementById('weeklyKpiStoreSelect').value;
+  const periodBadge = document.getElementById('weeklyKpiPeriod');
   
-  container.innerHTML = '<div style="padding: 40px; text-align: center; color: #888; font-weight: 600; grid-column: 1 / -1;">Syncing Live Weekly Data...</div>';
+  // 1. UNIQUE VIEW ID & HIDE CURRENT VIEWS
+  const viewId = `weekly-view-${store}`;
+  Array.from(container.children).forEach(child => child.style.display = 'none');
+  
+  // 2. CHECK CACHE (Instant Load!)
+  const existingView = document.getElementById(viewId);
+  if (existingView) {
+      existingView.style.display = 'contents'; // Magic grid pass-through to preserve your 5 columns!
+      if (weeklyKpiCache[store] && weeklyKpiCache[store].periodText) {
+          periodBadge.innerText = weeklyKpiCache[store].periodText;
+          periodBadge.style.display = "inline-block";
+      } else {
+          periodBadge.style.display = "none";
+      }
+      return; // STOP HERE! No network request!
+  }
+
+  // 3. SHOW LOADING MESSAGE
+  let fetchMsg = document.getElementById('weekly-fetch-msg');
+  if (!fetchMsg) {
+      fetchMsg = document.createElement('div');
+      fetchMsg.id = 'weekly-fetch-msg';
+      fetchMsg.style.cssText = 'padding: 40px; text-align: center; color: #888; font-weight: 600; grid-column: 1 / -1;';
+      container.appendChild(fetchMsg);
+  }
+  fetchMsg.innerText = 'Syncing Live Weekly Data...';
+  fetchMsg.style.display = 'block';
 
   try {
       const response = await fetch(`${WEEKLY_KPI_URL}?store=${store}&time=4-Week&v=${Date.now()}`);
@@ -936,7 +1051,6 @@ async function fetchWeeklyKPIs() {
       let employees = [];
       let firstEmpRowIndex = -1;
 
-      // Scan bottom-up to find the most recent (last) "Store" total row
       let storeTotalRowIndex = -1;
       for (let i = data.length - 1; i >= 0; i--) {
           let cellValue = String(data[i][0]).trim().toLowerCase();
@@ -949,13 +1063,13 @@ async function fetchWeeklyKPIs() {
       if (storeTotalRowIndex !== -1) {
           let stRow = data[storeTotalRowIndex];
           storeAvg = {
-              buyVal: stRow[2],         
+              buyVal: stRow[2],        
               buyMargin: stRow[5],      
               customers: stRow[6],      
-              conversion: stRow[8],     
+              conversion: stRow[8],    
               time: formatTime(stRow[12]), 
-              noDeals: stRow[14],       
-              listed: stRow[20]         
+              noDeals: stRow[14],      
+              listed: stRow[20]        
           };
 
           for (let i = Math.max(0, storeTotalRowIndex - 6); i <= Math.min(data.length - 1, storeTotalRowIndex + 6); i++) {
@@ -963,21 +1077,9 @@ async function fetchWeeklyKPIs() {
               let name = String(data[i][0]).trim();
               let lowerName = name.toLowerCase();
               
-              if (name && 
-                  lowerName !== "name" && 
-                  lowerName !== "employee" && 
-                  lowerName !== "store" && 
-                  lowerName !== "store total" && 
-                  !lowerName.includes("average") &&
-                  !lowerName.includes("week") &&  
-                  lowerName !== "ovl" &&          
-                  lowerName !== "lee" && 
-                  lowerName !== "wsp" && 
-                  lowerName !== "mpl" && 
-                  lowerName !== "bal"
-              ) {
+              if (name && lowerName !== "name" && lowerName !== "employee" && lowerName !== "store" && lowerName !== "store total" && !lowerName.includes("average") && !lowerName.includes("week") && lowerName !== "ovl" && lowerName !== "lee" && lowerName !== "wsp" && lowerName !== "mpl" && lowerName !== "bal") {
                   if (String(data[i][2]).trim() !== "" || String(data[i][20]).trim() !== "") {
-                      if (firstEmpRowIndex === -1) firstEmpRowIndex = i; // Mark the very first valid employee row
+                      if (firstEmpRowIndex === -1) firstEmpRowIndex = i; 
                       employees.push({
                           name: name,
                           buyVal: data[i][2],
@@ -993,7 +1095,7 @@ async function fetchWeeklyKPIs() {
           }
       }
 
-      // EXTRACT PERIOD TEXT (Dynamically check 2 or 3 rows above the first employee)
+      let periodTextToSave = "";
       if (firstEmpRowIndex !== -1) {
           let headerRowIndex = firstEmpRowIndex - 3;
           let headerRow = data[headerRowIndex];
@@ -1008,33 +1110,29 @@ async function fetchWeeklyKPIs() {
               let rawStart = String(headerRow[4] || '').trim();
               let rawEnd = String(headerRow[6] || '').trim();
               
-              const monthsMap = {
-                "Jan": "January", "Feb": "February", "Mar": "March", "Apr": "April",
-                "May": "May", "Jun": "June", "Jul": "July", "Aug": "August",
-                "Sep": "September", "Oct": "October", "Nov": "November", "Dec": "December"
-              };
+              const monthsMap = { "Jan": "January", "Feb": "February", "Mar": "March", "Apr": "April", "May": "May", "Jun": "June", "Jul": "July", "Aug": "August", "Sep": "September", "Oct": "October", "Nov": "November", "Dec": "December" };
               
-              let formattedMonth = rawMonth.replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/ig, match => {
-                  const cap = match.charAt(0).toUpperCase() + match.slice(1).toLowerCase();
-                  return monthsMap[cap] || match;
-              });
+              let formattedMonth = rawMonth.replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/ig, match => monthsMap[match.charAt(0).toUpperCase() + match.slice(1).toLowerCase()] || match);
               
-              const periodBadge = document.getElementById('weeklyKpiPeriod');
               if (rawMonth && rawStart && rawEnd) {
-                  periodBadge.innerText = "🗓️ " + formattedMonth + " " + rawStart + "-" + rawEnd;
+                  periodTextToSave = "🗓️ " + formattedMonth + " " + rawStart + "-" + rawEnd;
+                  periodBadge.innerText = periodTextToSave;
                   periodBadge.style.display = "inline-block";
               } else {
                   periodBadge.style.display = "none";
               }
           }
       }
+      
+      // Save period text to cache memory!
+      weeklyKpiCache[store] = { periodText: periodTextToSave };
 
       if (employees.length === 0) {
-          container.innerHTML = '<div style="padding: 40px; text-align: center; color: #dc2626; font-weight: 600; grid-column: 1 / -1;">No employee data found on the spreadsheet for this store.</div>';
+          fetchMsg.innerText = 'No employee data found on the spreadsheet for this store.';
+          fetchMsg.style.color = '#dc2626';
           return;
       }
 
-      // PERFECTLY ALIGNED HELPER FUNCTION
       const buildCol = (title, storeVal1, storeBadgeVal, empKey1, empBadgeKey, ruleName, isPctBadge) => {
          let hasBadge = empBadgeKey !== '';
          let gridCols = '1fr 75px 55px';
@@ -1053,7 +1151,6 @@ async function fetchWeeklyKPIs() {
                    badge2Html = `<span style="display: flex; justify-content: flex-end;"><span class="delta-badge ${badgeClass}">${val2}</span></span>`;
                }
             } else if (empKey1) {
-               // If there is NO badge column, we apply the rule directly to the text color!
                let isBad = checkRule(ruleName, val1);
                if (isBad) val1Style += ' color: var(--red-alert); font-weight: 900;';
             }
@@ -1100,17 +1197,26 @@ async function fetchWeeklyKPIs() {
          `;
       };
 
-      container.innerHTML = `
+      // Hide fetch message
+      fetchMsg.style.display = 'none';
+
+      // BUILD & SAVE VIEW
+      const newView = document.createElement('div');
+      newView.id = viewId;
+      newView.style.display = 'contents'; // Crucial for CSS Grid alignment
+      newView.innerHTML = `
          ${buildCol('Buying Performance', storeAvg.buyVal, storeAvg.buyMargin, 'buyVal', 'buyMargin', 'margin', true)}
          ${buildCol('Customer Conversion', storeAvg.customers, storeAvg.conversion, 'customers', 'conversion', 'conversion', true)}
          ${buildCol('No Deals', '', storeAvg.noDeals, '', 'noDeals', 'nodeals', false)}
          ${buildCol('Avg Trans. Time', '', storeAvg.time, '', 'time', 'time', false)}
          ${buildCol('Processed / Listed', storeAvg.listed, '', 'listed', '', null, false)}
       `;
+      container.appendChild(newView);
 
   } catch (error) {
       console.error("Weekly KPI Sync Failed", error);
-      container.innerHTML = '<div style="padding: 40px; text-align: center; color: #dc2626; font-weight: 600; grid-column: 1 / -1;">Failed to load Weekly KPI data. Check console.</div>';
+      fetchMsg.innerText = 'Failed to load Weekly KPI data. Check console.';
+      fetchMsg.style.color = '#dc2626';
   }
 }
 
@@ -1195,17 +1301,39 @@ async function initChecklists() {
     }
 }
   
-// --- BOOTSTRAP: Only fetch dashboard data AFTER PIN unlock! ---
-function initDashboardData() {
-    initChecklists(); // Loads the manager's personal checklist state!
-    loadCMS();
-    fetchHubData(); 
-    fetchKPIData();
-    fetchVarianceData();
-    fetchWeeklyKPIs(); 
+// =========================================================
+// SILENT BACKGROUND DATA PRE-LOADER
+// =========================================================
+async function preloadAllStores() {
+    const stores = ["OVL", "LEE", "WSP", "MPL", "BAL"];
+    for (const s of stores) {
+        if (!monthlyKpiCache[s]) {
+            try {
+                const res = await fetch(`${MONTHLY_KPI_URL}?store=${s}&v=${Date.now()}`);
+                const payload = await res.json();
+                if (!payload.error) {
+                    monthlyKpiCache[s] = { months: payload.months, data: groupKPIs(payload.data) };
+                }
+            } catch(e) {} // Silently ignore background errors
+        }
+    }
 }
 
-document.getElementById('kpiStoreSelect').addEventListener('change', fetchKPIData);
+// --- BOOTSTRAP: Only fetch dashboard data AFTER PIN unlock! ---
+function initDashboardData() {
+    initChecklists(); 
+    loadCMS();        
+    
+    setTimeout(fetchHubData, 100);
+    setTimeout(fetchVarianceData, 300);
+    setTimeout(fetchWeeklyKPIs, 500);
+    setTimeout(fetchKPIData, 700); 
+
+    // 🌟 Kicks off the silent background download 4 seconds after loading!
+    setTimeout(preloadAllStores, 4000);
+}
+
+document.getElementById('kpiStoreSelect').addEventListener('change', () => fetchKPIData(false));
 
 document.addEventListener("DOMContentLoaded", () => {
     // 1. Sidebar Snap: Apply collapsed state immediately while the page is still invisible

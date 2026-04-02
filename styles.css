@@ -517,7 +517,12 @@ body.no-scroll { overflow: hidden !important; }
 .checklist-item:hover { color: var(--sage-professional); }
 .checklist-item input[type="checkbox"] { margin-top: 2px; cursor: pointer; accent-color: var(--sage-professional); width: 16px; height: 16px; flex-shrink: 0; }
 
-.dashboard-layout { display: grid; grid-template-columns: 700px 1fr; gap: 30px; align-items: start; }
+.dashboard-layout { 
+  display: grid; 
+  grid-template-columns: 1fr 1fr; 
+  gap: 30px; 
+  align-items: stretch; /* CHANGE THIS FROM 'start' TO 'stretch' */
+}
 .dashboard-layout > div { min-width: 0; }
 
 /* Interactive KPI Dashboard */
@@ -526,7 +531,16 @@ body.no-scroll { overflow: hidden !important; }
 .kpi-select { padding: 8px 12px; border-radius: 8px; border: 1px solid #ddd; font-family: 'Inter', sans-serif; font-weight: 700; color: var(--slate-charcoal); outline: none; cursor: pointer; background: white; }
 .kpi-select:focus { border-color: var(--sage-professional); }
 
-.kpi-scroll-area { max-height: 630px; overflow-y: auto; overscroll-behavior: contain; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
+.kpi-scroll-area { 
+  /* Delete the max-height: 620px; rule entirely! */
+  /* Add these two flexbox rules so it fills the available space perfectly */
+  flex-grow: 1;
+  min-height: 0; 
+  
+  overflow-y: auto; 
+  border-bottom-left-radius: 12px; 
+  border-bottom-right-radius: 12px; 
+}
 .kpi-scroll-area::-webkit-scrollbar { width: 6px; }
 .kpi-scroll-area::-webkit-scrollbar-track { background: transparent; }
 .kpi-scroll-area::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
@@ -540,7 +554,19 @@ body.no-scroll { overflow: hidden !important; }
 .kpi-category.collapsed .chevron { transform: rotate(-90deg); }
 .chevron { transition: transform 0.2s; font-size: 12px; color: #888; }
 
-.kpi-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; align-items: center; padding: 15px 20px; border-top: 1px solid #f5f5f5; background: white; transition: background 0.2s; }
+.kpi-row { 
+  display: grid; 
+  grid-template-columns: 2fr 1fr 1fr 1fr; 
+  align-items: center; 
+  padding: 15px 20px; 
+  border-top: 1px solid #f5f5f5; 
+  background: white; 
+  transition: background 0.2s; 
+  
+  /* THE SPEED UPGRADES: Tells the browser NOT to draw rows that are scrolled out of view! */
+  content-visibility: auto;
+  contain-intrinsic-size: 0 52px;
+}
 .kpi-row:hover { background: #f9fafb; }
 
 .kpi-name-col { display: flex; flex-direction: column; gap: 4px; }
@@ -908,6 +934,28 @@ body.preload {
 }
 
 /* =========================================================
+   WEEKLY KPI GRID ALIGNMENT
+   ========================================================= */
+.weekly-kpi-grid {
+  display: grid;
+  /* Forces the 5 categories to sit side-by-side in perfect columns */
+  grid-template-columns: repeat(5, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+/* Fluid responsive drops so the 5 columns don't squish on laptops */
+@media (max-width: 1400px) {
+  .weekly-kpi-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 1100px) {
+  .weekly-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+  .weekly-kpi-grid { grid-template-columns: 1fr; }
+}
+
+/* =========================================================
    UNIVERSAL RESPONSIVE COMMAND CENTER
    ========================================================= */
 
@@ -960,4 +1008,79 @@ body.preload {
   .main-content { padding: 15px; }
   /* Compresses the sidebar toggle so it doesn't cover up text */
   .sidebar-toggle { width: 28px; height: 28px; font-size: 10px; }
+}
+
+/* =========================================================
+   KPI CATEGORY ACCORDIONS (CLAMPS)
+   ========================================================= */
+/* Adds a border between each distinct category */
+.kpi-category { 
+  border-bottom: 1px solid #eee; 
+}
+.kpi-category:last-child { 
+  border-bottom: none; 
+}
+
+/* Formats the header into a clickable, premium bar */
+.kpi-category-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8fafc; 
+  padding: 12px 20px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--slate-charcoal);
+  cursor: pointer;
+  transition: background 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.kpi-category-header:hover {
+  background: #f1f5f9;
+}
+
+/* Styles the Down Arrow */
+.chevron {
+  font-size: 10px;
+  color: #888;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* =======================================
+   INTERACTIVE COLLAPSE LOGIC
+   ======================================= */
+/* Hides the metrics rows when the category is clicked */
+.kpi-category.collapsed .kpi-category-content {
+  display: none;
+}
+
+/* Rotates the arrow to point right (►) when collapsed */
+.kpi-category.collapsed .chevron {
+  transform: rotate(-90deg);
+}
+
+/* =========================================================
+   KPI 4-COLUMN HEADER ALIGNMENT
+   ========================================================= */
+.kpi-table-header {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  padding: 15px 20px 10px 20px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #f4f7f9;
+  background: white;
+}
+
+/* Centers the middle two dates, right-aligns the Delta */
+.kpi-table-header div:nth-child(2), 
+.kpi-table-header div:nth-child(3) { 
+  text-align: center; 
+}
+.kpi-table-header div:last-child { 
+  text-align: right; 
 }
