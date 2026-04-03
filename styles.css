@@ -53,17 +53,28 @@ body.no-scroll { overflow: hidden !important; }
   box-shadow: 4px 0 15px rgba(0,0,0,0.05); 
 }
 
+.brand-logo {
+    height: 40px; /* Set a fixed height that fits your design */
+    width: 220px;  /* Set a width that represents the "Full" logo size */
+    object-fit: cover; /* Ensures the image covers the area without distortion */
+    object-position: left; /* CRITICAL: This keeps the left side of the image visible */
+    transition: width 0.3s ease; /* Smooth transition when collapsing */
+    display: block;
+}
+
+/* Update the container to align content to the left */
 .brand-area { 
   height: 160px; 
-  padding: 40px 20px 0 20px; 
-  text-align: center; 
+  padding: 40px 20px 0 20px; /* Removed right padding, kept left padding at 20px */
+  text-align: center; /* Changed from center */
   border-bottom: 1px solid rgba(255,255,255,0.05); 
   margin-bottom: 20px; 
   transition: padding 0.3s; 
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: center; /* Changed from center to align logo to the left */
   justify-content: flex-start; 
+  overflow: hidden; /* Prevents the logo from bleeding out during transition */
 }
 
 .brand-area h1 { 
@@ -129,8 +140,9 @@ body.no-scroll { overflow: hidden !important; }
 .sidebar.collapsed { width: 76px; }
 .sidebar.collapsed .brand-area { padding: 40px 10px; }
 .sidebar.collapsed .brand-area h1 { font-size: 12px; letter-spacing: 1px; }
-.sidebar.collapsed .badge { opacity: 0; font-size: 0px; padding: 0px; margin-top: 0px; letter-spacing: 0px; pointer-events: none; }
+.sidebar.collapsed .badge { opacity: 0; visibility: hidden;}
 .sidebar.collapsed .nav-link span, .sidebar.collapsed .idea-btn span { opacity: 0; width: 0; overflow: hidden; transition: opacity 0.1s ease 0s; }
+.sidebar.collapsed .brand-logo {width: 40px;}
 
 /* SIDEBAR TOGGLE */
 .sidebar-toggle { 
