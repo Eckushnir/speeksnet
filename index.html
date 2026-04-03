@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SPEEKSNET | SPEEKS Hub</title>
-<link rel="stylesheet" href="styles.css">
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SPEEKSNET | SPEEKS Hub</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <script src="speeks.js" defer></script>
 </head>
 <body class="preload">
 
@@ -54,10 +55,10 @@
             </div>
         </div>
     <div id="ann-container" class="notif-content">
-        <div style="padding: 20px; color:#999; font-size:12px; text-align:center;">Syncing...</div>
+      <div class="status-message">Syncing...</div>
     </div>
     <div id="archive-container" class="notif-content" style="display: none;">
-        <div style="padding: 20px; color:#999; font-size:12px; text-align:center;">Syncing...</div>
+      <div class="status-message">Syncing...</div>
     </div>
 </div>
 
@@ -82,231 +83,37 @@
     <div class="project-grid">
       <div class="card" style="margin-bottom: 0;">
         <div class="card-title">⚡ Active Projects</div>
-        <div id="active-container"><div style="padding: 12px; color: #999; font-size: 12px;">Syncing...</div></div>
+        <div id="active-container"><div class="status-message">Syncing...</div></div>
       </div>
       <div class="card" style="margin-bottom: 0;">
         <div class="card-title">🚀 Upcoming Projects</div>
-        <div id="upcoming-container"><div style="padding: 12px; color: #999; font-size: 12px;">Syncing...</div></div>
+        <div id="upcoming-container"><div class="status-message">Syncing...</div></div>
       </div>
     </div>
 
     <div class="card">
         <div class="card-title">⌨️ System Hotkeys & Knowledge Base</div>
-        <div id="kbSearchArea" style="margin-bottom:20px; display:flex; gap:10px;">
-            <input type="text" id="kbSearch" onkeyup="filterKB()" placeholder="Search by Brand, Device, or Task..." style="flex-grow:1; padding:12px; border-radius:10px; border:1px solid #ddd; outline:none; font-family:'Inter';">
-            <button onclick="loadHotkeys()" style="background:var(--slate-charcoal); color:white; border:none; padding:12px 20px; border-radius:10px; font-weight:700; cursor:pointer;">Sync</button>
+        
+        <div id="kbSearchArea" class="kb-search-bar">
+            <input type="text" id="kbSearch" class="kb-search-input" onkeyup="filterKB()" placeholder="Search by Brand, Device, or Task...">
+            <button onclick="loadHotkeys()" class="btn-primary">🔄 Sync</button>
         </div>
-        <div style="max-height:500px; overflow-y:auto; border-radius:12px; border:1px solid #eee;">
-            <table style="width:100%; border-collapse:collapse; font-size:13px; table-layout:fixed;">
-              <thead style="position:sticky; top:0; background:var(--slate-charcoal); color:white; z-index:10;">
-                <tr><th style="width:15%; padding:16px;">Brand</th><th style="width:15%">Device</th><th style="width:15%">OS</th><th style="width:35%">Instructions</th><th style="width:20%">Objective</th></tr>
+        
+        <div class="kb-table-container">
+            <table class="kb-table">
+              <thead>
+                <tr>
+                    <th style="width:15%;">Brand</th>
+                    <th style="width:15%">Device</th>
+                    <th style="width:15%">OS</th>
+                    <th style="width:35%">Instructions</th>
+                    <th style="width:20%">Objective</th>
+                </tr>
               </thead>
               <tbody id="kbBody"></tbody>
             </table>
         </div>
     </div>
 </main>
-
-<script>
-// URL CONSTANTS
-const CMS_URL = 'https://script.google.com/macros/s/AKfycbxZviJiiQKcQYyp3SK4tcNBHrHXkID7cmwwuONStVPE9DHCSAMappqAs9dBns7ufECI/exec';
-const HOTKEYS_URL = 'https://script.google.com/macros/s/AKfycbyLburcVWM8xAKwDt2RHAQhZBLb_rJjb2__EzhoAKx1KgkNFi-BchVetgaTKvwCwqZiRw/exec';
-
-function toggleSidebar() {
-    const sidebar = document.querySelector('.sidebar');
-    const mainContent = document.querySelector('.main-content');
-    const toggleBtn = document.querySelector('.sidebar-toggle');
-    sidebar.classList.toggle('collapsed');
-    mainContent.classList.toggle('expanded');
-    toggleBtn.classList.toggle('collapsed');
-    localStorage.setItem('speeksSidebar', sidebar.classList.contains('collapsed') ? 'collapsed' : 'expanded');
-}
-
-// --- MODAL LOGIC ---
-function closeAllModals() {
-    document.getElementById('notifDropdown').classList.remove('show');
-    document.getElementById('calendarDropdown').classList.remove('show');
-    document.getElementById('globalOverlay').classList.remove('show');
-    document.body.classList.remove('no-scroll');
-}
-
-function toggleNotifs() {
-  const dropdown = document.getElementById('notifDropdown');
-  const isOpen = dropdown.classList.contains('show');
-  closeAllModals(); // Close any other open modals first
-  
-  if (!isOpen) {
-    dropdown.classList.add('show');
-    document.getElementById('globalOverlay').classList.add('show');
-    document.getElementById('notifBadge').classList.remove('active');
-    document.body.classList.add('no-scroll');
-  }
-}
-
-function toggleCalendar() {
-  const dropdown = document.getElementById('calendarDropdown');
-  const isOpen = dropdown.classList.contains('show');
-  closeAllModals(); // Close any other open modals first
-  
-  if (!isOpen) {
-    dropdown.classList.add('show');
-    document.getElementById('globalOverlay').classList.add('show');
-    document.body.classList.add('no-scroll');
-  }
-}
-
-function switchAnnTab(tab) {
-  if (tab === 'recent') {
-      document.getElementById('ann-container').style.display = 'block';
-      document.getElementById('archive-container').style.display = 'none';
-      document.getElementById('tab-recent').classList.add('active');
-      document.getElementById('tab-archive').classList.remove('active');
-  } else {
-      document.getElementById('ann-container').style.display = 'none';
-      document.getElementById('archive-container').style.display = 'block';
-      document.getElementById('tab-archive').classList.add('active');
-      document.getElementById('tab-recent').classList.remove('active');
-  }
-}
-
-// Close modals when clicking the background overlay
-window.addEventListener('click', function(e) {
-  const overlay = document.getElementById('globalOverlay');
-  if (overlay && e.target === overlay) {
-    closeAllModals();
-  }
-});
-
-// Close modals when pressing the ESC key
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') {
-    closeAllModals();
-  }
-});
-
-// --- DATA FETCHING ---
-async function loadCMS() {
-    try {
-        const response = await fetch(`${CMS_URL}?v=${Date.now()}`);
-        const data = await response.json();
-        
-        const annContainer = document.getElementById('ann-container');
-        const archiveContainer = document.getElementById('archive-container');
-        const badge = document.getElementById('notifBadge');
-        
-        let showBadge = false;
-        let recentHtml = "";
-        let archiveHtml = "";
-        let recentCount = 0;
-        let archiveCount = 0;
-
-        if (data.announcements && data.announcements.length > 0) {
-            const sortedAnns = [...data.announcements].reverse();
-            const now = new Date();
-            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-            sortedAnns.forEach(item => {
-                const text = item.text || "";
-                const rawDate = item.date || "";
-                const author = item.author || "";
-                let displayDate = "";
-                let isArchived = false;
-
-                if (rawDate) {
-                  const annDate = new Date(rawDate);
-                  if (!isNaN(annDate.getTime())) {
-                    displayDate = annDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-                    const annDateOnly = new Date(annDate.getFullYear(), annDate.getMonth(), annDate.getDate());
-                    const diffDays = (today - annDateOnly) / (1000 * 60 * 60 * 24);
-                    
-                    if (diffDays <= 1 && diffDays >= 0) showBadge = true;
-                    if (diffDays > 2) isArchived = true;
-                  }
-                }
-
-                const htmlSnippet = `
-                  <div class="notif-item">
-                    <div class="ann-header">
-                      <span class="ann-author">${author || 'Announcement'}</span>
-                      ${displayDate ? `<small class="ann-date">${displayDate}</small>` : ''}
-                    </div>
-                    <hr />
-                    <div class="ann-text">${text}</div>
-                  </div>`;
-
-                if (isArchived) { archiveHtml += htmlSnippet; archiveCount++; } 
-                else { recentHtml += htmlSnippet; recentCount++; }
-            });
-            
-            if (recentCount === 0) recentHtml = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No recent announcements</div>';
-            if (archiveCount === 0) archiveHtml = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No archived announcements</div>';
-
-        } else {
-            recentHtml = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No announcements</div>';
-            archiveHtml = '<div style="padding: 20px; color:#999; font-size:12px; text-align:center;">No archived announcements</div>';
-        }
-
-        annContainer.innerHTML = recentHtml;
-        archiveContainer.innerHTML = archiveHtml;
-        
-        if (showBadge) badge.classList.add('active');
-
-        const activeProjects = data.active || [];
-        document.getElementById('active-container').innerHTML = activeProjects.length > 0
-          ? activeProjects.map(txt => `<div class="cms-item cms-active">${txt}</div>`).join('') 
-          : '<div class="cms-item">No active projects</div>';
-          
-        const upcomingProjects = data.upcoming || [];
-        document.getElementById('upcoming-container').innerHTML = upcomingProjects.length > 0
-          ? upcomingProjects.map(txt => `<div class="cms-item cms-upcoming">${txt}</div>`).join('') 
-          : '<div class="cms-item">No upcoming projects</div>';
-          
-    } catch (e) { console.error("CMS Failed", e); }
-}
-
-async function loadHotkeys() {
-    const tbody = document.getElementById('kbBody');
-    try {
-        const response = await fetch(`${HOTKEYS_URL}?v=${Date.now()}`);
-        const data = await response.json();
-        tbody.innerHTML = data.map((row) => {
-            const cols = Object.values(row);
-            const brand = cols[1] || "";
-            if (brand.toLowerCase() === "brand" || !brand) return '';
-            let bClass = 'b-generic';
-            if (brand.toLowerCase().includes('apple')) bClass = 'b-apple';
-            else if (['dell','hp','lenovo','asus'].some(x => brand.toLowerCase().includes(x))) bClass = 'b-windows';
-            return `<tr><td style="padding:16px;"><span class="bubble ${bClass}">${brand}</span></td><td>${cols[2]}</td><td>${cols[3]}</td><td>${cols[4]}</td><td>${cols[5]}</td></tr>`;
-        }).join('');
-    } catch (e) { console.error("KB Failed", e); }
-}
-
-function filterKB() {
-    const filter = document.getElementById("kbSearch").value.toUpperCase();
-    const rows = document.getElementById("kbBody").getElementsByTagName("tr");
-    for (let i = 0; i < rows.length; i++) {
-        const text = rows[i].textContent || rows[i].innerText;
-        rows[i].style.display = text.toUpperCase().includes(filter) ? "" : "none";
-    }
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-    // 1. Instantly snap the sidebar to the correct state
-    if (localStorage.getItem('speeksSidebar') === 'collapsed') {
-        document.querySelector('.sidebar').classList.add('collapsed');
-        document.querySelector('.main-content').classList.add('expanded');
-        document.querySelector('.sidebar-toggle').classList.add('collapsed');
-    }
-
-    // 2. Remove the animation lock 50ms later so hover effects work again
-    setTimeout(() => {
-        document.body.classList.remove('preload');
-    }, 50);
-
-    // 3. Load the data specific to the Hub page
-    loadHotkeys();
-    loadCMS();
-});
-</script>
 </body>
 </html>
