@@ -52,8 +52,8 @@
     <div class="manage-content" id="manageDocsList">
         </div>
     <div class="manage-footer">
-        <button class="btn-add" onclick="addManageRow()">+ Add Policy</button>
-        <button class="btn-save" id="saveDocsBtn" onclick="saveDocs()">Save Changes</button>
+        <button class="btn-secondary" onclick="addManageRow()">+ Add Policy</button>
+        <button class="btn-primary" id="saveDocsBtn" onclick="saveDocs()">Save Changes</button>
     </div>
 </div>
 
@@ -68,8 +68,12 @@
                 <button class="modal-close-btn" onclick="closeAllModals()">✖</button>
             </div>
         </div>
-    <div id="ann-container" class="notif-content"><div style="padding: 20px; color:#999; font-size:12px; text-align:center;">Syncing...</div></div>
-    <div id="archive-container" class="notif-content" style="display: none;"><div style="padding: 20px; color:#999; font-size:12px; text-align:center;">Syncing...</div></div>
+    <div id="ann-container" class="notif-content">
+        <div class="status-message">Syncing...</div>
+    </div>
+    <div id="archive-container" class="notif-content" style="display: none;">
+        <div class="status-message">Syncing...</div>
+    </div>
 </div>
 
 <div class="modal-menu calendar-menu" id="calendarDropdown">
@@ -88,9 +92,9 @@
         <h2>Processes & Policies</h2>
         <p>Your central library for company guidelines, procedures, and manuals.</p>
     </div>
-    <div class="search-container">
-        <span class="search-icon">🔍</span>
-        <input type="text" id="docSearch" class="search-input" placeholder="Search for documents..." onkeyup="filterDocs()">
+    <div class="kb-search-bar" style="position: relative; max-width: 500px; width: 100%;">
+        <span style="position: absolute; left: 18px; top: 50%; transform: translateY(-50%); font-size: 16px; color: #aaa; z-index: 5;">🔍</span>
+        <input type="text" id="docSearch" class="kb-search-input" placeholder="Search for documents..." onkeyup="filterDocs()" style="padding-left: 45px; width: 100%;">
     </div>
   </div>
 
