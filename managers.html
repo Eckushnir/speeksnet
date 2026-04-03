@@ -15,7 +15,7 @@
         <p id="authSubtitle">Please enter your 4-digit manager PIN.</p>
         <div id="pinInputContainer">
             <input type="password" id="pinInput" maxlength="4" placeholder="••••" onkeypress="if(event.key === 'Enter') checkPIN()">
-            <button id="unlockBtn" onclick="checkPIN()">Unlock Portal</button>
+            <button id="unlockBtn" class="btn-primary" onclick="checkPIN()">Unlock Portal</button>
             <div id="pinError" class="pin-error">Incorrect PIN. Please try again.</div>
         </div>
         <a href="index.html" class="auth-back-btn">← Return to SPEEKS Hub</a>
@@ -67,10 +67,10 @@
             </div>
         </div>
     <div id="ann-container" class="notif-content">
-        <div style="padding: 20px; color:#999; font-size:12px; text-align:center;">Syncing...</div>
+        <div class="status-message">Syncing...</div>
     </div>
     <div id="archive-container" class="notif-content" style="display: none;">
-        <div style="padding: 20px; color:#999; font-size:12px; text-align:center;">Syncing...</div>
+        <div class="status-message">Syncing...</div>
     </div>
 </div>
 
@@ -108,7 +108,7 @@
       <div class="card kpi-master-card">
         <div class="card-title" style="margin-bottom: 15px; border-bottom: none;">
             <span>🧮 Monthly KPI Comparison</span>
-            <a href="https://docs.google.com/spreadsheets/d/1e4mW-pcwUMJjl2Pjry6PT180P8M8nkYL5Z4GcspQmEA/edit?usp=sharing" target="_blank" style="font-size: 11px; background: #f4f7f9; padding: 8px 14px; border-radius: 8px; color: var(--slate-charcoal); text-decoration: none; font-weight: 800; transition: 0.2s;">Open Full Sheet ↗</a>
+            <a href="https://docs.google.com/spreadsheets/d/1e4mW-pcwUMJjl2Pjry6PT180P8M8nkYL5Z4GcspQmEA/edit?usp=sharing" target="_blank" class="mini-action-btn">Full Sheet ↗</a>
         </div>
         
         <div class="kpi-header-controls">
@@ -139,7 +139,7 @@
             </div>
 
             <div id="kpiDashboardContainer" class="kpi-scroll-area">
-                <div style="padding: 40px; text-align: center; color: #888; font-weight: 600;">Syncing KPI Data...</div>
+                <div class="status-message">Syncing KPI Data...</div>
             </div>
         </div>
       </div>
@@ -156,7 +156,7 @@
                 <option value="MPL">MPL</option>
                 <option value="BAL">BAL</option>
               </select>
-              <a href="https://docs.google.com/spreadsheets/d/1i_oV37lZXq8s91f9ymzwQlrM8WY2UlQQQ0qsRP3xLJ8/edit?usp=sharing" target="_blank" style="font-size: 11px; background: #f4f7f9; padding: 8px 12px; border-radius: 8px; color: var(--slate-charcoal); text-decoration: none; font-weight: 800; border: 1px solid #ddd; transition: 0.2s;">Full Sheet ↗</a>
+              <a href="https://docs.google.com/spreadsheets/d/1i_oV37lZXq8s91f9ymzwQlrM8WY2UlQQQ0qsRP3xLJ8/edit?usp=sharing" target="_blank" class="mini-action-btn">Full Sheet ↗</a>
             </div>
           </div>
           
@@ -212,7 +212,7 @@
           </div>
           
           <div class="vw-dashboard" id="vw-dashboard-container" style="flex-grow: 1;">
-            <div style="padding: 40px; text-align: center; color: #888; font-weight: 600; grid-column: 1 / -1;">Syncing Variance Data...</div>
+                <div class="status-message">Syncing Variance Data...</div>
           </div>
 
           <div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px; text-align: center;">
@@ -233,12 +233,12 @@
                   <option value="LEE">LEE</option>
                   <option value="WSP">WSP</option>
               </select>
-              <a href="https://docs.google.com/spreadsheets/d/1oHOnA6wDwaLQ-EP4-CiDTkKpAdP2V7y8mOay416HDME/edit?usp=sharing" target="_blank" style="font-size: 11px; background: #f4f7f9; padding: 8px 12px; border-radius: 8px; color: var(--slate-charcoal); text-decoration: none; font-weight: 800; border: 1px solid #ddd; transition: 0.2s;">Full Sheet ↗</a>
+              <a href="https://docs.google.com/spreadsheets/d/1oHOnA6wDwaLQ-EP4-CiDTkKpAdP2V7y8mOay416HDME/edit?usp=sharing" target="_blank" class="mini-action-btn">Full Sheet ↗</a>
             </div>
           </div>
           
           <div class="weekly-kpi-grid" id="weeklyKpiContainer">
-              <div style="padding: 40px; text-align: center; color: #888; font-weight: 600; grid-column: 1 / -1;">Syncing Live Weekly Data...</div>
+                <div class="status-message">Syncing Live Weekly Data...</div>
           </div>
       </div>
 
@@ -637,7 +637,6 @@ async function fetchKPIData(isRetry = false) {
             fetchMsg.style.cssText = 'padding: 40px; text-align: center; color: var(--sage-professional); font-weight: 600;';
             container.appendChild(fetchMsg);
         }
-        fetchMsg.innerText = 'Syncing Live Data from Google...';
         fetchMsg.style.display = 'block';
     }
     
@@ -670,15 +669,21 @@ async function fetchKPIData(isRetry = false) {
         
     } catch (e) { 
         if (!isRetry) {
-            console.warn("Google throttled. Auto-Retrying...");
+            // Safely hide all current views instead of destroying them
+            Array.from(container.children).forEach(child => child.style.display = 'none');
+        
             let fetchMsg = document.getElementById('kpi-fetch-msg');
-            if (fetchMsg) fetchMsg.innerText = 'Connection delayed. Retrying...';
-            setTimeout(() => fetchKPIData(true), 1500);
-            return;
+            if (!fetchMsg) {
+                fetchMsg = document.createElement('div');
+                fetchMsg.id = 'kpi-fetch-msg';
+                fetchMsg.className = 'status-message'; // Using our new standard class!
+                container.appendChild(fetchMsg);
+            }
+            fetchMsg.innerText = 'Syncing Monthly KPIs...';
+            fetchMsg.style.display = 'block';
         }
-        container.innerHTML = '<div style="padding: 40px; text-align: center; color: #dc2626; font-weight: 600;">Failed to sync KPI data. Check Apps Script.</div>'; 
     }
-}
+}    
 
 function renderKPIDashboard() {
     const store = document.getElementById('kpiStoreSelect').value;
@@ -709,7 +714,7 @@ function renderKPIDashboard() {
     if (!drawMsg) {
         drawMsg = document.createElement('div');
         drawMsg.id = 'kpi-draw-msg';
-        drawMsg.style.cssText = 'padding: 40px; text-align: center; color: #888; font-weight: 600;';
+        drawMsg.className = 'status-message'; // Standardized!
         container.appendChild(drawMsg);
     }
     drawMsg.innerText = 'Drawing charts...';

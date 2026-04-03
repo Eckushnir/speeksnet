@@ -54,12 +54,12 @@
                 <button class="modal-close-btn" onclick="closeAllModals()">✖</button>
             </div>
         </div>
-        <div id="ann-container" class="notif-content">
-            <div style="padding: 20px; color:#999; font-size:12px; text-align:center;">Syncing...</div>
-        </div>
-        <div id="archive-container" class="notif-content" style="display: none;">
-            <div style="padding: 20px; color:#999; font-size:12px; text-align:center;">Syncing...</div>
-        </div>
+    <div id="ann-container" class="notif-content">
+        <div class="status-message">Syncing...</div>
+    </div>
+    <div id="archive-container" class="notif-content" style="display: none;">
+        <div class="status-message">Syncing...</div>
+    </div>
     </div>
 </div>
 
@@ -81,7 +81,7 @@
     </div>
     <div class="sync-zone">
         <span class="last-synced-text" id="lastSyncedText">Last Synced: --:--</span>
-        <button class="sync-btn" onclick="syncAllData()">🔄 Sync Data</button>
+        <button onclick="syncAllData()" class="btn-primary">🔄 Sync Data</button>
     </div>
   </div>
 
@@ -127,7 +127,7 @@
 
   <div id="pane-records" class="tab-pane">
       <div id="recordsContainer">
-          <div style="padding: 40px; text-align: center; color: #888; font-weight: 600;">Syncing Records Data...</div>
+        <div class="status-message">Syncing Records Data...</div>
       </div>
   </div>
 
