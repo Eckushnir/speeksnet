@@ -85,25 +85,62 @@
 
   <div class="project-grid">
     
+    <div id="ceoModule" class="dynamic-module card" style="margin-bottom: 0;">
+      <div class="card-title">👑 CEO Tools</div>
+      <p style="padding: 15px; color: #ddd;">Executive resources and global overviews.</p>
+    </div>
+
     <div id="districtManagerModule" class="dynamic-module card" style="margin-bottom: 0;">
-      <div class="card-title">🏢 Corporate Tools</div>
-      <p style="padding: 15px; color: #ddd;">This module only appears for District Managers or Corporate staff.</p>
+      <div class="card-title">🏢 District Manager Resources</div>
+      <p style="padding: 15px; color: #ddd;">Multi-store reporting and district-level tools.</p>
     </div>
 
     <div id="managerModule" class="dynamic-module card" style="margin-bottom: 0;">
       <div class="card-title">🛠️ Manager Resources</div>
-      <p style="padding: 15px; color: #ddd;">This module only appears for Store Managers.</p>
+      <p style="padding: 15px; color: #ddd;">Store-level management, scheduling, and admin tools.</p>
     </div>
 
-    <div id="leeStoreModule" class="dynamic-module card" style="margin-bottom: 0;">
-      <div class="card-title">📍 LEE Location Dashboard</div>
-      <p style="padding: 15px; color: #ddd;">Information strictly relevant to the LEE location.</p>
+    <div id="employeeModule" class="dynamic-module card" style="margin-bottom: 0;">
+      <div class="card-title">👥 Employee Portal</div>
+      <p style="padding: 15px; color: #ddd;">Daily checklists, schedules, and floor resources.</p>
     </div>
-    
+
+    <div id="trainingModule" class="dynamic-module card" style="margin-bottom: 0;">
+      <div class="card-title">🎓 Training Academy</div>
+      <p style="padding: 15px; color: #ddd;">Onboarding guides and certification modules.</p>
+    </div>
+
     <div id="ovlStoreModule" class="dynamic-module card" style="margin-bottom: 0;">
       <div class="card-title">📍 OVL Location Dashboard</div>
       <p style="padding: 15px; color: #ddd;">Information strictly relevant to the OVL location.</p>
     </div>
+    
+    <div id="leeStoreModule" class="dynamic-module card" style="margin-bottom: 0;">
+      <div class="card-title">📍 LEE Location Dashboard</div>
+      <p style="padding: 15px; color: #ddd;">Information strictly relevant to the LEE location.</p>
+    </div>
+
+    <div id="wspStoreModule" class="dynamic-module card" style="margin-bottom: 0;">
+      <div class="card-title">📍 WSP Location Dashboard</div>
+      <p style="padding: 15px; color: #ddd;">Information strictly relevant to the WSP location.</p>
+    </div>
+
+    <div id="mplStoreModule" class="dynamic-module card" style="margin-bottom: 0;">
+      <div class="card-title">📍 MPL Location Dashboard</div>
+      <p style="padding: 15px; color: #ddd;">Information strictly relevant to the MPL location.</p>
+    </div>
+
+    <div id="balStoreModule" class="dynamic-module card" style="margin-bottom: 0;">
+      <div class="card-title">📍 BAL Location Dashboard</div>
+      <p style="padding: 15px; color: #ddd;">Information strictly relevant to the BAL location.</p>
+    </div>
+
+    <div id="corpStoreModule" class="dynamic-module card" style="margin-bottom: 0;">
+      <div class="card-title">🏢 CORP Dashboard</div>
+      <p style="padding: 15px; color: #ddd;">Information strictly relevant to Corporate (CORP).</p>
+    </div>
+
+  </div>
 
   </div>
 </main>
@@ -115,33 +152,49 @@
        window.location.href = "index.html"; 
        return;
     } 
-    // 3. Retrieve User Attributes
+    
+    // 2. Personalize the Greeting
     const userName = sessionStorage.getItem('speeksUserName') || 'User';
+    document.getElementById('userGreeting').innerText = `Welcome ${userName}!`;
+
+    // 3. Retrieve User Attributes
     const userRole = (sessionStorage.getItem('speeksUserRole') || '').toLowerCase();
     const userStore = (sessionStorage.getItem('speeksUserStore') || '').toUpperCase();
 
-    // Personalize the Greeting
-    document.getElementById('userGreeting').innerText = `Welcome ${userName}!`;
-
     // 4. Toggle Visibility Based on Role
-    if (userRole === 'district manager') {
-        const dmModule = document.getElementById('districtManagerModule');
-        if(dmModule) dmModule.style.display = 'block';
+    // (Checks exactly what is typed in the 'Role' column of your Google Sheet)
+    switch (userRole) {
+        case 'ceo':
+            document.getElementById('ceoModule')?.style.setProperty('display', 'block');
+            break;
+        case 'district manager':
+            document.getElementById('districtManagerModule')?.style.setProperty('display', 'block');
+            break;
+        case 'manager':
+            document.getElementById('managerModule')?.style.setProperty('display', 'block');
+            break;
+        case 'employee':
+            document.getElementById('employeeModule')?.style.setProperty('display', 'block');
+            break;
+        case 'training':
+            document.getElementById('trainingModule')?.style.setProperty('display', 'block');
+            break;
     }
-    if (userRole === 'manager') {
-        const mgrModule = document.getElementById('managerModule');
-        if(mgrModule) mgrModule.style.display = 'block';
-    }
-    
 
     // 5. Toggle Visibility Based on Store
-    if (userStore === 'LEE') {
-        const leeModule = document.getElementById('leeStoreModule');
-        if(leeModule) leeModule.style.display = 'block';
-    }
-    if (userStore === 'OVL') {
-        const ovlModule = document.getElementById('ovlStoreModule');
-        if(ovlModule) ovlModule.style.display = 'block';
+    // (Maps the exact text from the 'Store' column to the HTML IDs above)
+    const storeMapping = {
+        'OVL': 'ovlStoreModule',
+        'LEE': 'leeStoreModule',
+        'WSP': 'wspStoreModule',
+        'MPL': 'mplStoreModule',
+        'BAL': 'balStoreModule',
+        'CORP': 'corpStoreModule'
+    };
+
+    if (storeMapping[userStore]) {
+        const storeId = storeMapping[userStore];
+        document.getElementById(storeId)?.style.setProperty('display', 'block');
     }
   });
 </script>
