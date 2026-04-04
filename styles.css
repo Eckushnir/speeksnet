@@ -322,17 +322,91 @@ body.no-scroll { overflow: hidden !important; }
    ========================================================= */
 .vw-pulse-badge { background: var(--red-alert); color: white; padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; animation: pulseBadge 2s infinite; margin-left: 10px; display: inline-block; }
 
-/* PIN Overlay */
-.auth-overlay { position: fixed; inset: 0; background: rgba(244, 247, 249, 0.95); backdrop-filter: blur(10px); z-index: 100000; display: flex; align-items: center; justify-content: center; }
-.auth-box { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); text-align: center; width: 400px; max-width: 90%; border: 1px solid var(--grey-light-border); }
-.auth-box h2 { font-size: 22px; font-weight: 800; color: var(--slate-charcoal); margin-bottom: 10px; letter-spacing: -0.5px; }
-.auth-box p { font-size: 13px; color: #666; margin-bottom: 25px; line-height: 1.5; }
-.auth-box input { width: 100%; padding: 15px; font-size: 28px; text-align: center; letter-spacing: 15px; border-radius: 10px; border: 2px solid #eee; margin-bottom: 15px; outline: none; transition: 0.2s; font-family: monospace; }
-.auth-box input:focus { border-color: var(--sage-professional); }
-.auth-box button { width: 100%; padding: 16px; background: var(--sage-professional); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 15px rgba(90, 141, 59, 0.2); }
-.auth-box button:hover { background: #4a7530; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(90, 141, 59, 0.3); }
-.pin-error { color: var(--red-alert); font-size: 13px; font-weight: 700; margin-top: 15px; display: none; animation: shake 0.4s ease-in-out; }
-@keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+/* =========================================================
+   FULL PAGE AUTHENTICATION
+   ========================================================= */
+.auth-page { 
+  position: fixed; inset: 0; 
+  background: var(--slate-charcoal); /* Solid dark background to hide everything */
+  z-index: 100000; 
+  display: flex; align-items: center; justify-content: center; 
+  padding: 20px;
+}
+
+.auth-split-layout { 
+  display: flex; width: 1000px; max-width: 100%; height: 600px; max-height: 95vh; 
+  background: white; border-radius: 24px; 
+  box-shadow: 0 25px 80px rgba(0,0,0,0.5); 
+  overflow: hidden; 
+}
+
+/* Left Side - Brand Identity */
+.auth-brand-side { 
+  flex: 1.2; background: var(--slate-charcoal); padding: 50px; 
+  display: flex; flex-direction: column; align-items: center; justify-content: center; 
+  position: relative; text-align: center; color: white; border-right: 1px solid rgba(255,255,255,0.05);
+}
+.auth-brand-side::before { 
+  content: ''; position: absolute; inset: 0; 
+  background: linear-gradient(135deg, rgba(90, 141, 59, 0.15) 0%, transparent 100%); 
+  pointer-events: none; 
+}
+.auth-logo { width: 300px; max-width: 90%; margin-bottom: 40px; position: relative; z-index: 2; display: block; object-fit: contain;}
+.auth-brand-text { position: relative; z-index: 2; }
+.auth-brand-text h1 { font-size: 32px; font-weight: 200; letter-spacing: 10px; margin-bottom: 10px; color: white; line-height: 1; }
+.auth-brand-text p { font-size: 14px; color: #a0aab2; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; }
+
+/* Right Side - Login Form */
+.auth-form-side { 
+  flex: 1; padding: 50px; display: flex; flex-direction: column; 
+  justify-content: center; background: white; 
+}
+.auth-form-container { max-width: 380px; margin: 0 auto; width: 100%; }
+.auth-badge { 
+  display: inline-block; background: var(--bg-app); color: var(--slate-charcoal); 
+  font-size: 11px; font-weight: 800; padding: 6px 14px; border-radius: 20px; 
+  margin-bottom: 20px; letter-spacing: 1px; text-transform: uppercase; 
+  border: 1px solid #eee;
+}
+.auth-form-side h2 { font-size: 32px; font-weight: 800; color: var(--slate-charcoal); margin-bottom: 10px; letter-spacing: -1px; }
+.auth-form-side p { font-size: 14px; color: #666; margin-bottom: 35px; line-height: 1.5; font-weight: 500; }
+
+.pin-container { display: flex; flex-direction: column; gap: 15px; }
+.pin-container input { 
+  width: 100%; padding: 18px; font-size: 36px; text-align: center; 
+  letter-spacing: 24px; border-radius: 14px; border: 2px solid #eee; 
+  outline: none; transition: 0.2s; font-family: monospace; 
+  background: var(--bg-app); color: var(--slate-charcoal); 
+}
+.pin-container input:focus { 
+  border-color: var(--sage-professional); 
+  background: white; 
+  box-shadow: 0 0 0 4px rgba(90, 141, 59, 0.1); 
+}
+.auth-btn { 
+  width: 100%; height: 56px; font-size: 15px; border-radius: 14px; 
+}
+
+.pin-error { 
+  color: var(--red-alert); font-size: 13px; font-weight: 700; 
+  margin-top: 10px; text-align: center; display: none; 
+  animation: shake 0.4s ease-in-out; 
+}
+
+@keyframes shake { 
+  0%, 100% { transform: translateX(0); } 
+  25% { transform: translateX(-5px); } 
+  75% { transform: translateX(5px); } 
+}
+
+/* Mobile Responsiveness for Auth Page */
+@media (max-width: 900px) {
+  .auth-split-layout { flex-direction: column; height: auto; max-height: 100%; overflow-y: auto; }
+  .auth-brand-side { padding: 40px 20px; min-height: 250px; flex: none; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .auth-brand-text h1 { font-size: 24px; letter-spacing: 6px; }
+  .auth-form-side { padding: 40px 20px; flex: none; }
+  .pin-container input { font-size: 28px; letter-spacing: 16px; }
+}
 
 /* Dashboard Layout */
 .dashboard-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: stretch; }
