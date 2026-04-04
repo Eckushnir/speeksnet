@@ -813,3 +813,41 @@ body.preload { visibility: hidden !important; opacity: 0 !important; }
   background-color: #fef2f2 !important; /* Soft red background */
   box-shadow: 0 6px 15px rgba(239, 68, 68, 0.15) !important;
 }
+
+/* =========================================================
+   IDEA MODAL STYLES
+   ========================================================= */
+.idea-menu { 
+    width: 550px; 
+    max-width: 90vw; 
+}
+.idea-label { 
+    display: block; 
+    font-size: 11px; 
+    font-weight: 800; 
+    text-transform: uppercase; 
+    letter-spacing: 0.5px; 
+    margin-bottom: 8px; 
+    color: var(--slate-charcoal); 
+}
+.idea-input { 
+    width: 100%; 
+    padding: 14px 16px; 
+    border-radius: 10px; 
+    border: 1px solid #ddd; 
+    outline: none; 
+    font-family: 'Inter', sans-serif; 
+    font-size: 14px; 
+    font-weight: 500;
+    transition: 0.2s; 
+    background: #f9fafb; 
+    color: var(--slate-charcoal); 
+}
+.idea-input:focus { 
+    border-color: var(--sage-professional); 
+    background: white;
+    box-shadow: 0 0 0 4px rgba(90, 141, 59, 0.1); 
+}
+textarea.idea-input { 
+    resize: vertical; 
+}
