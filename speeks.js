@@ -691,16 +691,25 @@ function handleSignOut() {
     location.reload(); // Reloads the page, putting them back at the PIN screen
 }
 
+let isIdeaSubmitting = false; // Tracks when the form is actually sent
+
 function injectIdeaModal() {
     if (!document.getElementById('ideaModal')) {
         const modalHtml = `
+        <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;" onload="handleIframeLoad()"></iframe>
+        
         <div class="modal-menu idea-menu" id="ideaModal">
             <div class="modal-header">
                 <h3>💡 Submit an Idea</h3>
                 <button class="modal-close-btn" onclick="closeAllModals()">✖</button>
             </div>
             <div class="modal-content" style="padding: 25px;">
-                <form id="ideaForm" onsubmit="submitIdea(event)">
+                
+                <form id="ideaForm" action="https://formsubmit.co/ethan.kushnir@speekstechnology.com" method="POST" enctype="multipart/form-data" target="hidden_iframe" onsubmit="prepareIdeaSubmit()">
+                    
+                    <input type="hidden" name="_captcha" value="false">
+                    <input type="hidden" name="_subject" id="ideaDynamicSubject" value="New SPEEKS Idea">
+                    
                     <div style="margin-bottom: 15px;">
                         <label class="idea-label">Your Name</label>
                         <input type="text" id="ideaName" name="Name" class="idea-input" required placeholder="John Doe">
@@ -742,39 +751,30 @@ function injectIdeaModal() {
     }
 }
 
-function submitIdea(e) {
-    e.preventDefault();
+// 1. Updates UI when the user clicks "Submit"
+function prepareIdeaSubmit() {
+    isIdeaSubmitting = true; // Flips the switch so the iframe knows we sent something
     const btn = document.getElementById('submitIdeaBtn');
     btn.innerText = 'Sending...';
     btn.style.opacity = '0.7';
     
-    // ⚠️ PUT YOUR ACTUAL EMAIL HERE
-    const emailTo = "ethan.kushnir@speekstechnology.com"; 
+    // Updates the email subject line based on the dropdown category
+    const category = document.getElementById('ideaCategory').value;
+    document.getElementById('ideaDynamicSubject').value = 'New SPEEKS Idea: ' + category;
+}
 
-    // Use FormData so it can automatically package the text fields AND the file attachment
-    const formElement = document.getElementById('ideaForm');
-    const formData = new FormData(formElement);
-    
-    // Dynamically set the email subject line based on the category chosen
-    formData.append("_subject", `New SPEEKS Idea: ${document.getElementById('ideaCategory').value}`);
-    
-    // Prevents FormSubmit from trying to show a visual captcha puzzle (better for modal popups)
-    formData.append("_captcha", "false"); 
-
-    fetch(`https://formsubmit.co/ajax/${emailTo}`, {
-        method: "POST",
-        body: formData // We pass the raw FormData object, the browser handles the headers automatically
-    })
-    .then(response => response.json())
-    .then(data => {
+// 2. Triggers automatically when the hidden iframe finishes receiving the data
+function handleIframeLoad() {
+    if (isIdeaSubmitting) {
+        // Hide form, show success message
         document.getElementById('ideaForm').style.display = 'none';
         document.getElementById('ideaSuccess').style.display = 'block';
+        
+        // Reset the button
+        const btn = document.getElementById('submitIdeaBtn');
         btn.innerText = 'Submit Idea';
         btn.style.opacity = '1';
-    })
-    .catch(error => {
-        alert("There was an error sending your idea. Please try again.");
-        btn.innerText = 'Submit Idea';
-        btn.style.opacity = '1';
-    });
+        
+        isIdeaSubmitting = false; // Reset the switch
+    }
 }
