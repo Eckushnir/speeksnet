@@ -587,19 +587,26 @@ document.addEventListener("DOMContentLoaded", () => {
     if (document.getElementById('kbBody')) loadHotkeys();
     if (document.getElementById('content-container') && document.getElementById('docSearch')) { loadDocs(); document.getElementById('docSearch').addEventListener('keyup', filterDocs); }
     if (document.getElementById('authOverlay')) {
+        // Start fetching the Google Sheet database immediately
+        startAuthFetch(); 
+
         if (sessionStorage.getItem('speeksManagerUnlocked') === 'true') { 
+            // They already have an active session, let them right in
             document.getElementById('authOverlay').style.display = 'none'; 
             document.body.style.overflow = 'auto'; 
             
-            applyRoleBasedUI(); // <--- ADD THIS HERE
+            applyRoleBasedUI(); 
             initDashboardData(); 
         } 
         else { 
+            // Show the overlay (which now acts as a loading screen)
             document.getElementById('authOverlay').style.display = 'flex'; 
             document.body.style.overflow = 'hidden'; 
-            document.getElementById('pinInput')?.focus(); 
+            
+            // Run the invisible Cloudflare login!
+            autoLoginCloudflare();
         }
-        startAuthFetch();
+        
         ['kpiStoreSelect', 'weeklyKpiStoreSelect', 'vw-primary', 'vw-compare'].forEach(id => document.getElementById(id)?.addEventListener('change', () => id === 'kpiStoreSelect' ? fetchKPIData(false) : (id === 'weeklyKpiStoreSelect' ? fetchWeeklyKPIs() : renderVariance())));
     }
     if (document.getElementById('mainKpiChart')) syncAllData();
@@ -632,3 +639,106 @@ function applyRoleBasedUI() {
         });
     }
 }
+
+// --- CLOUDFLARE AUTO-LOGIN ---
+async function autoLoginCloudflare() {
+    const overlay = document.getElementById('authOverlay');
+    const subtitle = document.getElementById('authSubtitle');
+    const pinContainer = document.getElementById('pinInputContainer');
+
+    // Change the PIN screen to a "Loading" screen
+    if (subtitle) subtitle.innerText = "Securely verifying Google Identity...";
+    if (pinContainer) pinContainer.style.display = 'none';
+
+    try {
+        // 1. Ask Cloudflare for the user's email
+        const cfResponse = await fetch('/cdn-cgi/access/get-identity');
+        if (!cfResponse.ok) throw new Error("Cloudflare identity not found");
+        
+        const cfData = await cfResponse.json();
+        const userEmail = cfData.email.toLowerCase();
+
+        // 2. Wait for your Google Sheet data to load
+        const payload = await authFetchPromise;
+
+        // 3. Find the user in your Google Sheet by their email address
+        const matched = payload.users.find(u => u.email && u.email.toLowerCase() === userEmail);
+
+        if (matched) {
+            // 4. Success! Log them in silently.
+            sessionStorage.setItem('speeksManagerUnlocked', 'true'); 
+            sessionStorage.setItem('speeksActiveManager', matched.name);
+            sessionStorage.setItem('speeksUserRole', matched.role ? matched.role.toLowerCase() : 'employee');
+            sessionStorage.setItem('speeksUserStore', matched.store ? matched.store.toUpperCase() : 'ALL');
+            
+            overlay.style.display = 'none'; 
+            document.body.style.overflow = 'auto';
+            
+            applyRoleBasedUI(); 
+            initDashboardData();
+        } else {
+            // 5. They passed Cloudflare, but ARE NOT on the Google Sheet
+            if (subtitle) {
+                subtitle.innerText = `Access Denied: The email ${userEmail} is not in the employee database.`;
+                subtitle.style.color = "var(--red-alert)";
+                subtitle.style.fontWeight = "800";
+            }
+        }
+    } catch (e) {
+        // FALLBACK: If you test locally (not on the live URL), show the PIN box
+        if (subtitle) subtitle.innerText = "Local connection detected. Please enter your PIN.";
+        if (pinContainer) pinContainer.style.display = 'block';
+    }
+}
+
+// --- ROLE & PREFERENCE LOGIC ---
+function applyRoleBasedUI() {
+    const userRole = sessionStorage.getItem('speeksUserRole') || 'employee';
+    const userStore = sessionStorage.getItem('speeksUserStore') || 'ALL';
+
+    if (userRole === 'employee') {
+        document.querySelectorAll('.manager-only').forEach(el => el.style.display = 'none');
+    }
+
+    if (userStore !== 'ALL') {
+        const storeDropdowns = ['kpiStoreSelect', 'weeklyKpiStoreSelect', 'bsStoreSelect', 'vw-primary'];
+        storeDropdowns.forEach(id => {
+            const dropdown = document.getElementById(id);
+            if (dropdown) {
+                const optionExists = Array.from(dropdown.options).some(opt => opt.value === userStore);
+                if (optionExists) dropdown.value = userStore;
+            }
+        });
+    }
+}
+
+// --- 9. INITIALIZATION ROUTER ---
+document.addEventListener("DOMContentLoaded", () => {
+    setTimeout(() => document.body.classList.remove('preload'), 50);
+    if (localStorage.getItem('speeksSidebar') === 'collapsed') { document.querySelector('.sidebar')?.classList.add('collapsed'); document.querySelector('.main-content')?.classList.add('expanded'); document.querySelector('.sidebar-toggle')?.classList.add('collapsed'); }
+    loadCMS();
+    
+    if (document.getElementById('kbBody')) loadHotkeys();
+    if (document.getElementById('content-container') && document.getElementById('docSearch')) { loadDocs(); document.getElementById('docSearch').addEventListener('keyup', filterDocs); }
+    
+    if (document.getElementById('authOverlay')) {
+        startAuthFetch(); // Start fetching Google Sheet Data immediately
+
+        if (sessionStorage.getItem('speeksManagerUnlocked') === 'true') { 
+            document.getElementById('authOverlay').style.display = 'none'; 
+            document.body.style.overflow = 'auto'; 
+            applyRoleBasedUI(); 
+            initDashboardData(); 
+        } 
+        else { 
+            document.getElementById('authOverlay').style.display = 'flex'; 
+            document.body.style.overflow = 'hidden'; 
+            
+            // Trigger the new invisible Cloudflare login check
+            autoLoginCloudflare(); 
+        }
+        
+        ['kpiStoreSelect', 'weeklyKpiStoreSelect', 'vw-primary', 'vw-compare'].forEach(id => document.getElementById(id)?.addEventListener('change', () => id === 'kpiStoreSelect' ? fetchKPIData(false) : (id === 'weeklyKpiStoreSelect' ? fetchWeeklyKPIs() : renderVariance())));
+    }
+    if (document.getElementById('mainKpiChart')) syncAllData();
+});
