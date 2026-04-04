@@ -10,19 +10,6 @@
 </head>
 <body class="preload">
 
-<div id="authOverlay" class="auth-overlay" style="display: none;">
-    <div class="auth-box">
-        <h2>Manager Portal Access</h2>
-        <p id="authSubtitle">Please enter your 4-digit manager PIN.</p>
-        <div id="pinInputContainer">
-            <input type="password" id="pinInput" maxlength="4" placeholder="••••" onkeypress="if(event.key === 'Enter') checkPIN()">
-            <button id="unlockBtn" class="btn-primary" onclick="checkPIN()">Unlock Portal</button>
-            <div id="pinError" class="pin-error">Incorrect PIN. Please try again.</div>
-        </div>
-        <a href="index.html" class="auth-back-btn">← Return to SPEEKS Hub</a>
-    </div>
-</div>
-
 <aside class="sidebar">
   <div class="brand-area">
     <img src="images/speeks_logo.png" alt="SPEEKS Logo" class="brand-logo">
