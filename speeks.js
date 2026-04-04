@@ -680,19 +680,30 @@ async function autoLoginCloudflare() {
     }
 }
 
-// --- GLOBAL AUTH & LOGOUT INJECTION ---
 function injectGlobalAuth() {
     // 1. Inject the Auth Overlay if it doesn't exist
     if (!document.getElementById('authOverlay')) {
         const overlayHtml = `
-        <div id="authOverlay" class="auth-overlay" style="display: none;">
-            <div class="auth-box">
-                <h2>SPEEKSNET Hub Access</h2>
-                <p id="authSubtitle">Please enter your 4-digit PIN.</p>
-                <div id="pinInputContainer">
-                    <input type="password" id="pinInput" maxlength="4" placeholder="••••" onkeypress="if(event.key === 'Enter') checkPIN()">
-                    <button id="unlockBtn" class="btn-primary" onclick="checkPIN()">Unlock Portal</button>
-                    <div id="pinError" class="pin-error">Incorrect PIN. Please try again.</div>
+        <div id="authOverlay" class="auth-page" style="display: none;">
+            <div class="auth-split-layout">
+                <div class="auth-brand-side">
+                    <img src="images/speeks_logo.png" alt="SPEEKS Logo" class="auth-logo">
+                    <div class="auth-brand-text">
+                        <h1>SPEEKSNET</h1>
+                        <p>Internal Operations Portal</p>
+                    </div>
+                </div>
+                <div class="auth-form-side">
+                    <div class="auth-form-container">
+                        <div class="auth-badge">SECURE ACCESS</div>
+                        <h2>Welcome Back</h2>
+                        <p id="authSubtitle">Please enter your 4-digit PIN to securely access the hub.</p>
+                        <div id="pinInputContainer" class="pin-container">
+                            <input type="password" id="pinInput" maxlength="4" placeholder="••••" onkeypress="if(event.key === 'Enter') checkPIN()">
+                            <button id="unlockBtn" class="btn-primary auth-btn" onclick="checkPIN()">Unlock Portal</button>
+                            <div id="pinError" class="pin-error">Incorrect PIN. Please try again.</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>`;
