@@ -156,7 +156,7 @@ body.no-scroll { overflow: hidden !important; }
 /* =========================================================
    TOP ACTIONS & NOTIFICATIONS
    ========================================================= */
-.top-actions { position: fixed; top: 30px; right: 50px; z-index: 200; display: flex; gap: 15px; }
+.top-actions { position: fixed; top: 30px; right: 50px; z-index: 200; display: flex; gap: 15px; align-items: center; }
 
 .action-btn { 
   background: white; border: 1px solid #ddd; width: 56px; height: 56px; 
@@ -183,7 +183,7 @@ body.no-scroll { overflow: hidden !important; }
 .main-content { flex-grow: 1; margin-left: 260px; padding: 50px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 .main-content.expanded { margin-left: 76px; }
 
-.page-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px; padding-right: 160px; }
+.page-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px; padding-right: 360px; }
 .page-header h2 { font-size: clamp(24px, 3vw, 32px); font-weight: 800; color: var(--slate-charcoal); letter-spacing: -1px; margin-bottom: 8px; }
 .page-header p { font-size: clamp(13px, 1.5vw, 15px); color: #666; font-weight: 500; }
 .mission-statement { color: var(--sage-professional) !important; font-weight: 800 !important; font-size: 16px; }
@@ -714,3 +714,15 @@ body.preload { visibility: hidden !important; opacity: 0 !important; }
 
 /* Remove the old specific button classes we no longer need */
 .btn-save, .btn-add, .sync-btn { display: none; } /* Deactivating old classes to ensure clean inheritance */
+
+/* Sign Out Pill Styles */
+.logout-btn {
+  cursor: pointer;
+  margin-left: 10px; /* Gives it a slight visual separation from the bell */
+}
+.logout-btn:hover {
+  border-color: var(--red-alert) !important;
+  color: var(--red-alert) !important;
+  background-color: #fef2f2 !important; /* Soft red background */
+  box-shadow: 0 6px 15px rgba(239, 68, 68, 0.15) !important;
+}

@@ -142,10 +142,6 @@ let globalDocsData = [];
 function toggleManageDocs() {
   const dropdown = document.getElementById('manageDocsDropdown');
   if(!dropdown) return;
-  if (!dropdown.classList.contains('show')) {
-    const enteredPin = prompt("Please enter the PIN to manage policies:");
-    if (enteredPin !== "2770") return enteredPin !== null ? alert("Incorrect PIN.") : null; 
-  }
   populateManageModal();
   toggleModal('manageDocsDropdown');
 }
@@ -262,23 +258,20 @@ async function checkPIN() {
         const payload = await authFetchPromise;
         if (!payload || !payload.users) throw new Error();
         
-        // 1. Hash the PIN outside of the loop first
         const hashedPin = await hashString(pin);
-        
-        // 2. Use the already-hashed PIN inside the synchronous .find() method
         const matched = payload.users.find(u => String(u.hash).toLowerCase() === hashedPin.toLowerCase());
         
         if (matched) {
-            sessionStorage.setItem('speeksManagerUnlocked', 'true'); 
+            // Global Unlock Key (Session Storage survives refresh, but resets on tab close!)
+            sessionStorage.setItem('speeksUnlocked', 'true'); 
             sessionStorage.setItem('speeksActiveManager', matched.name);
-            // Save the new backend data
             sessionStorage.setItem('speeksUserRole', matched.role ? matched.role.toLowerCase() : 'employee');
             sessionStorage.setItem('speeksUserStore', matched.store ? matched.store.toUpperCase() : 'ALL');
             
             document.getElementById('authOverlay').style.display = 'none'; 
             document.body.style.overflow = 'auto';
             
-            applyRoleBasedUI(); // Apply the defaults BEFORE fetching data
+            applyRoleBasedUI();
             initDashboardData();
         } else {
             err.innerText = "Incorrect PIN. Please try again."; 
@@ -582,33 +575,30 @@ function syncAllData() { if (kpiChartCache[currentTimeframe]) renderKpiChart(kpi
 document.addEventListener("DOMContentLoaded", () => {
     setTimeout(() => document.body.classList.remove('preload'), 50);
     if (localStorage.getItem('speeksSidebar') === 'collapsed') { document.querySelector('.sidebar')?.classList.add('collapsed'); document.querySelector('.main-content')?.classList.add('expanded'); document.querySelector('.sidebar-toggle')?.classList.add('collapsed'); }
-    loadCMS();
     
+    loadCMS();
     if (document.getElementById('kbBody')) loadHotkeys();
     if (document.getElementById('content-container') && document.getElementById('docSearch')) { loadDocs(); document.getElementById('docSearch').addEventListener('keyup', filterDocs); }
-    if (document.getElementById('authOverlay')) {
-        // Start fetching the Google Sheet database immediately
-        startAuthFetch(); 
+    
+    // Inject the Global PIN screen and Logout button
+    injectGlobalAuth();
+    startAuthFetch(); // Start fetching Google Sheet Data in the background
 
-        if (sessionStorage.getItem('speeksManagerUnlocked') === 'true') { 
-            // They already have an active session, let them right in
-            document.getElementById('authOverlay').style.display = 'none'; 
-            document.body.style.overflow = 'auto'; 
-            
-            applyRoleBasedUI(); 
-            initDashboardData(); 
-        } 
-        else { 
-            // Show the overlay (which now acts as a loading screen)
-            document.getElementById('authOverlay').style.display = 'flex'; 
-            document.body.style.overflow = 'hidden'; 
-            
-            // Run the invisible Cloudflare login!
-            autoLoginCloudflare();
-        }
-        
-        ['kpiStoreSelect', 'weeklyKpiStoreSelect', 'vw-primary', 'vw-compare'].forEach(id => document.getElementById(id)?.addEventListener('change', () => id === 'kpiStoreSelect' ? fetchKPIData(false) : (id === 'weeklyKpiStoreSelect' ? fetchWeeklyKPIs() : renderVariance())));
+    // Check if they are already logged in this session
+    if (sessionStorage.getItem('speeksUnlocked') === 'true') { 
+        document.getElementById('authOverlay').style.display = 'none'; 
+        document.body.style.overflow = 'auto'; 
+        applyRoleBasedUI(); 
+        initDashboardData(); 
+    } 
+    else { 
+        document.getElementById('authOverlay').style.display = 'flex'; 
+        document.body.style.overflow = 'hidden'; 
+        document.getElementById('pinInput')?.focus(); 
     }
+    
+    ['kpiStoreSelect', 'weeklyKpiStoreSelect', 'vw-primary', 'vw-compare'].forEach(id => document.getElementById(id)?.addEventListener('change', () => id === 'kpiStoreSelect' ? fetchKPIData(false) : (id === 'weeklyKpiStoreSelect' ? fetchWeeklyKPIs() : renderVariance())));
+    
     if (document.getElementById('mainKpiChart')) syncAllData();
 });
 
@@ -640,7 +630,6 @@ function applyRoleBasedUI() {
     }
 }
 
-// --- CLOUDFLARE AUTO-LOGIN ---
 async function autoLoginCloudflare() {
     const overlay = document.getElementById('authOverlay');
     const subtitle = document.getElementById('authSubtitle');
@@ -662,6 +651,7 @@ async function autoLoginCloudflare() {
         const payload = await authFetchPromise;
 
         // 3. Find the user in your Google Sheet by their email address
+        // (This relies on Column F / Index 5 in your Auth sheet containing their email)
         const matched = payload.users.find(u => u.email && u.email.toLowerCase() === userEmail);
 
         if (matched) {
@@ -677,68 +667,61 @@ async function autoLoginCloudflare() {
             applyRoleBasedUI(); 
             initDashboardData();
         } else {
-            // 5. They passed Cloudflare, but ARE NOT on the Google Sheet
+            // They used a valid Google account, but aren't listed in your Google Sheet
             if (subtitle) {
                 subtitle.innerText = `Access Denied: The email ${userEmail} is not in the employee database.`;
                 subtitle.style.color = "var(--red-alert)";
-                subtitle.style.fontWeight = "800";
             }
         }
     } catch (e) {
-        // FALLBACK: If you test locally (not on the live URL), show the PIN box
+        // FALLBACK: If you are testing locally on your computer, show the PIN box
         if (subtitle) subtitle.innerText = "Local connection detected. Please enter your PIN.";
         if (pinContainer) pinContainer.style.display = 'block';
     }
 }
 
-// --- ROLE & PREFERENCE LOGIC ---
-function applyRoleBasedUI() {
-    const userRole = sessionStorage.getItem('speeksUserRole') || 'employee';
-    const userStore = sessionStorage.getItem('speeksUserStore') || 'ALL';
-
-    if (userRole === 'employee') {
-        document.querySelectorAll('.manager-only').forEach(el => el.style.display = 'none');
+// --- GLOBAL AUTH & LOGOUT INJECTION ---
+function injectGlobalAuth() {
+    // 1. Inject the Auth Overlay if it doesn't exist
+    if (!document.getElementById('authOverlay')) {
+        const overlayHtml = `
+        <div id="authOverlay" class="auth-overlay" style="display: none;">
+            <div class="auth-box">
+                <h2>SPEEKSNET Hub Access</h2>
+                <p id="authSubtitle">Please enter your 4-digit PIN.</p>
+                <div id="pinInputContainer">
+                    <input type="password" id="pinInput" maxlength="4" placeholder="••••" onkeypress="if(event.key === 'Enter') checkPIN()">
+                    <button id="unlockBtn" class="btn-primary" onclick="checkPIN()">Unlock Portal</button>
+                    <div id="pinError" class="pin-error">Incorrect PIN. Please try again.</div>
+                </div>
+            </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', overlayHtml);
     }
 
-    if (userStore !== 'ALL') {
-        const storeDropdowns = ['kpiStoreSelect', 'weeklyKpiStoreSelect', 'bsStoreSelect', 'vw-primary'];
-        storeDropdowns.forEach(id => {
-            const dropdown = document.getElementById(id);
-            if (dropdown) {
-                const optionExists = Array.from(dropdown.options).some(opt => opt.value === userStore);
-                if (optionExists) dropdown.value = userStore;
-            }
-        });
+// 2. Inject Logout Button into the top-actions bar
+    const topActions = document.querySelector('.top-actions');
+    if (topActions && !document.getElementById('logoutBtn')) {
+        const logoutBtn = document.createElement('a'); // Using an anchor tag matches your other pills
+        logoutBtn.className = 'quick-link-pill logout-btn';
+        logoutBtn.id = 'logoutBtn';
+        logoutBtn.innerHTML = '🚪 Sign Out';
+        
+        // Prevent default link behavior and run our sign out function
+        logoutBtn.onclick = (e) => { 
+            e.preventDefault(); 
+            handleSignOut(); 
+        };
+        
+        // appendChild puts it at the END of the container (Far Right)
+        topActions.appendChild(logoutBtn);
     }
 }
 
-// --- 9. INITIALIZATION ROUTER ---
-document.addEventListener("DOMContentLoaded", () => {
-    setTimeout(() => document.body.classList.remove('preload'), 50);
-    if (localStorage.getItem('speeksSidebar') === 'collapsed') { document.querySelector('.sidebar')?.classList.add('collapsed'); document.querySelector('.main-content')?.classList.add('expanded'); document.querySelector('.sidebar-toggle')?.classList.add('collapsed'); }
-    loadCMS();
-    
-    if (document.getElementById('kbBody')) loadHotkeys();
-    if (document.getElementById('content-container') && document.getElementById('docSearch')) { loadDocs(); document.getElementById('docSearch').addEventListener('keyup', filterDocs); }
-    
-    if (document.getElementById('authOverlay')) {
-        startAuthFetch(); // Start fetching Google Sheet Data immediately
-
-        if (sessionStorage.getItem('speeksManagerUnlocked') === 'true') { 
-            document.getElementById('authOverlay').style.display = 'none'; 
-            document.body.style.overflow = 'auto'; 
-            applyRoleBasedUI(); 
-            initDashboardData(); 
-        } 
-        else { 
-            document.getElementById('authOverlay').style.display = 'flex'; 
-            document.body.style.overflow = 'hidden'; 
-            
-            // Trigger the new invisible Cloudflare login check
-            autoLoginCloudflare(); 
-        }
-        
-        ['kpiStoreSelect', 'weeklyKpiStoreSelect', 'vw-primary', 'vw-compare'].forEach(id => document.getElementById(id)?.addEventListener('change', () => id === 'kpiStoreSelect' ? fetchKPIData(false) : (id === 'weeklyKpiStoreSelect' ? fetchWeeklyKPIs() : renderVariance())));
-    }
-    if (document.getElementById('mainKpiChart')) syncAllData();
-});
+function handleSignOut() {
+    sessionStorage.removeItem('speeksUnlocked');
+    sessionStorage.removeItem('speeksActiveManager');
+    sessionStorage.removeItem('speeksUserRole');
+    sessionStorage.removeItem('speeksUserStore');
+    location.reload(); // Reloads the page, putting them back at the PIN screen
+}
