@@ -630,55 +630,7 @@ function applyRoleBasedUI() {
     }
 }
 
-async function autoLoginCloudflare() {
-    const overlay = document.getElementById('authOverlay');
-    const subtitle = document.getElementById('authSubtitle');
-    const pinContainer = document.getElementById('pinInputContainer');
 
-    // Change the PIN screen to a "Loading" screen
-    if (subtitle) subtitle.innerText = "Securely verifying Google Identity...";
-    if (pinContainer) pinContainer.style.display = 'none';
-
-    try {
-        // 1. Ask Cloudflare for the user's email
-        const cfResponse = await fetch('/cdn-cgi/access/get-identity');
-        if (!cfResponse.ok) throw new Error("Cloudflare identity not found");
-        
-        const cfData = await cfResponse.json();
-        const userEmail = cfData.email.toLowerCase();
-
-        // 2. Wait for your Google Sheet data to load
-        const payload = await authFetchPromise;
-
-        // 3. Find the user in your Google Sheet by their email address
-        // (This relies on Column F / Index 5 in your Auth sheet containing their email)
-        const matched = payload.users.find(u => u.email && u.email.toLowerCase() === userEmail);
-
-        if (matched) {
-            // 4. Success! Log them in silently.
-            sessionStorage.setItem('speeksManagerUnlocked', 'true'); 
-            sessionStorage.setItem('speeksActiveManager', matched.name);
-            sessionStorage.setItem('speeksUserRole', matched.role ? matched.role.toLowerCase() : 'employee');
-            sessionStorage.setItem('speeksUserStore', matched.store ? matched.store.toUpperCase() : 'ALL');
-            
-            overlay.style.display = 'none'; 
-            document.body.style.overflow = 'auto';
-            
-            applyRoleBasedUI(); 
-            initDashboardData();
-        } else {
-            // They used a valid Google account, but aren't listed in your Google Sheet
-            if (subtitle) {
-                subtitle.innerText = `Access Denied: The email ${userEmail} is not in the employee database.`;
-                subtitle.style.color = "var(--red-alert)";
-            }
-        }
-    } catch (e) {
-        // FALLBACK: If you are testing locally on your computer, show the PIN box
-        if (subtitle) subtitle.innerText = "Local connection detected. Please enter your PIN.";
-        if (pinContainer) pinContainer.style.display = 'block';
-    }
-}
 
 // --- GLOBAL AUTH & LOGOUT INJECTION ---
 function injectGlobalAuth() {
