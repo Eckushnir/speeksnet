@@ -3,66 +3,147 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QuickPortal</title>
+  <title>SPEEKSNET | QuickPortal</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <script src="speeks.js" defer></script>
   <style>
-    /* Add basic hiding utility for modules */
+    /* Utility class to hide dynamic modules by default */
     .dynamic-module { display: none; }
   </style>
 </head>
 <body class="preload">
 
-  <div class="main-content">
-    <h1 id="userGreeting">Welcome!</h1>
-    <hr>
+<aside class="sidebar">
+  <div class="brand-area">
+    <img src="images/speeks_logo.png" alt="SPEEKS Logo" class="brand-logo">
+    <div class="badge">QUICK PORTAL</div>
+  </div>
+  <nav class="nav-bar">
+    <a href="index.html" class="nav-link"><i>🏠</i> <span>SPEEKS Hub</span></a>
+    <a href="quickportal.html" class="nav-link active"><i>⚡</i> <span>QuickPortal</span></a>
+    <a href="portals.html" class="nav-link"><i>🔗</i> <span>Portals</span></a>
+    <a href="metrics.html" class="nav-link"><i>📊</i> <span>Metrics & Leaderboards</span></a>
+    <a href="docs.html" class="nav-link"><i>📚</i> <span>Processes & Policies</span></a>
+    <a href="managers.html" class="nav-link"><i>🛠️</i> <span>Manager Portal</span></a>
+  </nav>
+  
+  <div class="sidebar-bottom">
+    <a href="https://docs.google.com/forms/d/e/1FAIpQLSfEm449owjdKiT_zp7ATB_oLvsy3x51bL38Q3nKNiM7UNUZFQ/viewform" target="_blank" class="idea-btn">
+      <i>💡</i> <span>Have an Idea?</span>
+    </a>
+  </div>
+</aside>
 
-    <div id="districtManagerModule" class="dynamic-module module-card">
-      <h2>Corporate Tools</h2>
-      <p>This module only appears for District Managers or Corporate staff.</p>
+<div class="sidebar-toggle" onclick="toggleSidebar()">◀</div>
+
+<div class="top-actions">
+    <div class="action-btn" onclick="toggleCalendar()" title="Strategic Calendar">📅</div>
+    <div class="action-btn" onclick="toggleNotifs()" title="Announcements">
+        🔔 <div class="notif-dot" id="notifBadge"></div>
     </div>
+</div>
 
-    <div id="managerModule" class="dynamic-module module-card">
-      <h2>Manager Resources</h2>
-      <p>This module only appears for Store Managers.</p>
+<div id="globalOverlay" class="overlay" style="display: none;"></div>
+
+<div class="modal-menu notif-menu" id="notifDropdown">
+    <div class="modal-header">
+        <h3>Announcements</h3>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div class="notif-tabs">
+                <button id="tab-recent" class="tab-btn active" onclick="switchAnnTab('recent')">Recent</button>
+                <button id="tab-archive" class="tab-btn" onclick="switchAnnTab('archive')">Archived</button>
+            </div>
+            <button class="modal-close-btn" onclick="closeAllModals()">✖</button>
+        </div>
     </div>
+    <div id="ann-container" class="notif-content">
+        <div style="padding: 20px; color:#999; font-size:12px; text-align:center;">Syncing...</div>
+    </div>
+    <div id="archive-container" class="notif-content" style="display: none;">
+        <div style="padding: 20px; color:#999; font-size:12px; text-align:center;">Syncing...</div>
+    </div>
+</div>
 
-    <div id="leeStoreModule" class="dynamic-module module-card">
-      <h2>Lee's Summit Dashboard</h2>
-      <p>Information strictly relevant to the LEE location.</p>
+<div class="modal-menu calendar-menu" id="calendarDropdown">
+    <div class="modal-header">
+        <h3>Strategic Calendar</h3>
+        <button class="modal-close-btn" onclick="closeAllModals()">✖</button>
+    </div>
+    <div class="calendar-content">
+        <iframe src="https://calendar.google.com/calendar/embed?src=75d63f4495d48b06d2405686eb56d8dfe7fe74175f4dddc340588565a5545980%40group.calendar.google.com&ctz=America%2FChicago"></iframe>
+    </div>
+</div>
+
+<main class="main-content">
+  <div class="page-header">
+    <div>
+        <h2 id="userGreeting">Welcome!</h2>
+        <p>Your personalized quick-access dashboard.</p>
     </div>
   </div>
 
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      // 1. Verify Authentication
-      if (sessionStorage.getItem('speeksUnlocked') !== 'true') {
-         // Not logged in: Redirect back to the hub or trigger the auth modal
-         window.location.href = "index.html"; 
-         return;
-      } 
-      
-      // 2. Personalize the Greeting
-      const userName = sessionStorage.getItem('speeksActiveManager') || 'User';
-      document.getElementById('userGreeting').innerText = `Welcome ${userName}!`;
+  <div class="project-grid">
+    
+    <div id="districtManagerModule" class="dynamic-module card" style="margin-bottom: 0;">
+      <div class="card-title">🏢 Corporate Tools</div>
+      <p style="padding: 15px; color: #ddd;">This module only appears for District Managers or Corporate staff.</p>
+    </div>
 
-      // 3. Retrieve User Attributes
-      const userRole = sessionStorage.getItem('speeksUserRole');
-      const userStore = sessionStorage.getItem('speeksUserStore');
+    <div id="managerModule" class="dynamic-module card" style="margin-bottom: 0;">
+      <div class="card-title">🛠️ Manager Resources</div>
+      <p style="padding: 15px; color: #ddd;">This module only appears for Store Managers.</p>
+    </div>
 
-      // 4. Toggle Visibility Based on Role
-      if (userRole.includes('district manager') || userRole.includes('corp')) {
-          document.getElementById('districtManagerModule').style.display = 'block';
-      }
-      if (userRole === 'manager') {
-          document.getElementById('managerModule').style.display = 'block';
-      }
+    <div id="leeStoreModule" class="dynamic-module card" style="margin-bottom: 0;">
+      <div class="card-title">📍 LEE Location Dashboard</div>
+      <p style="padding: 15px; color: #ddd;">Information strictly relevant to the LEE location.</p>
+    </div>
+    
+    <div id="ovlStoreModule" class="dynamic-module card" style="margin-bottom: 0;">
+      <div class="card-title">📍 OVL Location Dashboard</div>
+      <p style="padding: 15px; color: #ddd;">Information strictly relevant to the OVL location.</p>
+    </div>
 
-      // 5. Toggle Visibility Based on Store
-      if (userStore === 'LEE') {
-          document.getElementById('leeStoreModule').style.display = 'block';
-      }
-    });
-  </script>
+  </div>
+</main>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    // 1. Verify Authentication (Kick out if not logged in)
+    if (sessionStorage.getItem('speeksUnlocked') !== 'true') {
+       window.location.href = "index.html"; 
+       return;
+    } 
+    // 3. Retrieve User Attributes
+    const userName = sessionStorage.getItem('speeksUserName') || 'User';
+    const userRole = (sessionStorage.getItem('speeksUserRole') || '').toLowerCase();
+    const userStore = (sessionStorage.getItem('speeksUserStore') || '').toUpperCase();
+
+    // Personalize the Greeting
+    document.getElementById('userGreeting').innerText = `Welcome ${userName}!`;
+
+    // 4. Toggle Visibility Based on Role
+    if (userRole === 'district manager') {
+        const dmModule = document.getElementById('districtManagerModule');
+        if(dmModule) dmModule.style.display = 'block';
+    }
+    if (userRole === 'manager') {
+        const mgrModule = document.getElementById('managerModule');
+        if(mgrModule) mgrModule.style.display = 'block';
+    }
+    
+
+    // 5. Toggle Visibility Based on Store
+    if (userStore === 'LEE') {
+        const leeModule = document.getElementById('leeStoreModule');
+        if(leeModule) leeModule.style.display = 'block';
+    }
+    if (userStore === 'OVL') {
+        const ovlModule = document.getElementById('ovlStoreModule');
+        if(ovlModule) ovlModule.style.display = 'block';
+    }
+  });
+</script>
 </body>
 </html>

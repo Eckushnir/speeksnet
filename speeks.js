@@ -33,10 +33,13 @@ function toggleSidebar() {
 }
 
 function closeAllModals() {
-    ['notifDropdown', 'calendarDropdown', 'manageDocsDropdown', 'globalOverlay'].forEach(id => 
-        document.getElementById(id)?.classList.remove('show')
-    );
-    if (!document.getElementById('authOverlay') || sessionStorage.getItem('speeksManagerUnlocked') === 'true') {
+    ['notifDropdown', 'calendarDropdown', 'manageDocsDropdown', 'globalOverlay'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('show');
+    });
+    
+    // Only lock scrolling if the user is on the login screen
+    if (!document.getElementById('authOverlay') || sessionStorage.getItem('speeksUnlocked') === 'true') {
         document.body.classList.remove('no-scroll');
     }
 }
@@ -241,43 +244,52 @@ function filterDocs() {
 // --- 7. MODULE: MANAGER DASHBOARD ---
 let dynamicMonths = [], rawKPIData = [], monthlyKpiCache = {}, weeklyKpiCache = {}, liveVarianceDataCache = {}, hubDataCache = null, authFetchPromise = null;
 
-function startAuthFetch() { authFetchPromise = fetch(`${AUTH_URL}?v=${Date.now()}`).then(r => r.ok ? r.json() : null).catch(() => null); }
+function startAuthFetch() { 
+    authFetchPromise = fetch(`${AUTH_URL}?v=${Date.now()}`)
+        .then(r => r.ok ? r.json() : null)
+        .catch(() => null); 
+}
 
 async function checkPIN() {
-    const pin = document.getElementById('pinInput').value, 
-          err = document.getElementById('pinError'), 
-          btn = document.getElementById('unlockBtn');
+    const pin = document.getElementById('pinInput').value;
+    const err = document.getElementById('pinError');
+    const btn = document.getElementById('unlockBtn');
           
-    if(!pin) return;
+    if (!pin) return;
+    
     btn.innerText = "Verifying..."; 
     btn.style.opacity = "0.7"; 
     err.style.display = 'none';
 
     try {
         const payload = await authFetchPromise;
-        if (!payload || !payload.users) throw new Error();
+        if (!payload || !payload.users) throw new Error("Could not load users.");
         
-        // Directly compare the raw string inputs
+        // Directly compare the raw string inputs from the Google Sheet
         const matched = payload.users.find(u => u.pin === String(pin));
         
         if (matched) {
-            // Store session data identically to how your app currently expects it
+            // Clean, updated session storage variables
             sessionStorage.setItem('speeksUnlocked', 'true'); 
-            sessionStorage.setItem('speeksActiveManager', matched.name);
+            sessionStorage.setItem('speeksUserName', matched.name);
             sessionStorage.setItem('speeksUserRole', matched.role ? matched.role.toLowerCase() : 'employee');
             sessionStorage.setItem('speeksUserStore', matched.store ? matched.store.toUpperCase() : 'ALL');
             
-            document.getElementById('authOverlay').style.display = 'none'; 
+            // Hide Auth Overlay
+            const authOverlay = document.getElementById('authOverlay');
+            if (authOverlay) authOverlay.style.display = 'none'; 
             document.body.style.overflow = 'auto';
+            document.body.classList.remove('no-scroll');
             
-            if(typeof applyRoleBasedUI === 'function') applyRoleBasedUI();
-            if(typeof initDashboardData === 'function') initDashboardData();
+            // Trigger any existing data initialization
+            if (typeof initDashboardData === 'function') initDashboardData();
         } else {
             err.innerText = "Incorrect PIN. Please try again."; 
             err.style.display = 'block'; 
             document.getElementById('pinInput').value = ''; 
         }
     } catch (e) { 
+        console.error(e);
         err.innerText = "Connection Error."; 
         err.style.display = 'block'; 
     } finally { 
@@ -474,25 +486,6 @@ function renderBuyingSales() {
     let bar = document.getElementById('bs-bar'); if(bar) { bar.style.strokeDashoffset = 402 - (Math.min(p, 100)/100)*402; bar.style.stroke = p < 100 ? "var(--red-alert)" : "var(--sage-professional)"; }
 }
 
-async function initChecklists() {
-    const actM = sessionStorage.getItem('speeksActiveManager'), cont = document.getElementById('dynamicChecklistContainer');
-    if (!actM || !cont) return; 
-    let tCache = `speeksTasksCache_${actM}`, sCache = `speeksCheckState_${actM}`, tasks = JSON.parse(localStorage.getItem(tCache) || '[]'), state = JSON.parse(localStorage.getItem(sCache) || '{}');
-
-    const rndr = (tArr, s) => {
-        const bC = (tit, ic, ts) => `<div class="card" style="margin-bottom: 0; padding: 25px;"><div class="checklist-header">${ic} ${tit} Checklist</div>${ts.length ? ts.map(t => `<label class="checklist-item"><input type="checkbox" id="chk_${t.text.replace(/[^a-zA-Z0-9]/g, '')}" ${s["chk_"+t.text.replace(/[^a-zA-Z0-9]/g, '')] ? 'checked' : ''}> ${t.text}</label>`).join('') : `<div style="color:#888; font-size:12px; font-weight:600;">No tasks assigned.</div>`}</div>`;
-        cont.innerHTML = bC('Daily', '⚡', tArr.filter(t => t.category === 'daily')) + bC('Weekly', '🔄', tArr.filter(t => t.category === 'weekly')) + bC('Monthly', '🎯', tArr.filter(t => t.category === 'monthly'));
-        cont.querySelectorAll('input[type="checkbox"]').forEach(b => b.addEventListener('change', e => { state[b.id] = e.target.checked; localStorage.setItem(sCache, JSON.stringify(state)); fetch(AUTH_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ name: actM, checkState: state }) }).catch(()=>{}); }));
-    };
-    if (tasks.length) rndr(tasks, state);
-    const pld = await authFetchPromise;
-    if (pld?.users && pld?.tasks) {
-        const u = pld.users.find(u => String(u.name).toLowerCase() === actM.toLowerCase());
-        if (u?.checkState) try { state = JSON.parse(u.checkState); localStorage.setItem(sCache, JSON.stringify(state)); } catch(e) {}
-        localStorage.setItem(tCache, JSON.stringify(tasks = pld.tasks.filter(t => ['all', actM.toLowerCase()].includes(t.manager)))); rndr(tasks, state);
-    }
-}
-
 async function preloadAllStores() {
     if(!document.getElementById('kpiDashboardContainer')) return;
     ["OVL", "LEE", "WSP", "MPL", "BAL"].forEach(async s => { if (!monthlyKpiCache[s]) try { const p = await (await fetch(`${MONTHLY_KPI_URL}?store=${s}&v=${Date.now()}`)).json(); if (!p.error) monthlyKpiCache[s] = { months: p.months, data: groupKPIs(p.data) }; } catch(e) {} });
@@ -681,9 +674,10 @@ function injectGlobalAuth() {
 }
 
 function handleSignOut() {
+    // Clear only the new essential variables
     sessionStorage.removeItem('speeksUnlocked');
-    sessionStorage.removeItem('speeksActiveManager');
+    sessionStorage.removeItem('speeksUserName');
     sessionStorage.removeItem('speeksUserRole');
     sessionStorage.removeItem('speeksUserStore');
-    location.reload(); // Reloads the page, putting them back at the PIN screen
+    location.reload(); 
 }
