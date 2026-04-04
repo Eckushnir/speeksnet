@@ -749,7 +749,7 @@ function submitIdea(e) {
     btn.style.opacity = '0.7';
     
     // ⚠️ PUT YOUR ACTUAL EMAIL HERE
-    const emailTo = "your-email@example.com"; 
+    const emailTo = "ethan.kushnir@speekstechnology.com"; 
 
     // Use FormData so it can automatically package the text fields AND the file attachment
     const formElement = document.getElementById('ideaForm');
