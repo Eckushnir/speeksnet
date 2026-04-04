@@ -271,10 +271,16 @@ async function checkPIN() {
         if (matched) {
             sessionStorage.setItem('speeksManagerUnlocked', 'true'); 
             sessionStorage.setItem('speeksActiveManager', matched.name);
+            // Save the new backend data
+            sessionStorage.setItem('speeksUserRole', matched.role ? matched.role.toLowerCase() : 'employee');
+            sessionStorage.setItem('speeksUserStore', matched.store ? matched.store.toUpperCase() : 'ALL');
+            
             document.getElementById('authOverlay').style.display = 'none'; 
             document.body.style.overflow = 'auto';
+            
+            applyRoleBasedUI(); // Apply the defaults BEFORE fetching data
             initDashboardData();
-        } else { 
+        } else {
             err.innerText = "Incorrect PIN. Please try again."; 
             err.style.display = 'block'; 
             document.getElementById('pinInput').value = ''; 
@@ -581,10 +587,48 @@ document.addEventListener("DOMContentLoaded", () => {
     if (document.getElementById('kbBody')) loadHotkeys();
     if (document.getElementById('content-container') && document.getElementById('docSearch')) { loadDocs(); document.getElementById('docSearch').addEventListener('keyup', filterDocs); }
     if (document.getElementById('authOverlay')) {
-        if (sessionStorage.getItem('speeksManagerUnlocked') === 'true') { document.getElementById('authOverlay').style.display = 'none'; document.body.style.overflow = 'auto'; initDashboardData(); } 
-        else { document.getElementById('authOverlay').style.display = 'flex'; document.body.style.overflow = 'hidden'; document.getElementById('pinInput')?.focus(); }
+        if (sessionStorage.getItem('speeksManagerUnlocked') === 'true') { 
+            document.getElementById('authOverlay').style.display = 'none'; 
+            document.body.style.overflow = 'auto'; 
+            
+            applyRoleBasedUI(); // <--- ADD THIS HERE
+            initDashboardData(); 
+        } 
+        else { 
+            document.getElementById('authOverlay').style.display = 'flex'; 
+            document.body.style.overflow = 'hidden'; 
+            document.getElementById('pinInput')?.focus(); 
+        }
         startAuthFetch();
         ['kpiStoreSelect', 'weeklyKpiStoreSelect', 'vw-primary', 'vw-compare'].forEach(id => document.getElementById(id)?.addEventListener('change', () => id === 'kpiStoreSelect' ? fetchKPIData(false) : (id === 'weeklyKpiStoreSelect' ? fetchWeeklyKPIs() : renderVariance())));
     }
     if (document.getElementById('mainKpiChart')) syncAllData();
 });
+
+// --- ROLE & PREFERENCE LOGIC ---
+function applyRoleBasedUI() {
+    const userRole = sessionStorage.getItem('speeksUserRole') || 'employee';
+    const userStore = sessionStorage.getItem('speeksUserStore') || 'ALL';
+
+    // 1. Optional: Hide specific things if they are JUST an employee (not a manager/admin)
+    // You can add the class 'manager-only' to any HTML element you want to hide from standard employees
+    if (userRole === 'employee') {
+        document.querySelectorAll('.manager-only').forEach(el => el.style.display = 'none');
+    }
+
+    // 2. Set Default "Home Base" Store Dropdowns (but do NOT disable them)
+    if (userStore !== 'ALL') {
+        const storeDropdowns = ['kpiStoreSelect', 'weeklyKpiStoreSelect', 'bsStoreSelect', 'vw-primary'];
+        
+        storeDropdowns.forEach(id => {
+            const dropdown = document.getElementById(id);
+            if (dropdown) {
+                // Ensure their store actually exists in this specific dropdown before setting it
+                const optionExists = Array.from(dropdown.options).some(opt => opt.value === userStore);
+                if (optionExists) {
+                    dropdown.value = userStore;
+                }
+            }
+        });
+    }
+}
