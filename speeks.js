@@ -10,7 +10,7 @@ const MONTHLY_KPI_URL = 'https://script.google.com/macros/s/AKfycby0ihq9A4yUQvdZ
 const VARIANCE_API_URL = 'https://script.google.com/macros/s/AKfycbxFO_W-PW4ZT4e5mXlQOhlYl2ccpZ9by8MZ6rF-RJ6x3lryCjbi5XxY7c57vLgfx7k/exec';
 const HUB_URL = 'https://script.google.com/macros/s/AKfycbw3Ms5nc2bhbrjVW-da3xbZ3vKhyBx2TpeR-eSd1L05ZhV-h2Yh0yLmIV_E7TWDmwM69A/exec';
 const WEEKLY_KPI_URL = 'https://script.google.com/macros/s/AKfycbyVBos-uJuhaqfLMBqoz9byNkvUG06igl4RX2_cs8hH15rbp7K4uFFEN-wpQgS2ChAU/exec';
-const AUTH_URL = 'https://script.google.com/macros/s/AKfycbzAOcIrKP-GmKTe9zydMYb6X4yKvkDB3YIPMPSrW8upzw3ci5DyDWq71xIHR3QXJkDh/exec';
+const AUTH_URL = 'https://script.google.com/macros/s/AKfycbza40UZxFtBWwtm3Z52MqAaBtxRfilN7flkMIuE-ylco-VFli38_nK9avh4gDioHNZjKg/exec';
 const RECORDS_URL = 'https://script.google.com/macros/s/AKfycbwPMcs33YfH84ewJyg3ikqIKZtOJByEI9X2PD3cONtavJk7oJCUnGYbP6sESBE6-j2RSA/exec';
 
 // --- 2. GLOBAL HELPERS & UTILITIES ---
@@ -242,7 +242,6 @@ function filterDocs() {
 let dynamicMonths = [], rawKPIData = [], monthlyKpiCache = {}, weeklyKpiCache = {}, liveVarianceDataCache = {}, hubDataCache = null, authFetchPromise = null;
 
 function startAuthFetch() { authFetchPromise = fetch(`${AUTH_URL}?v=${Date.now()}`).then(r => r.ok ? r.json() : null).catch(() => null); }
-async function hashString(str) { return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)))).map(b => b.toString(16).padStart(2, '0')).join(''); }
 
 async function checkPIN() {
     const pin = document.getElementById('pinInput').value, 
@@ -258,11 +257,11 @@ async function checkPIN() {
         const payload = await authFetchPromise;
         if (!payload || !payload.users) throw new Error();
         
-        const hashedPin = await hashString(pin);
-        const matched = payload.users.find(u => String(u.hash).toLowerCase() === hashedPin.toLowerCase());
+        // Directly compare the raw string inputs
+        const matched = payload.users.find(u => u.pin === String(pin));
         
         if (matched) {
-            // Global Unlock Key (Session Storage survives refresh, but resets on tab close!)
+            // Store session data identically to how your app currently expects it
             sessionStorage.setItem('speeksUnlocked', 'true'); 
             sessionStorage.setItem('speeksActiveManager', matched.name);
             sessionStorage.setItem('speeksUserRole', matched.role ? matched.role.toLowerCase() : 'employee');
@@ -271,15 +270,15 @@ async function checkPIN() {
             document.getElementById('authOverlay').style.display = 'none'; 
             document.body.style.overflow = 'auto';
             
-            applyRoleBasedUI();
-            initDashboardData();
+            if(typeof applyRoleBasedUI === 'function') applyRoleBasedUI();
+            if(typeof initDashboardData === 'function') initDashboardData();
         } else {
             err.innerText = "Incorrect PIN. Please try again."; 
             err.style.display = 'block'; 
             document.getElementById('pinInput').value = ''; 
         }
     } catch (e) { 
-        err.innerText = "Connection/Security Error."; 
+        err.innerText = "Connection Error."; 
         err.style.display = 'block'; 
     } finally { 
         btn.innerText = "Unlock Portal"; 

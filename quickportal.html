@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuickPortal</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="speeks.js" defer></script>
+  <style>
+    /* Add basic hiding utility for modules */
+    .dynamic-module { display: none; }
+  </style>
+</head>
+<body class="preload">
+
+  <div class="main-content">
+    <h1 id="userGreeting">Welcome!</h1>
+    <hr>
+
+    <div id="districtManagerModule" class="dynamic-module module-card">
+      <h2>Corporate Tools</h2>
+      <p>This module only appears for District Managers or Corporate staff.</p>
+    </div>
+
+    <div id="managerModule" class="dynamic-module module-card">
+      <h2>Manager Resources</h2>
+      <p>This module only appears for Store Managers.</p>
+    </div>
+
+    <div id="leeStoreModule" class="dynamic-module module-card">
+      <h2>Lee's Summit Dashboard</h2>
+      <p>Information strictly relevant to the LEE location.</p>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      // 1. Verify Authentication
+      if (sessionStorage.getItem('speeksUnlocked') !== 'true') {
+         // Not logged in: Redirect back to the hub or trigger the auth modal
+         window.location.href = "index.html"; 
+         return;
+      } 
+      
+      // 2. Personalize the Greeting
+      const userName = sessionStorage.getItem('speeksActiveManager') || 'User';
+      document.getElementById('userGreeting').innerText = `Welcome ${userName}!`;
+
+      // 3. Retrieve User Attributes
+      const userRole = sessionStorage.getItem('speeksUserRole');
+      const userStore = sessionStorage.getItem('speeksUserStore');
+
+      // 4. Toggle Visibility Based on Role
+      if (userRole.includes('district manager') || userRole.includes('corp')) {
+          document.getElementById('districtManagerModule').style.display = 'block';
+      }
+      if (userRole === 'manager') {
+          document.getElementById('managerModule').style.display = 'block';
+      }
+
+      // 5. Toggle Visibility Based on Store
+      if (userStore === 'LEE') {
+          document.getElementById('leeStoreModule').style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>
