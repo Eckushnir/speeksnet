@@ -800,3 +800,17 @@ body.preload { visibility: hidden !important; opacity: 0 !important; }
   background-color: #fef2f2 !important; /* Soft red background */
   box-shadow: 0 6px 15px rgba(239, 68, 68, 0.15) !important;
 }
+
+/* other */
+
+.user-manage-row {
+  display: flex; gap: 10px; align-items: center; background: #fff;
+  padding: 12px; border-radius: 8px; border: 1px solid var(--gen-border); margin-bottom: 8px;
+}
+.user-manage-row input, .user-manage-row select {
+  padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;
+}
+.user-manage-row .del-btn {
+  background: var(--red-alert); color: white; border: none; padding: 0 10px;
+  height: 34px; border-radius: 4px; cursor: pointer; font-weight: bold;
+}

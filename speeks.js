@@ -33,14 +33,129 @@ function toggleSidebar() {
 }
 
 function closeAllModals() {
-    ['notifDropdown', 'calendarDropdown', 'manageDocsDropdown', 'globalOverlay'].forEach(id => {
+    ['notifDropdown', 'calendarDropdown', 'manageDocsDropdown', 'manageUsersDropdown', 'globalOverlay'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.remove('show');
     });
     
-    // Only lock scrolling if the user is on the login screen
     if (!document.getElementById('authOverlay') || sessionStorage.getItem('speeksUnlocked') === 'true') {
         document.body.classList.remove('no-scroll');
+    }
+}
+
+// --- MANAGE USERS MODULE ---
+let globalUsersData = [];
+
+async function toggleManageUsers() {
+    const dropdown = document.getElementById('manageUsersDropdown');
+    if (!dropdown) return;
+    const isOpen = dropdown.classList.contains('show');
+    closeAllModals(); 
+    
+    if (!isOpen) {
+        dropdown.classList.add('show');
+        document.getElementById('globalOverlay')?.classList.add('show');
+        document.body.classList.add('no-scroll');
+
+        const list = document.getElementById('manageUsersList');
+        list.innerHTML = '<div style="text-align:center; padding:20px; color:#999;">Loading user database...</div>';
+        
+        try {
+            // Fetch fresh data from sheet to ensure we aren't editing a stale cache
+            const res = await fetch(`${AUTH_URL}?v=${Date.now()}`);
+            const data = await res.json();
+            globalUsersData = data.users || [];
+            populateUsersModal();
+        } catch (e) {
+            list.innerHTML = '<div style="color:var(--red-alert); padding:20px;">Failed to load users.</div>';
+        }
+    }
+}
+
+function populateUsersModal() {
+    const list = document.getElementById('manageUsersList');
+    list.innerHTML = '';
+    if (globalUsersData.length === 0) {
+        addManageUserRow();
+    } else {
+        globalUsersData.forEach(user => addManageUserRow(user));
+    }
+}
+
+function addManageUserRow(user = { name: '', pin: '', store: 'LEE', role: 'Employee' }) {
+    const row = document.createElement('div');
+    row.className = 'user-manage-row';
+
+    const stores = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL', 'CORP'];
+    const roles = ['CEO', 'District Manager', 'Manager', 'Employee', 'Training'];
+
+    const storeOptions = stores.map(s => `<option value="${s}" ${(user.store || '').toUpperCase() === s ? 'selected' : ''}>${s}</option>`).join('');
+    const roleOptions = roles.map(r => `<option value="${r}" ${(user.role || '').toLowerCase() === r.toLowerCase() ? 'selected' : ''}>${r}</option>`).join('');
+
+    // Renders the row in the requested order: Name, Pin, Store, Role
+    row.innerHTML = `
+        <input type="text" class="u-name" placeholder="Full Name" value="${user.name}" style="flex: 2;">
+        
+        <input type="text" class="u-pin" placeholder="PIN" maxlength="4" value="${user.pin}" 
+               style="flex: 1; max-width: 80px;" 
+               oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,4)">
+               
+        <select class="u-store" style="flex: 1;">${storeOptions}</select>
+        
+        <select class="u-role" style="flex: 1.5;">${roleOptions}</select>
+        
+        <button class="del-btn" onclick="this.parentElement.remove()" title="Delete User">✖</button>
+    `;
+    document.getElementById('manageUsersList').appendChild(row);
+}
+
+async function saveManageUsers() {
+    const btn = document.getElementById('saveUsersBtn');
+    const updatedUsers = [];
+    let valid = true;
+
+    document.querySelectorAll('.user-manage-row').forEach(row => {
+        const name = row.querySelector('.u-name').value.trim();
+        const pin = row.querySelector('.u-pin').value.trim();
+        const store = row.querySelector('.u-store').value;
+        const role = row.querySelector('.u-role').value;
+
+        // Only save if the row isn't completely blank
+        if (name || pin) {
+            if (pin.length !== 4) {
+                alert(`Error: The PIN for ${name || 'a user'} must be exactly 4 digits.`);
+                valid = false;
+            }
+            updatedUsers.push({ name, pin, store, role });
+        }
+    });
+
+    if (!valid) return;
+
+    btn.textContent = "Saving...";
+    btn.style.opacity = "0.7";
+
+    try {
+        // Send as text/plain to bypass CORS preflight issues in Apps Script
+        const res = await fetch(AUTH_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(updatedUsers)
+        });
+
+        if (res.ok) {
+            alert("Database successfully updated!");
+            startAuthFetch(); // Refresh the local cached credentials so logins work immediately
+            closeAllModals();
+        } else {
+            alert("Error saving users.");
+        }
+    } catch (e) {
+        console.error(e);
+        alert("Failed to connect to server.");
+    } finally {
+        btn.textContent = "Save Changes";
+        btn.style.opacity = "1";
     }
 }
 

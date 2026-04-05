@@ -44,6 +44,20 @@
     </div>
 </div>
 
+<div class="modal-menu manage-docs-menu" id="manageUsersDropdown">
+    <div class="modal-header">
+        <h3>Manage Portal Users</h3>
+        <button class="modal-close-btn" onclick="closeAllModals()">✖</button>
+    </div>
+    <div class="modal-body" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
+        <div id="manageUsersList" style="display: flex; flex-direction: column;"></div>
+        <button class="btn-secondary" style="margin-top: 15px;" onclick="addManageUserRow()">+ Add New User</button>
+    </div>
+    <div class="modal-footer" style="padding: 20px; border-top: 1px solid var(--gen-border); display: flex; justify-content: flex-end;">
+        <button id="saveUsersBtn" class="btn-primary" onclick="saveManageUsers()">Save Changes</button>
+    </div>
+</div>
+
 <div id="globalOverlay" class="overlay" style="display: none;"></div>
 
 <main class="main-content">
@@ -52,9 +66,8 @@
         <h2 id="userGreeting">Welcome!</h2>
         <p>Your personalized quick-access dashboard.</p>
     </div>
-    
-        
   </div>
+    
   <div class="quick-links-bar">  
     <a href="https://docs.google.com/spreadsheets/d/1pubURplK66yC6oXmpz7P-r8zN07DWmDiLxrtTg0rmdk/edit?usp=sharing" class="dynamic-module role-manager role-district-manager quick-link-pill" target="_blank">🎯 Daily Listing Goals</a>
     <a href="https://drive.google.com/drive/folders/1OyRPYmb77B1s77fPj2ebUJGXYxAqPKfc?usp=sharing" target="_blank" class="dynamic-module role-manager role-district-manager quick-link-pill">📁 Resources</a>  
@@ -71,8 +84,9 @@
     </div>
 
     <div class="dynamic-module role-district-manager card" style="margin-bottom: 0;">
-      <div class="card-title">🏢 District Manager Resources</div>
+      <div class="card-title">🏢 District Manager Tools</div>
       <p style="padding: 15px; color: #ddd;">Multi-store reporting and district-level tools.</p>
+      <div class="dynamic-module role-district-manager quick-link-pill" style="margin-bottom: 0; cursor: pointer;" onclick="toggleManageUsers()">👥 Manage QuickPortal Users</div>
     </div>
 
     <div class="dynamic-module role-manager card" style="margin-bottom: 0;">
