@@ -33,7 +33,7 @@ function toggleSidebar() {
 }
 
 function closeAllModals() {
-    ['notifDropdown', 'calendarDropdown', 'manageDocsDropdown', 'manageUsersDropdown', 'globalOverlay'].forEach(id => {
+    ['notifDropdown', 'calendarDropdown', 'manageDocsDropdown', 'manageUsersDropdown', 'globalOverlay', 'ideaModal'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.remove('show');
     });
@@ -175,6 +175,7 @@ function toggleModal(modalId, badgeId = null) {
 
 function toggleNotifs() { toggleModal('notifDropdown', 'notifBadge'); }
 function toggleCalendar() { toggleModal('calendarDropdown'); }
+function toggleIdeaModal() { toggleModal('ideaModal'); }
 
 function switchAnnTab(tab) {
     const isRecent = tab === 'recent';
@@ -689,7 +690,8 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // Inject the Global PIN screen and Logout button
     injectGlobalAuth();
-    startAuthFetch(); // Start fetching Google Sheet Data in the background
+    injectIdeaModal(); // <-- ADD THIS LINE
+    startAuthFetch();
 
     // Check if they are already logged in this session
     if (sessionStorage.getItem('speeksUnlocked') === 'true') { 
@@ -794,5 +796,93 @@ function handleSignOut() {
     sessionStorage.removeItem('speeksUserName');
     sessionStorage.removeItem('speeksUserRole');
     sessionStorage.removeItem('speeksUserStore');
-    location.reload(); 
+    location.reload(); // Reloads the page, putting them back at the PIN screen
+}
+
+let isIdeaSubmitting = false; // Tracks when the form is actually sent
+
+function injectIdeaModal() {
+    if (!document.getElementById('ideaModal')) {
+        const modalHtml = `
+        <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;" onload="handleIframeLoad()"></iframe>
+        
+        <div class="modal-menu idea-menu" id="ideaModal">
+            <div class="modal-header">
+                <h3>💡 Submit an Idea</h3>
+                <button class="modal-close-btn" onclick="closeAllModals()">✖</button>
+            </div>
+            <div class="modal-content" style="padding: 25px;">
+                
+                <form id="ideaForm" action="https://formsubmit.co/ethan.kushnir@speekstechnology.com" method="POST" enctype="multipart/form-data" target="hidden_iframe" onsubmit="prepareIdeaSubmit()">
+                    
+                    <input type="hidden" name="_captcha" value="false">
+                    <input type="hidden" name="_subject" id="ideaDynamicSubject" value="New SPEEKS Idea">
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label class="idea-label">Your Name</label>
+                        <input type="text" id="ideaName" name="Name" class="idea-input" required placeholder="John Doe">
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label class="idea-label">Category</label>
+                        <select id="ideaCategory" name="Category" class="idea-input">
+                            <option value="New Feature">New Feature</option>
+                            <option value="Process Improvement">Process Improvement</option>
+                            <option value="Bug Fix / Issue">Bug Fix / Issue</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label class="idea-label">Idea Details</label>
+                        <textarea id="ideaDesc" name="Idea_Description" required rows="5" class="idea-input" placeholder="Describe your idea here..."></textarea>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label class="idea-label">Attach a File (Optional)</label>
+                        <input type="file" id="ideaFile" name="Attachment" class="idea-input" accept="image/*,.pdf,.doc,.docx" style="padding: 10px;">
+                    </div>
+
+                    <div style="display:flex; justify-content:flex-end; gap:10px;">
+                        <button type="button" class="btn-secondary" onclick="closeAllModals()">Cancel</button>
+                        <button type="submit" class="btn-primary" id="submitIdeaBtn">Submit Idea</button>
+                    </div>
+                </form>
+                
+                <div id="ideaSuccess" style="display:none; text-align:center; padding: 30px 10px;">
+                    <div style="font-size: 40px; margin-bottom: 10px;">🎉</div>
+                    <h3 style="color: var(--sage-professional); margin-bottom: 10px; font-weight: 800;">Idea Submitted!</h3>
+                    <p style="color: #666; font-size: 14px; margin-bottom: 20px; font-weight: 500;">Thanks for helping us improve SPEEKS.</p>
+                    <button class="btn-primary" onclick="closeAllModals(); setTimeout(() => { document.getElementById('ideaForm').style.display='block'; document.getElementById('ideaSuccess').style.display='none'; document.getElementById('ideaForm').reset(); }, 500);">Close</button>
+                </div>
+            </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+}
+
+// 1. Updates UI when the user clicks "Submit"
+function prepareIdeaSubmit() {
+    isIdeaSubmitting = true; // Flips the switch so the iframe knows we sent something
+    const btn = document.getElementById('submitIdeaBtn');
+    btn.innerText = 'Sending...';
+    btn.style.opacity = '0.7';
+    
+    // Updates the email subject line based on the dropdown category
+    const category = document.getElementById('ideaCategory').value;
+    document.getElementById('ideaDynamicSubject').value = 'New SPEEKS Idea: ' + category;
+}
+
+// 2. Triggers automatically when the hidden iframe finishes receiving the data
+function handleIframeLoad() {
+    if (isIdeaSubmitting) {
+        // Hide form, show success message
+        document.getElementById('ideaForm').style.display = 'none';
+        document.getElementById('ideaSuccess').style.display = 'block';
+        
+        // Reset the button
+        const btn = document.getElementById('submitIdeaBtn');
+        btn.innerText = 'Submit Idea';
+        btn.style.opacity = '1';
+        
+        isIdeaSubmitting = false; // Reset the switch
+    }
 }
