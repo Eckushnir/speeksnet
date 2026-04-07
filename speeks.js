@@ -10,7 +10,7 @@ const MONTHLY_KPI_URL = 'https://script.google.com/macros/s/AKfycby0ihq9A4yUQvdZ
 const VARIANCE_API_URL = 'https://script.google.com/macros/s/AKfycbxFO_W-PW4ZT4e5mXlQOhlYl2ccpZ9by8MZ6rF-RJ6x3lryCjbi5XxY7c57vLgfx7k/exec';
 const HUB_URL = 'https://script.google.com/macros/s/AKfycbw3Ms5nc2bhbrjVW-da3xbZ3vKhyBx2TpeR-eSd1L05ZhV-h2Yh0yLmIV_E7TWDmwM69A/exec';
 const WEEKLY_KPI_URL = 'https://script.google.com/macros/s/AKfycbyVBos-uJuhaqfLMBqoz9byNkvUG06igl4RX2_cs8hH15rbp7K4uFFEN-wpQgS2ChAU/exec';
-const AUTH_URL = 'https://script.google.com/macros/s/AKfycbzAOcIrKP-GmKTe9zydMYb6X4yKvkDB3YIPMPSrW8upzw3ci5DyDWq71xIHR3QXJkDh/exec';
+const AUTH_URL = 'https://script.google.com/macros/s/AKfycbza40UZxFtBWwtm3Z52MqAaBtxRfilN7flkMIuE-ylco-VFli38_nK9avh4gDioHNZjKg/exec';
 const RECORDS_URL = 'https://script.google.com/macros/s/AKfycbwPMcs33YfH84ewJyg3ikqIKZtOJByEI9X2PD3cONtavJk7oJCUnGYbP6sESBE6-j2RSA/exec';
 
 // --- 2. GLOBAL HELPERS & UTILITIES ---
@@ -33,11 +33,129 @@ function toggleSidebar() {
 }
 
 function closeAllModals() {
-    ['notifDropdown', 'calendarDropdown', 'manageDocsDropdown', 'globalOverlay', 'ideaModal'].forEach(id => 
-        document.getElementById(id)?.classList.remove('show')
-    );
-    if (!document.getElementById('authOverlay') || sessionStorage.getItem('speeksManagerUnlocked') === 'true') {
+    ['notifDropdown', 'calendarDropdown', 'manageDocsDropdown', 'manageUsersDropdown', 'globalOverlay', 'ideaModal'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('show');
+    });
+    
+    if (!document.getElementById('authOverlay') || sessionStorage.getItem('speeksUnlocked') === 'true') {
         document.body.classList.remove('no-scroll');
+    }
+}
+
+// --- MANAGE USERS MODULE ---
+let globalUsersData = [];
+
+async function toggleManageUsers() {
+    const dropdown = document.getElementById('manageUsersDropdown');
+    if (!dropdown) return;
+    const isOpen = dropdown.classList.contains('show');
+    closeAllModals(); 
+    
+    if (!isOpen) {
+        dropdown.classList.add('show');
+        document.getElementById('globalOverlay')?.classList.add('show');
+        document.body.classList.add('no-scroll');
+
+        const list = document.getElementById('manageUsersList');
+        list.innerHTML = '<div style="text-align:center; padding:20px; color:#999;">Loading user database...</div>';
+        
+        try {
+            // Fetch fresh data from sheet to ensure we aren't editing a stale cache
+            const res = await fetch(`${AUTH_URL}?v=${Date.now()}`);
+            const data = await res.json();
+            globalUsersData = data.users || [];
+            populateUsersModal();
+        } catch (e) {
+            list.innerHTML = '<div style="color:var(--red-alert); padding:20px;">Failed to load users.</div>';
+        }
+    }
+}
+
+function populateUsersModal() {
+    const list = document.getElementById('manageUsersList');
+    list.innerHTML = '';
+    if (globalUsersData.length === 0) {
+        addManageUserRow();
+    } else {
+        globalUsersData.forEach(user => addManageUserRow(user));
+    }
+}
+
+function addManageUserRow(user = { name: '', pin: '', store: 'LEE', role: 'Employee' }) {
+    const row = document.createElement('div');
+    row.className = 'user-manage-row';
+
+    const stores = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL', 'CORP'];
+    const roles = ['CEO', 'District Manager', 'Manager', 'Employee', 'Training'];
+
+    const storeOptions = stores.map(s => `<option value="${s}" ${(user.store || '').toUpperCase() === s ? 'selected' : ''}>${s}</option>`).join('');
+    const roleOptions = roles.map(r => `<option value="${r}" ${(user.role || '').toLowerCase() === r.toLowerCase() ? 'selected' : ''}>${r}</option>`).join('');
+
+    // Renders the row in the requested order: Name, Pin, Store, Role
+    row.innerHTML = `
+        <input type="text" class="u-name" placeholder="Full Name" value="${user.name}" style="flex: 2;">
+        
+        <input type="text" class="u-pin" placeholder="PIN" maxlength="4" value="${user.pin}" 
+               style="flex: 1; max-width: 80px;" 
+               oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,4)">
+               
+        <select class="u-store" style="flex: 1;">${storeOptions}</select>
+        
+        <select class="u-role" style="flex: 1.5;">${roleOptions}</select>
+        
+        <button class="del-btn" onclick="this.parentElement.remove()" title="Delete User">✖</button>
+    `;
+    document.getElementById('manageUsersList').appendChild(row);
+}
+
+async function saveManageUsers() {
+    const btn = document.getElementById('saveUsersBtn');
+    const updatedUsers = [];
+    let valid = true;
+
+    document.querySelectorAll('.user-manage-row').forEach(row => {
+        const name = row.querySelector('.u-name').value.trim();
+        const pin = row.querySelector('.u-pin').value.trim();
+        const store = row.querySelector('.u-store').value;
+        const role = row.querySelector('.u-role').value;
+
+        // Only save if the row isn't completely blank
+        if (name || pin) {
+            if (pin.length !== 4) {
+                alert(`Error: The PIN for ${name || 'a user'} must be exactly 4 digits.`);
+                valid = false;
+            }
+            updatedUsers.push({ name, pin, store, role });
+        }
+    });
+
+    if (!valid) return;
+
+    btn.textContent = "Saving...";
+    btn.style.opacity = "0.7";
+
+    try {
+        // Send as text/plain to bypass CORS preflight issues in Apps Script
+        const res = await fetch(AUTH_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(updatedUsers)
+        });
+
+        if (res.ok) {
+            alert("Database successfully updated!");
+            startAuthFetch(); // Refresh the local cached credentials so logins work immediately
+            closeAllModals();
+        } else {
+            alert("Error saving users.");
+        }
+    } catch (e) {
+        console.error(e);
+        alert("Failed to connect to server.");
+    } finally {
+        btn.textContent = "Save Changes";
+        btn.style.opacity = "1";
     }
 }
 
@@ -242,45 +360,53 @@ function filterDocs() {
 // --- 7. MODULE: MANAGER DASHBOARD ---
 let dynamicMonths = [], rawKPIData = [], monthlyKpiCache = {}, weeklyKpiCache = {}, liveVarianceDataCache = {}, hubDataCache = null, authFetchPromise = null;
 
-function startAuthFetch() { authFetchPromise = fetch(`${AUTH_URL}?v=${Date.now()}`).then(r => r.ok ? r.json() : null).catch(() => null); }
-async function hashString(str) { return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)))).map(b => b.toString(16).padStart(2, '0')).join(''); }
+function startAuthFetch() { 
+    authFetchPromise = fetch(`${AUTH_URL}?v=${Date.now()}`)
+        .then(r => r.ok ? r.json() : null)
+        .catch(() => null); 
+}
 
 async function checkPIN() {
-    const pin = document.getElementById('pinInput').value, 
-          err = document.getElementById('pinError'), 
-          btn = document.getElementById('unlockBtn');
+    const pin = document.getElementById('pinInput').value;
+    const err = document.getElementById('pinError');
+    const btn = document.getElementById('unlockBtn');
           
-    if(!pin) return;
+    if (!pin) return;
+    
     btn.innerText = "Verifying..."; 
     btn.style.opacity = "0.7"; 
     err.style.display = 'none';
 
     try {
         const payload = await authFetchPromise;
-        if (!payload || !payload.users) throw new Error();
+        if (!payload || !payload.users) throw new Error("Could not load users.");
         
-        const hashedPin = await hashString(pin);
-        const matched = payload.users.find(u => String(u.hash).toLowerCase() === hashedPin.toLowerCase());
+        // Directly compare the raw string inputs from the Google Sheet
+        const matched = payload.users.find(u => u.pin === String(pin));
         
         if (matched) {
-            // Global Unlock Key (Session Storage survives refresh, but resets on tab close!)
+            // Clean, updated session storage variables
             sessionStorage.setItem('speeksUnlocked', 'true'); 
-            sessionStorage.setItem('speeksActiveManager', matched.name);
+            sessionStorage.setItem('speeksUserName', matched.name);
             sessionStorage.setItem('speeksUserRole', matched.role ? matched.role.toLowerCase() : 'employee');
             sessionStorage.setItem('speeksUserStore', matched.store ? matched.store.toUpperCase() : 'ALL');
             
-            document.getElementById('authOverlay').style.display = 'none'; 
+            // Hide Auth Overlay
+            const authOverlay = document.getElementById('authOverlay');
+            if (authOverlay) authOverlay.style.display = 'none'; 
             document.body.style.overflow = 'auto';
+            document.body.classList.remove('no-scroll');
             
-            applyRoleBasedUI();
-            initDashboardData();
+            // Trigger any existing data initialization
+            if (typeof initDashboardData === 'function') initDashboardData();
         } else {
             err.innerText = "Incorrect PIN. Please try again."; 
             err.style.display = 'block'; 
             document.getElementById('pinInput').value = ''; 
         }
     } catch (e) { 
-        err.innerText = "Connection/Security Error."; 
+        console.error(e);
+        err.innerText = "Connection Error."; 
         err.style.display = 'block'; 
     } finally { 
         btn.innerText = "Unlock Portal"; 
@@ -476,25 +602,6 @@ function renderBuyingSales() {
     let bar = document.getElementById('bs-bar'); if(bar) { bar.style.strokeDashoffset = 402 - (Math.min(p, 100)/100)*402; bar.style.stroke = p < 100 ? "var(--red-alert)" : "var(--sage-professional)"; }
 }
 
-async function initChecklists() {
-    const actM = sessionStorage.getItem('speeksActiveManager'), cont = document.getElementById('dynamicChecklistContainer');
-    if (!actM || !cont) return; 
-    let tCache = `speeksTasksCache_${actM}`, sCache = `speeksCheckState_${actM}`, tasks = JSON.parse(localStorage.getItem(tCache) || '[]'), state = JSON.parse(localStorage.getItem(sCache) || '{}');
-
-    const rndr = (tArr, s) => {
-        const bC = (tit, ic, ts) => `<div class="card" style="margin-bottom: 0; padding: 25px;"><div class="checklist-header">${ic} ${tit} Checklist</div>${ts.length ? ts.map(t => `<label class="checklist-item"><input type="checkbox" id="chk_${t.text.replace(/[^a-zA-Z0-9]/g, '')}" ${s["chk_"+t.text.replace(/[^a-zA-Z0-9]/g, '')] ? 'checked' : ''}> ${t.text}</label>`).join('') : `<div style="color:#888; font-size:12px; font-weight:600;">No tasks assigned.</div>`}</div>`;
-        cont.innerHTML = bC('Daily', '⚡', tArr.filter(t => t.category === 'daily')) + bC('Weekly', '🔄', tArr.filter(t => t.category === 'weekly')) + bC('Monthly', '🎯', tArr.filter(t => t.category === 'monthly'));
-        cont.querySelectorAll('input[type="checkbox"]').forEach(b => b.addEventListener('change', e => { state[b.id] = e.target.checked; localStorage.setItem(sCache, JSON.stringify(state)); fetch(AUTH_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ name: actM, checkState: state }) }).catch(()=>{}); }));
-    };
-    if (tasks.length) rndr(tasks, state);
-    const pld = await authFetchPromise;
-    if (pld?.users && pld?.tasks) {
-        const u = pld.users.find(u => String(u.name).toLowerCase() === actM.toLowerCase());
-        if (u?.checkState) try { state = JSON.parse(u.checkState); localStorage.setItem(sCache, JSON.stringify(state)); } catch(e) {}
-        localStorage.setItem(tCache, JSON.stringify(tasks = pld.tasks.filter(t => ['all', actM.toLowerCase()].includes(t.manager)))); rndr(tasks, state);
-    }
-}
-
 async function preloadAllStores() {
     if(!document.getElementById('kpiDashboardContainer')) return;
     ["OVL", "LEE", "WSP", "MPL", "BAL"].forEach(async s => { if (!monthlyKpiCache[s]) try { const p = await (await fetch(`${MONTHLY_KPI_URL}?store=${s}&v=${Date.now()}`)).json(); if (!p.error) monthlyKpiCache[s] = { months: p.months, data: groupKPIs(p.data) }; } catch(e) {} });
@@ -684,8 +791,9 @@ function injectGlobalAuth() {
 }
 
 function handleSignOut() {
+    // Clear only the new essential variables
     sessionStorage.removeItem('speeksUnlocked');
-    sessionStorage.removeItem('speeksActiveManager');
+    sessionStorage.removeItem('speeksUserName');
     sessionStorage.removeItem('speeksUserRole');
     sessionStorage.removeItem('speeksUserStore');
     location.reload(); // Reloads the page, putting them back at the PIN screen

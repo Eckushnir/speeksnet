@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SPEEKSNET | QuickPortal</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <script src="speeks.js" defer></script>
+  <style>
+    /* Hides all dynamic content globally until the JS verifies the user's role/store */
+    .dynamic-module { display: none; }
+  </style>
+</head>
+<body class="preload">
+
+<aside class="sidebar">
+  <div class="brand-area">
+    <img src="images/speeks_logo.png" alt="SPEEKS Logo" class="brand-logo">
+    <div class="badge">QUICK PORTAL</div>
+  </div>
+  <nav class="nav-bar">
+    <a href="index.html" class="nav-link"><i>🏠</i> <span>SPEEKS Hub</span></a>
+    <a href="quickportal.html" class="nav-link active"><i>⚡</i> <span>QuickPortal</span></a>
+    <a href="portals.html" class="nav-link"><i>🔗</i> <span>Portals</span></a>
+    <a href="metrics.html" class="nav-link"><i>📊</i> <span>Metrics & Leaderboards</span></a>
+    <a href="docs.html" class="nav-link"><i>📚</i> <span>Processes & Policies</span></a>
+    <a href="managers.html" class="nav-link"><i>🛠️</i> <span>Manager Portal</span></a>
+  </nav>
+  
+  <div class="sidebar-bottom">
+    <a href="https://docs.google.com/forms/d/e/1FAIpQLSfEm449owjdKiT_zp7ATB_oLvsy3x51bL38Q3nKNiM7UNUZFQ/viewform" target="_blank" class="idea-btn">
+      <i>💡</i> <span>Have an Idea?</span>
+    </a>
+  </div>
+</aside>
+
+<div class="sidebar-toggle" onclick="toggleSidebar()">◀</div>
+
+<div class="top-actions">
+    <div class="action-btn" onclick="toggleCalendar()" title="Strategic Calendar">📅</div>
+    <div class="action-btn" onclick="toggleNotifs()" title="Announcements">
+        🔔 <div class="notif-dot" id="notifBadge"></div>
+    </div>
+</div>
+
+<div class="modal-menu manage-docs-menu" id="manageUsersDropdown">
+    <div class="modal-header">
+        <h3>Manage Portal Users</h3>
+        <button class="modal-close-btn" onclick="closeAllModals()">✖</button>
+    </div>
+    <div class="modal-body" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
+        <div id="manageUsersList" style="display: flex; flex-direction: column;"></div>
+        <button class="btn-secondary" style="margin-top: 15px;" onclick="addManageUserRow()">+ Add New User</button>
+    </div>
+    <div class="modal-footer" style="padding: 20px; border-top: 1px solid var(--gen-border); display: flex; justify-content: flex-end;">
+        <button id="saveUsersBtn" class="btn-primary" onclick="saveManageUsers()">Save Changes</button>
+    </div>
+</div>
+
+<div id="globalOverlay" class="overlay" style="display: none;"></div>
+
+<main class="main-content">
+  <div class="page-header">
+    <div>
+        <h2 id="userGreeting">Welcome!</h2>
+        <p>Your personalized quick-access dashboard.</p>
+    </div>
+  </div>
+    
+  <div class="quick-links-bar">  
+    <a href="https://docs.google.com/spreadsheets/d/1pubURplK66yC6oXmpz7P-r8zN07DWmDiLxrtTg0rmdk/edit?usp=sharing" class="dynamic-module role-manager role-district-manager quick-link-pill" target="_blank">🎯 Daily Listing Goals</a>
+    <a href="https://drive.google.com/drive/folders/1OyRPYmb77B1s77fPj2ebUJGXYxAqPKfc?usp=sharing" target="_blank" class="dynamic-module role-manager role-district-manager quick-link-pill">📁 Resources</a>  
+    <a href="https://docs.google.com/spreadsheets/d/1KdQNDYfJT-Gt6wal6cgCbh6aqOUOHxey3PEsoeyztzQ/edit?usp=sharing" target="_blank" class="dynamic-module role-manager role-district-manager quick-link-pill">📦 SPEEKS Aging Inventory Tracker</a>
+    <a href="https://docs.google.com/spreadsheets/d/1zw-jcqpAnMY6PNofERbUz4pUHA3qnlnZx6O6C_XSmLY/edit?usp=sharing" target="_blank" class="dynamic-module role-manager role-district-manager quick-link-pill">🛡️ eBay & Shopify Insurance Cases</a>
+    <a href="https://docs.google.com/spreadsheets/d/1ar3tabN-bUqkjWqgy25MCHzSup2jhiaAKaGxLwZTeJ8/edit?usp=sharing" target="_blank" class="dynamic-module role-manager role-district-manager quick-link-pill">📍 Local Location Visits</a>
+  </div>
+
+  <div class="project-grid">
+    
+    <div class="dynamic-module role-ceo card" style="margin-bottom: 0;">
+      <div class="card-title">👑 CEO Tools</div>
+      <p style="padding: 15px; color: #ddd;">Executive resources and global overviews.</p>
+    </div>
+
+    <div class="dynamic-module role-district-manager card" style="margin-bottom: 0;">
+      <div class="card-title">🏢 District Manager Tools</div>
+      <p style="padding: 15px; color: #ddd;">Multi-store reporting and district-level tools.</p>
+      <div class="dynamic-module role-district-manager quick-link-pill" style="margin-bottom: 0; cursor: pointer;" onclick="toggleManageUsers()">👥 Manage QuickPortal Users</div>
+    </div>
+
+    <div class="dynamic-module role-manager card" style="margin-bottom: 0;">
+      <div class="card-title">🛠️ Manager Resources</div>
+      <p style="padding: 15px; color: #ddd;">Store-level management, scheduling, and admin tools.</p>
+    </div>
+
+    <div class="dynamic-module role-employee card" style="margin-bottom: 0;">
+      <div class="card-title">👥 Employee Portal</div>
+      <p style="padding: 15px; color: #ddd;">Daily checklists, schedules, and floor resources.</p>
+    </div>
+
+    <div class="dynamic-module role-training card" style="margin-bottom: 0;">
+      <div class="card-title">🎓 Training Academy</div>
+      <p style="padding: 15px; color: #ddd;">Onboarding guides and certification modules.</p>
+    </div>
+
+    <div class="dynamic-module store-ovl card" style="margin-bottom: 0;">
+      <div class="card-title">📍 OVL Location Dashboard</div>
+      <p style="padding: 15px; color: #ddd;">Information strictly relevant to the OVL location.</p>
+    </div>
+    
+    <div class="dynamic-module store-lee card" style="margin-bottom: 0;">
+      <div class="card-title">📍 LEE Location Dashboard</div>
+      <p style="padding: 15px; color: #ddd;">Information strictly relevant to the LEE location.</p>
+    </div>
+
+    <div class="dynamic-module store-wsp card" style="margin-bottom: 0;">
+      <div class="card-title">📍 WSP Location Dashboard</div>
+      <p style="padding: 15px; color: #ddd;">Information strictly relevant to the WSP location.</p>
+    </div>
+
+    <div class="dynamic-module store-mpl card" style="margin-bottom: 0;">
+      <div class="card-title">📍 MPL Location Dashboard</div>
+      <p style="padding: 15px; color: #ddd;">Information strictly relevant to the MPL location.</p>
+    </div>
+
+    <div class="dynamic-module store-bal card" style="margin-bottom: 0;">
+      <div class="card-title">📍 BAL Location Dashboard</div>
+      <p style="padding: 15px; color: #ddd;">Information strictly relevant to the BAL location.</p>
+    </div>
+
+    <div class="dynamic-module store-corp card" style="margin-bottom: 0;">
+      <div class="card-title">🏢 CORP Dashboard</div>
+      <p style="padding: 15px; color: #ddd;">Information strictly relevant to Corporate (CORP).</p>
+    </div>
+
+  </div>
+</main>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    // 1. Verify Authentication
+    if (sessionStorage.getItem('speeksUnlocked') !== 'true') {
+       window.location.href = "index.html"; 
+       return;
+    } 
+    
+    // 2. Personalize the Greeting
+    const userName = sessionStorage.getItem('speeksUserName') || 'User';
+    document.getElementById('userGreeting').innerText = `Welcome ${userName}!`;
+
+    // 3. Format the Session Data into Target Classes
+    const rawRole = sessionStorage.getItem('speeksUserRole') || '';
+    const rawStore = sessionStorage.getItem('speeksUserStore') || '';
+
+    // Replaces spaces with dashes so "District Manager" becomes "role-district-manager"
+    const userRoleClass = `role-${rawRole.toLowerCase().replace(/\s+/g, '-')}`; 
+    const userStoreClass = `store-${rawStore.toLowerCase()}`;
+
+    // 4. The Class-Based Access Engine
+    document.querySelectorAll('.dynamic-module').forEach(module => {
+        // If the module's HTML classes include the user's role OR the user's store
+        if (module.classList.contains(userRoleClass) || module.classList.contains(userStoreClass)) {
+            
+            // Unhide the element! 
+            // We use 'inline-flex' for links/buttons so they stack horizontally, and 'block' for large cards.
+            if (module.tagName === 'A' || module.tagName === 'BUTTON') {
+                module.style.display = 'inline-flex';
+            } else {
+                module.style.display = 'block';
+            }
+        }
+    });
+  });
+</script>
+</body>
+</html>
