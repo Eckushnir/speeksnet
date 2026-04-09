@@ -712,6 +712,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ⬇️ ADD THIS LINE RIGHT HERE! ⬇️
     fetchScorecardData();
+    fetchAlertsData();
 });
 
 // --- ROLE & PREFERENCE LOGIC ---
@@ -978,5 +979,90 @@ async function fetchScorecardData() {
     } catch (error) {
         console.error('Error fetching scorecard:', error);
         container.innerHTML = '<div style="color: var(--red-alert); font-weight: bold; padding: 20px 0; text-align: center;">Error syncing scorecard. Check Apps Script URL.</div>';
+    }
+}
+
+// --- WIDGET: LIVE STORE PERFORMANCE ALERTS (2x2 GRID) ---
+async function fetchAlertsData() {
+    const container = document.getElementById('alerts-widget-body');
+    const titleElement = document.getElementById('alerts-store-name');
+    if (!container) return;
+
+    container.innerHTML = '<div class="status-message" style="width: 100%; padding: 20px 0;">Loading Data...</div>';
+
+    // ⚠️ PASTE YOUR ALERTS APPS SCRIPT WEB APP URL HERE
+    const ALERTS_URL = 'https://script.google.com/macros/s/AKfycbxap-4Jgdn5-ntkv_X-vFZLTWlTB29_bDLdwcFxhWd2su3ZQJ0ZS7UpUgZAK08lOIV6/exec';
+
+    let targetStore = sessionStorage.getItem('speeksUserStore') || 'OVL';
+    if (targetStore === 'ALL' || targetStore === 'CORP') targetStore = 'OVL'; 
+
+    try {
+        const response = await fetch(ALERTS_URL);
+        const json = await response.json();
+        
+        if (!json.success) throw new Error(json.error);
+
+        const storeData = json.data.find(item => String(item.store).toUpperCase() === targetStore.toUpperCase());
+
+        if (!storeData) {
+            container.innerHTML = `<div style="color: #888; text-align: center; width: 100%; padding: 20px 0; font-weight: bold;">No data found for ${targetStore}.</div>`;
+            return;
+        }
+
+        if (titleElement) {
+            titleElement.innerHTML = `📍 ${storeData.store} Alerts`;
+        }
+
+        // --- 1. Card Builder Helper Function (Horizontal Inner Layout) ---
+        const buildAlertCard = (title, value, severity) => {
+            let textColor = 'var(--sage-professional)'; // Green
+            let displayText = 'All Clear';
+            let pulseHtml = '';
+
+            if (value !== '') {
+                displayText = value;
+                
+                if (severity === 'high') {
+                    textColor = 'var(--idea-gold)'; // Yellow
+                } else if (severity === 'very-high') {
+                    textColor = 'var(--red-alert)'; // Red + Pulse
+                    pulseHtml = '<div class="notif-dot active" style="display:block; position:absolute; top:-6px; right:-6px; width:14px; height:14px; border-width: 2px; z-index: 5;"></div>';
+                }
+            }
+
+            // Removed max-width restriction on the text, allowing it to stretch fully!
+            return `
+            <div style="position: relative; background: #f9fafb; padding: 20px 25px; border-radius: 10px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+                ${pulseHtml}
+                <div style="font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 20px; flex-shrink: 0;">${title}</div>
+                <div style="font-size: 14px; font-weight: 800; color: ${textColor}; text-align: right; line-height: 1.3; flex-grow: 1;">
+                    ${displayText}
+                </div>
+            </div>`;
+        };
+
+        // --- 2. Inject the 2x2 Grid with the Vertical Dashed Divider ---
+        container.innerHTML = `
+        <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 20px; align-items: stretch; width: 100%;">
+            
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div style="font-size: 10px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 1px; margin-bottom: -4px; padding-left: 5px;">Current Issues</div>
+                ${buildAlertCard('High', storeData.currentHigh, 'high')}
+                ${buildAlertCard('Very High', storeData.currentVeryHigh, 'very-high')}
+            </div>
+
+            <div style="width: 2px; background: repeating-linear-gradient(to bottom, #e2e8f0, #e2e8f0 6px, transparent 6px, transparent 12px); margin: 26px 0 6px 0;"></div>
+
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div style="font-size: 10px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 1px; margin-bottom: -4px; padding-left: 5px;">Projected Issues</div>
+                ${buildAlertCard('High', storeData.projectedHigh, 'high')}
+                ${buildAlertCard('Very High', storeData.projectedVeryHigh, 'very-high')}
+            </div>
+
+        </div>`;
+        
+    } catch (error) {
+        console.error('Error fetching alerts:', error);
+        container.innerHTML = '<div style="color: var(--red-alert); font-weight: bold; width: 100%; padding: 20px 0; text-align: center;">Error syncing alerts. Check Apps Script URL.</div>';
     }
 }

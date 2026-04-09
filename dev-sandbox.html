@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SPEEKSNET | Dev Sandbox</title>
+  <title>SPEEKSNET | Store Dashboard</title>
   <link rel="stylesheet" href="styles.css?v=1.2">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <script src="speeks.js?v=1.2" defer></script>
@@ -13,7 +13,7 @@
 <aside class="sidebar">
   <div class="brand-area">
     <img src="images/speeks_logo.png" alt="SPEEKS Logo" class="brand-logo">
-    <div class="badge" style="background: var(--idea-gold); color: var(--slate-charcoal);">DEV SANDBOX</div>
+    <div class="badge" style="background: var(--idea-gold); color: var(--slate-charcoal);">DASHBOARD</div>
   </div>
   <nav class="nav-bar">
     <a href="index.html" class="nav-link"><i>🏠</i> <span>SPEEKS Hub</span></a>
@@ -22,7 +22,7 @@
     <a href="metrics.html" class="nav-link"><i>📊</i> <span>Metrics & Leaderboards</span></a>
     <a href="docs.html" class="nav-link"><i>📚</i> <span>Processes & Policies</span></a>
     <a href="managers.html" class="nav-link"><i>🛠️</i> <span>Manager Portal</span></a>
-    <a href="dev-sandbox.html" class="nav-link active" style="margin-top: 20px; border: 1px dashed var(--idea-gold);"><i>🧪</i> <span>Dev Sandbox</span></a>
+    <a href="dev-sandbox.html" class="nav-link active" style="margin-top: 20px; border: 1px dashed var(--idea-gold);"><i>📍</i> <span>Store Dashboard</span></a>
   </nav>
 
   <div class="sidebar-bottom">
@@ -46,91 +46,34 @@
 <main class="main-content">
   <div class="page-header">
     <div>
-        <h2>Developer Sandbox</h2>
-        <p>Preview, test, and store UI widgets and components before deploying them to live pages.</p>
+        <h2>Store Operations Dashboard</h2>
+        <p>Live performance metrics and alerts for your location.</p>
     </div>
   </div>
 
-  <div class="card">
-      <div class="card-title">
-          <span>🧪 Widget: Status Message Alert</span>
-          <button class="btn-secondary mini-action-btn copy-code-btn" onclick="copyWidgetCode('code-block-1', this)">📋 Copy Code</button>
-      </div>
-      
-      <div class="dev-preview-area">
-          <div style="font-size: 11px; color: #aaa; font-weight: 800; text-transform: uppercase; margin-bottom: 15px; letter-spacing: 1px;">Live Preview</div>
-          
-          <div style="background: #e0f2fe; border-left: 4px solid #0ea5e9; padding: 15px 20px; border-radius: 0 8px 8px 0; display: flex; align-items: center; gap: 12px;">
-              <span style="font-size: 20px;">ℹ️</span>
-              <div style="display: flex; flex-direction: column;">
-                  <strong style="color: #0369a1; font-size: 13px;">System Update</strong>
-                  <span style="color: #0c4a6e; font-size: 12px;">The inventory database is currently syncing.</span>
-              </div>
+  <div id="content-container" style="display: flex; flex-direction: column; gap: 30px; align-items: center; padding: 20px; max-width: 1200px; margin: 0 auto;">
+
+      <div class="card" style="width: 100%; max-width: 300px; margin: 0; padding: 25px 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border-radius: 12px; background: #fff;">
+          <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 15px;">
+              <span id="scorecard-store-name" style="font-size: 14px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase;">📍 Store Scorecard</span>
           </div>
 
+          <div id="scorecard-widget-body">
+              <div class="status-message" style="padding: 20px 0; text-align: center; color: #888;">Loading data...</div>
+          </div>
       </div>
 
-      <div class="dev-code-area">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-              <div style="font-size: 11px; color: #888; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">Raw Code</div>
+      <div class="card" style="width: 100%; max-width: 1000px; margin: 0; padding: 25px 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border-radius: 12px; background: #fff;">
+          <div style="display: flex; justify-content: flex-start; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #f4f7f9; padding-bottom: 12px;">
+              <span id="alerts-store-name" style="font-size: 15px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 0.5px;">📍 Store Alerts</span>
           </div>
-          <pre class="code-block"><code id="code-block-1">
-&lt;div style="background: #e0f2fe; border-left: 4px solid #0ea5e9; padding: 15px 20px; border-radius: 0 8px 8px 0; display: flex; align-items: center; gap: 12px;"&gt;
-    &lt;span style="font-size: 20px;"&gt;ℹ️&lt;/span&gt;
-    &lt;div style="display: flex; flex-direction: column;"&gt;
-        &lt;strong style="color: #0369a1; font-size: 13px;"&gt;System Update&lt;/strong&gt;
-        &lt;span style="color: #0c4a6e; font-size: 12px;"&gt;The inventory database is currently syncing.&lt;/span&gt;
-    &lt;/div&gt;
-&lt;/div&gt;
-          </code></pre>
+
+          <div id="alerts-widget-body">
+              <div class="status-message" style="width: 100%; padding: 20px 0; text-align: center; color: #888;">Loading data...</div>
+          </div>
       </div>
+
   </div>
-  </main>
+</main>
 </body>
 </html>
-
-
-
-
-
-
-
-<div class="card">
-      <div class="card-title">
-          <span>📋 Widget: Live Store Scorecard</span>
-          <button class="btn-secondary mini-action-btn copy-code-btn" onclick="copyWidgetCode('code-block-scorecard', this)">📋 Copy Code</button>
-      </div>
-      
-      <div class="dev-preview-area" style="display: flex; justify-content: center; background: #f1f5f9;">
-          
-            <div class="card" style="width: 100%; max-width: 300px; margin-bottom: 0; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <span id="scorecard-store-name" style="font-size: 14px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase;">📍 Store Scorecard</span>
-                    <button onclick="fetchScorecardData()" class="mini-action-btn" style="padding: 6px 10px; font-size: 10px;">🔄 Sync</button>
-                </div>
-
-                <div id="scorecard-widget-body">
-                    <div class="status-message" style="padding: 20px 0;">Click Sync to load data...</div>
-                </div>
-            </div>
-          </div>
-
-      <div class="dev-code-area">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-              <div style="font-size: 11px; color: #888; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">Raw Code</div>
-          </div>
-          <pre class="code-block"><code id="code-block-scorecard">
-&lt;!-- Operations Scorecard Widget --&gt;
-&lt;div class="card" style="width: 100%; max-width: 400px; margin-bottom: 0; padding: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.05);"&gt;
-    &lt;div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;"&gt;
-        &lt;span id="scorecard-store-name" style="font-size: 16px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase;"&gt;📍 Store Scorecard&lt;/span&gt;
-        &lt;button onclick="fetchScorecardData()" class="mini-action-btn" style="padding: 6px 12px; font-size: 11px;"&gt;🔄 Sync&lt;/button&gt;
-    &lt;/div&gt;
-
-    &lt;div id="scorecard-widget-body"&gt;
-        &lt;div class="status-message" style="padding: 20px 0;"&gt;Syncing...&lt;/div&gt;
-    &lt;/div&gt;
-&lt;/div&gt;
-          </code></pre>
-      </div>
-  </div>
