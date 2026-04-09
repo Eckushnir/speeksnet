@@ -690,7 +690,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // Inject the Global PIN screen and Logout button
     injectGlobalAuth();
-    injectIdeaModal(); // <-- ADD THIS LINE
+    injectIdeaModal(); 
     startAuthFetch();
 
     // Check if they are already logged in this session
@@ -709,6 +709,9 @@ document.addEventListener("DOMContentLoaded", () => {
     ['kpiStoreSelect', 'weeklyKpiStoreSelect', 'vw-primary', 'vw-compare'].forEach(id => document.getElementById(id)?.addEventListener('change', () => id === 'kpiStoreSelect' ? fetchKPIData(false) : (id === 'weeklyKpiStoreSelect' ? fetchWeeklyKPIs() : renderVariance())));
     
     if (document.getElementById('mainKpiChart')) syncAllData();
+
+    // ⬇️ ADD THIS LINE RIGHT HERE! ⬇️
+    fetchScorecardData();
 });
 
 // --- ROLE & PREFERENCE LOGIC ---
@@ -884,5 +887,96 @@ function handleIframeLoad() {
         btn.style.opacity = '1';
         
         isIdeaSubmitting = false; // Reset the switch
+    }
+}
+
+
+
+
+
+
+
+
+
+// --- WIDGET: LIVE STORE SCORECARD (PERSONALIZED & DYNAMIC) ---
+async function fetchScorecardData() {
+    const container = document.getElementById('scorecard-widget-body');
+    const titleElement = document.getElementById('scorecard-store-name');
+    if (!container) return;
+
+    container.innerHTML = '<div class="status-message" style="padding: 20px 0;">Syncing Data...</div>';
+
+    // The active Apps Script URL
+    const SCORECARD_URL = 'https://script.google.com/macros/s/AKfycbwvelWpXnlXCJZQGagZX5llMCN1k6CjronBpIcenNVDTjUdPISjF0mYhHYy2ry0Vdg0_Q/exec';
+
+    // Figure out which store to show based on who is logged in
+    let targetStore = sessionStorage.getItem('speeksUserStore') || 'OVL';
+    if (targetStore === 'ALL' || targetStore === 'CORP') targetStore = 'OVL'; 
+
+    try {
+        const response = await fetch(SCORECARD_URL);
+        const json = await response.json();
+        
+        if (!json.success) throw new Error(json.error);
+
+        // Isolate ONLY the data for the logged-in user's store
+        const storeData = json.data.find(item => String(item.store).toUpperCase() === targetStore.toUpperCase());
+
+        if (!storeData) {
+            container.innerHTML = `<div style="color: #888; text-align: center; padding: 20px 0; font-weight: bold;">No data found for ${targetStore}.</div>`;
+            return;
+        }
+
+        if (titleElement) {
+            titleElement.innerHTML = `📍 ${storeData.store} Scorecard`;
+        }
+
+        const latestScore = parseFloat(storeData.score) || 0; 
+        const rawDate = storeData.date || 'Recent';
+
+        // --- Date Formatting Engine: Get the Monday of that week! ---
+        let displayDate = rawDate;
+        const parsedDate = new Date(rawDate);
+        
+        if (!isNaN(parsedDate.getTime())) {
+            const day = parsedDate.getUTCDay(); // 0 = Sun, 1 = Mon, etc.
+            const diffToMonday = day === 0 ? -6 : 1 - day; // Math to jump back to Monday
+            
+            const mondayDate = new Date(parsedDate);
+            mondayDate.setUTCDate(parsedDate.getUTCDate() + diffToMonday);
+
+            displayDate = "Week of " + mondayDate.toLocaleDateString('en-US', { 
+                timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric' 
+            });
+        }
+
+        // --- Color & Pulse Logic (ADJUSTED FOR OUT-OF-10 SCALE) ---
+        const getScoreColor = (score) => {
+            if (score > 8) return 'var(--sage-professional)';  // Green (Original > 4)
+            if (score >= 6) return 'var(--idea-gold)';         // Yellow (Original 3 to 4)
+            return 'var(--red-alert)';                         // Red (Original < 3)
+        };
+
+        const scoreColor = getScoreColor(latestScore);
+
+        // Red pulsing dot if the score is under 6 (Original < 3)
+        const pulse = latestScore < 6 
+            ? '<div class="notif-dot active" style="display:block; position:absolute; top:-6px; right:-6px; width:14px; height:14px; border-width: 2px;"></div>' 
+            : '';
+
+        // Inject the final compact widget UI
+        container.innerHTML = `
+        <div style="position: relative; background: #f9fafb; padding: 25px 20px; border-radius: 12px; border: 1px solid #eee; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+            ${pulse}
+            <div style="font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Latest Score</div>
+            <div style="font-size: 13px; font-weight: 800; color: var(--slate-charcoal); margin-bottom: 15px;">${displayDate}</div>
+            <div style="font-size: 52px; font-weight: 900; color: ${scoreColor}; line-height: 1; text-shadow: 0 4px 15px ${scoreColor}30;">
+                ${latestScore.toFixed(1)}
+            </div>
+        </div>`;
+        
+    } catch (error) {
+        console.error('Error fetching scorecard:', error);
+        container.innerHTML = '<div style="color: var(--red-alert); font-weight: bold; padding: 20px 0; text-align: center;">Error syncing scorecard. Check Apps Script URL.</div>';
     }
 }
