@@ -713,6 +713,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // ⬇️ ADD THIS LINE RIGHT HERE! ⬇️
     fetchScorecardData();
     fetchAlertsData();
+    fetchEbayMetrics();
 });
 
 // --- ROLE & PREFERENCE LOGIC ---
@@ -929,7 +930,7 @@ async function fetchScorecardData() {
         }
 
         if (titleElement) {
-            titleElement.innerHTML = `📍 ${storeData.store} Scorecard`;
+            titleElement.innerHTML = `📊 ${storeData.store} Scorecard`;
         }
 
         const latestScore = parseFloat(storeData.score) || 0; 
@@ -982,15 +983,13 @@ async function fetchScorecardData() {
     }
 }
 
-// --- WIDGET: LIVE STORE PERFORMANCE ALERTS (2x2 GRID) ---
+// --- WIDGET: LIVE STORE PERFORMANCE ALERTS ---
 async function fetchAlertsData() {
     const container = document.getElementById('alerts-widget-body');
     const titleElement = document.getElementById('alerts-store-name');
     if (!container) return;
 
-    container.innerHTML = '<div class="status-message" style="width: 100%; padding: 20px 0;">Loading Data...</div>';
-
-    // ⚠️ PASTE YOUR ALERTS APPS SCRIPT WEB APP URL HERE
+    // ⚠️ PASTE YOUR ALERTS URL HERE
     const ALERTS_URL = 'https://script.google.com/macros/s/AKfycbxap-4Jgdn5-ntkv_X-vFZLTWlTB29_bDLdwcFxhWd2su3ZQJ0ZS7UpUgZAK08lOIV6/exec';
 
     let targetStore = sessionStorage.getItem('speeksUserStore') || 'OVL';
@@ -999,70 +998,142 @@ async function fetchAlertsData() {
     try {
         const response = await fetch(ALERTS_URL);
         const json = await response.json();
-        
         if (!json.success) throw new Error(json.error);
 
         const storeData = json.data.find(item => String(item.store).toUpperCase() === targetStore.toUpperCase());
+        if (!storeData) return;
 
-        if (!storeData) {
-            container.innerHTML = `<div style="color: #888; text-align: center; width: 100%; padding: 20px 0; font-weight: bold;">No data found for ${targetStore}.</div>`;
-            return;
-        }
+        if (titleElement) titleElement.innerHTML = `⚡ ${storeData.store} Performance Metrics`;
 
-        if (titleElement) {
-            titleElement.innerHTML = `📍 ${storeData.store} Alerts`;
-        }
-
-        // --- 1. Card Builder Helper Function (Horizontal Inner Layout) ---
         const buildAlertCard = (title, value, severity) => {
-            let textColor = 'var(--sage-professional)'; // Green
+            let textColor = 'var(--sage-professional)';
             let displayText = 'All Clear';
             let pulseHtml = '';
 
             if (value !== '') {
                 displayText = value;
-                
-                if (severity === 'high') {
-                    textColor = 'var(--idea-gold)'; // Yellow
-                } else if (severity === 'very-high') {
-                    textColor = 'var(--red-alert)'; // Red + Pulse
-                    pulseHtml = '<div class="notif-dot active" style="display:block; position:absolute; top:-6px; right:-6px; width:14px; height:14px; border-width: 2px; z-index: 5;"></div>';
+                if (severity === 'high') textColor = 'var(--idea-gold)';
+                else if (severity === 'very-high') {
+                    textColor = 'var(--red-alert)';
+                    pulseHtml = '<div class="notif-dot active" style="display:block; position:absolute; top:-4px; right:-4px; width:12px; height:12px; border-width: 2px; z-index: 5;"></div>';
                 }
             }
 
-            // Removed max-width restriction on the text, allowing it to stretch fully!
+            // ADDED: flex: 1 and min-height: 65px to force all boxes to be exactly the same size!
             return `
-            <div style="position: relative; background: #f9fafb; padding: 20px 25px; border-radius: 10px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+            <div style="position: relative; background: #f9fafb; padding: 12px 15px; border-radius: 8px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); flex: 1; min-height: 65px; box-sizing: border-box;">
                 ${pulseHtml}
-                <div style="font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 20px; flex-shrink: 0;">${title}</div>
-                <div style="font-size: 14px; font-weight: 800; color: ${textColor}; text-align: right; line-height: 1.3; flex-grow: 1;">
-                    ${displayText}
+                <div style="font-size: 10px; font-weight: 800; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 15px; flex-shrink: 0;">${title}</div>
+                <div style="display: flex; flex-direction: column; align-items: flex-end; flex-grow: 1;">
+                    <div style="font-size: 12px; font-weight: 800; color: ${textColor}; text-align: center; line-height: 1.3; max-width: 100%;">
+                        ${displayText}
+                    </div>
                 </div>
             </div>`;
         };
 
-        // --- 2. Inject the 2x2 Grid with the Vertical Dashed Divider ---
         container.innerHTML = `
-        <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 20px; align-items: stretch; width: 100%;">
-            
-            <div style="display: flex; flex-direction: column; gap: 12px;">
-                <div style="font-size: 10px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 1px; margin-bottom: -4px; padding-left: 5px;">Current Issues</div>
+        <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 15px; align-items: stretch; width: 100%; height: 100%;">
+            <div style="display: flex; flex-direction: column; gap: 8px; justify-content: space-between; height: 100%;">
+                <div style="font-size: 9px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 1px; padding-left: 5px;">Current Issues</div>
                 ${buildAlertCard('High', storeData.currentHigh, 'high')}
                 ${buildAlertCard('Very High', storeData.currentVeryHigh, 'very-high')}
             </div>
-
-            <div style="width: 2px; background: repeating-linear-gradient(to bottom, #e2e8f0, #e2e8f0 6px, transparent 6px, transparent 12px); margin: 26px 0 6px 0;"></div>
-
-            <div style="display: flex; flex-direction: column; gap: 12px;">
-                <div style="font-size: 10px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 1px; margin-bottom: -4px; padding-left: 5px;">Projected Issues</div>
+            <div style="width: 2px; background: repeating-linear-gradient(to bottom, #e2e8f0, #e2e8f0 6px, transparent 6px, transparent 12px); margin: 20px 0 0 0;"></div>
+            <div style="display: flex; flex-direction: column; gap: 8px; justify-content: space-between; height: 100%;">
+                <div style="font-size: 9px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 1px; padding-left: 5px;">Projected Issues</div>
                 ${buildAlertCard('High', storeData.projectedHigh, 'high')}
                 ${buildAlertCard('Very High', storeData.projectedVeryHigh, 'very-high')}
             </div>
+        </div>`;
+    } catch (error) {
+        console.error('Error fetching alerts:', error);
+    }
+}
 
+
+// --- WIDGET: LIVE EBAY TOP RATED METRICS ---
+async function fetchEbayMetrics() {
+    const container = document.getElementById('ebay-widget-body');
+    const titleElement = document.getElementById('ebay-store-name');
+    if (!container) return;
+
+    // ⚠️ PASTE YOUR KPI WEB APP URL HERE
+    const KPI_APP_URL = 'https://script.google.com/macros/s/AKfycby0ihq9A4yUQvdZdeAF9euC5jih24hP2XGG-J_balNtxop2RHBuIuigw_mH3XTeCkkhow/exec';
+
+    let targetStore = sessionStorage.getItem('speeksUserStore') || 'OVL';
+    if (targetStore === 'ALL' || targetStore === 'CORP') targetStore = 'OVL'; 
+
+    try {
+        const response = await fetch(`${KPI_APP_URL}?store=${targetStore}`);
+        const json = await response.json();
+        if (json.error) throw new Error(json.error);
+        if (titleElement) titleElement.innerHTML = `🏆 ${targetStore} eBay Top Rated Metrics`;
+
+        const ebayGroup = json.data.find(group => group.category === "eBay Metrics");
+        if (!ebayGroup || !ebayGroup.metrics) return;
+
+        let cardsHtml = '';
+
+        ebayGroup.metrics.forEach(metric => {
+            const latestValue = metric.values[metric.values.length - 1];
+            let textColor = 'var(--sage-professional)'; 
+            let pulseHtml = '';
+            let isRed = false;
+
+            let titleText = metric.name;
+            let paramText = '';
+            
+            if (metric.name.includes('<')) {
+                let parts = metric.name.split('<');
+                titleText = parts[0].trim();
+                paramText = 'Target: < ' + parts[1].trim();
+            } else if (metric.name.includes('>')) {
+                let parts = metric.name.split('>');
+                titleText = parts[0].trim();
+                paramText = 'Target: > ' + parts[1].trim();
+            }
+
+            if (metric.name.includes("Defect Rate")) {
+                if (latestValue >= 0.375) isRed = true;
+                else if (latestValue >= 0.25) textColor = 'var(--idea-gold)';
+            } else if (metric.name.includes("Late Shipment")) {
+                if (latestValue >= 2.25) isRed = true;
+                else if (latestValue >= 1.50) textColor = 'var(--idea-gold)';
+            } else if (metric.name.includes("Case")) {
+                if (latestValue >= 0.225) isRed = true;
+                else if (latestValue >= 0.15) textColor = 'var(--idea-gold)';
+            } else if (metric.name.includes("Tracking")) {
+                if (latestValue <= 96.25) isRed = true;
+                else if (latestValue <= 97.50) textColor = 'var(--idea-gold)';
+            }
+
+            if (isRed) {
+                textColor = 'var(--red-alert)';
+                pulseHtml = '<div class="notif-dot active" style="display:block; position:absolute; top:-4px; right:-4px; width:12px; height:12px; border-width: 2px; z-index: 5;"></div>';
+            }
+
+            // ADDED: height: 100% and min-height: 65px to perfectly match the Alerts widget height!
+            cardsHtml += `
+            <div style="position: relative; background: #f9fafb; padding: 12px 15px; border-radius: 8px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); height: 100%; box-sizing: border-box; min-height: 65px;">
+                ${pulseHtml}
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <div style="font-size: 10px; font-weight: 800; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">${titleText}</div>
+                    <div style="font-size: 9px; font-weight: 900; color: #64748b; background: #e2e8f0; padding: 2px 6px; border-radius: 4px; width: fit-content; letter-spacing: 0.5px;">${paramText}</div>
+                </div>
+                <div style="font-size: 16px; font-weight: 900; color: ${textColor}; text-align: right; line-height: 1;">
+                    ${latestValue.toFixed(2)}%
+                </div>
+            </div>`;
+        });
+
+        // Use auto-rows to ensure grid tracks perfectly stretch the cards
+        container.innerHTML = `
+        <div style="display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 1fr; gap: 12px; width: 100%; height: 100%;">
+            ${cardsHtml}
         </div>`;
         
     } catch (error) {
-        console.error('Error fetching alerts:', error);
-        container.innerHTML = '<div style="color: var(--red-alert); font-weight: bold; width: 100%; padding: 20px 0; text-align: center;">Error syncing alerts. Check Apps Script URL.</div>';
+        console.error('Error fetching eBay metrics:', error);
     }
 }

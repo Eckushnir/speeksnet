@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SPEEKSNET | Store Dashboard</title>
-  <link rel="stylesheet" href="styles.css?v=1.2">
-  <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <script src="speeks.js?v=1.2" defer></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPEEKSNET | Dev Sandbox</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<script src="speeks.js" defer></script>
 </head>
 <body class="preload">
 
 <aside class="sidebar">
   <div class="brand-area">
     <img src="images/speeks_logo.png" alt="SPEEKS Logo" class="brand-logo">
-    <div class="badge" style="background: var(--idea-gold); color: var(--slate-charcoal);">DASHBOARD</div>
+    <div class="badge" style="background: var(--idea-gold); color: var(--slate-charcoal);">DEV SANDBOX</div>
   </div>
   <nav class="nav-bar">
     <a href="index.html" class="nav-link"><i>🏠</i> <span>SPEEKS Hub</span></a>
@@ -22,7 +22,7 @@
     <a href="metrics.html" class="nav-link"><i>📊</i> <span>Metrics & Leaderboards</span></a>
     <a href="docs.html" class="nav-link"><i>📚</i> <span>Processes & Policies</span></a>
     <a href="managers.html" class="nav-link"><i>🛠️</i> <span>Manager Portal</span></a>
-    <a href="dev-sandbox.html" class="nav-link active" style="margin-top: 20px; border: 1px dashed var(--idea-gold);"><i>📍</i> <span>Store Dashboard</span></a>
+    <a href="dev-sandbox.html" class="nav-link active" style="margin-top: 20px; border: 1px dashed var(--idea-gold);"><i>🧪</i> <span>Dev Sandbox</span></a>
   </nav>
 
   <div class="sidebar-bottom">
@@ -46,34 +46,53 @@
 <main class="main-content">
   <div class="page-header">
     <div>
-        <h2>Store Operations Dashboard</h2>
-        <p>Live performance metrics and alerts for your location.</p>
+        <h2>Store Manager Portal (Staging Area)</h2>
+        <p>Testing the new widget row alignment before pushing to the live Manager Portal.</p>
     </div>
   </div>
 
-  <div id="content-container" style="display: flex; flex-direction: column; gap: 30px; align-items: center; padding: 20px; max-width: 1200px; margin: 0 auto;">
+  <div class="quick-links-bar" style="margin-bottom: 25px;">
+      <a href="#" class="quick-link-pill">📁 Resources</a>  
+      <a href="#" class="quick-link-pill">🎯 Daily Listing Goals</a>
+      <a href="#" class="quick-link-pill">📦 SPEEKS Aging Inventory Tracker</a>
+      <a href="#" class="quick-link-pill">🛡️ eBay & Shopify Insurance Cases</a>
+      <a href="#" class="quick-link-pill">📍 Local Location Visits</a>
+  </div>
 
-      <div class="card" style="width: 100%; max-width: 300px; margin: 0; padding: 25px 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border-radius: 12px; background: #fff;">
-          <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 15px;">
-              <span id="scorecard-store-name" style="font-size: 14px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase;">📍 Store Scorecard</span>
+  <div id="top-alerts-row" style="display: flex; flex-wrap: wrap; gap: 20px; width: 100%; margin-bottom: 30px;">
+
+        <div class="card" style="flex: 1 1 250px; max-width: 350px; margin: 0; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border-radius: 12px; background: #fff;">
+          <div style="display: flex; justify-content: flex-start; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #f4f7f9; padding-bottom: 10px;">
+              <span id="scorecard-store-name" style="font-size: 13px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 0.5px;">📊 Store Scorecard</span>
           </div>
-
           <div id="scorecard-widget-body">
-              <div class="status-message" style="padding: 20px 0; text-align: center; color: #888;">Loading data...</div>
+              <div class="status-message" style="padding: 20px 0; text-align: center; color: #888;">Loading...</div>
           </div>
       </div>
 
-      <div class="card" style="width: 100%; max-width: 1000px; margin: 0; padding: 25px 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border-radius: 12px; background: #fff;">
-          <div style="display: flex; justify-content: flex-start; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #f4f7f9; padding-bottom: 12px;">
-              <span id="alerts-store-name" style="font-size: 15px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 0.5px;">📍 Store Alerts</span>
+      <div class="card" style="flex: 2 1 350px; margin: 0; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border-radius: 12px; background: #fff; display: flex; flex-direction: column;">
+          <div style="display: flex; justify-content: flex-start; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #f4f7f9; padding-bottom: 10px;">
+              <span id="alerts-store-name" style="font-size: 13px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 0.5px;">📍 Store Alerts</span>
           </div>
+          <div id="alerts-widget-body" style="flex-grow: 1;">
+              <div class="status-message" style="width: 100%; padding: 20px 0; text-align: center; color: #888;">Loading...</div>
+          </div>
+      </div>
 
-          <div id="alerts-widget-body">
-              <div class="status-message" style="width: 100%; padding: 20px 0; text-align: center; color: #888;">Loading data...</div>
+      <div class="card" style="flex: 2 1 350px; margin: 0; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border-radius: 12px; background: #fff; display: flex; flex-direction: column;">
+          <div style="display: flex; justify-content: flex-start; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #f4f7f9; padding-bottom: 10px;">
+              <span id="ebay-store-name" style="font-size: 13px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 0.5px;">🏷️ eBay Top Rated Status</span>
+          </div>
+          <div id="ebay-widget-body" style="flex-grow: 1;">
+              <div class="status-message" style="width: 100%; padding: 20px 0; text-align: center; color: #888;">Loading...</div>
           </div>
       </div>
 
   </div>
+  <div style="width: 100%; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 40px; text-align: center; color: #94a3b8; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">
+
+  </div>
+
 </main>
 </body>
 </html>
