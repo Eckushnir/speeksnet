@@ -607,7 +607,7 @@ async function preloadAllStores() {
     ["OVL", "LEE", "WSP", "MPL", "BAL"].forEach(async s => { if (!monthlyKpiCache[s]) try { const p = await (await fetch(`${MONTHLY_KPI_URL}?store=${s}&v=${Date.now()}`)).json(); if (!p.error) monthlyKpiCache[s] = { months: p.months, data: groupKPIs(p.data) }; } catch(e) {} });
 }
 
-function initDashboardData() { initChecklists(); setTimeout(fetchHubData, 100); setTimeout(fetchVarianceData, 300); setTimeout(fetchWeeklyKPIs, 500); setTimeout(fetchKPIData, 700); setTimeout(preloadAllStores, 4000); }
+function initDashboardData() { if (typeof initChecklists === 'function') initChecklists(); setTimeout(fetchHubData, 100); setTimeout(fetchVarianceData, 300); setTimeout(fetchWeeklyKPIs, 500); setTimeout(fetchKPIData, 700); setTimeout(preloadAllStores, 4000); }
 
 // --- 8. MODULE: METRICS (CHARTS & RECORDS) ---
 let mainChartInstance = null, currentTimeframe = '4-Week', recordsCache = JSON.parse(localStorage.getItem('speeksRecordsCache')) || null, kpiChartCache = JSON.parse(localStorage.getItem('speeksKpiChartCache')) || { '4-Week': null, 'Monthly': null };
@@ -1006,26 +1006,32 @@ async function fetchAlertsData() {
         if (titleElement) titleElement.innerHTML = `⚡ ${storeData.store} Performance Metrics`;
 
         const buildAlertCard = (title, value, severity) => {
-            let textColor = 'var(--sage-professional)';
+            // Default "All Clear" (Soft Green)
+            let bgColor = '#d1fae5';
+            let textColor = '#065f46'; 
             let displayText = 'All Clear';
             let pulseHtml = '';
 
             if (value !== '') {
                 displayText = value;
-                if (severity === 'high') textColor = 'var(--idea-gold)';
-                else if (severity === 'very-high') {
-                    textColor = 'var(--red-alert)';
+                if (severity === 'high') {
+                    // Warning Bubble (Soft Yellow/Amber)
+                    bgColor = '#fef3c7'; 
+                    textColor = '#92400e';
+                } else if (severity === 'very-high') {
+                    // Alert Bubble (Soft Red)
+                    bgColor = '#fee2e2';
+                    textColor = '#991b1b';
                     pulseHtml = '<div class="notif-dot active" style="display:block; position:absolute; top:-4px; right:-4px; width:12px; height:12px; border-width: 2px; z-index: 5;"></div>';
                 }
             }
 
-            // ADDED: flex: 1 and min-height: 65px to force all boxes to be exactly the same size!
             return `
             <div style="position: relative; background: #f9fafb; padding: 12px 15px; border-radius: 8px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); flex: 1; min-height: 65px; box-sizing: border-box;">
                 ${pulseHtml}
                 <div style="font-size: 10px; font-weight: 800; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 15px; flex-shrink: 0;">${title}</div>
                 <div style="display: flex; flex-direction: column; align-items: flex-end; flex-grow: 1;">
-                    <div style="font-size: 12px; font-weight: 800; color: ${textColor}; text-align: center; line-height: 1.3; max-width: 100%;">
+                    <div style="font-size: 11px; font-weight: 900; color: ${textColor}; background-color: ${bgColor}; padding: 4px 10px; border-radius: 6px; text-align: center; line-height: 1.3; max-width: 100%;">
                         ${displayText}
                     </div>
                 </div>
@@ -1077,9 +1083,13 @@ async function fetchEbayMetrics() {
 
         ebayGroup.metrics.forEach(metric => {
             const latestValue = metric.values[metric.values.length - 1];
-            let textColor = 'var(--sage-professional)'; 
+            
+            // Unified soft default styling (Green)
+            let bgColor = '#d1fae5'; 
+            let textColor = '#065f46';
             let pulseHtml = '';
             let isRed = false;
+            let isYellow = false;
 
             let titleText = metric.name;
             let paramText = '';
@@ -1094,26 +1104,31 @@ async function fetchEbayMetrics() {
                 paramText = 'Target: > ' + parts[1].trim();
             }
 
+            // Threshold Logic
             if (metric.name.includes("Defect Rate")) {
                 if (latestValue >= 0.375) isRed = true;
-                else if (latestValue >= 0.25) textColor = 'var(--idea-gold)';
+                else if (latestValue >= 0.25) isYellow = true;
             } else if (metric.name.includes("Late Shipment")) {
                 if (latestValue >= 2.25) isRed = true;
-                else if (latestValue >= 1.50) textColor = 'var(--idea-gold)';
+                else if (latestValue >= 1.50) isYellow = true;
             } else if (metric.name.includes("Case")) {
                 if (latestValue >= 0.225) isRed = true;
-                else if (latestValue >= 0.15) textColor = 'var(--idea-gold)';
+                else if (latestValue >= 0.15) isYellow = true;
             } else if (metric.name.includes("Tracking")) {
                 if (latestValue <= 96.25) isRed = true;
-                else if (latestValue <= 97.50) textColor = 'var(--idea-gold)';
+                else if (latestValue <= 97.50) isYellow = true;
             }
 
+            // Apply Soft Bubble Colors based on Thresholds
             if (isRed) {
-                textColor = 'var(--red-alert)';
+                bgColor = '#fee2e2'; // Soft Red
+                textColor = '#991b1b';
                 pulseHtml = '<div class="notif-dot active" style="display:block; position:absolute; top:-4px; right:-4px; width:12px; height:12px; border-width: 2px; z-index: 5;"></div>';
+            } else if (isYellow) {
+                bgColor = '#fef3c7'; // Soft Yellow
+                textColor = '#92400e';
             }
 
-            // ADDED: height: 100% and min-height: 65px to perfectly match the Alerts widget height!
             cardsHtml += `
             <div style="position: relative; background: #f9fafb; padding: 12px 15px; border-radius: 8px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); height: 100%; box-sizing: border-box; min-height: 65px;">
                 ${pulseHtml}
@@ -1121,13 +1136,12 @@ async function fetchEbayMetrics() {
                     <div style="font-size: 10px; font-weight: 800; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">${titleText}</div>
                     <div style="font-size: 9px; font-weight: 900; color: #64748b; background: #e2e8f0; padding: 2px 6px; border-radius: 4px; width: fit-content; letter-spacing: 0.5px;">${paramText}</div>
                 </div>
-                <div style="font-size: 16px; font-weight: 900; color: ${textColor}; text-align: right; line-height: 1;">
+                <div style="font-size: 13px; font-weight: 900; color: ${textColor}; background-color: ${bgColor}; padding: 4px 10px; border-radius: 6px; text-align: right; line-height: 1;">
                     ${latestValue.toFixed(2)}%
                 </div>
             </div>`;
         });
 
-        // Use auto-rows to ensure grid tracks perfectly stretch the cards
         container.innerHTML = `
         <div style="display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 1fr; gap: 12px; width: 100%; height: 100%;">
             ${cardsHtml}
