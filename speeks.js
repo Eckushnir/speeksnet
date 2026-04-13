@@ -886,3 +886,23 @@ function handleIframeLoad() {
         isIdeaSubmitting = false; // Reset the switch
     }
 }
+
+document.addEventListener("DOMContentLoaded", function() {
+  const dropdownBtn = document.getElementById("devWorkspaceBtn");
+  const dropdownContainer = document.getElementById("devDropdown");
+
+  // Toggle the 'open' class when the button is clicked
+  if (dropdownBtn) {
+    dropdownBtn.addEventListener("click", function(event) {
+      event.stopPropagation(); // Prevents the document click listener below from firing immediately
+      dropdownContainer.classList.toggle("open");
+    });
+  }
+
+  // Close the dropdown if the user clicks anywhere else on the page
+  document.addEventListener("click", function(event) {
+    if (dropdownContainer && !dropdownContainer.contains(event.target)) {
+      dropdownContainer.classList.remove("open");
+    }
+  });
+});

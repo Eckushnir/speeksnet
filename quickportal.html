@@ -29,7 +29,7 @@
   </nav>
   
   <div class="sidebar-bottom">
-    <a href="https://docs.google.com/forms/d/e/1FAIpQLSfEm449owjdKiT_zp7ATB_oLvsy3x51bL38Q3nKNiM7UNUZFQ/viewform" target="_blank" class="idea-btn">
+    <a href="#" onclick="toggleIdeaModal(); return false;" class="idea-btn">
       <i>💡</i> <span>Have an Idea?</span>
     </a>
   </div>
@@ -66,8 +66,27 @@
         <h2 id="userGreeting">Welcome!</h2>
         <p>Your personalized quick-access dashboard.</p>
     </div>
-  </div>
     
+    <div class="dev-dropdown-container dynamic-module role-district-manager user-nick-hettinger" id="devDropdown">
+      <button class="dev-workspace-btn" id="devWorkspaceBtn">
+        <svg class="lock-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+        <span class="dev-title">SPEEKS Tools</span>
+        <svg class="chevron-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </button>
+  
+      <div class="dev-dropdown-menu">
+        <a href="allmodules.html" class="dev-dropdown-link">All Modules</a>
+        <a class="dev-dropdown-link dynamic-module role-district-manager" style="cursor: pointer;" onclick="toggleManageUsers()">User Permissions</a>
+      </div>
+    </div>
+
+  </div>
+     
   <div class="quick-links-bar">  
     <a href="https://docs.google.com/spreadsheets/d/1pubURplK66yC6oXmpz7P-r8zN07DWmDiLxrtTg0rmdk/edit?usp=sharing" class="dynamic-module role-manager role-district-manager quick-link-pill" target="_blank">🎯 Daily Listing Goals</a>
     <a href="https://drive.google.com/drive/folders/1OyRPYmb77B1s77fPj2ebUJGXYxAqPKfc?usp=sharing" target="_blank" class="dynamic-module role-manager role-district-manager quick-link-pill">📁 Resources</a>  
@@ -86,7 +105,6 @@
     <div class="dynamic-module role-district-manager card" style="margin-bottom: 0;">
       <div class="card-title">🏢 District Manager Tools</div>
       <p style="padding: 15px; color: #ddd;">Multi-store reporting and district-level tools.</p>
-      <div class="dynamic-module role-district-manager quick-link-pill" style="margin-bottom: 0; cursor: pointer;" onclick="toggleManageUsers()">👥 Manage QuickPortal Users</div>
     </div>
 
     <div class="dynamic-module role-manager card" style="margin-bottom: 0;">
@@ -155,20 +173,14 @@
 
     // Replaces spaces with dashes so "District Manager" becomes "role-district-manager"
     const userRoleClass = `role-${rawRole.toLowerCase().replace(/\s+/g, '-')}`; 
+    const userNameClass = `user-${userName.toLowerCase().replace(/\s+/g, '-')}`;
     const userStoreClass = `store-${rawStore.toLowerCase()}`;
 
     // 4. The Class-Based Access Engine
     document.querySelectorAll('.dynamic-module').forEach(module => {
         // If the module's HTML classes include the user's role OR the user's store
-        if (module.classList.contains(userRoleClass) || module.classList.contains(userStoreClass)) {
-            
-            // Unhide the element! 
-            // We use 'inline-flex' for links/buttons so they stack horizontally, and 'block' for large cards.
-            if (module.tagName === 'A' || module.tagName === 'BUTTON') {
-                module.style.display = 'inline-flex';
-            } else {
-                module.style.display = 'block';
-            }
+        if (module.classList.contains(userRoleClass) || module.classList.contains(userStoreClass) || module.classList.contains(userNameClass)) {
+            module.style.display = 'block'; // Show the module
         }
     });
   });
