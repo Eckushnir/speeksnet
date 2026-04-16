@@ -973,3 +973,72 @@ textarea.idea-input {
   background-color: #f9fafb;
   color: #111827; 
 }
+
+/* --- Hot Bar Stacking System --- */
+.hotbars-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 25px;
+  width: 100%;
+}
+
+.hotbar-wrapper {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* --- The Main Container --- */
+.hotbar-container {
+  display: flex;
+  align-items: center; 
+  background: #ffffff; /* Keeps the clean white card look */
+  border: 1px solid var(--gen-border); /* 1. Matches your site's standard borders */
+  border-left: 4px solid var(--slate-charcoal); /* 2. Anchors to your sidebar color */
+  border-radius: 8px;
+  padding: 6px 8px; 
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02); /* Softened the shadow to be flatter */
+}
+
+/* --- The Label --- */
+.hotbar-label {
+  font-weight: 800;
+  font-size: 0.85em;
+  color: var(--slate-charcoal); 
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 0 15px 0 8px;
+  white-space: nowrap;
+}
+
+/* --- Hot Bar Flex Layout --- */
+.hotbar-links {
+  display: flex;
+  width: 100%;
+  gap: 8px;
+}
+
+/* --- Option 2: Outlined Cards --- */
+.hotbar-btn {
+  flex: 1;
+  text-align: center;
+  padding: 8px 10px;
+  background: #ffffff; /* Pure white resting state */
+  color: var(--slate-charcoal);
+  text-decoration: none;
+  border-radius: 6px; /* Sharper corners */
+  font-size: 0.85em;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border: 1px solid var(--gen-border); /* Matches your native site borders */
+  transition: all 0.2s ease;
+}
+
+.hotbar-btn:hover {
+  border-color: var(--sage-professional); /* Border shifts to green */
+  color: var(--sage-professional); /* Text shifts to green */
+  box-shadow: 0 4px 8px rgba(90, 141, 59, 0.08); /* Faint green shadow */
+  transform: translateY(-2px); /* Lifts up slightly */
+}
