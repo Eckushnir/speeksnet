@@ -978,7 +978,7 @@ textarea.idea-input {
 .hotbars-stack {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 5px;
   margin-bottom: 25px;
   width: 100%;
 }
