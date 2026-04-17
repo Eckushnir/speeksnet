@@ -227,7 +227,29 @@
       <p style="padding: 15px; color: #ddd;">Information strictly relevant to Corporate (CORP).</p>
     </div>
 
-  </div>
+    <div class="card">
+            <div class="card-title">⌨️ Hotkeys & Commands</div>
+            
+            <div id="kbSearchArea" class="kb-search-bar">
+                <input type="text" id="kbSearch" class="kb-search-input" onkeyup="filterKB()" placeholder="Search by Brand, Device, or Task...">
+            </div>
+            
+            <div class="kb-table-container">
+                <table class="kb-table">
+                  <thead>
+                    <tr>
+                        <th style="width:15%;">Brand</th>
+                        <th style="width:15%">Device</th>
+                        <th style="width:35%">Hotkey/Command</th>
+                        <th style="width:20%">Objective</th>
+                    </tr>
+                  </thead>
+                  <tbody id="kbBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
 </main>
 
 <script>

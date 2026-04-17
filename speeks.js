@@ -244,7 +244,7 @@ async function loadHotkeys() {
             const cols = Object.values(row), brand = cols[1] || "";
             if (brand.toLowerCase() === "brand" || !brand) return '';
             const bClass = brand.toLowerCase().includes('apple') ? 'b-apple' : (['dell','hp','lenovo','asus'].some(x => brand.toLowerCase().includes(x)) ? 'b-windows' : 'b-generic');
-            return `<tr><td><span class="bubble ${bClass}">${brand}</span></td><td>${cols[2]}</td><td>${cols[3]}</td><td>${cols[4]}</td><td>${cols[5]}</td></tr>`;
+            return `<tr><td><span class="bubble ${bClass}">${brand}</span></td><td>${cols[2]}</td><td>${cols[3]}</td><td>${cols[4]}</td></tr>`;
         }).join('');
     } catch (e) {}
 }
