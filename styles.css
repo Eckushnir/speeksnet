@@ -712,12 +712,33 @@ body.preload { visibility: hidden !important; opacity: 0 !important; }
 .kb-search-input { flex-grow: 1; padding: 12px 20px; border-radius: 10px; border: 1px solid #ddd; outline: none; font-family: 'Inter', sans-serif; font-size: 14px; transition: 0.2s; }
 .kb-search-input:focus { border-color: var(--sage-professional); box-shadow: 0 0 0 3px rgba(90, 141, 59, 0.1); }
 
-.kb-table-container { max-height: 500px; overflow-y: auto; border-radius: 12px; border: 1px solid #eee; background: white; }
+/* Restricts the height of the container and adds a scrollbar */
+.kb-table-container {
+    height: 400px; /* Adjust this value to make the box taller or shorter */
+    overflow-y: auto;
+    border-bottom: 1px solid var(--gen-border); /* Neatens the bottom edge */
+}
+
+/* Customizes the scrollbar for the table container */
+.kb-table-container::-webkit-scrollbar {
+    width: 6px;
+}
+.kb-table-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+.kb-table-container::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 10px;
+}
+.kb-table-container::-webkit-scrollbar-thumb:hover {
+    background: var(--sage-professional);
+}
 .kb-table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
 .kb-table th { position: sticky; top: 0; background: var(--slate-charcoal); color: white; z-index: 10; padding: 16px; text-align: left; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; font-size: 12px; }
 .kb-table td { padding: 16px; border-bottom: 1px solid #f5f5f5; vertical-align: middle; color: var(--text-dark); }
 .kb-table tr:last-child td { border-bottom: none; }
 .kb-table tr:hover { background: #f9fafb; }
+
 
 /* Brand Badges / Bubbles */
 .bubble { display: inline-flex; align-items: center; justify-content: center; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
