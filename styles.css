@@ -183,7 +183,14 @@ body.no-scroll { overflow: hidden !important; }
 .main-content { flex-grow: 1; margin-left: 260px; padding: 50px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 .main-content.expanded { margin-left: 76px; }
 
-.page-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px; padding-right: 360px; }
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    padding-right: 360px;
+    flex-direction: row;
+    align-items: center;
+}
 .page-header h2 { font-size: clamp(24px, 3vw, 32px); font-weight: 800; color: var(--slate-charcoal); letter-spacing: -1px; margin-bottom: 8px; }
 .page-header p { font-size: clamp(13px, 1.5vw, 15px); color: #666; font-weight: 500; }
 .mission-statement { color: var(--sage-professional) !important; font-weight: 800 !important; font-size: 16px; }
@@ -705,12 +712,33 @@ body.preload { visibility: hidden !important; opacity: 0 !important; }
 .kb-search-input { flex-grow: 1; padding: 12px 20px; border-radius: 10px; border: 1px solid #ddd; outline: none; font-family: 'Inter', sans-serif; font-size: 14px; transition: 0.2s; }
 .kb-search-input:focus { border-color: var(--sage-professional); box-shadow: 0 0 0 3px rgba(90, 141, 59, 0.1); }
 
-.kb-table-container { max-height: 500px; overflow-y: auto; border-radius: 12px; border: 1px solid #eee; background: white; }
+/* Restricts the height of the container and adds a scrollbar */
+.kb-table-container {
+    height: 400px; /* Adjust this value to make the box taller or shorter */
+    overflow-y: auto;
+    border-bottom: 1px solid var(--gen-border); /* Neatens the bottom edge */
+}
+
+/* Customizes the scrollbar for the table container */
+.kb-table-container::-webkit-scrollbar {
+    width: 6px;
+}
+.kb-table-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+.kb-table-container::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 10px;
+}
+.kb-table-container::-webkit-scrollbar-thumb:hover {
+    background: var(--sage-professional);
+}
 .kb-table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
 .kb-table th { position: sticky; top: 0; background: var(--slate-charcoal); color: white; z-index: 10; padding: 16px; text-align: left; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; font-size: 12px; }
 .kb-table td { padding: 16px; border-bottom: 1px solid #f5f5f5; vertical-align: middle; color: var(--text-dark); }
 .kb-table tr:last-child td { border-bottom: none; }
 .kb-table tr:hover { background: #f9fafb; }
+
 
 /* Brand Badges / Bubbles */
 .bubble { display: inline-flex; align-items: center; justify-content: center; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -826,6 +854,8 @@ body.preload { visibility: hidden !important; opacity: 0 !important; }
 .user-manage-row .del-btn {
   background: var(--red-alert); color: white; border: none; padding: 0 10px;
   height: 34px; border-radius: 4px; cursor: pointer; font-weight: bold;
+}
+
 /* =========================================================
    IDEA MODAL STYLES
    ========================================================= */
@@ -862,4 +892,274 @@ body.preload { visibility: hidden !important; opacity: 0 !important; }
 }
 textarea.idea-input { 
     resize: vertical; 
+}
+
+/* --- Dropdown Container & Button --- */
+.dev-dropdown-container {
+  position: relative;
+  display: inline-block;
+}
+
+.dev-workspace-btn {
+  display: flex;
+  align-items: center;
+  background-color: #4b5563; 
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  gap: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.dev-workspace-btn:hover {
+  background-color: #374151; 
+}
+
+.dev-workspace-btn:active {
+  transform: scale(0.98); 
+}
+
+/* Icons and Text inside Button */
+.lock-icon {
+  width: 14px;
+  height: 14px;
+  stroke: #ffffff;
+}
+
+.chevron-icon {
+  width: 16px;
+  height: 16px;
+  stroke: #ffffff;
+  transition: transform 0.3s ease;
+}
+
+.dev-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* --- The Dropdown Menu --- */
+.dev-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0; 
+  margin-top: 10px;
+  background-color: #ffffff;
+  min-width: 180px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  
+  /* Hidden by default */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
+  z-index: 100;
+}
+
+/* CLICK TRIGGER: Uses the .open class instead of :hover */
+.dev-dropdown-container.open .chevron-icon {
+  transform: rotate(180deg);
+}
+
+.dev-dropdown-container.open .dev-dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+/* --- Dropdown Links --- */
+.dev-dropdown-link {
+  display: block;
+  padding: 12px 16px;
+  color: #4b5563;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.dev-dropdown-link:not(:last-child) {
+  border-bottom: 1px solid #f3f4f6; 
+}
+
+.dev-dropdown-link:hover {
+  background-color: #f9fafb;
+  color: #111827; 
+}
+
+/* --- Hot Bar Stacking System --- */
+.hotbars-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 25px;
+  width: 100%;
+}
+
+.hotbar-wrapper {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* --- The Main Container --- */
+.hotbar-container {
+  display: flex;
+  align-items: center; 
+  background: #ffffff; /* Keeps the clean white card look */
+  border: 1px solid var(--gen-border); /* 1. Matches your site's standard borders */
+  border-left: 4px solid var(--slate-charcoal); /* 2. Anchors to your sidebar color */
+  border-radius: 8px;
+  padding: 6px 8px; 
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02); /* Softened the shadow to be flatter */
+}
+
+/* --- The Label --- */
+.hotbar-label {
+  font-weight: 800;
+  font-size: 0.85em;
+  color: var(--slate-charcoal); 
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 0 15px 0 8px;
+  white-space: nowrap;
+}
+
+/* --- Hot Bar Flex Layout --- */
+.hotbar-links {
+  display: flex;
+  width: 100%;
+  gap: 8px;
+}
+
+/* --- Option 2: Outlined Cards --- */
+.hotbar-btn {
+  flex: 1;
+  text-align: center;
+  padding: 8px 10px;
+  background: #ffffff; /* Pure white resting state */
+  color: var(--slate-charcoal);
+  text-decoration: none;
+  border-radius: 6px; /* Sharper corners */
+  font-size: 0.85em;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border: 1px solid var(--gen-border); /* Matches your native site borders */
+  transition: all 0.2s ease;
+}
+
+.hotbar-btn:hover {
+  border-color: var(--sage-professional); /* Border shifts to green */
+  color: var(--sage-professional); /* Text shifts to green */
+  box-shadow: 0 4px 8px rgba(90, 141, 59, 0.08); /* Faint green shadow */
+  transform: translateY(-2px); /* Lifts up slightly */
+}
+/* =========================================================
+   QUICK MESSAGES MODULE
+   ========================================================= */
+
+.qm-category {
+    font-weight: 800;
+    cursor: pointer;
+    padding: 10px 15px;
+    background: var(--gen-bg);
+    color: var(--slate-charcoal);
+    margin-bottom: 5px;
+    border-radius: 6px;
+    border: 1px solid var(--gen-border);
+    user-select: none;
+    transition: background 0.2s;
+}
+
+.qm-category:hover {
+    background: #e8eaed;
+}
+
+.qm-category-items {
+    display: none; /* Hidden by default */
+    margin-left: 15px;
+    padding-left: 10px;
+    border-left: 2px solid var(--gen-border);
+    margin-bottom: 15px;
+}
+
+.qm-category-items.open {
+    display: block; /* Shown when category is clicked */
+}
+
+.qm-item {
+    margin-bottom: 8px;
+    padding: 8px;
+    border-bottom: 1px solid var(--gen-border);
+}
+
+.qm-item:last-child {
+    border-bottom: none;
+}
+
+.qm-item-header {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.qm-item-name {
+    cursor: pointer;
+    color: var(--text-dark);
+    font-weight: 600;
+    user-select: none;
+}
+
+.qm-item-name:hover {
+    color: var(--sage-professional);
+}
+
+/* Copy Button formatting */
+.qm-copy-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2em;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.qm-copy-btn:hover {
+    background: var(--gen-border);
+}
+
+/* Hidden message text that drops down */
+.qm-item-message {
+    display: none;
+    margin-top: 8px;
+    font-size: 0.9em;
+    color: var(--gen-text);
+    background: #ffffff;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px dashed var(--gen-border);
+}
+
+.qm-item-message.open {
+    display: block;
+}
+
+/* =========================================================
+   QUICK MESSAGES MODAL SIZING
+   ========================================================= */
+
+/* Lock the modal to a static width so it doesn't shift */
+#quickMsgDropdown {
+    width: 600px; 
+    max-width: 90vw; /* Safety net so it doesn't overflow off small screens */
 }
