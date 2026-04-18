@@ -894,6 +894,45 @@ textarea.idea-input {
     resize: vertical; 
 }
 
+/* =========================================================
+   DEV SANDBOX SPECIFIC STYLES
+   ========================================================= */
+.dev-preview-area {
+    border: 2px dashed #e2e8f0;
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 20px;
+    background: #f8fafc;
+}
+
+.dev-code-area {
+    margin-top: 20px;
+}
+
+.code-block {
+    background: #1e293b; /* Dark theme for code */
+    color: #e2e8f0;
+    padding: 20px;
+    border-radius: 12px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    overflow-x: auto;
+    box-shadow: inset 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.code-block code {
+    white-space: pre-wrap; /* Forces long lines to wrap so you don't have to scroll infinitely sideways */
+}
+
+.copy-code-btn {
+    cursor: pointer;
+}
+.copy-code-btn.success {
+    background: var(--sage-professional) !important;
+    color: white !important;
+    border-color: var(--sage-professional) !important;
+}
 /* --- Dropdown Container & Button --- */
 .dev-dropdown-container {
   position: relative;

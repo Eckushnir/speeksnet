@@ -607,7 +607,7 @@ async function preloadAllStores() {
     ["OVL", "LEE", "WSP", "MPL", "BAL"].forEach(async s => { if (!monthlyKpiCache[s]) try { const p = await (await fetch(`${MONTHLY_KPI_URL}?store=${s}&v=${Date.now()}`)).json(); if (!p.error) monthlyKpiCache[s] = { months: p.months, data: groupKPIs(p.data) }; } catch(e) {} });
 }
 
-function initDashboardData() { initChecklists(); setTimeout(fetchHubData, 100); setTimeout(fetchVarianceData, 300); setTimeout(fetchWeeklyKPIs, 500); setTimeout(fetchKPIData, 700); setTimeout(preloadAllStores, 4000); }
+function initDashboardData() { if (typeof initChecklists === 'function') initChecklists(); setTimeout(fetchHubData, 100); setTimeout(fetchVarianceData, 300); setTimeout(fetchWeeklyKPIs, 500); setTimeout(fetchKPIData, 700); setTimeout(preloadAllStores, 4000); }
 
 // --- 8. MODULE: METRICS (CHARTS & RECORDS) ---
 let mainChartInstance = null, currentTimeframe = '4-Week', recordsCache = JSON.parse(localStorage.getItem('speeksRecordsCache')) || null, kpiChartCache = JSON.parse(localStorage.getItem('speeksKpiChartCache')) || { '4-Week': null, 'Monthly': null };
@@ -690,7 +690,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // Inject the Global PIN screen and Logout button
     injectGlobalAuth();
-    injectIdeaModal(); // <-- ADD THIS LINE
+    injectIdeaModal(); 
     startAuthFetch();
 
     // Check if they are already logged in this session
@@ -709,6 +709,15 @@ document.addEventListener("DOMContentLoaded", () => {
     ['kpiStoreSelect', 'weeklyKpiStoreSelect', 'vw-primary', 'vw-compare'].forEach(id => document.getElementById(id)?.addEventListener('change', () => id === 'kpiStoreSelect' ? fetchKPIData(false) : (id === 'weeklyKpiStoreSelect' ? fetchWeeklyKPIs() : renderVariance())));
     
     if (document.getElementById('mainKpiChart')) syncAllData();
+
+// Automatically load the widgets if they exist on the page!
+    fetchScorecardData();
+    fetchAlertsData();
+    fetchEbayMetrics();
+    
+    // 🔥 The Unified District Master Board
+    fetchMasterDistrictDashboard();
+    fetchDistrictMonthlyKPIs();
 });
 
 // --- ROLE & PREFERENCE LOGIC ---
@@ -986,6 +995,705 @@ function handleIframeLoad() {
 
 
 
+
+
+
+
+
+
+// --- WIDGET: LIVE STORE SCORECARD (PERSONALIZED & DYNAMIC) ---
+async function fetchScorecardData() {
+    const container = document.getElementById('scorecard-widget-body');
+    const titleElement = document.getElementById('scorecard-store-name');
+    if (!container) return;
+
+    container.innerHTML = '<div class="status-message" style="padding: 20px 0;">Syncing Data...</div>';
+
+    // The active Apps Script URL
+    const SCORECARD_URL = 'https://script.google.com/macros/s/AKfycbwvelWpXnlXCJZQGagZX5llMCN1k6CjronBpIcenNVDTjUdPISjF0mYhHYy2ry0Vdg0_Q/exec';
+
+    // Figure out which store to show based on who is logged in
+    let targetStore = sessionStorage.getItem('speeksUserStore') || 'OVL';
+    if (targetStore === 'ALL' || targetStore === 'CORP') targetStore = 'OVL'; 
+
+    try {
+        const response = await fetch(SCORECARD_URL);
+        const json = await response.json();
+        
+        if (!json.success) throw new Error(json.error);
+
+        // Isolate ONLY the data for the logged-in user's store
+        const storeData = json.data.find(item => String(item.store).toUpperCase() === targetStore.toUpperCase());
+
+        if (!storeData) {
+            container.innerHTML = `<div style="color: #888; text-align: center; padding: 20px 0; font-weight: bold;">No data found for ${targetStore}.</div>`;
+            return;
+        }
+
+        if (titleElement) {
+            titleElement.innerHTML = `📊 ${storeData.store} Scorecard`;
+        }
+
+        const latestScore = parseFloat(storeData.score) || 0; 
+        const rawDate = storeData.date || 'Recent';
+
+        // --- Date Formatting Engine: Get the Monday of that week! ---
+        let displayDate = rawDate;
+        const parsedDate = new Date(rawDate);
+        
+        if (!isNaN(parsedDate.getTime())) {
+            const day = parsedDate.getUTCDay(); // 0 = Sun, 1 = Mon, etc.
+            const diffToMonday = day === 0 ? -6 : 1 - day; // Math to jump back to Monday
+            
+            const mondayDate = new Date(parsedDate);
+            mondayDate.setUTCDate(parsedDate.getUTCDate() + diffToMonday);
+
+            displayDate = "Week of " + mondayDate.toLocaleDateString('en-US', { 
+                timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric' 
+            });
+        }
+
+        // --- Color & Pulse Logic (ADJUSTED FOR OUT-OF-10 SCALE) ---
+        const getScoreColor = (score) => {
+            if (score > 8) return 'var(--sage-professional)';  // Green (Original > 4)
+            if (score >= 6) return 'var(--idea-gold)';         // Yellow (Original 3 to 4)
+            return 'var(--red-alert)';                         // Red (Original < 3)
+        };
+
+        const scoreColor = getScoreColor(latestScore);
+
+        // Red pulsing dot if the score is under 6 (Original < 3)
+        const pulse = latestScore < 6 
+            ? '<div class="notif-dot active" style="display:block; position:absolute; top:-6px; right:-6px; width:14px; height:14px; border-width: 2px;"></div>' 
+            : '';
+
+        // Inject the final compact widget UI
+        container.innerHTML = `
+        <div style="position: relative; background: #f9fafb; padding: 25px 20px; border-radius: 12px; border: 1px solid #eee; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+            ${pulse}
+            <div style="font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Latest Score</div>
+            <div style="font-size: 13px; font-weight: 800; color: var(--slate-charcoal); margin-bottom: 15px;">${displayDate}</div>
+            <div style="font-size: 52px; font-weight: 900; color: ${scoreColor}; line-height: 1; text-shadow: 0 4px 15px ${scoreColor}30;">
+                ${latestScore.toFixed(1)}
+            </div>
+        </div>`;
+        
+    } catch (error) {
+        console.error('Error fetching scorecard:', error);
+        container.innerHTML = '<div style="color: var(--red-alert); font-weight: bold; padding: 20px 0; text-align: center;">Error syncing scorecard. Check Apps Script URL.</div>';
+    }
+}
+
+// --- WIDGET: LIVE STORE PERFORMANCE ALERTS ---
+async function fetchAlertsData() {
+    const container = document.getElementById('alerts-widget-body');
+    const titleElement = document.getElementById('alerts-store-name');
+    if (!container) return;
+
+    // ⚠️ PASTE YOUR ALERTS URL HERE
+    const ALERTS_URL = 'https://script.google.com/macros/s/AKfycbxap-4Jgdn5-ntkv_X-vFZLTWlTB29_bDLdwcFxhWd2su3ZQJ0ZS7UpUgZAK08lOIV6/exec';
+
+    let targetStore = sessionStorage.getItem('speeksUserStore') || 'OVL';
+    if (targetStore === 'ALL' || targetStore === 'CORP') targetStore = 'OVL'; 
+
+    try {
+        const response = await fetch(ALERTS_URL);
+        const json = await response.json();
+        if (!json.success) throw new Error(json.error);
+
+        const storeData = json.data.find(item => String(item.store).toUpperCase() === targetStore.toUpperCase());
+        if (!storeData) return;
+
+        // 🔥 FIXED: Hardcoded the requested title so it stops flashing back!
+        if (titleElement) titleElement.innerHTML = `🚨 Action Needed - eBay Performance`;
+
+        const buildAlertCard = (title, value, severity) => {
+            let bgColor = '#d1fae5';
+            let textColor = '#065f46'; 
+            let displayText = 'All Clear';
+            let pulseHtml = '';
+
+            if (value !== '') {
+                displayText = value;
+                if (severity === 'high') {
+                    bgColor = '#fef3c7'; 
+                    textColor = '#92400e';
+                } else if (severity === 'very-high') {
+                    bgColor = '#fee2e2';
+                    textColor = '#991b1b';
+                    pulseHtml = '<div class="notif-dot active" style="display:block; position:absolute; top:-4px; right:-4px; width:12px; height:12px; border-width: 2px; z-index: 5;"></div>';
+                }
+            }
+
+            // 🔥 FIXED: Bubbles are now locked at 46px height with flex-centered text
+            return `
+            <div style="position: relative; background: #f9fafb; padding: 12px 15px; border-radius: 8px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); flex: 1; min-height: 65px; box-sizing: border-box;">
+                ${pulseHtml}
+                <div style="font-size: 10px; font-weight: 800; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 15px; flex-shrink: 0;">${title}</div>
+                <div style="display: flex; flex-direction: column; align-items: flex-end; flex-grow: 1; width: 60%;">
+                    <div style="font-size: 11px; font-weight: 900; color: ${textColor}; background-color: ${bgColor}; padding: 4px 10px; border-radius: 6px; width: 100%; height: 46px; display: flex; align-items: center; justify-content: center; text-align: center; line-height: 1.2; box-sizing: border-box;">
+                        ${displayText}
+                    </div>
+                </div>
+            </div>`;
+        };
+
+        container.innerHTML = `
+        <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 15px; align-items: stretch; width: 100%; height: 100%;">
+            <div style="display: flex; flex-direction: column; gap: 8px; justify-content: space-between; height: 100%;">
+                <div style="font-size: 9px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 1px; padding-left: 5px;">Current Issues</div>
+                ${buildAlertCard('High', storeData.currentHigh, 'high')}
+                ${buildAlertCard('Very High', storeData.currentVeryHigh, 'very-high')}
+            </div>
+            <div style="width: 2px; background: repeating-linear-gradient(to bottom, #e2e8f0, #e2e8f0 6px, transparent 6px, transparent 12px); margin: 20px 0 0 0;"></div>
+            <div style="display: flex; flex-direction: column; gap: 8px; justify-content: space-between; height: 100%;">
+                <div style="font-size: 9px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 1px; padding-left: 5px;">Projected Issues</div>
+                ${buildAlertCard('High', storeData.projectedHigh, 'high')}
+                ${buildAlertCard('Very High', storeData.projectedVeryHigh, 'very-high')}
+            </div>
+        </div>`;
+    } catch (error) {
+        console.error('Error fetching alerts:', error);
+    }
+}
+
+
+// --- WIDGET: LIVE EBAY TOP RATED METRICS ---
+async function fetchEbayMetrics() {
+    const container = document.getElementById('ebay-widget-body');
+    const titleElement = document.getElementById('ebay-store-name');
+    if (!container) return;
+
+    // ⚠️ PASTE YOUR KPI WEB APP URL HERE
+    const KPI_APP_URL = 'https://script.google.com/macros/s/AKfycby0ihq9A4yUQvdZdeAF9euC5jih24hP2XGG-J_balNtxop2RHBuIuigw_mH3XTeCkkhow/exec';
+
+    let targetStore = sessionStorage.getItem('speeksUserStore') || 'OVL';
+    if (targetStore === 'ALL' || targetStore === 'CORP') targetStore = 'OVL'; 
+
+    try {
+        const response = await fetch(`${KPI_APP_URL}?store=${targetStore}`);
+        const json = await response.json();
+        if (json.error) throw new Error(json.error);
+        if (titleElement) titleElement.innerHTML = `🏆 ${targetStore} eBay Top Rated Metrics`;
+
+        const ebayGroup = json.data.find(group => group.category === "eBay Metrics");
+        if (!ebayGroup || !ebayGroup.metrics) return;
+
+        let cardsHtml = '';
+
+        ebayGroup.metrics.forEach(metric => {
+            const latestValue = metric.values[metric.values.length - 1];
+            
+            // Unified soft default styling (Green)
+            let bgColor = '#d1fae5'; 
+            let textColor = '#065f46';
+            let pulseHtml = '';
+            let isRed = false;
+            let isYellow = false;
+
+            let titleText = metric.name;
+            let paramText = '';
+            
+            if (metric.name.includes('<')) {
+                let parts = metric.name.split('<');
+                titleText = parts[0].trim();
+                paramText = 'Target: < ' + parts[1].trim();
+            } else if (metric.name.includes('>')) {
+                let parts = metric.name.split('>');
+                titleText = parts[0].trim();
+                paramText = 'Target: > ' + parts[1].trim();
+            }
+
+            // Threshold Logic
+            if (metric.name.includes("Defect Rate")) {
+                if (latestValue >= 0.375) isRed = true;
+                else if (latestValue >= 0.25) isYellow = true;
+            } else if (metric.name.includes("Late Shipment")) {
+                if (latestValue >= 2.25) isRed = true;
+                else if (latestValue >= 1.50) isYellow = true;
+            } else if (metric.name.includes("Case")) {
+                if (latestValue >= 0.225) isRed = true;
+                else if (latestValue >= 0.15) isYellow = true;
+            } else if (metric.name.includes("Tracking")) {
+                if (latestValue <= 96.25) isRed = true;
+                else if (latestValue <= 97.50) isYellow = true;
+            }
+
+            // Apply Soft Bubble Colors based on Thresholds
+            if (isRed) {
+                bgColor = '#fee2e2'; // Soft Red
+                textColor = '#991b1b';
+                pulseHtml = '<div class="notif-dot active" style="display:block; position:absolute; top:-4px; right:-4px; width:12px; height:12px; border-width: 2px; z-index: 5;"></div>';
+            } else if (isYellow) {
+                bgColor = '#fef3c7'; // Soft Yellow
+                textColor = '#92400e';
+            }
+
+            cardsHtml += `
+            <div style="position: relative; background: #f9fafb; padding: 12px 15px; border-radius: 8px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); height: 100%; box-sizing: border-box; min-height: 65px;">
+                ${pulseHtml}
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <div style="font-size: 10px; font-weight: 800; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">${titleText}</div>
+                    <div style="font-size: 9px; font-weight: 900; color: #64748b; background: #e2e8f0; padding: 2px 6px; border-radius: 4px; width: fit-content; letter-spacing: 0.5px;">${paramText}</div>
+                </div>
+                <div style="font-size: 13px; font-weight: 900; color: ${textColor}; background-color: ${bgColor}; padding: 4px 10px; border-radius: 6px; text-align: right; line-height: 1;">
+                    ${latestValue.toFixed(2)}%
+                </div>
+            </div>`;
+        });
+
+        container.innerHTML = `
+        <div style="display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 1fr; gap: 12px; width: 100%; height: 100%;">
+            ${cardsHtml}
+        </div>`;
+        
+    } catch (error) {
+        console.error('Error fetching eBay metrics:', error);
+    }
+}
+
+// ============================================================================
+// MASTER DISTRICT DASHBOARD (PER-STORE COLUMNS)
+// ============================================================================
+async function fetchMasterDistrictDashboard() {
+    const container = document.getElementById('district-master-body');
+    if (!container) return;
+
+    const STORES = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
+    const STORE_ICONS = { 'OVL': '🟣', 'LEE': '🔵', 'WSP': '🟢', 'MPL': '🟠', 'BAL': '🔴' };
+
+    const SCORECARD_URL = 'https://script.google.com/macros/s/AKfycbwvelWpXnlXCJZQGagZX5llMCN1k6CjronBpIcenNVDTjUdPISjF0mYhHYy2ry0Vdg0_Q/exec';
+    const ALERTS_URL = 'https://script.google.com/macros/s/AKfycbxap-4Jgdn5-ntkv_X-vFZLTWlTB29_bDLdwcFxhWd2su3ZQJ0ZS7UpUgZAK08lOIV6/exec';
+
+    // Inside fetchMasterDistrictDashboard()...
+    const renderMasterBoard = (hubData, varData, scoreData, alertsData, weeklyResults) => {
+        let html = '';
+
+        STORES.forEach(store => {
+            const sLower = store.toLowerCase();
+            const icon = STORE_ICONS[store];
+
+            // 1. SCORECARD & HEADER
+            const sScore = scoreData.data?.find(s => s.store.toUpperCase() === store) || {};
+            const scoreNum = parseFloat(sScore.score) || 0;
+            let sColor = scoreNum > 8 ? '#065f46' : (scoreNum >= 6 ? '#92400e' : '#991b1b');
+            let sBg = scoreNum > 8 ? '#d1fae5' : (scoreNum >= 6 ? '#fef3c7' : '#fee2e2');
+
+            let displayDate = "Recent";
+            if (sScore.date) {
+                const parsedDate = new Date(sScore.date);
+                if (!isNaN(parsedDate.getTime())) {
+                    const day = parsedDate.getUTCDay();
+                    const diffToMonday = day === 0 ? -6 : 1 - day;
+                    const mondayDate = new Date(parsedDate);
+                    mondayDate.setUTCDate(parsedDate.getUTCDate() + diffToMonday);
+                    displayDate = mondayDate.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' });
+                }
+            }
+
+            // 2. ACTION NEEDED
+            const issues = [];
+            const sAlerts = alertsData.data?.find(a => a.store.toUpperCase() === store) || {};
+            if (sAlerts.currentVeryHigh) issues.push({text: sAlerts.currentVeryHigh, type: 'red', tip: 'Active Issue: Very High'});
+            if (sAlerts.currentHigh) issues.push({text: sAlerts.currentHigh, type: 'yellow', tip: 'Active Issue: High'});
+            if (sAlerts.projectedVeryHigh) issues.push({text: sAlerts.projectedVeryHigh, type: 'red', tip: 'Projected Issue: Very High'});
+            if (sAlerts.projectedHigh) issues.push({text: sAlerts.projectedHigh, type: 'yellow', tip: 'Projected Issue: High'});
+
+            if (issues.length === 0) issues.push({text: 'All Clear', type: 'green', tip: 'No active or projected alerts.'});
+
+            // 🚀 FIXED BADGE LOGIC: Strict 48px height, vertically and horizontally centered text
+            const renderBadge = (b) => {
+                let bg = b.type === 'red' ? '#fee2e2' : (b.type === 'yellow' ? '#fef3c7' : '#d1fae5');
+                let txt = b.type === 'red' ? '#991b1b' : (b.type === 'yellow' ? '#92400e' : '#065f46');
+                let pulse = b.type === 'red' ? `<div class="notif-dot active" style="display:block; position:absolute; top:-4px; right:-4px; width:12px; height:12px; border-width: 2px;"></div>` : '';
+                
+                let hoverAction = `onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 10px rgba(0,0,0,0.1)'; this.querySelector('.fast-tip').style.opacity='1'; this.querySelector('.fast-tip').style.visibility='visible';" onmouseleave="this.style.transform='none'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.03)'; this.querySelector('.fast-tip').style.opacity='0'; this.querySelector('.fast-tip').style.visibility='hidden';"`;
+
+                let customTooltip = `
+                <div class="fast-tip" style="position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: var(--slate-charcoal); color: white; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; white-space: nowrap; opacity: 0; visibility: hidden; transition: opacity 0.15s ease, visibility 0.15s ease; pointer-events: none; z-index: 50; box-shadow: 0 6px 16px rgba(0,0,0,0.15); text-transform: none; letter-spacing: 0.3px;">
+                    ${b.tip}
+                    <div style="position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border-width: 5px; border-style: solid; border-color: var(--slate-charcoal) transparent transparent transparent;"></div>
+                </div>`;
+
+                return `
+                <div ${hoverAction} style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 48px; font-size: 11px; font-weight: 800; color: ${txt}; background: ${bg}; padding: 4px 10px; border-radius: 8px; text-align: center; line-height: 1.2; width: 100%; box-sizing: border-box; cursor: pointer; border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 2px 4px rgba(0,0,0,0.03); transition: transform 0.2s ease, box-shadow 0.2s ease; margin-bottom: 8px;">
+                    ${pulse}<span>${b.text}</span>
+                    ${customTooltip}
+                </div>`;
+            };
+
+            // 3. BUYING & SELLING SNAPSHOT
+            let rawPctStr = String(hubData[`${sLower}Pct`]);
+            let rawPct = parseFloat(rawPctStr) || 0;
+            let salesPctNum = (!rawPctStr.includes('%') && rawPct > 0 && rawPct <= 1.5) ? (rawPct * 100) : rawPct;
+            const salesPct = Number.isInteger(salesPctNum) ? salesPctNum : salesPctNum.toFixed(2);
+            
+            const gpTrack = Math.round(parseFloat(hubData[`${sLower}TrackGP`])) || 0;
+            const buyProj = Math.round(parseFloat(hubData[`${sLower}BuyProj`])) || 0;
+            
+            let sellMarginNum = 0;
+            const rev = parseFloat(hubData[`${sLower}Rev`]) || 0;
+            const gp = parseFloat(hubData[`${sLower}GP`]) || 0;
+            if (hubData[`${sLower}SellMargin`]) {
+                let smRaw = parseFloat(hubData[`${sLower}SellMargin`]);
+                sellMarginNum = (!String(hubData[`${sLower}SellMargin`]).includes('%') && smRaw > 0 && smRaw <= 1.5) ? (smRaw * 100) : smRaw;
+            } else if (rev > 0) {
+                sellMarginNum = (gp / rev) * 100;
+            }
+            const sellMargin = Number.isInteger(sellMarginNum) ? sellMarginNum : sellMarginNum.toFixed(2);
+
+            let rawMarginStr = String(hubData[`${sLower}BuyMargin`]);
+            let rawMargin = parseFloat(rawMarginStr) || 0;
+            let buyMarginNum = (!rawMarginStr.includes('%') && rawMargin > 0 && rawMargin <= 1.5) ? (rawMargin * 100) : rawMargin;
+            const buyMargin = Number.isInteger(buyMarginNum) ? buyMarginNum : buyMarginNum.toFixed(2);
+
+            const pctColor = salesPctNum >= 100 ? '#065f46' : '#991b1b';
+            const pctBg = salesPctNum >= 100 ? '#d1fae5' : '#fee2e2';
+            
+            const sellMarginColor = sellMarginNum >= 55.5 ? '#065f46' : '#991b1b';
+            const sellMarginBg = sellMarginNum >= 55.5 ? '#d1fae5' : '#fee2e2';
+            
+            const marginColor = (buyMarginNum > 0 && buyMarginNum < 51) ? '#991b1b' : '#065f46';
+            const marginBg = (buyMarginNum > 0 && buyMarginNum < 51) ? '#fee2e2' : '#d1fae5';
+
+            // 4. LIVE VARIANCE (Totals Only)
+            const sVar = varData[store] || {};
+            const totalVar = parseFloat(sVar.total) || 0;
+            const vColor = totalVar < 0 ? '#991b1b' : (totalVar > 0 ? '#065f46' : '#64748b');
+            const vBg = totalVar < 0 ? '#fee2e2' : (totalVar > 0 ? '#d1fae5' : '#f1f5f9');
+            const vSign = totalVar > 0 ? '+' : '';
+
+            // 5. WEEKLY METRICS
+            const sWeekData = weeklyResults.find(w => w.store === store);
+            const wAvg = sWeekData?.sAvg || {};
+
+            const renderLineStat = (label, val, ruleType) => {
+                let isBad = false;
+                let displayVal = val || '-';
+                if (displayVal !== '-' && (ruleType === 'margin' || ruleType === 'conversion') && !String(displayVal).includes('%')) displayVal += '%';
+                
+                if (val && val !== '-') {
+                    let n = parseFloat(String(val).replace(/[^0-9.-]/g, ''));
+                    if (ruleType === 'margin') isBad = n < 51;
+                    if (ruleType === 'conversion') isBad = n < 85;
+                    if (ruleType === 'nodeals') isBad = n > 7;
+                    if (ruleType === 'time') {
+                        let t = String(val);
+                        let timeVal = t.includes(':') ? parseInt(t.split(':')[0]) + (parseInt(t.split(':')[1])/60) : n;
+                        isBad = timeVal > 13;
+                    }
+                }
+                
+                let bg = ruleType === 'nobg' ? 'transparent' : (ruleType === null ? '#f1f5f9' : (isBad ? '#fee2e2' : '#d1fae5'));
+                let txt = ruleType === 'nobg' ? 'var(--slate-charcoal)' : (ruleType === null ? 'var(--slate-charcoal)' : (isBad ? '#991b1b' : '#065f46'));
+                let pad = ruleType === 'nobg' ? '0' : '3px 8px';
+                if (displayVal === '-') { bg = '#f1f5f9'; txt = '#888'; pad = '3px 8px'; }
+                
+                return `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <span style="font-size: 10px; font-weight: 800; color: #888;">${label}</span>
+                    <span style="font-size: 11px; font-weight: 900; color: ${txt}; background: ${bg}; padding: ${pad}; border-radius: 6px;">${displayVal}</span>
+                </div>`;
+            };
+
+            // BUILD HTML
+            html += `
+            <div class="card" style="margin: 0; padding: 0; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border-radius: 12px; background: #fff; overflow: hidden; display: flex; flex-direction: column; height: 100%;">
+                
+                <div style="background: var(--slate-charcoal); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 16px; font-weight: 900; color: white; display: flex; align-items: center; gap: 8px;">${icon} ${store}</span>
+                    <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                        <span style="font-size: 14px; font-weight: 900; background: ${sBg}; color: ${sColor}; padding: 3px 10px; border-radius: 8px; line-height: 1;">${scoreNum.toFixed(1)}</span>
+                        <span style="font-size: 10px; font-weight: 800; color: #a0aab2; margin-top: 4px; text-transform: uppercase;">Week of ${displayDate}</span>
+                    </div>
+                </div>
+
+                <div style="padding: 16px; flex-grow: 1; display: flex; flex-direction: column; gap: 16px;">
+                    
+                    <div>
+                        <div style="font-size: 10px; font-weight: 900; color: #a0aab2; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">💰 Buying & Selling Snapshot</div>
+                        <div style="background: #f9fafb; border: 1px solid #eee; border-radius: 8px; padding: 10px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                <span style="font-size: 10px; font-weight: 800; color: #888;">Sales vs Goal</span>
+                                <span style="font-size: 11px; font-weight: 900; color: ${pctColor}; background: ${pctBg}; padding: 3px 8px; border-radius: 6px;">${salesPct}%</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                <span style="font-size: 10px; font-weight: 800; color: #888;">GP Track</span>
+                                <span style="font-size: 11px; font-weight: 900; color: var(--slate-charcoal);">$${gpTrack.toLocaleString()}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                <span style="font-size: 10px; font-weight: 800; color: #888;">Sell Margin</span>
+                                <span style="font-size: 11px; font-weight: 900; color: ${sellMarginColor}; background: ${sellMarginBg}; padding: 3px 8px; border-radius: 6px;">${sellMarginNum > 0 ? sellMargin + '%' : '-'}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                <span style="font-size: 10px; font-weight: 800; color: #888;">Buy Track</span>
+                                <span style="font-size: 11px; font-weight: 900; color: var(--slate-charcoal);">$${buyProj.toLocaleString()}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 10px;">
+                                <span style="font-size: 10px; font-weight: 800; color: #888;">Buy Margin</span>
+                                <span style="font-size: 11px; font-weight: 900; color: ${marginColor}; background: ${marginBg}; padding: 3px 8px; border-radius: 6px;">${buyMargin}%</span>
+                            </div>
+                            
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 10px; font-weight: 800; color: var(--slate-charcoal);">Variance Total</span>
+                                <span style="font-size: 11px; font-weight: 900; color: ${vColor}; background: ${vBg}; padding: 3px 8px; border-radius: 6px;">${vSign}${totalVar.toFixed(2)}%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div style="font-size: 10px; font-weight: 900; color: #a0aab2; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">🗓️ Weekly Metrics</div>
+                        <div style="background: #f9fafb; border: 1px solid #eee; border-radius: 8px; padding: 10px;">
+                            ${renderLineStat('Conversion', wAvg.conversion, 'conversion')}
+                            ${renderLineStat('Margin', wAvg.buyMargin, 'margin')}
+                            ${renderLineStat('Trans. Time', wAvg.time, 'time')}
+                            ${renderLineStat('No Deals', wAvg.noDeals, 'nodeals')}
+                            <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #e2e8f0;">
+                                ${renderLineStat('Listed Devices', wAvg.listed, 'nobg')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="flex-grow: 1; display: flex; flex-direction: column;">
+                        <div style="font-size: 10px; font-weight: 900; color: #a0aab2; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">🚨 Action Needed - eBay Performance</div>
+                        <div style="display: flex; flex-direction: column; gap: 6px; flex-grow: 1;">
+                            ${issues.map(renderBadge).join('')}
+                        </div>
+                    </div>
+
+                </div>
+            </div>`;
+        });
+
+        container.innerHTML = html;
+    };
+
+    const cachedHtml = localStorage.getItem('speeksDistMasterHtml');
+    if (cachedHtml) container.innerHTML = cachedHtml;
+
+    try {
+        const [hubData, varData, scoreData, alertsData] = await Promise.all([
+            fetch(`${HUB_URL}?v=${Date.now()}`).then(r => r.json()),
+            fetch(`${VARIANCE_API_URL}?v=${Date.now()}`).then(r => r.json()),
+            fetch(SCORECARD_URL).then(r => r.json()),
+            fetch(ALERTS_URL).then(r => r.json())
+        ]);
+
+        const weeklyPromises = STORES.map(async (store) => {
+            const d = await fetch(`${WEEKLY_KPI_URL}?store=${store}&time=4-Week&v=${Date.now()}`).then(r => r.json());
+            let sAvg = {};
+            const formatTime = (val) => {
+                if (!val) return ""; let s = String(val).trim();
+                if (!s.includes(':')) return s.includes('.') ? s.split('.')[0] + ':' + (s.split('.')[1] + '0').substring(0,2) : (!isNaN(s) ? s + ':00' : s);
+                return s.length <= 5 ? s : s;
+            };
+            let sIdx = d.findLastIndex(r => String(r[0]).trim().toLowerCase() === "store" || String(r[0]).trim().toLowerCase() === "store total");
+            if (sIdx !== -1) {
+                let st = d[sIdx];
+                sAvg = { buyMargin: st[5], conversion: st[8], time: formatTime(st[12]), noDeals: st[14], listed: st[20] };
+            }
+            return { store, sAvg };
+        });
+
+        const weeklyResults = await Promise.all(weeklyPromises);
+
+        renderMasterBoard(hubData, varData, scoreData, alertsData, weeklyResults);
+        
+        localStorage.setItem('speeksDistMasterHtml', container.innerHTML);
+
+    } catch (error) { 
+        if (!cachedHtml) container.innerHTML = '<div style="color: var(--red-alert); font-weight: bold; text-align: center; grid-column: 1 / -1;">Error compiling Master Dashboard.</div>'; 
+    }
+}
+
+// ============================================================================
+// DISTRICT MONTHLY KPI MATRIX (5-STORE AGGREGATOR)
+// ============================================================================
+let districtKpiCache = null;
+
+async function fetchDistrictMonthlyKPIs() {
+    const container = document.getElementById('district-kpi-body');
+    if (!container) return;
+
+    const STORES = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
+    const MONTHLY_KPI_URL = 'https://script.google.com/macros/s/AKfycby0ihq9A4yUQvdZdeAF9euC5jih24hP2XGG-J_balNtxop2RHBuIuigw_mH3XTeCkkhow/exec';
+
+    const cachedStr = localStorage.getItem('speeksDistKpiData');
+    if (cachedStr) {
+        try {
+            districtKpiCache = JSON.parse(cachedStr);
+            buildDistrictKpiDropdowns();
+            renderDistrictKPIs();
+        } catch(e) {}
+    }
+
+    try {
+        const promises = STORES.map(store => 
+            fetch(`${MONTHLY_KPI_URL}?store=${store}&v=${Date.now()}`)
+            .then(r => r.json())
+            .then(data => ({store, data}))
+            .catch(e => ({store, error: true}))
+        );
+        
+        const results = await Promise.all(promises);
+
+        districtKpiCache = { masterMonths: [], stores: {} };
+
+        results.forEach(res => {
+            if (res.store === 'OVL' && res.data && res.data.months) {
+                districtKpiCache.masterMonths = res.data.months; 
+            }
+            
+            if (res.data && !res.data.error && res.data.data) {
+                districtKpiCache.stores[res.store] = {
+                    months: res.data.months || [],
+                    data: res.data.data
+                };
+            } else {
+                districtKpiCache.stores[res.store] = { months: [], data: [] }; 
+            }
+        });
+
+        localStorage.setItem('speeksDistKpiData', JSON.stringify(districtKpiCache));
+
+        buildDistrictKpiDropdowns();
+        renderDistrictKPIs();
+        
+    } catch (e) {
+        if (!cachedStr) container.innerHTML = '<div style="color: var(--red-alert); font-weight: bold; text-align: center; padding: 20px;">Failed to load District KPIs.</div>';
+    }
+}
+
+// 🚀 UPDATED DROPDOWN BUILDER (Formats to "March 2026")
+function buildDistrictKpiDropdowns() {
+    if (!districtKpiCache || !districtKpiCache.masterMonths) return;
+    const sel = document.getElementById('dist-kpi-month');
+    if (!sel) return;
+
+    const months = districtKpiCache.masterMonths;
+    const currVal = sel.value;
+
+    sel.innerHTML = '';
+    
+    // Dictionary to translate abbreviations
+    const monthsMap = {
+        "Jan": "January", "Feb": "February", "Mar": "March", "Apr": "April",
+        "May": "May", "Jun": "June", "Jul": "July", "Aug": "August",
+        "Sep": "September", "Oct": "October", "Nov": "November", "Dec": "December"
+    };
+
+    months.forEach((m, i) => {
+        let displayText = m;
+        let parts = String(m).trim().split(/[- ]/);
+        
+        // If it looks like "Mar-26" or "Mar 26"
+        if (parts.length >= 2) {
+            let monthPart = parts[0];
+            // Fix capitalization just in case
+            monthPart = monthPart.charAt(0).toUpperCase() + monthPart.slice(1).toLowerCase();
+            let fullM = monthsMap[monthPart] || monthPart;
+            
+            let y = parts[parts.length - 1];
+            let fullY = y.length === 2 ? "20" + y : y; // "26" -> "2026"
+            
+            displayText = `${fullM} ${fullY}`;
+        }
+        
+        sel.add(new Option(displayText, i));
+    });
+
+    sel.value = currVal !== "" && currVal < months.length ? currVal : months.length - 1;
+}
+
+window.renderDistrictKPIs = function() {
+    const container = document.getElementById('district-kpi-body');
+    const mIdx = parseInt(document.getElementById('dist-kpi-month').value);
+
+    if (!districtKpiCache || !districtKpiCache.stores['OVL']) return;
+
+    const targetMonthRaw = districtKpiCache.masterMonths[mIdx];
+    if (!targetMonthRaw) return;
+    
+    const targetMonthClean = String(targetMonthRaw).replace(/[^a-z0-9]/gi, '').toLowerCase();
+
+    const STORES = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
+    const baseline = districtKpiCache.stores['OVL'].data; 
+
+    let html = '';
+
+    if (!baseline) return;
+
+    baseline.forEach(cat => {
+        html += `<div class="kpi-category">
+                    <div class="kpi-category-header" onclick="toggleCategory(this)">
+                        ${cat.category}
+                        <span class="chevron">▼</span>
+                    </div>
+                    <div class="kpi-category-content">`;
+
+        cat.metrics.forEach(m => {
+            const metricName = m.name;
+            const isInverse = m.inverse;
+
+            let rowHtml = `<div class="kpi-row" style="display: grid; grid-template-columns: minmax(180px, 2fr) repeat(5, minmax(80px, 1fr)); padding: 12px 20px; align-items: center; border-bottom: 1px solid #f8fafc;">
+                            <div class="kpi-name-col"><span class="kpi-name" style="font-size: 11px; font-weight: 800; color: #555; text-transform: uppercase;">${metricName}</span></div>`;
+
+            STORES.forEach(store => {
+                const storeObj = districtKpiCache.stores[store];
+                
+                const storeMonthIdx = storeObj.months.findIndex(m => String(m).replace(/[^a-z0-9]/gi, '').toLowerCase() === targetMonthClean);
+
+                const storeCat = storeObj.data?.find(c => c.category === cat.category);
+                const storeMetric = storeCat?.metrics.find(sm => sm.name === metricName);
+
+                if (storeMetric && storeMonthIdx !== -1 && storeMetric.values[storeMonthIdx] !== undefined) {
+                    const rawVal = storeMetric.values[storeMonthIdx];
+                    const numVal = parseNum(rawVal);
+                    let displayStr = rawVal;
+                    
+                    if (rawVal === "" || rawVal === null) {
+                        rowHtml += `<div style="text-align: center;"><span style="font-size: 11px; color: #ccc; font-weight: 800;">-</span></div>`;
+                        return; 
+                    } else if (!isNaN(numVal) && rawVal !== "") {
+                        if (metricName.toLowerCase().match(/%|rate|variance|margin|gm|cogs/) && !String(rawVal).includes('%')) {
+                            displayStr = `${numVal.toFixed(2).replace(/\.00$/, '')}%`;
+                        } else if (!isNaN(numVal) && typeof rawVal === 'number') {
+                            displayStr = formatSmartValue(numVal, metricName);
+                        }
+                    }
+
+                    let bg = '#f1f5f9'; 
+                    let txt = 'var(--slate-charcoal)';
+
+                    if (storeMonthIdx > 0 && storeMetric.values[storeMonthIdx - 1] !== undefined && storeMetric.values[storeMonthIdx - 1] !== "") {
+                        const prevVal = parseNum(storeMetric.values[storeMonthIdx - 1]);
+                        const dNum = numVal - prevVal;
+                        
+                        if (Math.abs(dNum) > 0.001) {
+                            const isPositiveImpact = dNum > 0 ? !isInverse : isInverse;
+                            if (isPositiveImpact) {
+                                bg = '#d1fae5'; txt = '#065f46'; 
+                            } else {
+                                bg = '#fee2e2'; txt = '#991b1b'; 
+                            }
+                        }
+                    }
+
+                    rowHtml += `<div style="text-align: center;"><span style="display: inline-block; font-size: 11px; font-weight: 900; color: ${txt}; background: ${bg}; padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.05); box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">${displayStr}</span></div>`;
+                } else {
+                    rowHtml += `<div style="text-align: center;"><span style="font-size: 11px; color: #ccc; font-weight: 800;">-</span></div>`;
+                }
+            });
+
+            rowHtml += `</div>`;
+            html += rowHtml;
+        });
+
+        html += `</div></div>`;
+    });
+
+    container.innerHTML = html;
+};
 document.addEventListener("DOMContentLoaded", function() {
   const dropdownBtn = document.getElementById("devWorkspaceBtn");
   const dropdownContainer = document.getElementById("devDropdown");
