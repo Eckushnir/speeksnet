@@ -51,16 +51,16 @@
     </div>
   </div>
 
-  <div class="quick-links-bar" style="margin-bottom: 25px;">
-      <a href="#" class="quick-link-pill">📁 Resources</a>  
-      <a href="#" class="quick-link-pill">🎯 Daily Listing Goals</a>
-      <a href="#" class="quick-link-pill">📦 SPEEKS Aging Inventory Tracker</a>
-      <a href="#" class="quick-link-pill">🛡️ eBay & Shopify Insurance Cases</a>
-      <a href="#" class="quick-link-pill">📍 Local Location Visits</a>
+  <div class="quick-links-bar" style="margin-bottom: 30px; flex-wrap: wrap;">
+      <a href="#" target="_blank" class="quick-link-pill">📁 Store Manager Folder</a>
+      <a href="https://docs.google.com/spreadsheets/d/1i_oV37lZXq8s91f9ymzwQlrM8WY2UlQQQ0qsRP3xLJ8/edit" target="_blank" class="quick-link-pill">💰 Sales Summary</a>
+      <a href="https://docs.google.com/spreadsheets/d/1oHOnA6wDwaLQ-EP4-CiDTkKpAdP2V7y8mOay416HDME/edit" target="_blank" class="quick-link-pill">🗓️ Weekly Metrics</a>
+      <a href="https://docs.google.com/spreadsheets/d/1e4mW-pcwUMJjl2Pjry6PT180P8M8nkYL5Z4GcspQmEA/edit" target="_blank" class="quick-link-pill">🧮 Monthly KPIs</a>
+      <a href="https://drive.google.com/drive/folders/12Fjxp44sY6T-o6OlrG6n_YtrHow4bE2f?usp=sharing" target="_blank" class="quick-link-pill">⚖️ Variance</a>
+      <a href="https://docs.google.com/spreadsheets/d/1agChyBxxwJqP-3CXo10C36-95Y_dVKXTA4GboeCaRRs/edit" target="_blank" class="quick-link-pill">📊 Scorecard</a>
   </div>
 
   <div id="top-alerts-row" style="display: flex; flex-wrap: wrap; gap: 20px; width: 100%; margin-bottom: 30px;">
-
       <div class="card" style="flex: 1 1 250px; max-width: 350px; margin: 0; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border-radius: 12px; background: #fff;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #f4f7f9; padding-bottom: 10px;">
               <span id="scorecard-store-name" style="font-size: 13px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 0.5px;">📊 Store Scorecard</span>
@@ -73,7 +73,7 @@
 
       <div class="card" style="flex: 2 1 350px; margin: 0; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border-radius: 12px; background: #fff; display: flex; flex-direction: column;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #f4f7f9; padding-bottom: 10px;">
-              <span id="alerts-store-name" style="font-size: 13px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 0.5px;">⚡ Store Alerts</span>
+              <span id="alerts-store-name" style="font-size: 13px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 0.5px;">🚨 Action Needed - eBay Performance</span>
               <a href="https://docs.google.com/spreadsheets/d/1QVbFYJCXtVgStuYCHw0AcPDZfcoojBgqgEgMO8jYA_E/edit?gid=0#gid=0" target="_blank" class="mini-action-btn">Full Sheet ↗</a>
           </div>
           <div id="alerts-widget-body" style="flex-grow: 1;">
@@ -81,19 +81,52 @@
           </div>
       </div>
 
-      <div class="card" style="flex: 2 1 350px; margin: 0; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border-radius: 12px; background: #fff; display: flex; flex-direction: column;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #f4f7f9; padding-bottom: 10px;">
-              <span id="ebay-store-name" style="font-size: 13px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 0.5px;">🏆 eBay Top Rated Status</span>
-              <a href="https://docs.google.com/spreadsheets/d/1e4mW-pcwUMJjl2Pjry6PT180P8M8nkYL5Z4GcspQmEA/edit?gid=1561986391#gid=1561986391" target="_blank" class="mini-action-btn">Full Sheet ↗</a>
-          </div>
-          <div id="ebay-widget-body" style="flex-grow: 1;">
-              <div class="status-message" style="width: 100%; padding: 20px 0; text-align: center; color: #888;">Loading...</div>
-          </div>
+      <div style="flex: 2 1 350px; margin: 0;"></div>
+  </div>
+
+  <div style="margin-bottom: 40px;">
+      
+      <div style="margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px;">
+          <h3 style="font-size: 20px; font-weight: 900; color: var(--slate-charcoal); letter-spacing: -0.5px; margin-bottom: 0;">🌐 District Command Center</h3>
       </div>
 
-  </div>
+      <div id="district-master-body" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 15px; align-items: stretch;">
+          <div class="status-message" style="grid-column: 1 / -1;">Building Master Dashboard...</div>
+      </div>
 
-  </div>
+      <div class="card" style="margin: 20px 0 0 0; padding: 0; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border-radius: 12px; background: #fff; overflow: hidden;">
+          
+          <div style="background: var(--slate-charcoal); padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+              <span style="font-size: 16px; font-weight: 900; color: white; text-transform: uppercase; letter-spacing: 0.5px;">District Monthly KPIs</span>
+              
+              <div style="display: flex; align-items: center; justify-content: center; gap: 12px;">
+                  <span style="font-size: 13px; font-weight: 900; color: #a0aab2; text-transform: uppercase; margin-top: 1px;">Month:</span>
+                  <select id="dist-kpi-month" class="kpi-select" onchange="renderDistrictKPIs()" 
+                      style="appearance: none; background-color: #ffffff; background-image: url('data:image/svg+xml;utf8,<svg fill=%22none%22 stroke=%22%23111827%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22 viewBox=%220 0 24 24%22 xmlns=%22http://www.w3.org/2000/svg%22><path d=%22M6 9l6 6 6-6%22/></svg>'); background-repeat: no-repeat; background-position: right 14px center; background-size: 16px; color: #111827; border: 1.5px solid #d1d5db; border-radius: 8px; padding: 8px 36px 8px 16px; font-size: 14px; font-weight: 900; outline: none; cursor: pointer; min-width: 140px; text-align: center; text-align-last: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                  </select>
+              </div>
+          </div>
+
+          <div style="overflow-x: auto; width: 100%;">
+              <div style="min-width: 750px;">
+                  <div style="display: grid; grid-template-columns: minmax(180px, 2fr) repeat(5, minmax(80px, 1fr)); padding: 15px 20px; align-items: center; background: #f9fafb; border-bottom: 2px solid #f0f0f0;">
+                      <div style="font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase;">Metric</div>
+                      <div style="text-align: center; color: var(--slate-charcoal); font-size: 14px; font-weight: 900;">🟣 OVL</div>
+                      <div style="text-align: center; color: var(--slate-charcoal); font-size: 14px; font-weight: 900;">🔵 LEE</div>
+                      <div style="text-align: center; color: var(--slate-charcoal); font-size: 14px; font-weight: 900;">🟢 WSP</div>
+                      <div style="text-align: center; color: var(--slate-charcoal); font-size: 14px; font-weight: 900;">🟠 MPL</div>
+                      <div style="text-align: center; color: var(--slate-charcoal); font-size: 14px; font-weight: 900;">🔴 BAL</div>
+                  </div>
+
+                  <div id="district-kpi-body" class="kpi-scroll-area" style="max-height: 400px; overflow-y: auto;">
+                      <div class="status-message" style="padding: 40px 0; text-align: center; color: #888;">Compiling District KPIs...</div>
+                  </div>
+              </div>
+          </div>
+
+      </div>
+      </div>
+
   <div style="width: 100%; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 40px; text-align: center; color: #94a3b8; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">
 
   </div>
