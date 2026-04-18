@@ -33,7 +33,7 @@ function toggleSidebar() {
 }
 
 function closeAllModals() {
-    ['notifDropdown', 'calendarDropdown', 'manageDocsDropdown', 'manageUsersDropdown', 'globalOverlay', 'ideaModal'].forEach(id => {
+    ['notifDropdown', 'calendarDropdown', 'manageDocsDropdown', 'manageUsersDropdown', 'hotkeysDropdown', 'globalOverlay', 'ideaModal'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.remove('show');
     });
