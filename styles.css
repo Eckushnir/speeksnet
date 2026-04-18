@@ -1063,3 +1063,103 @@ textarea.idea-input {
   box-shadow: 0 4px 8px rgba(90, 141, 59, 0.08); /* Faint green shadow */
   transform: translateY(-2px); /* Lifts up slightly */
 }
+/* =========================================================
+   QUICK MESSAGES MODULE
+   ========================================================= */
+
+.qm-category {
+    font-weight: 800;
+    cursor: pointer;
+    padding: 10px 15px;
+    background: var(--gen-bg);
+    color: var(--slate-charcoal);
+    margin-bottom: 5px;
+    border-radius: 6px;
+    border: 1px solid var(--gen-border);
+    user-select: none;
+    transition: background 0.2s;
+}
+
+.qm-category:hover {
+    background: #e8eaed;
+}
+
+.qm-category-items {
+    display: none; /* Hidden by default */
+    margin-left: 15px;
+    padding-left: 10px;
+    border-left: 2px solid var(--gen-border);
+    margin-bottom: 15px;
+}
+
+.qm-category-items.open {
+    display: block; /* Shown when category is clicked */
+}
+
+.qm-item {
+    margin-bottom: 8px;
+    padding: 8px;
+    border-bottom: 1px solid var(--gen-border);
+}
+
+.qm-item:last-child {
+    border-bottom: none;
+}
+
+.qm-item-header {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.qm-item-name {
+    cursor: pointer;
+    color: var(--text-dark);
+    font-weight: 600;
+    user-select: none;
+}
+
+.qm-item-name:hover {
+    color: var(--sage-professional);
+}
+
+/* Copy Button formatting */
+.qm-copy-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2em;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.qm-copy-btn:hover {
+    background: var(--gen-border);
+}
+
+/* Hidden message text that drops down */
+.qm-item-message {
+    display: none;
+    margin-top: 8px;
+    font-size: 0.9em;
+    color: var(--gen-text);
+    background: #ffffff;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px dashed var(--gen-border);
+}
+
+.qm-item-message.open {
+    display: block;
+}
+
+/* =========================================================
+   QUICK MESSAGES MODAL SIZING
+   ========================================================= */
+
+/* Lock the modal to a static width so it doesn't shift */
+#quickMsgDropdown {
+    width: 600px; 
+    max-width: 90vw; /* Safety net so it doesn't overflow off small screens */
+}

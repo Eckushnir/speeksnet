@@ -33,7 +33,7 @@ function toggleSidebar() {
 }
 
 function closeAllModals() {
-    ['notifDropdown', 'calendarDropdown', 'manageDocsDropdown', 'manageUsersDropdown', 'hotkeysDropdown', 'globalOverlay', 'ideaModal'].forEach(id => {
+    ['notifDropdown', 'calendarDropdown', 'manageDocsDropdown', 'manageUsersDropdown', 'hotkeysDropdown', 'globalOverlay', 'ideaModal', 'quickMsgDropdown'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.remove('show');
     });
@@ -739,7 +739,104 @@ function applyRoleBasedUI() {
     }
 }
 
+// --- 1. Define your Web App URL ---
+const QUICK_MSG_URL = 'https://script.google.com/macros/s/AKfycbxpPxDhcyS5gJ90plzsW_I1zkiC9bCZ6WA3Pl22XJL3NLg6K8L5QfeYX6VNN5bECstIeg/exec'; // Replace this!
 
+// --- 2. Main Logic to Load and Render Messages ---
+async function loadQuickMessages() {
+    const contentDiv = document.getElementById('qmContent');
+    
+    // Optional: caching so it doesn't re-fetch every single click
+    if (contentDiv.innerHTML !== 'Loading messages...' && contentDiv.innerHTML.trim() !== '') {
+        return; 
+    }
+
+    try {
+        const response = await fetch(QUICK_MSG_URL);
+        const data = await response.json();
+        
+        if (!data || data.length === 0) {
+            contentDiv.innerHTML = '<p>No messages found in the Google Sheet.</p>';
+            return;
+        }
+
+        // Dynamically get your column names so this code adapts to your sheet automatically
+        const headers = Object.keys(data[0]);
+        const categoryCol = headers[0]; // e.g. "Prompt"
+        const nameCol = headers[1];     // e.g. "Response Name"
+        const msgCol = headers[2];      // e.g. "Response Message"
+
+        // Group rows into their respective Categories
+        const groupedData = {};
+        data.forEach(row => {
+            const category = row[categoryCol];
+            if (!groupedData[category]) groupedData[category] = [];
+            groupedData[category].push(row);
+        });
+
+        // Build out the HTML tree
+        let html = '';
+        for (const [category, items] of Object.entries(groupedData)) {
+            html += `
+            <div class="qm-category-wrapper">
+                <div class="qm-category" onclick="this.nextElementSibling.classList.toggle('open')">
+                    📁 ${escapeHtml(category)}
+                </div>
+                <div class="qm-category-items">
+                    ${items.map(item => `
+                        <div class="qm-item">
+                            <div class="qm-item-header">
+                                <div class="qm-item-name" onclick="this.parentElement.nextElementSibling.classList.toggle('open')">
+                                    ${escapeHtml(item[nameCol])}
+                                </div>
+                                <button class="qm-copy-btn" title="Copy Message" data-message="${escapeHtml(item[msgCol])}" onclick="copyQMToClipboard(this)">
+                                    📋
+                                </button>
+                            </div>
+                            <div class="qm-item-message">
+                                ${escapeHtml(item[msgCol])}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>`;
+        }
+        
+        contentDiv.innerHTML = html;
+        
+    } catch (error) {
+        console.error("Error loading Quick Messages:", error);
+        contentDiv.innerHTML = '<p style="color:red;">Error loading messages. Check console.</p>';
+    }
+}
+
+// --- 3. Functional Scripts ---
+
+// Safe copy to clipboard feature with visual confirmation
+function copyQMToClipboard(button) {
+    const textToCopy = button.getAttribute('data-message');
+    
+    navigator.clipboard.writeText(textToCopy).then(() => {
+        const originalIcon = button.innerText;
+        button.innerText = '✅'; 
+        setTimeout(() => {
+            button.innerText = originalIcon; 
+        }, 1500);
+    }).catch(err => {
+        console.error('Failed to copy text: ', err);
+    });
+}
+
+// Security wrapper to prevent HTML injection from sheet strings
+function escapeHtml(unsafe) {
+    if (!unsafe) return '';
+    return unsafe.toString()
+         .replace(/&/g, "&amp;")
+         .replace(/</g, "&lt;")
+         .replace(/>/g, "&gt;")
+         .replace(/"/g, "&quot;")
+         .replace(/'/g, "&#039;");
+}
 
 function injectGlobalAuth() {
     // 1. Inject the Auth Overlay if it doesn't exist
@@ -886,6 +983,8 @@ function handleIframeLoad() {
         isIdeaSubmitting = false; // Reset the switch
     }
 }
+
+
 
 document.addEventListener("DOMContentLoaded", function() {
   const dropdownBtn = document.getElementById("devWorkspaceBtn");
