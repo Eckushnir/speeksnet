@@ -15,7 +15,7 @@ const RECORDS_URL = 'https://script.google.com/macros/s/AKfycbwPMcs33YfH84ewJyg3
 const QUICK_MSG_URL = 'https://script.google.com/macros/s/AKfycbxpPxDhcyS5gJ90plzsW_I1zkiC9bCZ6WA3Pl22XJL3NLg6K8L5QfeYX6VNN5bECstIeg/exec';
 
 // ⚠️ PASTE YOUR NEW GOALS APPS SCRIPT URL HERE:
-const GOALS_API_URL = 'YOUR_NEW_SCRIPT_URL_HERE';
+const GOALS_API_URL = 'https://script.google.com/macros/s/AKfycbw_eV-2Nxizf85J8atBJ6Muyq0aOAjZAsSLwlx9abPjNKJub_RlzrMBKkQuTbcRTbF2/exec';
 
 // --- 2. GLOBAL HELPERS & UTILITIES ---
 function parseNum(val) {
@@ -1055,7 +1055,7 @@ async function fetchLiveGoalsData() {
     if (goalsTargetStore === 'ALL' || goalsTargetStore === 'CORP') goalsTargetStore = 'OVL'; 
 
     try {
-        // 1. Pull Employees directly from the Weekly KPI Sheet!
+        // 1. Pull Employees from the Weekly KPI Sheet
         const d = await fetch(`${WEEKLY_KPI_URL}?store=${goalsTargetStore}&time=4-Week&v=${Date.now()}`).then(r => r.json());
         let emps = [];
         let sIdx = d.findLastIndex(r => String(r[0]).trim().toLowerCase() === "store" || String(r[0]).trim().toLowerCase() === "store total");
@@ -1064,19 +1064,16 @@ async function fetchLiveGoalsData() {
             for (let i = Math.max(0, sIdx - 6); i <= Math.min(d.length - 1, sIdx + 6); i++) {
                 if (i === sIdx) continue;
                 let n = String(d[i][0]).trim(), lN = n.toLowerCase();
-                // Filter out bad rows, keep actual names
                 if (n && !["name", "employee", "store", "store total", "ovl", "lee", "wsp", "mpl", "bal"].includes(lN) && !lN.includes("average") && !lN.includes("week")) {
-                    if (String(d[i][2]).trim() !== "" || String(d[i][20]).trim() !== "") {
-                        emps.push(n);
-                    }
+                    if (String(d[i][2]).trim() !== "" || String(d[i][20]).trim() !== "") emps.push(n);
                 }
             }
         }
         goalsRoster = emps.length ? [...new Set(emps)] : ['No Employees Found'];
 
-        // 2. Read from Browser LocalStorage for Sandbox Testing
-        let savedData = JSON.parse(localStorage.getItem('speeksMockGoalsData')) || {};
-        liveGoalsData = savedData[goalsTargetStore] || [];
+        // 2. Fetch Live Database Goals (REPLACES LOCAL SANDBOX)
+        const res = await fetch(`${GOALS_API_URL}?store=${goalsTargetStore}&v=${Date.now()}`);
+        liveGoalsData = await res.json();
         
         renderGoalsScoreboard('daily');
     } catch (e) {
@@ -1290,13 +1287,13 @@ function selectRole(btn, emp, role) {
     btn.setAttribute('data-selected-role', role);
 }
 
-function saveGoalsData() {
-    const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
-    let savedData = JSON.parse(localStorage.getItem('speeksMockGoalsData')) || {};
-    if (!savedData[goalsTargetStore]) savedData[goalsTargetStore] = [];
+async function saveGoalsData() {
+    const btn = document.getElementById('saveGoalsBtn');
+    btn.innerText = "Saving to Database...";
+    btn.style.opacity = "0.7";
 
-    // Remove existing records for today to overwrite them cleanly
-    savedData[goalsTargetStore] = savedData[goalsTargetStore].filter(r => r.date !== todayStr);
+    const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
+    let payloadEmployees = [];
 
     goalsRoster.forEach((emp, idx) => {
         const roleGroup = document.getElementById(`roles-${idx}`);
@@ -1307,27 +1304,38 @@ function saveGoalsData() {
         const result = document.getElementById(`input-result-${idx}`).value;
 
         if (role !== '-' || goal !== '' || result !== '') {
-            savedData[goalsTargetStore].push({
-                date: todayStr,
-                employee: emp,
-                role: role,
-                goal: goal,
-                result: result
-            });
+            payloadEmployees.push({ employee: emp, role: role, goal: goal, result: result });
         }
     });
 
-    // Save to browser memory
-    localStorage.setItem('speeksMockGoalsData', JSON.stringify(savedData));
-    
-    // Update live data INSTANTLY in memory (No API fetch needed!)
-    liveGoalsData = savedData[goalsTargetStore];
-    
-    // Refresh UI & Flip back instantly
-    document.getElementById('goals-pulse-dot').style.display = 'none';
-    const activeTab = document.getElementById('tab-daily').classList.contains('active') ? 'daily' : 'weekly';
-    renderGoalsScoreboard(activeTab);
-    flipGoalCard(false);
+    try {
+        const response = await fetch(GOALS_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ store: goalsTargetStore, employees: payloadEmployees })
+        });
+
+        if(response.ok) {
+            // Instantly update UI Memory so we don't have to wait for a refresh
+            liveGoalsData = liveGoalsData.filter(r => r.date !== todayStr);
+            payloadEmployees.forEach(p => {
+                liveGoalsData.push({ date: todayStr, store: goalsTargetStore, employee: p.employee, role: p.role, goal: p.goal, result: p.result });
+            });
+
+            document.getElementById('goals-pulse-dot').style.display = 'none';
+            const activeTab = document.getElementById('tab-daily').classList.contains('active') ? 'daily' : 'weekly';
+            renderGoalsScoreboard(activeTab);
+            flipGoalCard(false);
+        } else {
+            alert("Error saving goals to server.");
+        }
+    } catch (error) {
+        console.error(error);
+        alert("Connection failed. Please try again.");
+    } finally {
+        btn.innerText = "Save Changes";
+        btn.style.opacity = "1";
+    }
 }
 
 // --- GLOBAL INITIALIZER ATTACHMENTS ---
