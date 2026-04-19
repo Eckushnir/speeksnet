@@ -1049,7 +1049,7 @@ async function initListingGoals() {
 async function fetchLiveGoalsData() {
     const list = document.getElementById('goals-roster-list');
     if (!list) return;
-    list.innerHTML = '<div class="status-message" style="text-align: center; color: #888; padding: 20px 0;">Pulling Weekly KPI Roster...</div>';
+    list.innerHTML = '<div class="status-message" style="text-align: center; color: #888; padding: 20px 0;">Syncing Live Goals...</div>';
 
     goalsTargetStore = sessionStorage.getItem('speeksUserStore') || 'OVL';
     if (goalsTargetStore === 'ALL' || goalsTargetStore === 'CORP') goalsTargetStore = 'OVL'; 
@@ -1071,9 +1071,14 @@ async function fetchLiveGoalsData() {
         }
         goalsRoster = emps.length ? [...new Set(emps)] : ['No Employees Found'];
 
-        // 2. Fetch Live Database Goals (REPLACES LOCAL SANDBOX)
-        const res = await fetch(`${GOALS_API_URL}?store=${goalsTargetStore}&v=${Date.now()}`);
-        liveGoalsData = await res.json();
+        // 2. FETCH DIRECTLY FROM GOOGLE SHEETS (NO CACHE)
+        try {
+            const res = await fetch(`${GOALS_API_URL}?store=${goalsTargetStore}&v=${Date.now()}`);
+            liveGoalsData = await res.json();
+        } catch (dbError) {
+            console.error("Database read failed:", dbError);
+            liveGoalsData = []; // Fallback to empty if DB fails
+        }
         
         renderGoalsScoreboard('daily');
     } catch (e) {
