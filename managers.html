@@ -87,8 +87,81 @@
       <a href="https://docs.google.com/spreadsheets/d/1ar3tabN-bUqkjWqgy25MCHzSup2jhiaAKaGxLwZTeJ8/edit?usp=sharing" target="_blank" class="quick-link-pill">📍 Local Location Visits</a>
   </div>
 
-  <div class="checklist-grid" id="dynamicChecklistContainer">
+  <div class="checklist-grid" id="dynamicChecklistContainer"></div>
+
+<div id="top-alerts-row" class="top-alerts-row">
+      
+      <div class="card alert-card">
+          <div class="alert-card-header">
+              <span id="scorecard-store-name" class="alert-store-name">📊 Store Scorecard</span>
+              <a href="https://docs.google.com/spreadsheets/d/1agChyBxxwJqP-3CXo10C36-95Y_dVKXTA4GboeCaRRs/edit?gid=285677074#gid=285677074" target="_blank" class="mini-action-btn">Full Sheet ↗</a>
+          </div>
+          <div id="scorecard-widget-body"><div class="status-message">Loading...</div></div>
       </div>
+
+      <div class="card alert-card flex-col-stretch">
+          <div class="alert-card-header">
+              <span id="alerts-store-name" class="alert-store-name">🚨 Action Needed - eBay Performance</span>
+              <a href="https://docs.google.com/spreadsheets/d/1QVbFYJCXtVgStuYCHw0AcPDZfcoojBgqgEgMO8jYA_E/edit?gid=0#gid=0" target="_blank" class="mini-action-btn">Full Sheet ↗</a>
+          </div>
+          <div id="alerts-widget-body"><div class="status-message">Loading...</div></div>
+      </div>
+
+        <div class="card alert-card flex-col-stretch">
+          <div class="alert-card-header goals-header-mod">
+              <div class="goals-title-wrapper">
+                  <span class="alert-store-name">🎯 Listing Goals</span>
+                  <div id="goals-pulse-dot" class="notif-dot active goals-pulse"></div>
+              </div>
+              
+              <div style="display: flex; align-items: center; gap: 10px;">
+                  <div id="goals-date-display" style="font-size: 11px; font-weight: 800; color: var(--sage-professional); text-transform: uppercase;"></div>
+                  
+                  <button id="goals-action-btn" onclick="flipGoalCard(true)" class="mini-action-btn">Update ↗</button>
+                  <div class="goal-tab-container">
+                      <div id="tab-daily" class="goal-tab active" onclick="switchGoalTab('daily')">Daily</div>
+                      <div id="tab-weekly" class="goal-tab inactive" onclick="switchGoalTab('weekly')">Weekly</div>
+                  </div>
+              </div>
+          </div>
+
+          <div class="flip-container">
+              <div class="flip-inner" id="goals-flipper">
+                  
+                  <div class="flip-front" id="goals-front-view">
+                      <div class="goals-header-row">
+                          <span class="goals-header-lbl">Employee & Role</span>
+                          <span class="goals-header-lbl center">Goal</span>
+                          <span class="goals-header-lbl center">Result</span>
+                      </div>
+
+                      <div id="goals-roster-list" class="goals-roster-container">
+                          <div class="status-message goals-loading-msg">Loading Roster...</div>
+                      </div>
+
+                      <div class="goals-total-row">
+                          <span class="goals-total-lbl">Total</span>
+                          <span id="goals-total-target" class="goals-total-val target">0</span>
+                          <span id="goals-total-actual" class="goals-total-val actual">0</span>
+                      </div>
+                  </div>
+
+                  <div class="flip-back">
+                      <div class="goals-edit-header">
+                          <span id="goals-input-title" class="goals-edit-title">Set Goals & Log Results</span>
+                          <button onclick="flipGoalCard(false)" class="goals-close-btn">✖</button>
+                      </div>
+
+                      <div id="goals-edit-list" class="goals-edit-list-container">
+                          </div>
+
+                      <button onclick="saveGoalsData()" id="saveGoalsBtn" class="btn-primary goals-save-btn">Save Changes</button>
+                  </div>
+
+              </div>
+          </div>
+      </div>
+  </div>
 
   <div class="dashboard-layout">
       

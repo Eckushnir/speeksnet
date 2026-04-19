@@ -14,6 +14,9 @@ const AUTH_URL = 'https://script.google.com/macros/s/AKfycbza40UZxFtBWwtm3Z52MqA
 const RECORDS_URL = 'https://script.google.com/macros/s/AKfycbwPMcs33YfH84ewJyg3ikqIKZtOJByEI9X2PD3cONtavJk7oJCUnGYbP6sESBE6-j2RSA/exec';
 const QUICK_MSG_URL = 'https://script.google.com/macros/s/AKfycbxpPxDhcyS5gJ90plzsW_I1zkiC9bCZ6WA3Pl22XJL3NLg6K8L5QfeYX6VNN5bECstIeg/exec';
 
+// ⚠️ PASTE YOUR NEW GOALS APPS SCRIPT URL HERE:
+const GOALS_API_URL = 'https://script.google.com/macros/s/AKfycbw_eV-2Nxizf85J8atBJ6Muyq0aOAjZAsSLwlx9abPjNKJub_RlzrMBKkQuTbcRTbF2/exec';
+
 // --- 2. GLOBAL HELPERS & UTILITIES ---
 function parseNum(val) {
     if (!val && val !== 0) return 0;
@@ -595,7 +598,15 @@ async function preloadAllStores() {
     ["OVL", "LEE", "WSP", "MPL", "BAL"].forEach(async s => { if (!monthlyKpiCache[s]) try { const p = await (await fetch(`${MONTHLY_KPI_URL}?store=${s}&v=${Date.now()}`)).json(); if (!p.error) monthlyKpiCache[s] = { months: p.months, data: groupKPIs(p.data) }; } catch(e) {} });
 }
 
-function initDashboardData() { if (typeof initChecklists === 'function') initChecklists(); setTimeout(fetchHubData, 100); setTimeout(fetchVarianceData, 300); setTimeout(fetchWeeklyKPIs, 500); setTimeout(fetchKPIData, 700); setTimeout(preloadAllStores, 4000); }
+function initDashboardData() { 
+    if (typeof initChecklists === 'function') initChecklists(); 
+    setTimeout(fetchHubData, 100); 
+    setTimeout(fetchVarianceData, 300); 
+    setTimeout(fetchWeeklyKPIs, 500); 
+    setTimeout(fetchKPIData, 700); 
+    setTimeout(preloadAllStores, 4000); 
+    setTimeout(initListingGoals, 200);
+}
 
 // --- 8. MODULE: METRICS (CHARTS & RECORDS) ---
 let mainChartInstance = null, currentTimeframe = '4-Week', recordsCache = JSON.parse(localStorage.getItem('speeksRecordsCache')) || null, kpiChartCache = JSON.parse(localStorage.getItem('speeksKpiChartCache')) || { '4-Week': null, 'Monthly': null };
@@ -942,6 +953,7 @@ async function fetchAlertsData() {
         const response = await fetch(ALERTS_URL);
         const json = await response.json();
         if (!json.success) throw new Error(json.error);
+
         const storeData = json.data.find(item => String(item.store).toUpperCase() === targetStore.toUpperCase());
         if (!storeData) return;
 
@@ -955,16 +967,22 @@ async function fetchAlertsData() {
 
             if (value !== '') {
                 displayText = value;
-                if (severity === 'high') { bgColor = '#fef3c7'; textColor = '#92400e'; } 
-                else if (severity === 'very-high') { bgColor = '#fee2e2'; textColor = '#991b1b'; pulseHtml = '<div class="notif-dot active" style="display:block; position:absolute; top:-4px; right:-4px; width:12px; height:12px; border-width: 2px; z-index: 5;"></div>'; }
+                if (severity === 'high') {
+                    bgColor = '#fef3c7'; 
+                    textColor = '#92400e';
+                } else if (severity === 'very-high') {
+                    bgColor = '#fee2e2';
+                    textColor = '#991b1b';
+                    pulseHtml = '<div class="notif-dot active" style="display:block; position:absolute; top:-4px; right:-4px; width:12px; height:12px; border-width: 2px; z-index: 5;"></div>';
+                }
             }
 
             return `
-            <div class="alert-item">
+            <div style="position: relative; background: #f9fafb; padding: 12px 15px; border-radius: 8px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); flex: 1; min-height: 65px; box-sizing: border-box;">
                 ${pulseHtml}
-                <div class="alert-label">${title}</div>
-                <div class="alert-val-container">
-                    <div class="alert-val" style="color: ${textColor}; background-color: ${bgColor};">
+                <div style="font-size: 10px; font-weight: 800; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 15px; flex-shrink: 0;">${title}</div>
+                <div style="display: flex; flex-direction: column; align-items: flex-end; flex-grow: 1; width: 60%;">
+                    <div style="font-size: 11px; font-weight: 900; color: ${textColor}; background-color: ${bgColor}; padding: 4px 10px; border-radius: 6px; width: 100%; height: 46px; display: flex; align-items: center; justify-content: center; text-align: center; line-height: 1.2; box-sizing: border-box;">
                         ${displayText}
                     </div>
                 </div>
@@ -974,401 +992,351 @@ async function fetchAlertsData() {
         container.innerHTML = `
         <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 15px; align-items: stretch; width: 100%; height: 100%;">
             <div style="display: flex; flex-direction: column; gap: 8px; justify-content: space-between; height: 100%;">
-                <div style="font-size: 9px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 1px; padding-left: 5px;">Current Issues</div>
+                <div style="font-size: 10px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 1px; padding-left: 5px;">Current Issues</div>
                 ${buildAlertCard('High', storeData.currentHigh, 'high')}
                 ${buildAlertCard('Very High', storeData.currentVeryHigh, 'very-high')}
             </div>
             <div style="width: 2px; background: repeating-linear-gradient(to bottom, #e2e8f0, #e2e8f0 6px, transparent 6px, transparent 12px); margin: 20px 0 0 0;"></div>
             <div style="display: flex; flex-direction: column; gap: 8px; justify-content: space-between; height: 100%;">
-                <div style="font-size: 9px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 1px; padding-left: 5px;">Projected Issues</div>
+                <div style="font-size: 10px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 1px; padding-left: 5px;">Projected Issues</div>
                 ${buildAlertCard('High', storeData.projectedHigh, 'high')}
                 ${buildAlertCard('Very High', storeData.projectedVeryHigh, 'very-high')}
             </div>
         </div>`;
-    } catch (error) { console.error('Error fetching alerts:', error); }
-}
-
-async function fetchMasterDistrictDashboard() {
-    const container = document.getElementById('district-master-body');
-    if (!container) return;
-
-    const STORES = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
-    const STORE_ICONS = { 'OVL': '🟣', 'LEE': '🔵', 'WSP': '🟢', 'MPL': '🟠', 'BAL': '🔴' };
-    const SCORECARD_URL = 'https://script.google.com/macros/s/AKfycbwvelWpXnlXCJZQGagZX5llMCN1k6CjronBpIcenNVDTjUdPISjF0mYhHYy2ry0Vdg0_Q/exec';
-    const ALERTS_URL = 'https://script.google.com/macros/s/AKfycbxap-4Jgdn5-ntkv_X-vFZLTWlTB29_bDLdwcFxhWd2su3ZQJ0ZS7UpUgZAK08lOIV6/exec';
-
-    const renderMasterBoard = (hubData, varData, scoreData, alertsData, weeklyResults) => {
-        let html = '';
-        STORES.forEach(store => {
-            const sLower = store.toLowerCase();
-            const icon = STORE_ICONS[store];
-
-            // 1. SCORECARD & HEADER
-            const sScore = scoreData.data?.find(s => s.store.toUpperCase() === store) || {};
-            const scoreNum = parseFloat(sScore.score) || 0;
-            let sColor = scoreNum > 8 ? '#065f46' : (scoreNum >= 6 ? '#92400e' : '#991b1b');
-            let sBg = scoreNum > 8 ? '#d1fae5' : (scoreNum >= 6 ? '#fef3c7' : '#fee2e2');
-
-            let displayDate = "Recent";
-            if (sScore.date) {
-                const parsedDate = new Date(sScore.date);
-                if (!isNaN(parsedDate.getTime())) {
-                    const day = parsedDate.getUTCDay();
-                    const diffToMonday = day === 0 ? -6 : 1 - day;
-                    const mondayDate = new Date(parsedDate);
-                    mondayDate.setUTCDate(parsedDate.getUTCDate() + diffToMonday);
-                    displayDate = mondayDate.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' });
-                }
-            }
-
-            // 2. ACTION NEEDED
-            const issues = [];
-            const sAlerts = alertsData.data?.find(a => a.store.toUpperCase() === store) || {};
-            if (sAlerts.currentVeryHigh) issues.push({text: sAlerts.currentVeryHigh, type: 'red', tip: 'Active Issue: Very High'});
-            if (sAlerts.currentHigh) issues.push({text: sAlerts.currentHigh, type: 'yellow', tip: 'Active Issue: High'});
-            if (sAlerts.projectedVeryHigh) issues.push({text: sAlerts.projectedVeryHigh, type: 'red', tip: 'Projected Issue: Very High'});
-            if (sAlerts.projectedHigh) issues.push({text: sAlerts.projectedHigh, type: 'yellow', tip: 'Projected Issue: High'});
-            if (issues.length === 0) issues.push({text: 'All Clear', type: 'green', tip: 'No active or projected alerts.'});
-
-            // 3. BUYING & SELLING SNAPSHOT
-            let rawPctStr = String(hubData[`${sLower}Pct`]);
-            let rawPct = parseFloat(rawPctStr) || 0;
-            let salesPctNum = (!rawPctStr.includes('%') && rawPct > 0 && rawPct <= 1.5) ? (rawPct * 100) : rawPct;
-            const salesPct = Number.isInteger(salesPctNum) ? salesPctNum : salesPctNum.toFixed(2);
-            
-            const gpTrack = Math.round(parseFloat(hubData[`${sLower}TrackGP`])) || 0;
-            const buyProj = Math.round(parseFloat(hubData[`${sLower}BuyProj`])) || 0;
-            
-            let sellMarginNum = 0;
-            const rev = parseFloat(hubData[`${sLower}Rev`]) || 0;
-            const gp = parseFloat(hubData[`${sLower}GP`]) || 0;
-            if (hubData[`${sLower}SellMargin`]) {
-                let smRaw = parseFloat(hubData[`${sLower}SellMargin`]);
-                sellMarginNum = (!String(hubData[`${sLower}SellMargin`]).includes('%') && smRaw > 0 && smRaw <= 1.5) ? (smRaw * 100) : smRaw;
-            } else if (rev > 0) {
-                sellMarginNum = (gp / rev) * 100;
-            }
-            const sellMargin = Number.isInteger(sellMarginNum) ? sellMarginNum : sellMarginNum.toFixed(2);
-
-            let rawMarginStr = String(hubData[`${sLower}BuyMargin`]);
-            let rawMargin = parseFloat(rawMarginStr) || 0;
-            let buyMarginNum = (!rawMarginStr.includes('%') && rawMargin > 0 && rawMargin <= 1.5) ? (rawMargin * 100) : rawMargin;
-            const buyMargin = Number.isInteger(buyMarginNum) ? buyMarginNum : buyMarginNum.toFixed(2);
-
-            const pctColor = salesPctNum >= 100 ? '#065f46' : '#991b1b';
-            const pctBg = salesPctNum >= 100 ? '#d1fae5' : '#fee2e2';
-            const sellMarginColor = sellMarginNum >= 55.5 ? '#065f46' : '#991b1b';
-            const sellMarginBg = sellMarginNum >= 55.5 ? '#d1fae5' : '#fee2e2';
-            const marginColor = (buyMarginNum > 0 && buyMarginNum < 51) ? '#991b1b' : '#065f46';
-            const marginBg = (buyMarginNum > 0 && buyMarginNum < 51) ? '#fee2e2' : '#d1fae5';
-
-            // 4. LIVE VARIANCE
-            const sVar = varData[store] || {};
-            const totalVar = parseFloat(sVar.total) || 0;
-            const vColor = totalVar < 0 ? '#991b1b' : (totalVar > 0 ? '#065f46' : '#64748b');
-            const vBg = totalVar < 0 ? '#fee2e2' : (totalVar > 0 ? '#d1fae5' : '#f1f5f9');
-            const vSign = totalVar > 0 ? '+' : '';
-
-            // 5. WEEKLY METRICS
-            const sWeekData = weeklyResults.find(w => w.store === store);
-            const wAvg = sWeekData?.sAvg || {};
-
-            const renderLineStat = (label, val, ruleType) => {
-                let isBad = false;
-                let displayVal = val || '-';
-                if (displayVal !== '-' && (ruleType === 'margin' || ruleType === 'conversion') && !String(displayVal).includes('%')) displayVal += '%';
-                
-                if (val && val !== '-') {
-                    let n = parseFloat(String(val).replace(/[^0-9.-]/g, ''));
-                    if (ruleType === 'margin') isBad = n < 51;
-                    if (ruleType === 'conversion') isBad = n < 85;
-                    if (ruleType === 'nodeals') isBad = n > 7;
-                    if (ruleType === 'time') {
-                        let t = String(val);
-                        let timeVal = t.includes(':') ? parseInt(t.split(':')[0]) + (parseInt(t.split(':')[1])/60) : n;
-                        isBad = timeVal > 13;
-                    }
-                }
-                
-                let bg = ruleType === 'nobg' ? 'transparent' : (ruleType === null ? '#f1f5f9' : (isBad ? '#fee2e2' : '#d1fae5'));
-                let txt = ruleType === 'nobg' ? 'var(--slate-charcoal)' : (ruleType === null ? 'var(--slate-charcoal)' : (isBad ? '#991b1b' : '#065f46'));
-                let pad = ruleType === 'nobg' ? '0' : '3px 8px';
-                if (displayVal === '-') { bg = '#f1f5f9'; txt = '#888'; pad = '3px 8px'; }
-                
-                return `
-                <div class="master-stat-row">
-                    <span class="master-stat-label">${label}</span>
-                    <span class="master-stat-val" style="color: ${txt}; background: ${bg}; padding: ${pad};">${displayVal}</span>
-                </div>`;
-            };
-
-            // BUILD HTML USING NEW CSS CLASSES
-            html += `
-            <div class="card master-card">
-                <div class="master-card-header">
-                    <span class="master-card-title">${icon} ${store}</span>
-                    <div class="master-card-score-box">
-                        <span class="master-card-score" style="background: ${sBg}; color: ${sColor};">${scoreNum.toFixed(1)}</span>
-                        <span class="master-card-date">Week of ${displayDate}</span>
-                    </div>
-                </div>
-
-                <div class="master-card-body">
-                    <div>
-                        <div class="master-section-title">💰 Buying & Selling Snapshot</div>
-                        <div class="master-stat-box">
-                            <div class="master-stat-row"><span class="master-stat-label">Sales vs Goal</span><span class="master-stat-val" style="color: ${pctColor}; background: ${pctBg};">${salesPct}%</span></div>
-                            <div class="master-stat-row"><span class="master-stat-label">GP Track</span><span class="master-stat-val" style="color: var(--slate-charcoal);">$${gpTrack.toLocaleString()}</span></div>
-                            <div class="master-stat-row"><span class="master-stat-label">Sell Margin</span><span class="master-stat-val" style="color: ${sellMarginColor}; background: ${sellMarginBg};">${sellMarginNum > 0 ? sellMargin + '%' : '-'}</span></div>
-                            <div class="master-stat-row"><span class="master-stat-label">Buy Track</span><span class="master-stat-val" style="color: var(--slate-charcoal);">$${buyProj.toLocaleString()}</span></div>
-                            <div class="master-stat-row dashed"><span class="master-stat-label">Buy Margin</span><span class="master-stat-val" style="color: ${marginColor}; background: ${marginBg};">${buyMargin}%</span></div>
-                            <div class="master-stat-row"><span class="master-stat-label">Variance Total</span><span class="master-stat-val" style="color: ${vColor}; background: ${vBg};">${vSign}${totalVar.toFixed(2)}%</span></div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <div class="master-section-title">🗓️ Weekly Metrics</div>
-                        <div class="master-stat-box">
-                            ${renderLineStat('Conversion', wAvg.conversion, 'conversion')}
-                            ${renderLineStat('Margin', wAvg.buyMargin, 'margin')}
-                            ${renderLineStat('Trans. Time', wAvg.time, 'time')}
-                            ${renderLineStat('No Deals', wAvg.noDeals, 'nodeals')}
-                            <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #e2e8f0;">
-                                ${renderLineStat('Listed Devices', wAvg.listed, 'nobg')}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style="flex-grow: 1; display: flex; flex-direction: column;">
-                        <div class="master-section-title">🚨 Action Needed - eBay Performance</div>
-                        <div style="display: flex; flex-direction: column; gap: 6px; flex-grow: 1;">
-                            ${issues.map(b => {
-                                let bg = b.type === 'red' ? '#fee2e2' : (b.type === 'yellow' ? '#fef3c7' : '#d1fae5');
-                                let txt = b.type === 'red' ? '#991b1b' : (b.type === 'yellow' ? '#92400e' : '#065f46');
-                                let pulse = b.type === 'red' ? `<div class="notif-dot active" style="display:block; position:absolute; top:-4px; right:-4px; width:12px; height:12px; border-width: 2px;"></div>` : '';
-                                return `<div class="master-action-badge" style="color: ${txt}; background: ${bg};">${pulse}<span>${b.text}</span><div class="fast-tip">${b.tip}</div></div>`;
-                            }).join('')}
-                        </div>
-                    </div>
-                </div>
-            </div>`;
-        });
-
-        container.innerHTML = html;
-    };
-
-    const cachedHtml = localStorage.getItem('speeksDistMasterHtml');
-    if (cachedHtml) container.innerHTML = cachedHtml;
-
-    try {
-        const [hubData, varData, scoreData, alertsData] = await Promise.all([
-            fetch(`${HUB_URL}?v=${Date.now()}`).then(r => r.json()),
-            fetch(`${VARIANCE_API_URL}?v=${Date.now()}`).then(r => r.json()),
-            fetch(SCORECARD_URL).then(r => r.json()),
-            fetch(ALERTS_URL).then(r => r.json())
-        ]);
-
-        const weeklyPromises = STORES.map(async (store) => {
-            const d = await fetch(`${WEEKLY_KPI_URL}?store=${store}&time=4-Week&v=${Date.now()}`).then(r => r.json());
-            let sAvg = {};
-            const formatTime = (val) => {
-                if (!val) return ""; let s = String(val).trim();
-                if (!s.includes(':')) return s.includes('.') ? s.split('.')[0] + ':' + (s.split('.')[1] + '0').substring(0,2) : (!isNaN(s) ? s + ':00' : s);
-                return s.length <= 5 ? s : s;
-            };
-            let sIdx = d.findLastIndex(r => String(r[0]).trim().toLowerCase() === "store" || String(r[0]).trim().toLowerCase() === "store total");
-            if (sIdx !== -1) {
-                let st = d[sIdx];
-                sAvg = { buyMargin: st[5], conversion: st[8], time: formatTime(st[12]), noDeals: st[14], listed: st[20] };
-            }
-            return { store, sAvg };
-        });
-
-        const weeklyResults = await Promise.all(weeklyPromises);
-        renderMasterBoard(hubData, varData, scoreData, alertsData, weeklyResults);
-        localStorage.setItem('speeksDistMasterHtml', container.innerHTML);
-
-    } catch (error) { 
-        if (!cachedHtml) container.innerHTML = '<div style="color: var(--red-alert); font-weight: bold; text-align: center; grid-column: 1 / -1;">Error compiling Master Dashboard.</div>'; 
+    } catch (error) {
+        console.error('Error fetching alerts:', error);
     }
 }
 
-let districtKpiCache = null;
+// ============================================================================
+// WIDGET: DAILY LISTING GOALS (SANDBOX TESTING MODE)
+// ============================================================================
 
-async function fetchDistrictMonthlyKPIs() {
-    const container = document.getElementById('district-kpi-body');
-    if (!container) return;
+let goalsRoster = []; 
+let liveGoalsData = [];
+let goalsTargetStore = 'OVL';
+let currentAppDate = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
 
-    const STORES = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
-    const MONTHLY_KPI_URL = 'https://script.google.com/macros/s/AKfycby0ihq9A4yUQvdZdeAF9euC5jih24hP2XGG-J_balNtxop2RHBuIuigw_mH3XTeCkkhow/exec';
-
-    const cachedStr = localStorage.getItem('speeksDistKpiData');
-    if (cachedStr) {
-        try {
-            districtKpiCache = JSON.parse(cachedStr);
-            buildDistrictKpiDropdowns();
-            renderDistrictKPIs();
-        } catch(e) {}
-    }
-
-    try {
-        const promises = STORES.map(store => 
-            fetch(`${MONTHLY_KPI_URL}?store=${store}&v=${Date.now()}`)
-            .then(r => r.json())
-            .then(data => ({store, data}))
-            .catch(e => ({store, error: true}))
-        );
-        
-        const results = await Promise.all(promises);
-        districtKpiCache = { masterMonths: [], stores: {} };
-
-        results.forEach(res => {
-            if (res.store === 'OVL' && res.data && res.data.months) { districtKpiCache.masterMonths = res.data.months; }
-            if (res.data && !res.data.error && res.data.data) {
-                districtKpiCache.stores[res.store] = { months: res.data.months || [], data: res.data.data };
-            } else {
-                districtKpiCache.stores[res.store] = { months: [], data: [] }; 
-            }
-        });
-
-        localStorage.setItem('speeksDistKpiData', JSON.stringify(districtKpiCache));
-        buildDistrictKpiDropdowns();
-        renderDistrictKPIs();
-        
-    } catch (e) {
-        if (!cachedStr) container.innerHTML = '<div style="color: var(--red-alert); font-weight: bold; text-align: center; padding: 20px;">Failed to load District KPIs.</div>';
-    }
-}
-
-function buildDistrictKpiDropdowns() {
-    if (!districtKpiCache || !districtKpiCache.masterMonths) return;
-    const sel = document.getElementById('dist-kpi-month');
-    if (!sel) return;
-
-    const months = districtKpiCache.masterMonths;
-    const currVal = sel.value;
-    sel.innerHTML = '';
+function runScheduledTasks() {
+    const now = new Date();
     
-    const monthsMap = {
-        "Jan": "January", "Feb": "February", "Mar": "March", "Apr": "April",
-        "May": "May", "Jun": "June", "Jul": "July", "Aug": "August",
-        "Sep": "September", "Oct": "October", "Nov": "November", "Dec": "December"
-    };
+    // Get exact Central Time details
+    const ctDateStr = now.toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
+    const ctTimeString = now.toLocaleString('en-US', { timeZone: 'America/Chicago', hour: 'numeric', hour12: false });
+    const hours = parseInt(ctTimeString, 10);
+    
+    // 1. Pulse Dot Logic (Active from 9:00 AM - 9:59 AM  &  7:00 PM - 7:59 PM Central)
+    const isPulseTime = (hours === 9) || (hours === 19);
+    const dot = document.getElementById('goals-pulse-dot');
+    if (dot) dot.style.display = isPulseTime ? 'block' : 'none';
 
-    months.forEach((m, i) => {
-        let displayText = m;
-        let parts = String(m).trim().split(/[- ]/);
-        if (parts.length >= 2) {
-            let monthPart = parts[0];
-            monthPart = monthPart.charAt(0).toUpperCase() + monthPart.slice(1).toLowerCase();
-            let fullM = monthsMap[monthPart] || monthPart;
-            let y = parts[parts.length - 1];
-            let fullY = y.length === 2 ? "20" + y : y; 
-            displayText = `${fullM} ${fullY}`;
-        }
-        sel.add(new Option(displayText, i));
-    });
-
-    sel.value = currVal !== "" && currVal < months.length ? currVal : months.length - 1;
+    // 2. Midnight Auto-Reset Logic (Visually wipes the board if left open overnight)
+    if (ctDateStr !== currentAppDate) {
+        currentAppDate = ctDateStr;
+        const activeTab = document.getElementById('tab-daily')?.classList.contains('active') ? 'daily' : 'weekly';
+        renderGoalsScoreboard(activeTab);
+    }
 }
 
-window.renderDistrictKPIs = function() {
-    const container = document.getElementById('district-kpi-body');
-    const mIdx = parseInt(document.getElementById('dist-kpi-month').value);
-    if (!districtKpiCache || !districtKpiCache.stores['OVL']) return;
+async function initListingGoals() {
+    // Run scheduled checks immediately, then run in the background every 60 seconds
+    runScheduledTasks();
+    setInterval(runScheduledTasks, 60000); 
 
-    const targetMonthRaw = districtKpiCache.masterMonths[mIdx];
-    if (!targetMonthRaw) return;
-    const targetMonthClean = String(targetMonthRaw).replace(/[^a-z0-9]/gi, '').toLowerCase();
+    await fetchLiveGoalsData();
+}
 
-    const STORES = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
-    const baseline = districtKpiCache.stores['OVL'].data; 
+async function fetchLiveGoalsData() {
+    const list = document.getElementById('goals-roster-list');
+    if (!list) return;
+    list.innerHTML = '<div class="status-message" style="text-align: center; color: #888; padding: 20px 0;">Pulling Weekly KPI Roster...</div>';
+
+    goalsTargetStore = sessionStorage.getItem('speeksUserStore') || 'OVL';
+    if (goalsTargetStore === 'ALL' || goalsTargetStore === 'CORP') goalsTargetStore = 'OVL'; 
+
+    try {
+        // 1. Pull Employees from the Weekly KPI Sheet
+        const d = await fetch(`${WEEKLY_KPI_URL}?store=${goalsTargetStore}&time=4-Week&v=${Date.now()}`).then(r => r.json());
+        let emps = [];
+        let sIdx = d.findLastIndex(r => String(r[0]).trim().toLowerCase() === "store" || String(r[0]).trim().toLowerCase() === "store total");
+        
+        if (sIdx !== -1) {
+            for (let i = Math.max(0, sIdx - 6); i <= Math.min(d.length - 1, sIdx + 6); i++) {
+                if (i === sIdx) continue;
+                let n = String(d[i][0]).trim(), lN = n.toLowerCase();
+                if (n && !["name", "employee", "store", "store total", "ovl", "lee", "wsp", "mpl", "bal"].includes(lN) && !lN.includes("average") && !lN.includes("week")) {
+                    if (String(d[i][2]).trim() !== "" || String(d[i][20]).trim() !== "") emps.push(n);
+                }
+            }
+        }
+        goalsRoster = emps.length ? [...new Set(emps)] : ['No Employees Found'];
+
+        // 2. Fetch Live Database Goals (REPLACES LOCAL SANDBOX)
+        const res = await fetch(`${GOALS_API_URL}?store=${goalsTargetStore}&v=${Date.now()}`);
+        liveGoalsData = await res.json();
+        
+        renderGoalsScoreboard('daily');
+    } catch (e) {
+        console.error('Error fetching goals roster:', e);
+        list.innerHTML = '<div style="color: var(--red-alert); font-weight: bold; text-align: center; padding: 20px 0;">Error loading roster.</div>';
+    }
+}
+
+function renderGoalsScoreboard(viewType = 'daily') {
+    const list = document.getElementById('goals-roster-list');
+    const dateDisplay = document.getElementById('goals-date-display');
+    if (!list) return;
+    let totalG = 0; let totalR = 0;
     let html = '';
-    if (!baseline) return;
 
-    baseline.forEach(cat => {
-        html += `<div class="kpi-category">
-                    <div class="kpi-category-header" onclick="toggleCategory(this)">
-                        ${cat.category}
-                        <span class="chevron">▼</span>
-                    </div>
-                    <div class="kpi-category-content">`;
+    const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
+    const now = new Date();
+    
+    // Shift week start to Monday (0=Sun, 1=Mon, 2=Tue...)
+    const day = now.getDay();
+    const diffToMonday = day === 0 ? -6 : 1 - day;
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() + diffToMonday);
+    startOfWeek.setHours(0,0,0,0);
 
-        cat.metrics.forEach(m => {
-            const metricName = m.name;
-            const isInverse = m.inverse;
-            let rowHtml = `<div class="kpi-row" style="display: grid; grid-template-columns: minmax(180px, 2fr) repeat(5, minmax(80px, 1fr)); padding: 12px 20px; align-items: center; border-bottom: 1px solid #f8fafc;">
-                            <div class="kpi-name-col"><span class="kpi-name" style="font-size: 11px; font-weight: 800; color: #555; text-transform: uppercase;">${metricName}</span></div>`;
+    // Update Date UI
+    if (dateDisplay) {
+        if (viewType === 'daily') {
+            dateDisplay.innerText = now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+        } else {
+            dateDisplay.innerText = "Week of " + startOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+    }
 
-            STORES.forEach(store => {
-                const storeObj = districtKpiCache.stores[store];
-                const storeMonthIdx = storeObj.months.findIndex(m => String(m).replace(/[^a-z0-9]/gi, '').toLowerCase() === targetMonthClean);
-                const storeCat = storeObj.data?.find(c => c.category === cat.category);
-                const storeMetric = storeCat?.metrics.find(sm => sm.name === metricName);
+    goalsRoster.forEach(emp => {
+        let empGoal = 0; let empResult = 0; let empRole = '-';
+        let dailyStats = {};
+        
+        const empRecords = liveGoalsData.filter(r => r.employee === emp);
+        const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-                if (storeMetric && storeMonthIdx !== -1 && storeMetric.values[storeMonthIdx] !== undefined) {
-                    const rawVal = storeMetric.values[storeMonthIdx];
-                    const numVal = parseNum(rawVal);
-                    let displayStr = rawVal;
-                    
-                    if (rawVal === "" || rawVal === null) {
-                        rowHtml += `<div style="text-align: center;"><span style="font-size: 11px; color: #ccc; font-weight: 800;">-</span></div>`;
-                        return; 
-                    } else if (!isNaN(numVal) && rawVal !== "") {
-                        if (metricName.toLowerCase().match(/%|rate|variance|margin|gm|cogs/) && !String(rawVal).includes('%')) {
-                            displayStr = `${numVal.toFixed(2).replace(/\.00$/, '')}%`;
-                        } else if (!isNaN(numVal) && typeof rawVal === 'number') {
-                            displayStr = formatSmartValue(numVal, metricName);
-                        }
-                    }
+        empRecords.forEach(record => {
+            const isToday = record.date === todayStr;
+            const recDate = new Date(record.date);
+            const isThisWeek = recDate >= startOfWeek;
 
-                    let bg = '#f1f5f9'; let txt = 'var(--slate-charcoal)';
+            if (viewType === 'daily' && isToday) {
+                empGoal = parseInt(record.goal) || 0;
+                empResult = parseInt(record.result) || 0;
+                empRole = record.role || '-';
+            } else if (viewType === 'weekly' && isThisWeek) {
+                const rG = parseInt(record.goal) || 0;
+                const rR = parseInt(record.result) || 0;
+                empGoal += rG;
+                empResult += rR;
+                
+                // Track daily breakdown for the sub-row
+                const dayIdx = (recDate.getDay() + 6) % 7; 
+                const dayName = daysOfWeek[dayIdx];
+                dailyStats[dayName] = { goal: rG, result: rR };
+            }
+        });
 
-                    if (storeMonthIdx > 0 && storeMetric.values[storeMonthIdx - 1] !== undefined && storeMetric.values[storeMonthIdx - 1] !== "") {
-                        const prevVal = parseNum(storeMetric.values[storeMonthIdx - 1]);
-                        const dNum = numVal - prevVal;
-                        
-                        if (Math.abs(dNum) > 0.001) {
-                            const isPositiveImpact = dNum > 0 ? !isInverse : isInverse;
-                            if (isPositiveImpact) { bg = '#d1fae5'; txt = '#065f46'; } 
-                            else { bg = '#fee2e2'; txt = '#991b1b'; }
-                        }
-                    }
+        totalG += empGoal;
+        totalR += empResult;
 
-                    rowHtml += `<div style="text-align: center;"><span style="display: inline-block; font-size: 11px; font-weight: 900; color: ${txt}; background: ${bg}; padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.05); box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">${displayStr}</span></div>`;
+        // Dynamic Bubble Color Logic for Individuals
+        let resultClass = 'delta-neutral';
+        if (empGoal > 0 || empResult > 0) {
+            resultClass = empResult >= empGoal ? 'delta-pos' : 'delta-neg';
+        }
+
+        // Build Daily Breakdown HTML with N/A Placeholders
+        let dailyBreakdownHtml = '';
+        if (viewType === 'weekly') {
+            const currentDayIdx = (now.getDay() + 6) % 7; // Map Sun=0 to Mon=0
+            dailyBreakdownHtml = '<div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; padding-top: 4px; border-top: 1px dashed #f0f0f0;">';
+            
+            daysOfWeek.forEach((dName, idx) => {
+                if (dailyStats[dName]) {
+                    // They logged goals! Show the score.
+                    const dG = dailyStats[dName].goal;
+                    const dR = dailyStats[dName].result;
+                    const dClass = dR >= dG ? 'color: #065f46; background: #d1fae5;' : 'color: #991b1b; background: #fee2e2;';
+                    dailyBreakdownHtml += `<div style="font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; ${dClass}">${dName}: ${dR}/${dG}</div>`;
+                } else if (idx <= currentDayIdx) {
+                    // Day has passed or is today, but no data logged. Show N/A.
+                    dailyBreakdownHtml += `<div style="font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; color: #64748b; background: #f1f5f9;" title="Not Logged">${dName}: N/A</div>`;
                 } else {
-                    rowHtml += `<div style="text-align: center;"><span style="font-size: 11px; color: #ccc; font-weight: 800;">-</span></div>`;
+                    // Future day in the week. Show faint placeholder.
+                    dailyBreakdownHtml += `<div style="font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; color: #cbd5e1; border: 1px dashed #e2e8f0; background: transparent;">${dName}</div>`;
                 }
             });
+            dailyBreakdownHtml += '</div>';
+        }
 
-            rowHtml += `</div>`;
-            html += rowHtml;
+        html += `
+        <div style="display: flex; flex-direction: column; border-bottom: 1px solid #f8fafc; padding: 6px 0;">
+            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; align-items: center;">
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <span class="goals-roster-name" style="font-size: 13px; font-weight: 800; color: var(--slate-charcoal); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${emp}</span>
+                    ${viewType === 'daily' && empRole !== '-' ? `<span class="goals-roster-badge" style="font-size: 10px; background: #e2e8f0; color: var(--slate-charcoal); padding: 3px 6px; border-radius: 4px; display: inline-block; width: fit-content;">${empRole}</span>` : ''}
+                </div>
+                <span class="goals-roster-val target" style="font-size: 13px; text-align: center; font-weight: 900; color: var(--slate-charcoal);">${empGoal || '-'}</span>
+                <span style="display: flex; justify-content: center; align-items: center;">
+                    <span class="delta-badge ${resultClass}" style="font-size: 13px; padding: 4px 12px;">${empResult || '-'}</span>
+                </span>
+            </div>
+            ${dailyBreakdownHtml}
+        </div>`;
+    });
+
+    list.innerHTML = html;
+    document.getElementById('goals-total-target').innerText = totalG;
+    
+    const actualEl = document.getElementById('goals-total-actual');
+    actualEl.innerText = totalR;
+    
+    // Dynamic Color Logic for Overall Total
+    if (totalG > 0 || totalR > 0) {
+        if (totalR >= totalG) {
+            actualEl.style.backgroundColor = '#d1fae5'; 
+            actualEl.style.color = '#065f46';           
+        } else {
+            actualEl.style.backgroundColor = '#fee2e2'; 
+            actualEl.style.color = '#991b1b';           
+        }
+    } else {
+        actualEl.style.backgroundColor = '#f1f5f9';     
+        actualEl.style.color = 'var(--slate-charcoal)'; 
+    }
+}
+
+function switchGoalTab(tab) {
+    const tD = document.getElementById('tab-daily');
+    const tW = document.getElementById('tab-weekly');
+    const actionBtn = document.getElementById('goals-action-btn');
+
+    if (tab === 'daily') {
+        tD.className = 'goal-tab active';
+        tW.className = 'goal-tab inactive';
+        actionBtn.style.display = 'block';
+        renderGoalsScoreboard('daily');
+    } else {
+        tW.className = 'goal-tab active';
+        tD.className = 'goal-tab inactive';
+        actionBtn.style.display = 'none'; 
+        renderGoalsScoreboard('weekly');
+    }
+}
+
+function flipGoalCard(showEdit) {
+    const flipper = document.getElementById('goals-flipper');
+    const tabContainer = document.querySelector('.goal-tab-container');
+    
+    if (showEdit) {
+        buildGoalsEditForm();
+        flipper.classList.add('is-flipped');
+        // Disable Tabs
+        if (tabContainer) {
+            tabContainer.style.pointerEvents = 'none';
+            tabContainer.style.opacity = '0.5';
+        }
+    } else {
+        flipper.classList.remove('is-flipped');
+        // Re-enable Tabs
+        if (tabContainer) {
+            tabContainer.style.pointerEvents = 'auto';
+            tabContainer.style.opacity = '1';
+        }
+    }
+}
+
+function buildGoalsEditForm() {
+    const container = document.getElementById('goals-edit-list');
+    const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
+    let html = '';
+
+    goalsRoster.forEach((emp, idx) => {
+        const todayRecord = liveGoalsData.find(r => r.employee === emp && r.date === todayStr) || { role: '', goal: '', result: '' };
+        
+        const roles = ['B1', 'B2', 'L1', 'L2'];
+        let rolesHtml = '';
+        roles.forEach(r => {
+            const isActive = todayRecord.role === r ? 'active' : '';
+            rolesHtml += `<button type="button" class="role-dot ${isActive}" onclick="selectRole(this, '${emp}', '${r}')">${r}</button>`;
         });
 
-        html += `</div></div>`;
+        html += `
+        <div class="goals-edit-item">
+            <div class="goals-edit-name">${emp}</div>
+            <div class="goals-edit-controls">
+                <div class="goals-edit-roles" id="roles-${idx}">
+                    ${rolesHtml}
+                </div>
+                <div style="display:flex; gap: 8px;">
+                    <input type="number" id="input-goal-${idx}" class="goal-input" placeholder="Goal" value="${todayRecord.goal}" title="Target Goal" />
+                    <input type="number" id="input-result-${idx}" class="goal-input" placeholder="Actual" value="${todayRecord.result}" title="Actual Result" style="border-color: #a7f3d0; background: #ecfdf5;" />
+                </div>
+            </div>
+        </div>`;
     });
 
     container.innerHTML = html;
-};
+}
 
-// --- DEV SANDBOX DROPDOWN LOGIC ---
-document.addEventListener("DOMContentLoaded", function() {
-  const dropdownBtn = document.getElementById("devWorkspaceBtn");
-  const dropdownContainer = document.getElementById("devDropdown");
+function selectRole(btn, emp, role) {
+    const parent = btn.parentElement;
+    Array.from(parent.children).forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    btn.setAttribute('data-selected-role', role);
+}
 
-  if (dropdownBtn) {
-    dropdownBtn.addEventListener("click", function(event) {
-      event.stopPropagation(); 
-      dropdownContainer.classList.toggle("open");
+async function saveGoalsData() {
+    const btn = document.getElementById('saveGoalsBtn');
+    btn.innerText = "Saving to Database...";
+    btn.style.opacity = "0.7";
+
+    const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
+    let payloadEmployees = [];
+
+    goalsRoster.forEach((emp, idx) => {
+        const roleGroup = document.getElementById(`roles-${idx}`);
+        const activeBtn = roleGroup?.querySelector('.active');
+        const role = activeBtn ? (activeBtn.getAttribute('data-selected-role') || activeBtn.innerText) : '-';
+        
+        const goal = document.getElementById(`input-goal-${idx}`).value;
+        const result = document.getElementById(`input-result-${idx}`).value;
+
+        if (role !== '-' || goal !== '' || result !== '') {
+            payloadEmployees.push({ employee: emp, role: role, goal: goal, result: result });
+        }
     });
-  }
 
-  document.addEventListener("click", function(event) {
-    if (dropdownContainer && !dropdownContainer.contains(event.target)) {
-      dropdownContainer.classList.remove("open");
+    try {
+        const response = await fetch(GOALS_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ store: goalsTargetStore, employees: payloadEmployees })
+        });
+
+        if(response.ok) {
+            // Instantly update UI Memory so we don't have to wait for a refresh
+            liveGoalsData = liveGoalsData.filter(r => r.date !== todayStr);
+            payloadEmployees.forEach(p => {
+                liveGoalsData.push({ date: todayStr, store: goalsTargetStore, employee: p.employee, role: p.role, goal: p.goal, result: p.result });
+            });
+
+            document.getElementById('goals-pulse-dot').style.display = 'none';
+            const activeTab = document.getElementById('tab-daily').classList.contains('active') ? 'daily' : 'weekly';
+            renderGoalsScoreboard(activeTab);
+            flipGoalCard(false);
+        } else {
+            alert("Error saving goals to server.");
+        }
+    } catch (error) {
+        console.error(error);
+        alert("Connection failed. Please try again.");
+    } finally {
+        btn.innerText = "Save Changes";
+        btn.style.opacity = "1";
     }
-  });
-});
+}
 
 // --- GLOBAL INITIALIZER ATTACHMENTS ---
 function applyRoleBasedUI() {
@@ -1439,6 +1407,4 @@ document.addEventListener("DOMContentLoaded", () => {
 
     fetchScorecardData();
     fetchAlertsData();
-    fetchMasterDistrictDashboard();
-    fetchDistrictMonthlyKPIs();
 });

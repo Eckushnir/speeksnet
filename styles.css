@@ -640,3 +640,84 @@ body.preload { visibility: hidden !important; opacity: 0 !important; }
 .master-action-badge:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 .master-action-badge .fast-tip { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: var(--slate-charcoal); color: white; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; white-space: nowrap; opacity: 0; visibility: hidden; transition: opacity 0.15s ease, visibility 0.15s ease; pointer-events: none; z-index: 50; box-shadow: 0 6px 16px rgba(0,0,0,0.15); }
 .master-action-badge:hover .fast-tip { opacity: 1; visibility: visible; }
+
+/* ========================================================================== */
+/* LISTING GOALS WIDGET - FLIP ANIMATION & STYLES                             */
+/* ========================================================================== */
+.flip-container { perspective: 1000px; width: 100%; flex-grow: 1; display: flex; flex-direction: column; }
+.flip-inner { transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1); transform-style: preserve-3d; position: relative; width: 100%; flex-grow: 1; display: flex; }
+.flip-front, .flip-back { backface-visibility: hidden; position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; background: #fff; }
+/* Pointer Events fix for scrolling loss */
+.flip-front { z-index: 2; pointer-events: auto; }
+.flip-back { transform: rotateY(180deg); z-index: 1; pointer-events: none; }
+.is-flipped { transform: rotateY(180deg); }
+.is-flipped .flip-front { pointer-events: none; }
+.is-flipped .flip-back { pointer-events: auto; }
+
+.role-btn { padding: 4px 8px; font-size: 9px; font-weight: 800; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; color: #888; background: #fff; transition: all 0.2s; }
+.role-btn.active { background: var(--slate-charcoal); color: #fff; border-color: var(--slate-charcoal); }
+
+/* BIGGER INPUTS & SCROLLBAR CLEANUP FOR GOALS */
+.goal-input { width: 75px; padding: 8px; text-align: center; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-weight: 800; color: var(--slate-charcoal); outline: none; transition: all 0.2s; }
+.goal-input:focus { border-color: var(--idea-gold); box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.2); }
+
+.goals-roster-container::-webkit-scrollbar, .goals-edit-list-container::-webkit-scrollbar { width: 6px; }
+.goals-roster-container::-webkit-scrollbar-track, .goals-edit-list-container::-webkit-scrollbar-track { background: transparent; }
+.goals-roster-container::-webkit-scrollbar-thumb, .goals-edit-list-container::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+.goals-roster-container::-webkit-scrollbar-thumb:hover, .goals-edit-list-container::-webkit-scrollbar-thumb:hover { background: var(--sage-professional); }
+
+.goal-tab-container { display: flex; background: #f1f5f9; border-radius: 8px; padding: 2px; }
+.goal-tab { padding: 4px 12px; font-size: 10px; font-weight: 800; text-transform: uppercase; cursor: pointer; border-radius: 6px; transition: all 0.2s; }
+.goal-tab.active { background: #fff; color: var(--slate-charcoal); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.goal-tab.inactive { background: transparent; color: #888; box-shadow: none; }
+
+.goals-status-lbl { font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase; }
+.update-btn { margin: 0; padding: 4px 12px; font-size: 10px; cursor: pointer; border: none; background: #fee2e2; color: #991b1b; }
+.update-btn:hover { background: #fecaca; color: #7f1d1d; }
+
+/* REPLACING LIGHT GRAYS WITH SLATE & TIGHTENING PADDING */
+.goals-header-row { display: grid; grid-template-columns: 2fr 1fr 1fr; padding-bottom: 4px; border-bottom: 1px dashed #e2e8f0; margin-bottom: 4px; }
+.goals-header-lbl { font-size: 10px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase; }
+.goals-header-lbl.center { text-align: center; }
+
+.goals-total-row { display: grid; grid-template-columns: 2fr 1fr 1fr; padding-top: 6px; border-top: 2px solid #f4f7f9; margin-top: auto; }
+.goals-total-lbl { font-size: 11px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase; }
+.goals-total-val { font-size: 12px; font-weight: 900; text-align: center; border-radius: 6px; }
+.goals-total-val.target { color: var(--slate-charcoal); background: #f1f5f9; }
+.goals-total-val.actual { color: #065f46; background: #d1fae5; }
+
+.goals-roster-item { display: grid; grid-template-columns: 2fr 1fr 1fr; align-items: center; padding: 6px 0; border-bottom: 1px solid #f8fafc; }
+.goals-roster-name { font-size: 11px; font-weight: 800; color: var(--slate-charcoal); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.goals-roster-badge { background: #e2e8f0; color: #475569; padding: 2px 6px; border-radius: 4px; font-size: 8px; display: inline-block; width: fit-content; margin-top: 2px; }
+.goals-roster-val { font-size: 11px; font-weight: 900; text-align: center; }
+.goals-roster-val.target { color: #475569; }
+.goals-roster-val.actual { color: #065f46; }
+
+.goals-edit-item { background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 8px; }
+.goals-edit-name { font-size: 11px; font-weight: 800; color: var(--slate-charcoal); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.goals-edit-controls { display: flex; justify-content: space-between; align-items: center; }
+.goals-edit-roles { display: flex; gap: 4px; }
+
+/* WIDGET LAYOUT ALIGNMENTS */
+.flex-col-stretch { flex: 2 1 350px; max-width: none; margin: 0; }
+
+/* LISTING GOALS WIDGET CLEANUP */
+.goals-header-mod { margin-bottom: 6px; padding-bottom: 6px; }
+.goals-title-wrapper { display: flex; align-items: center; gap: 8px; }
+.goals-pulse { display: none; position: relative; width: 10px; height: 10px; border-width: 2px; top: 0; right: 0; }
+.goals-view-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.hide-by-default { display: none; }
+.goals-roster-container { display: flex; flex-direction: column; overflow-y: auto; flex-grow: 1; min-height: 0; }
+.goals-loading-msg { padding: 15px 0; }
+.goals-edit-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.goals-edit-title { font-size: 11px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase; }
+.goals-close-btn { background: none; border: none; color: #888; font-size: 14px; font-weight: 900; cursor: pointer; padding: 0; }
+.goals-close-btn:hover { color: var(--red-alert); }
+.goals-edit-list-container { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; flex-grow: 1; padding-right: 5px; }
+.goals-save-btn { width: 100%; padding: 10px; margin-top: 10px; font-size: 12px; }
+
+/* NEW ROLE DOTS FOR LISTING GOALS */
+.role-dot { width: 24px; height: 24px; border-radius: 50%; border: 1px solid #cbd5e1; background: #fff; color: #64748b; font-size: 9px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; padding: 0; flex-shrink: 0; }
+.role-dot:hover { border-color: var(--sage-professional); color: var(--sage-professional); }
+.role-dot.active { background: var(--slate-charcoal); color: #fff; border-color: var(--slate-charcoal); }
+.goals-edit-roles { display: flex; gap: 6px; align-items: center; }
