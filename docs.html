@@ -32,6 +32,8 @@
 <div class="sidebar-toggle" onclick="toggleSidebar()">◀</div>
 
 <div class="top-actions">
+    <div class="action-btn" onclick="toggleModal('quickMsgDropdown'); loadQuickMessages();" title="Quick Messages">💬</div>
+    <div class="action-btn" onclick="toggleModal('hotkeysDropdown')" title="Hotkeys & Commands">⌨️</div>
     <div class="action-btn" onclick="toggleCalendar()" title="Strategic Calendar">📅</div>
     <div class="action-btn" onclick="toggleNotifs()" title="Announcements">
         🔔 <div class="notif-dot" id="notifBadge"></div>
@@ -39,6 +41,41 @@
 </div>
 
 <div id="globalOverlay" class="overlay" style="display: none;"></div>
+<div class="modal-menu manage-docs-menu" id="hotkeysDropdown">
+    <div class="modal-header">
+        <h3>⌨️ Hotkeys & Commands</h3>
+        <button class="modal-close-btn" onclick="closeAllModals(); document.getElementById('hotkeysDropdown').classList.remove('show');">✖</button>
+    </div>
+    <div class="modal-body" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
+        <div id="kbSearchArea" class="kb-search-bar" style="margin-bottom: 15px;">
+            <input type="text" id="kbSearch" class="kb-search-input" onkeyup="filterKB()" placeholder="Search by Brand, Device, or Task..." style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--gen-border);">
+        </div>
+        
+        <div class="kb-table-container">
+            <table class="kb-table" style="width: 100%; text-align: left; border-collapse: collapse;">
+              <thead>
+                <tr style="border-bottom: 2px solid #eee;">
+                    <th style="width:15%; padding-bottom: 10px;">Brand</th>
+                    <th style="width:15%; padding-bottom: 10px;">Device</th>
+                    <th style="width:35%; padding-bottom: 10px;">Hotkey/Command</th>
+                    <th style="width:20%; padding-bottom: 10px;">Objective</th>
+                </tr>
+              </thead>
+              <tbody id="kbBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal-menu" id="quickMsgDropdown">
+    <div class="modal-header">
+        <h3>💬 Quick Messages</h3>
+        <button class="modal-close-btn" onclick="closeAllModals(); document.getElementById('quickMsgDropdown').classList.remove('show');">✖</button>
+    </div>
+    <div class="modal-body" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
+        <div id="qmContent">Loading messages...</div>
+    </div>
+</div>
 
 <div class="modal-menu manage-menu" id="manageDocsDropdown">
     <div class="modal-header">

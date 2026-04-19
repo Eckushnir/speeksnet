@@ -12,6 +12,7 @@ const HUB_URL = 'https://script.google.com/macros/s/AKfycbw3Ms5nc2bhbrjVW-da3xbZ
 const WEEKLY_KPI_URL = 'https://script.google.com/macros/s/AKfycbyVBos-uJuhaqfLMBqoz9byNkvUG06igl4RX2_cs8hH15rbp7K4uFFEN-wpQgS2ChAU/exec';
 const AUTH_URL = 'https://script.google.com/macros/s/AKfycbza40UZxFtBWwtm3Z52MqAaBtxRfilN7flkMIuE-ylco-VFli38_nK9avh4gDioHNZjKg/exec';
 const RECORDS_URL = 'https://script.google.com/macros/s/AKfycbwPMcs33YfH84ewJyg3ikqIKZtOJByEI9X2PD3cONtavJk7oJCUnGYbP6sESBE6-j2RSA/exec';
+const QUICK_MSG_URL = 'https://script.google.com/macros/s/AKfycbxpPxDhcyS5gJ90plzsW_I1zkiC9bCZ6WA3Pl22XJL3NLg6K8L5QfeYX6VNN5bECstIeg/exec';
 
 // --- 2. GLOBAL HELPERS & UTILITIES ---
 function parseNum(val) {
@@ -61,7 +62,6 @@ async function toggleManageUsers() {
         list.innerHTML = '<div style="text-align:center; padding:20px; color:#999;">Loading user database...</div>';
         
         try {
-            // Fetch fresh data from sheet to ensure we aren't editing a stale cache
             const res = await fetch(`${AUTH_URL}?v=${Date.now()}`);
             const data = await res.json();
             globalUsersData = data.users || [];
@@ -92,18 +92,11 @@ function addManageUserRow(user = { name: '', pin: '', store: 'LEE', role: 'Emplo
     const storeOptions = stores.map(s => `<option value="${s}" ${(user.store || '').toUpperCase() === s ? 'selected' : ''}>${s}</option>`).join('');
     const roleOptions = roles.map(r => `<option value="${r}" ${(user.role || '').toLowerCase() === r.toLowerCase() ? 'selected' : ''}>${r}</option>`).join('');
 
-    // Renders the row in the requested order: Name, Pin, Store, Role
     row.innerHTML = `
         <input type="text" class="u-name" placeholder="Full Name" value="${user.name}" style="flex: 2;">
-        
-        <input type="text" class="u-pin" placeholder="PIN" maxlength="4" value="${user.pin}" 
-               style="flex: 1; max-width: 80px;" 
-               oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,4)">
-               
+        <input type="text" class="u-pin" placeholder="PIN" maxlength="4" value="${user.pin}" style="flex: 1; max-width: 80px;" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,4)">
         <select class="u-store" style="flex: 1;">${storeOptions}</select>
-        
         <select class="u-role" style="flex: 1.5;">${roleOptions}</select>
-        
         <button class="del-btn" onclick="this.parentElement.remove()" title="Delete User">✖</button>
     `;
     document.getElementById('manageUsersList').appendChild(row);
@@ -120,7 +113,6 @@ async function saveManageUsers() {
         const store = row.querySelector('.u-store').value;
         const role = row.querySelector('.u-role').value;
 
-        // Only save if the row isn't completely blank
         if (name || pin) {
             if (pin.length !== 4) {
                 alert(`Error: The PIN for ${name || 'a user'} must be exactly 4 digits.`);
@@ -136,7 +128,6 @@ async function saveManageUsers() {
     btn.style.opacity = "0.7";
 
     try {
-        // Send as text/plain to bypass CORS preflight issues in Apps Script
         const res = await fetch(AUTH_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -145,7 +136,7 @@ async function saveManageUsers() {
 
         if (res.ok) {
             alert("Database successfully updated!");
-            startAuthFetch(); // Refresh the local cached credentials so logins work immediately
+            startAuthFetch(); 
             closeAllModals();
         } else {
             alert("Error saving users.");
@@ -381,23 +372,20 @@ async function checkPIN() {
         const payload = await authFetchPromise;
         if (!payload || !payload.users) throw new Error("Could not load users.");
         
-        // Directly compare the raw string inputs from the Google Sheet
         const matched = payload.users.find(u => u.pin === String(pin));
         
         if (matched) {
-            // Clean, updated session storage variables
             sessionStorage.setItem('speeksUnlocked', 'true'); 
             sessionStorage.setItem('speeksUserName', matched.name);
             sessionStorage.setItem('speeksUserRole', matched.role ? matched.role.toLowerCase() : 'employee');
             sessionStorage.setItem('speeksUserStore', matched.store ? matched.store.toUpperCase() : 'ALL');
             
-            // Hide Auth Overlay
             const authOverlay = document.getElementById('authOverlay');
             if (authOverlay) authOverlay.style.display = 'none'; 
             document.body.style.overflow = 'auto';
             document.body.classList.remove('no-scroll');
             
-            // Trigger any existing data initialization
+            applyRoleBasedUI();
             if (typeof initDashboardData === 'function') initDashboardData();
         } else {
             err.innerText = "Incorrect PIN. Please try again."; 
@@ -679,103 +667,25 @@ function renderRecords() {
 function toggleBoard(id, btn) { const el = document.getElementById(id); el.classList.toggle('open'); btn.innerText = el.classList.contains('open') ? 'Hide Leaderboard ▴' : 'See Full Leaderboard ▾'; }
 function syncAllData() { if (kpiChartCache[currentTimeframe]) renderKpiChart(kpiChartCache[currentTimeframe], document.getElementById('metricSelector')?.value); if (hubDataCache) renderLiveData(hubDataCache); fetchChartData(currentTimeframe); fetchHubData(); loadCMS(); fetchRecordsData(); }
 
-// --- 9. INITIALIZATION ROUTER ---
-document.addEventListener("DOMContentLoaded", () => {
-    setTimeout(() => document.body.classList.remove('preload'), 50);
-    if (localStorage.getItem('speeksSidebar') === 'collapsed') { document.querySelector('.sidebar')?.classList.add('collapsed'); document.querySelector('.main-content')?.classList.add('expanded'); document.querySelector('.sidebar-toggle')?.classList.add('collapsed'); }
-    
-    loadCMS();
-    if (document.getElementById('kbBody')) loadHotkeys();
-    if (document.getElementById('content-container') && document.getElementById('docSearch')) { loadDocs(); document.getElementById('docSearch').addEventListener('keyup', filterDocs); }
-    
-    // Inject the Global PIN screen and Logout button
-    injectGlobalAuth();
-    injectIdeaModal(); 
-    startAuthFetch();
 
-    // Check if they are already logged in this session
-    if (sessionStorage.getItem('speeksUnlocked') === 'true') { 
-        document.getElementById('authOverlay').style.display = 'none'; 
-        document.body.style.overflow = 'auto'; 
-        applyRoleBasedUI(); 
-        initDashboardData(); 
-    } 
-    else { 
-        document.getElementById('authOverlay').style.display = 'flex'; 
-        document.body.style.overflow = 'hidden'; 
-        document.getElementById('pinInput')?.focus(); 
-    }
-    
-    ['kpiStoreSelect', 'weeklyKpiStoreSelect', 'vw-primary', 'vw-compare'].forEach(id => document.getElementById(id)?.addEventListener('change', () => id === 'kpiStoreSelect' ? fetchKPIData(false) : (id === 'weeklyKpiStoreSelect' ? fetchWeeklyKPIs() : renderVariance())));
-    
-    if (document.getElementById('mainKpiChart')) syncAllData();
-
-// Automatically load the widgets if they exist on the page!
-    fetchScorecardData();
-    fetchAlertsData();
-    fetchEbayMetrics();
-    
-    // 🔥 The Unified District Master Board
-    fetchMasterDistrictDashboard();
-    fetchDistrictMonthlyKPIs();
-});
-
-// --- ROLE & PREFERENCE LOGIC ---
-function applyRoleBasedUI() {
-    const userRole = sessionStorage.getItem('speeksUserRole') || 'employee';
-    const userStore = sessionStorage.getItem('speeksUserStore') || 'ALL';
-
-    // 1. Optional: Hide specific things if they are JUST an employee (not a manager/admin)
-    // You can add the class 'manager-only' to any HTML element you want to hide from standard employees
-    if (userRole === 'employee') {
-        document.querySelectorAll('.manager-only').forEach(el => el.style.display = 'none');
-    }
-
-    // 2. Set Default "Home Base" Store Dropdowns (but do NOT disable them)
-    if (userStore !== 'ALL') {
-        const storeDropdowns = ['kpiStoreSelect', 'weeklyKpiStoreSelect', 'bsStoreSelect', 'vw-primary'];
-        
-        storeDropdowns.forEach(id => {
-            const dropdown = document.getElementById(id);
-            if (dropdown) {
-                // Ensure their store actually exists in this specific dropdown before setting it
-                const optionExists = Array.from(dropdown.options).some(opt => opt.value === userStore);
-                if (optionExists) {
-                    dropdown.value = userStore;
-                }
-            }
-        });
-    }
-}
-
-// --- 1. Define your Web App URL ---
-const QUICK_MSG_URL = 'https://script.google.com/macros/s/AKfycbxpPxDhcyS5gJ90plzsW_I1zkiC9bCZ6WA3Pl22XJL3NLg6K8L5QfeYX6VNN5bECstIeg/exec'; // Replace this!
-
-// --- 2. Main Logic to Load and Render Messages ---
+// --- QUICK MESSAGES MODULE ---
 async function loadQuickMessages() {
     const contentDiv = document.getElementById('qmContent');
-    
-    // Optional: caching so it doesn't re-fetch every single click
-    if (contentDiv.innerHTML !== 'Loading messages...' && contentDiv.innerHTML.trim() !== '') {
-        return; 
-    }
+    if (contentDiv.innerHTML !== 'Loading messages...' && contentDiv.innerHTML.trim() !== '') return; 
 
     try {
         const response = await fetch(QUICK_MSG_URL);
         const data = await response.json();
-        
         if (!data || data.length === 0) {
             contentDiv.innerHTML = '<p>No messages found in the Google Sheet.</p>';
             return;
         }
 
-        // Dynamically get your column names so this code adapts to your sheet automatically
         const headers = Object.keys(data[0]);
-        const categoryCol = headers[0]; // e.g. "Prompt"
-        const nameCol = headers[1];     // e.g. "Response Name"
-        const msgCol = headers[2];      // e.g. "Response Message"
+        const categoryCol = headers[0]; 
+        const nameCol = headers[1];     
+        const msgCol = headers[2];      
 
-        // Group rows into their respective Categories
         const groupedData = {};
         data.forEach(row => {
             const category = row[categoryCol];
@@ -783,7 +693,6 @@ async function loadQuickMessages() {
             groupedData[category].push(row);
         });
 
-        // Build out the HTML tree
         let html = '';
         for (const [category, items] of Object.entries(groupedData)) {
             html += `
@@ -810,33 +719,22 @@ async function loadQuickMessages() {
                 </div>
             </div>`;
         }
-        
         contentDiv.innerHTML = html;
-        
     } catch (error) {
         console.error("Error loading Quick Messages:", error);
         contentDiv.innerHTML = '<p style="color:red;">Error loading messages. Check console.</p>';
     }
 }
 
-// --- 3. Functional Scripts ---
-
-// Safe copy to clipboard feature with visual confirmation
 function copyQMToClipboard(button) {
     const textToCopy = button.getAttribute('data-message');
-    
     navigator.clipboard.writeText(textToCopy).then(() => {
         const originalIcon = button.innerText;
         button.innerText = '✅'; 
-        setTimeout(() => {
-            button.innerText = originalIcon; 
-        }, 1500);
-    }).catch(err => {
-        console.error('Failed to copy text: ', err);
-    });
+        setTimeout(() => { button.innerText = originalIcon; }, 1500);
+    }).catch(err => console.error('Failed to copy text: ', err));
 }
 
-// Security wrapper to prevent HTML injection from sheet strings
 function escapeHtml(unsafe) {
     if (!unsafe) return '';
     return unsafe.toString()
@@ -848,7 +746,6 @@ function escapeHtml(unsafe) {
 }
 
 function injectGlobalAuth() {
-    // 1. Inject the Auth Overlay if it doesn't exist
     if (!document.getElementById('authOverlay')) {
         const overlayHtml = `
         <div id="authOverlay" class="auth-page" style="display: none;">
@@ -877,53 +774,40 @@ function injectGlobalAuth() {
         document.body.insertAdjacentHTML('beforeend', overlayHtml);
     }
 
-// 2. Inject Logout Button into the top-actions bar
     const topActions = document.querySelector('.top-actions');
     if (topActions && !document.getElementById('logoutBtn')) {
-        const logoutBtn = document.createElement('a'); // Using an anchor tag matches your other pills
+        const logoutBtn = document.createElement('a'); 
         logoutBtn.className = 'quick-link-pill logout-btn';
         logoutBtn.id = 'logoutBtn';
         logoutBtn.innerHTML = '🚪 Sign Out';
-        
-        // Prevent default link behavior and run our sign out function
-        logoutBtn.onclick = (e) => { 
-            e.preventDefault(); 
-            handleSignOut(); 
-        };
-        
-        // appendChild puts it at the END of the container (Far Right)
+        logoutBtn.onclick = (e) => { e.preventDefault(); handleSignOut(); };
         topActions.appendChild(logoutBtn);
     }
 }
 
 function handleSignOut() {
-    // Clear only the new essential variables
     sessionStorage.removeItem('speeksUnlocked');
     sessionStorage.removeItem('speeksUserName');
     sessionStorage.removeItem('speeksUserRole');
     sessionStorage.removeItem('speeksUserStore');
-    location.reload(); // Reloads the page, putting them back at the PIN screen
+    location.reload(); 
 }
 
-let isIdeaSubmitting = false; // Tracks when the form is actually sent
+let isIdeaSubmitting = false; 
 
 function injectIdeaModal() {
     if (!document.getElementById('ideaModal')) {
         const modalHtml = `
         <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;" onload="handleIframeLoad()"></iframe>
-        
         <div class="modal-menu idea-menu" id="ideaModal">
             <div class="modal-header">
                 <h3>💡 Submit an Idea</h3>
                 <button class="modal-close-btn" onclick="closeAllModals()">✖</button>
             </div>
             <div class="modal-content" style="padding: 25px;">
-                
                 <form id="ideaForm" action="https://formsubmit.co/ethan.kushnir@speekstechnology.com" method="POST" enctype="multipart/form-data" target="hidden_iframe" onsubmit="prepareIdeaSubmit()">
-                    
                     <input type="hidden" name="_captcha" value="false">
                     <input type="hidden" name="_subject" id="ideaDynamicSubject" value="New SPEEKS Idea">
-                    
                     <div style="margin-bottom: 15px;">
                         <label class="idea-label">Your Name</label>
                         <input type="text" id="ideaName" name="Name" class="idea-input" required placeholder="John Doe">
@@ -941,18 +825,15 @@ function injectIdeaModal() {
                         <label class="idea-label">Idea Details</label>
                         <textarea id="ideaDesc" name="Idea_Description" required rows="5" class="idea-input" placeholder="Describe your idea here..."></textarea>
                     </div>
-                    
                     <div style="margin-bottom: 20px;">
                         <label class="idea-label">Attach a File (Optional)</label>
                         <input type="file" id="ideaFile" name="Attachment" class="idea-input" accept="image/*,.pdf,.doc,.docx" style="padding: 10px;">
                     </div>
-
                     <div style="display:flex; justify-content:flex-end; gap:10px;">
                         <button type="button" class="btn-secondary" onclick="closeAllModals()">Cancel</button>
                         <button type="submit" class="btn-primary" id="submitIdeaBtn">Submit Idea</button>
                     </div>
                 </form>
-                
                 <div id="ideaSuccess" style="display:none; text-align:center; padding: 30px 10px;">
                     <div style="font-size: 40px; margin-bottom: 10px;">🎉</div>
                     <h3 style="color: var(--sage-professional); margin-bottom: 10px; font-weight: 800;">Idea Submitted!</h3>
@@ -965,57 +846,42 @@ function injectIdeaModal() {
     }
 }
 
-// 1. Updates UI when the user clicks "Submit"
 function prepareIdeaSubmit() {
-    isIdeaSubmitting = true; // Flips the switch so the iframe knows we sent something
+    isIdeaSubmitting = true; 
     const btn = document.getElementById('submitIdeaBtn');
     btn.innerText = 'Sending...';
     btn.style.opacity = '0.7';
-    
-    // Updates the email subject line based on the dropdown category
     const category = document.getElementById('ideaCategory').value;
     document.getElementById('ideaDynamicSubject').value = 'New SPEEKS Idea: ' + category;
 }
 
-// 2. Triggers automatically when the hidden iframe finishes receiving the data
 function handleIframeLoad() {
     if (isIdeaSubmitting) {
-        // Hide form, show success message
         document.getElementById('ideaForm').style.display = 'none';
         document.getElementById('ideaSuccess').style.display = 'block';
-        
-        // Reset the button
         const btn = document.getElementById('submitIdeaBtn');
         btn.innerText = 'Submit Idea';
         btn.style.opacity = '1';
-        
-        isIdeaSubmitting = false; // Reset the switch
+        isIdeaSubmitting = false; 
     }
 }
 
+// --- WIDGET RENDERERS ---
 
-// --- WIDGET: LIVE STORE SCORECARD (PERSONALIZED & DYNAMIC) ---
 async function fetchScorecardData() {
     const container = document.getElementById('scorecard-widget-body');
     const titleElement = document.getElementById('scorecard-store-name');
     if (!container) return;
-
     container.innerHTML = '<div class="status-message" style="padding: 20px 0;">Syncing Data...</div>';
-
-    // The active Apps Script URL
     const SCORECARD_URL = 'https://script.google.com/macros/s/AKfycbwvelWpXnlXCJZQGagZX5llMCN1k6CjronBpIcenNVDTjUdPISjF0mYhHYy2ry0Vdg0_Q/exec';
 
-    // Figure out which store to show based on who is logged in
     let targetStore = sessionStorage.getItem('speeksUserStore') || 'OVL';
     if (targetStore === 'ALL' || targetStore === 'CORP') targetStore = 'OVL'; 
 
     try {
         const response = await fetch(SCORECARD_URL);
         const json = await response.json();
-        
         if (!json.success) throw new Error(json.error);
-
-        // Isolate ONLY the data for the logged-in user's store
         const storeData = json.data.find(item => String(item.store).toUpperCase() === targetStore.toUpperCase());
 
         if (!storeData) {
@@ -1023,67 +889,50 @@ async function fetchScorecardData() {
             return;
         }
 
-        if (titleElement) {
-            titleElement.innerHTML = `📊 ${storeData.store} Scorecard`;
-        }
+        if (titleElement) titleElement.innerHTML = `📊 ${storeData.store} Scorecard`;
 
         const latestScore = parseFloat(storeData.score) || 0; 
         const rawDate = storeData.date || 'Recent';
 
-        // --- Date Formatting Engine: Get the Monday of that week! ---
         let displayDate = rawDate;
         const parsedDate = new Date(rawDate);
-        
         if (!isNaN(parsedDate.getTime())) {
-            const day = parsedDate.getUTCDay(); // 0 = Sun, 1 = Mon, etc.
-            const diffToMonday = day === 0 ? -6 : 1 - day; // Math to jump back to Monday
-            
+            const day = parsedDate.getUTCDay(); 
+            const diffToMonday = day === 0 ? -6 : 1 - day; 
             const mondayDate = new Date(parsedDate);
             mondayDate.setUTCDate(parsedDate.getUTCDate() + diffToMonday);
-
-            displayDate = "Week of " + mondayDate.toLocaleDateString('en-US', { 
-                timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric' 
-            });
+            displayDate = "Week of " + mondayDate.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric' });
         }
 
-        // --- Color & Pulse Logic (ADJUSTED FOR OUT-OF-10 SCALE) ---
         const getScoreColor = (score) => {
-            if (score > 8) return 'var(--sage-professional)';  // Green (Original > 4)
-            if (score >= 6) return 'var(--idea-gold)';         // Yellow (Original 3 to 4)
-            return 'var(--red-alert)';                         // Red (Original < 3)
+            if (score > 8) return 'var(--sage-professional)';  
+            if (score >= 6) return 'var(--idea-gold)';         
+            return 'var(--red-alert)';                         
         };
-
         const scoreColor = getScoreColor(latestScore);
 
-        // Red pulsing dot if the score is under 6 (Original < 3)
-        const pulse = latestScore < 6 
-            ? '<div class="notif-dot active" style="display:block; position:absolute; top:-6px; right:-6px; width:14px; height:14px; border-width: 2px;"></div>' 
-            : '';
+        const pulse = latestScore < 6 ? '<div class="notif-dot active" style="display:block; position:absolute; top:-6px; right:-6px; width:14px; height:14px; border-width: 2px;"></div>' : '';
 
-        // Inject the final compact widget UI
         container.innerHTML = `
-        <div style="position: relative; background: #f9fafb; padding: 25px 20px; border-radius: 12px; border: 1px solid #eee; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+        <div class="scorecard-widget">
             ${pulse}
-            <div style="font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Latest Score</div>
-            <div style="font-size: 13px; font-weight: 800; color: var(--slate-charcoal); margin-bottom: 15px;">${displayDate}</div>
-            <div style="font-size: 52px; font-weight: 900; color: ${scoreColor}; line-height: 1; text-shadow: 0 4px 15px ${scoreColor}30;">
+            <div class="scorecard-label">Latest Score</div>
+            <div class="scorecard-date">${displayDate}</div>
+            <div class="scorecard-val" style="color: ${scoreColor}; text-shadow: 0 4px 15px ${scoreColor}30;">
                 ${latestScore.toFixed(1)}
             </div>
         </div>`;
-        
     } catch (error) {
         console.error('Error fetching scorecard:', error);
-        container.innerHTML = '<div style="color: var(--red-alert); font-weight: bold; padding: 20px 0; text-align: center;">Error syncing scorecard. Check Apps Script URL.</div>';
+        container.innerHTML = '<div style="color: var(--red-alert); font-weight: bold; padding: 20px 0; text-align: center;">Error syncing scorecard.</div>';
     }
 }
 
-// --- WIDGET: LIVE STORE PERFORMANCE ALERTS ---
 async function fetchAlertsData() {
     const container = document.getElementById('alerts-widget-body');
     const titleElement = document.getElementById('alerts-store-name');
     if (!container) return;
 
-    // ⚠️ PASTE YOUR ALERTS URL HERE
     const ALERTS_URL = 'https://script.google.com/macros/s/AKfycbxap-4Jgdn5-ntkv_X-vFZLTWlTB29_bDLdwcFxhWd2su3ZQJ0ZS7UpUgZAK08lOIV6/exec';
 
     let targetStore = sessionStorage.getItem('speeksUserStore') || 'OVL';
@@ -1093,11 +942,9 @@ async function fetchAlertsData() {
         const response = await fetch(ALERTS_URL);
         const json = await response.json();
         if (!json.success) throw new Error(json.error);
-
         const storeData = json.data.find(item => String(item.store).toUpperCase() === targetStore.toUpperCase());
         if (!storeData) return;
 
-        // 🔥 FIXED: Hardcoded the requested title so it stops flashing back!
         if (titleElement) titleElement.innerHTML = `🚨 Action Needed - eBay Performance`;
 
         const buildAlertCard = (title, value, severity) => {
@@ -1108,23 +955,16 @@ async function fetchAlertsData() {
 
             if (value !== '') {
                 displayText = value;
-                if (severity === 'high') {
-                    bgColor = '#fef3c7'; 
-                    textColor = '#92400e';
-                } else if (severity === 'very-high') {
-                    bgColor = '#fee2e2';
-                    textColor = '#991b1b';
-                    pulseHtml = '<div class="notif-dot active" style="display:block; position:absolute; top:-4px; right:-4px; width:12px; height:12px; border-width: 2px; z-index: 5;"></div>';
-                }
+                if (severity === 'high') { bgColor = '#fef3c7'; textColor = '#92400e'; } 
+                else if (severity === 'very-high') { bgColor = '#fee2e2'; textColor = '#991b1b'; pulseHtml = '<div class="notif-dot active" style="display:block; position:absolute; top:-4px; right:-4px; width:12px; height:12px; border-width: 2px; z-index: 5;"></div>'; }
             }
 
-            // 🔥 FIXED: Bubbles are now locked at 46px height with flex-centered text
             return `
-            <div style="position: relative; background: #f9fafb; padding: 12px 15px; border-radius: 8px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); flex: 1; min-height: 65px; box-sizing: border-box;">
+            <div class="alert-item">
                 ${pulseHtml}
-                <div style="font-size: 10px; font-weight: 800; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 15px; flex-shrink: 0;">${title}</div>
-                <div style="display: flex; flex-direction: column; align-items: flex-end; flex-grow: 1; width: 60%;">
-                    <div style="font-size: 11px; font-weight: 900; color: ${textColor}; background-color: ${bgColor}; padding: 4px 10px; border-radius: 6px; width: 100%; height: 46px; display: flex; align-items: center; justify-content: center; text-align: center; line-height: 1.2; box-sizing: border-box;">
+                <div class="alert-label">${title}</div>
+                <div class="alert-val-container">
+                    <div class="alert-val" style="color: ${textColor}; background-color: ${bgColor};">
                         ${displayText}
                     </div>
                 </div>
@@ -1145,123 +985,20 @@ async function fetchAlertsData() {
                 ${buildAlertCard('Very High', storeData.projectedVeryHigh, 'very-high')}
             </div>
         </div>`;
-    } catch (error) {
-        console.error('Error fetching alerts:', error);
-    }
+    } catch (error) { console.error('Error fetching alerts:', error); }
 }
 
-
-// --- WIDGET: LIVE EBAY TOP RATED METRICS ---
-async function fetchEbayMetrics() {
-    const container = document.getElementById('ebay-widget-body');
-    const titleElement = document.getElementById('ebay-store-name');
-    if (!container) return;
-
-    // ⚠️ PASTE YOUR KPI WEB APP URL HERE
-    const KPI_APP_URL = 'https://script.google.com/macros/s/AKfycby0ihq9A4yUQvdZdeAF9euC5jih24hP2XGG-J_balNtxop2RHBuIuigw_mH3XTeCkkhow/exec';
-
-    let targetStore = sessionStorage.getItem('speeksUserStore') || 'OVL';
-    if (targetStore === 'ALL' || targetStore === 'CORP') targetStore = 'OVL'; 
-
-    try {
-        const response = await fetch(`${KPI_APP_URL}?store=${targetStore}`);
-        const json = await response.json();
-        if (json.error) throw new Error(json.error);
-        if (titleElement) titleElement.innerHTML = `🏆 ${targetStore} eBay Top Rated Metrics`;
-
-        const ebayGroup = json.data.find(group => group.category === "eBay Metrics");
-        if (!ebayGroup || !ebayGroup.metrics) return;
-
-        let cardsHtml = '';
-
-        ebayGroup.metrics.forEach(metric => {
-            const latestValue = metric.values[metric.values.length - 1];
-            
-            // Unified soft default styling (Green)
-            let bgColor = '#d1fae5'; 
-            let textColor = '#065f46';
-            let pulseHtml = '';
-            let isRed = false;
-            let isYellow = false;
-
-            let titleText = metric.name;
-            let paramText = '';
-            
-            if (metric.name.includes('<')) {
-                let parts = metric.name.split('<');
-                titleText = parts[0].trim();
-                paramText = 'Target: < ' + parts[1].trim();
-            } else if (metric.name.includes('>')) {
-                let parts = metric.name.split('>');
-                titleText = parts[0].trim();
-                paramText = 'Target: > ' + parts[1].trim();
-            }
-
-            // Threshold Logic
-            if (metric.name.includes("Defect Rate")) {
-                if (latestValue >= 0.375) isRed = true;
-                else if (latestValue >= 0.25) isYellow = true;
-            } else if (metric.name.includes("Late Shipment")) {
-                if (latestValue >= 2.25) isRed = true;
-                else if (latestValue >= 1.50) isYellow = true;
-            } else if (metric.name.includes("Case")) {
-                if (latestValue >= 0.225) isRed = true;
-                else if (latestValue >= 0.15) isYellow = true;
-            } else if (metric.name.includes("Tracking")) {
-                if (latestValue <= 96.25) isRed = true;
-                else if (latestValue <= 97.50) isYellow = true;
-            }
-
-            // Apply Soft Bubble Colors based on Thresholds
-            if (isRed) {
-                bgColor = '#fee2e2'; // Soft Red
-                textColor = '#991b1b';
-                pulseHtml = '<div class="notif-dot active" style="display:block; position:absolute; top:-4px; right:-4px; width:12px; height:12px; border-width: 2px; z-index: 5;"></div>';
-            } else if (isYellow) {
-                bgColor = '#fef3c7'; // Soft Yellow
-                textColor = '#92400e';
-            }
-
-            cardsHtml += `
-            <div style="position: relative; background: #f9fafb; padding: 12px 15px; border-radius: 8px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); height: 100%; box-sizing: border-box; min-height: 65px;">
-                ${pulseHtml}
-                <div style="display: flex; flex-direction: column; gap: 4px;">
-                    <div style="font-size: 10px; font-weight: 800; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">${titleText}</div>
-                    <div style="font-size: 9px; font-weight: 900; color: #64748b; background: #e2e8f0; padding: 2px 6px; border-radius: 4px; width: fit-content; letter-spacing: 0.5px;">${paramText}</div>
-                </div>
-                <div style="font-size: 13px; font-weight: 900; color: ${textColor}; background-color: ${bgColor}; padding: 4px 10px; border-radius: 6px; text-align: right; line-height: 1;">
-                    ${latestValue.toFixed(2)}%
-                </div>
-            </div>`;
-        });
-
-        container.innerHTML = `
-        <div style="display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 1fr; gap: 12px; width: 100%; height: 100%;">
-            ${cardsHtml}
-        </div>`;
-        
-    } catch (error) {
-        console.error('Error fetching eBay metrics:', error);
-    }
-}
-
-// ============================================================================
-// MASTER DISTRICT DASHBOARD (PER-STORE COLUMNS)
-// ============================================================================
 async function fetchMasterDistrictDashboard() {
     const container = document.getElementById('district-master-body');
     if (!container) return;
 
     const STORES = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
     const STORE_ICONS = { 'OVL': '🟣', 'LEE': '🔵', 'WSP': '🟢', 'MPL': '🟠', 'BAL': '🔴' };
-
     const SCORECARD_URL = 'https://script.google.com/macros/s/AKfycbwvelWpXnlXCJZQGagZX5llMCN1k6CjronBpIcenNVDTjUdPISjF0mYhHYy2ry0Vdg0_Q/exec';
     const ALERTS_URL = 'https://script.google.com/macros/s/AKfycbxap-4Jgdn5-ntkv_X-vFZLTWlTB29_bDLdwcFxhWd2su3ZQJ0ZS7UpUgZAK08lOIV6/exec';
 
-    // Inside fetchMasterDistrictDashboard()...
     const renderMasterBoard = (hubData, varData, scoreData, alertsData, weeklyResults) => {
         let html = '';
-
         STORES.forEach(store => {
             const sLower = store.toLowerCase();
             const icon = STORE_ICONS[store];
@@ -1291,29 +1028,7 @@ async function fetchMasterDistrictDashboard() {
             if (sAlerts.currentHigh) issues.push({text: sAlerts.currentHigh, type: 'yellow', tip: 'Active Issue: High'});
             if (sAlerts.projectedVeryHigh) issues.push({text: sAlerts.projectedVeryHigh, type: 'red', tip: 'Projected Issue: Very High'});
             if (sAlerts.projectedHigh) issues.push({text: sAlerts.projectedHigh, type: 'yellow', tip: 'Projected Issue: High'});
-
             if (issues.length === 0) issues.push({text: 'All Clear', type: 'green', tip: 'No active or projected alerts.'});
-
-            // 🚀 FIXED BADGE LOGIC: Strict 48px height, vertically and horizontally centered text
-            const renderBadge = (b) => {
-                let bg = b.type === 'red' ? '#fee2e2' : (b.type === 'yellow' ? '#fef3c7' : '#d1fae5');
-                let txt = b.type === 'red' ? '#991b1b' : (b.type === 'yellow' ? '#92400e' : '#065f46');
-                let pulse = b.type === 'red' ? `<div class="notif-dot active" style="display:block; position:absolute; top:-4px; right:-4px; width:12px; height:12px; border-width: 2px;"></div>` : '';
-                
-                let hoverAction = `onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 10px rgba(0,0,0,0.1)'; this.querySelector('.fast-tip').style.opacity='1'; this.querySelector('.fast-tip').style.visibility='visible';" onmouseleave="this.style.transform='none'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.03)'; this.querySelector('.fast-tip').style.opacity='0'; this.querySelector('.fast-tip').style.visibility='hidden';"`;
-
-                let customTooltip = `
-                <div class="fast-tip" style="position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: var(--slate-charcoal); color: white; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; white-space: nowrap; opacity: 0; visibility: hidden; transition: opacity 0.15s ease, visibility 0.15s ease; pointer-events: none; z-index: 50; box-shadow: 0 6px 16px rgba(0,0,0,0.15); text-transform: none; letter-spacing: 0.3px;">
-                    ${b.tip}
-                    <div style="position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border-width: 5px; border-style: solid; border-color: var(--slate-charcoal) transparent transparent transparent;"></div>
-                </div>`;
-
-                return `
-                <div ${hoverAction} style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 48px; font-size: 11px; font-weight: 800; color: ${txt}; background: ${bg}; padding: 4px 10px; border-radius: 8px; text-align: center; line-height: 1.2; width: 100%; box-sizing: border-box; cursor: pointer; border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 2px 4px rgba(0,0,0,0.03); transition: transform 0.2s ease, box-shadow 0.2s ease; margin-bottom: 8px;">
-                    ${pulse}<span>${b.text}</span>
-                    ${customTooltip}
-                </div>`;
-            };
 
             // 3. BUYING & SELLING SNAPSHOT
             let rawPctStr = String(hubData[`${sLower}Pct`]);
@@ -1342,14 +1057,12 @@ async function fetchMasterDistrictDashboard() {
 
             const pctColor = salesPctNum >= 100 ? '#065f46' : '#991b1b';
             const pctBg = salesPctNum >= 100 ? '#d1fae5' : '#fee2e2';
-            
             const sellMarginColor = sellMarginNum >= 55.5 ? '#065f46' : '#991b1b';
             const sellMarginBg = sellMarginNum >= 55.5 ? '#d1fae5' : '#fee2e2';
-            
             const marginColor = (buyMarginNum > 0 && buyMarginNum < 51) ? '#991b1b' : '#065f46';
             const marginBg = (buyMarginNum > 0 && buyMarginNum < 51) ? '#fee2e2' : '#d1fae5';
 
-            // 4. LIVE VARIANCE (Totals Only)
+            // 4. LIVE VARIANCE
             const sVar = varData[store] || {};
             const totalVar = parseFloat(sVar.total) || 0;
             const vColor = totalVar < 0 ? '#991b1b' : (totalVar > 0 ? '#065f46' : '#64748b');
@@ -1383,60 +1096,39 @@ async function fetchMasterDistrictDashboard() {
                 if (displayVal === '-') { bg = '#f1f5f9'; txt = '#888'; pad = '3px 8px'; }
                 
                 return `
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                    <span style="font-size: 10px; font-weight: 800; color: #888;">${label}</span>
-                    <span style="font-size: 11px; font-weight: 900; color: ${txt}; background: ${bg}; padding: ${pad}; border-radius: 6px;">${displayVal}</span>
+                <div class="master-stat-row">
+                    <span class="master-stat-label">${label}</span>
+                    <span class="master-stat-val" style="color: ${txt}; background: ${bg}; padding: ${pad};">${displayVal}</span>
                 </div>`;
             };
 
-            // BUILD HTML
+            // BUILD HTML USING NEW CSS CLASSES
             html += `
-            <div class="card" style="margin: 0; padding: 0; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border-radius: 12px; background: #fff; overflow: hidden; display: flex; flex-direction: column; height: 100%;">
-                
-                <div style="background: var(--slate-charcoal); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 16px; font-weight: 900; color: white; display: flex; align-items: center; gap: 8px;">${icon} ${store}</span>
-                    <div style="display: flex; flex-direction: column; align-items: flex-end;">
-                        <span style="font-size: 14px; font-weight: 900; background: ${sBg}; color: ${sColor}; padding: 3px 10px; border-radius: 8px; line-height: 1;">${scoreNum.toFixed(1)}</span>
-                        <span style="font-size: 10px; font-weight: 800; color: #a0aab2; margin-top: 4px; text-transform: uppercase;">Week of ${displayDate}</span>
+            <div class="card master-card">
+                <div class="master-card-header">
+                    <span class="master-card-title">${icon} ${store}</span>
+                    <div class="master-card-score-box">
+                        <span class="master-card-score" style="background: ${sBg}; color: ${sColor};">${scoreNum.toFixed(1)}</span>
+                        <span class="master-card-date">Week of ${displayDate}</span>
                     </div>
                 </div>
 
-                <div style="padding: 16px; flex-grow: 1; display: flex; flex-direction: column; gap: 16px;">
-                    
+                <div class="master-card-body">
                     <div>
-                        <div style="font-size: 10px; font-weight: 900; color: #a0aab2; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">💰 Buying & Selling Snapshot</div>
-                        <div style="background: #f9fafb; border: 1px solid #eee; border-radius: 8px; padding: 10px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                                <span style="font-size: 10px; font-weight: 800; color: #888;">Sales vs Goal</span>
-                                <span style="font-size: 11px; font-weight: 900; color: ${pctColor}; background: ${pctBg}; padding: 3px 8px; border-radius: 6px;">${salesPct}%</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                                <span style="font-size: 10px; font-weight: 800; color: #888;">GP Track</span>
-                                <span style="font-size: 11px; font-weight: 900; color: var(--slate-charcoal);">$${gpTrack.toLocaleString()}</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                                <span style="font-size: 10px; font-weight: 800; color: #888;">Sell Margin</span>
-                                <span style="font-size: 11px; font-weight: 900; color: ${sellMarginColor}; background: ${sellMarginBg}; padding: 3px 8px; border-radius: 6px;">${sellMarginNum > 0 ? sellMargin + '%' : '-'}</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                                <span style="font-size: 10px; font-weight: 800; color: #888;">Buy Track</span>
-                                <span style="font-size: 11px; font-weight: 900; color: var(--slate-charcoal);">$${buyProj.toLocaleString()}</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 10px;">
-                                <span style="font-size: 10px; font-weight: 800; color: #888;">Buy Margin</span>
-                                <span style="font-size: 11px; font-weight: 900; color: ${marginColor}; background: ${marginBg}; padding: 3px 8px; border-radius: 6px;">${buyMargin}%</span>
-                            </div>
-                            
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <span style="font-size: 10px; font-weight: 800; color: var(--slate-charcoal);">Variance Total</span>
-                                <span style="font-size: 11px; font-weight: 900; color: ${vColor}; background: ${vBg}; padding: 3px 8px; border-radius: 6px;">${vSign}${totalVar.toFixed(2)}%</span>
-                            </div>
+                        <div class="master-section-title">💰 Buying & Selling Snapshot</div>
+                        <div class="master-stat-box">
+                            <div class="master-stat-row"><span class="master-stat-label">Sales vs Goal</span><span class="master-stat-val" style="color: ${pctColor}; background: ${pctBg};">${salesPct}%</span></div>
+                            <div class="master-stat-row"><span class="master-stat-label">GP Track</span><span class="master-stat-val" style="color: var(--slate-charcoal);">$${gpTrack.toLocaleString()}</span></div>
+                            <div class="master-stat-row"><span class="master-stat-label">Sell Margin</span><span class="master-stat-val" style="color: ${sellMarginColor}; background: ${sellMarginBg};">${sellMarginNum > 0 ? sellMargin + '%' : '-'}</span></div>
+                            <div class="master-stat-row"><span class="master-stat-label">Buy Track</span><span class="master-stat-val" style="color: var(--slate-charcoal);">$${buyProj.toLocaleString()}</span></div>
+                            <div class="master-stat-row dashed"><span class="master-stat-label">Buy Margin</span><span class="master-stat-val" style="color: ${marginColor}; background: ${marginBg};">${buyMargin}%</span></div>
+                            <div class="master-stat-row"><span class="master-stat-label">Variance Total</span><span class="master-stat-val" style="color: ${vColor}; background: ${vBg};">${vSign}${totalVar.toFixed(2)}%</span></div>
                         </div>
                     </div>
 
                     <div>
-                        <div style="font-size: 10px; font-weight: 900; color: #a0aab2; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">🗓️ Weekly Metrics</div>
-                        <div style="background: #f9fafb; border: 1px solid #eee; border-radius: 8px; padding: 10px;">
+                        <div class="master-section-title">🗓️ Weekly Metrics</div>
+                        <div class="master-stat-box">
                             ${renderLineStat('Conversion', wAvg.conversion, 'conversion')}
                             ${renderLineStat('Margin', wAvg.buyMargin, 'margin')}
                             ${renderLineStat('Trans. Time', wAvg.time, 'time')}
@@ -1448,12 +1140,16 @@ async function fetchMasterDistrictDashboard() {
                     </div>
 
                     <div style="flex-grow: 1; display: flex; flex-direction: column;">
-                        <div style="font-size: 10px; font-weight: 900; color: #a0aab2; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">🚨 Action Needed - eBay Performance</div>
+                        <div class="master-section-title">🚨 Action Needed - eBay Performance</div>
                         <div style="display: flex; flex-direction: column; gap: 6px; flex-grow: 1;">
-                            ${issues.map(renderBadge).join('')}
+                            ${issues.map(b => {
+                                let bg = b.type === 'red' ? '#fee2e2' : (b.type === 'yellow' ? '#fef3c7' : '#d1fae5');
+                                let txt = b.type === 'red' ? '#991b1b' : (b.type === 'yellow' ? '#92400e' : '#065f46');
+                                let pulse = b.type === 'red' ? `<div class="notif-dot active" style="display:block; position:absolute; top:-4px; right:-4px; width:12px; height:12px; border-width: 2px;"></div>` : '';
+                                return `<div class="master-action-badge" style="color: ${txt}; background: ${bg};">${pulse}<span>${b.text}</span><div class="fast-tip">${b.tip}</div></div>`;
+                            }).join('')}
                         </div>
                     </div>
-
                 </div>
             </div>`;
         });
@@ -1489,9 +1185,7 @@ async function fetchMasterDistrictDashboard() {
         });
 
         const weeklyResults = await Promise.all(weeklyPromises);
-
         renderMasterBoard(hubData, varData, scoreData, alertsData, weeklyResults);
-        
         localStorage.setItem('speeksDistMasterHtml', container.innerHTML);
 
     } catch (error) { 
@@ -1499,9 +1193,6 @@ async function fetchMasterDistrictDashboard() {
     }
 }
 
-// ============================================================================
-// DISTRICT MONTHLY KPI MATRIX (5-STORE AGGREGATOR)
-// ============================================================================
 let districtKpiCache = null;
 
 async function fetchDistrictMonthlyKPIs() {
@@ -1529,26 +1220,18 @@ async function fetchDistrictMonthlyKPIs() {
         );
         
         const results = await Promise.all(promises);
-
         districtKpiCache = { masterMonths: [], stores: {} };
 
         results.forEach(res => {
-            if (res.store === 'OVL' && res.data && res.data.months) {
-                districtKpiCache.masterMonths = res.data.months; 
-            }
-            
+            if (res.store === 'OVL' && res.data && res.data.months) { districtKpiCache.masterMonths = res.data.months; }
             if (res.data && !res.data.error && res.data.data) {
-                districtKpiCache.stores[res.store] = {
-                    months: res.data.months || [],
-                    data: res.data.data
-                };
+                districtKpiCache.stores[res.store] = { months: res.data.months || [], data: res.data.data };
             } else {
                 districtKpiCache.stores[res.store] = { months: [], data: [] }; 
             }
         });
 
         localStorage.setItem('speeksDistKpiData', JSON.stringify(districtKpiCache));
-
         buildDistrictKpiDropdowns();
         renderDistrictKPIs();
         
@@ -1557,7 +1240,6 @@ async function fetchDistrictMonthlyKPIs() {
     }
 }
 
-// 🚀 UPDATED DROPDOWN BUILDER (Formats to "March 2026")
 function buildDistrictKpiDropdowns() {
     if (!districtKpiCache || !districtKpiCache.masterMonths) return;
     const sel = document.getElementById('dist-kpi-month');
@@ -1565,10 +1247,8 @@ function buildDistrictKpiDropdowns() {
 
     const months = districtKpiCache.masterMonths;
     const currVal = sel.value;
-
     sel.innerHTML = '';
     
-    // Dictionary to translate abbreviations
     const monthsMap = {
         "Jan": "January", "Feb": "February", "Mar": "March", "Apr": "April",
         "May": "May", "Jun": "June", "Jul": "July", "Aug": "August",
@@ -1578,20 +1258,14 @@ function buildDistrictKpiDropdowns() {
     months.forEach((m, i) => {
         let displayText = m;
         let parts = String(m).trim().split(/[- ]/);
-        
-        // If it looks like "Mar-26" or "Mar 26"
         if (parts.length >= 2) {
             let monthPart = parts[0];
-            // Fix capitalization just in case
             monthPart = monthPart.charAt(0).toUpperCase() + monthPart.slice(1).toLowerCase();
             let fullM = monthsMap[monthPart] || monthPart;
-            
             let y = parts[parts.length - 1];
-            let fullY = y.length === 2 ? "20" + y : y; // "26" -> "2026"
-            
+            let fullY = y.length === 2 ? "20" + y : y; 
             displayText = `${fullM} ${fullY}`;
         }
-        
         sel.add(new Option(displayText, i));
     });
 
@@ -1601,19 +1275,15 @@ function buildDistrictKpiDropdowns() {
 window.renderDistrictKPIs = function() {
     const container = document.getElementById('district-kpi-body');
     const mIdx = parseInt(document.getElementById('dist-kpi-month').value);
-
     if (!districtKpiCache || !districtKpiCache.stores['OVL']) return;
 
     const targetMonthRaw = districtKpiCache.masterMonths[mIdx];
     if (!targetMonthRaw) return;
-    
     const targetMonthClean = String(targetMonthRaw).replace(/[^a-z0-9]/gi, '').toLowerCase();
 
     const STORES = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
     const baseline = districtKpiCache.stores['OVL'].data; 
-
     let html = '';
-
     if (!baseline) return;
 
     baseline.forEach(cat => {
@@ -1627,15 +1297,12 @@ window.renderDistrictKPIs = function() {
         cat.metrics.forEach(m => {
             const metricName = m.name;
             const isInverse = m.inverse;
-
             let rowHtml = `<div class="kpi-row" style="display: grid; grid-template-columns: minmax(180px, 2fr) repeat(5, minmax(80px, 1fr)); padding: 12px 20px; align-items: center; border-bottom: 1px solid #f8fafc;">
                             <div class="kpi-name-col"><span class="kpi-name" style="font-size: 11px; font-weight: 800; color: #555; text-transform: uppercase;">${metricName}</span></div>`;
 
             STORES.forEach(store => {
                 const storeObj = districtKpiCache.stores[store];
-                
                 const storeMonthIdx = storeObj.months.findIndex(m => String(m).replace(/[^a-z0-9]/gi, '').toLowerCase() === targetMonthClean);
-
                 const storeCat = storeObj.data?.find(c => c.category === cat.category);
                 const storeMetric = storeCat?.metrics.find(sm => sm.name === metricName);
 
@@ -1655,8 +1322,7 @@ window.renderDistrictKPIs = function() {
                         }
                     }
 
-                    let bg = '#f1f5f9'; 
-                    let txt = 'var(--slate-charcoal)';
+                    let bg = '#f1f5f9'; let txt = 'var(--slate-charcoal)';
 
                     if (storeMonthIdx > 0 && storeMetric.values[storeMonthIdx - 1] !== undefined && storeMetric.values[storeMonthIdx - 1] !== "") {
                         const prevVal = parseNum(storeMetric.values[storeMonthIdx - 1]);
@@ -1664,11 +1330,8 @@ window.renderDistrictKPIs = function() {
                         
                         if (Math.abs(dNum) > 0.001) {
                             const isPositiveImpact = dNum > 0 ? !isInverse : isInverse;
-                            if (isPositiveImpact) {
-                                bg = '#d1fae5'; txt = '#065f46'; 
-                            } else {
-                                bg = '#fee2e2'; txt = '#991b1b'; 
-                            }
+                            if (isPositiveImpact) { bg = '#d1fae5'; txt = '#065f46'; } 
+                            else { bg = '#fee2e2'; txt = '#991b1b'; }
                         }
                     }
 
@@ -1687,22 +1350,95 @@ window.renderDistrictKPIs = function() {
 
     container.innerHTML = html;
 };
+
+// --- DEV SANDBOX DROPDOWN LOGIC ---
 document.addEventListener("DOMContentLoaded", function() {
   const dropdownBtn = document.getElementById("devWorkspaceBtn");
   const dropdownContainer = document.getElementById("devDropdown");
 
-  // Toggle the 'open' class when the button is clicked
   if (dropdownBtn) {
     dropdownBtn.addEventListener("click", function(event) {
-      event.stopPropagation(); // Prevents the document click listener below from firing immediately
+      event.stopPropagation(); 
       dropdownContainer.classList.toggle("open");
     });
   }
 
-  // Close the dropdown if the user clicks anywhere else on the page
   document.addEventListener("click", function(event) {
     if (dropdownContainer && !dropdownContainer.contains(event.target)) {
       dropdownContainer.classList.remove("open");
     }
   });
+});
+
+// --- GLOBAL INITIALIZER ATTACHMENTS ---
+function applyRoleBasedUI() {
+    const userRole = sessionStorage.getItem('speeksUserRole') || 'employee';
+    const userStore = sessionStorage.getItem('speeksUserStore') || 'ALL';
+    const userName = sessionStorage.getItem('speeksUserName') || 'User';
+
+    const greetingEl = document.getElementById('userGreeting');
+    if (greetingEl) greetingEl.innerText = `Welcome ${userName}!`;
+
+    const userRoleClass = `role-${userRole.toLowerCase().replace(/\s+/g, '-')}`; 
+    const userStoreClass = `store-${userStore.toLowerCase()}`;
+
+    document.querySelectorAll('.dynamic-module').forEach(module => {
+        const classes = Array.from(module.classList);
+        const requiredRoles = classes.filter(c => c.startsWith('role-'));
+        const requiredStores = classes.filter(c => c.startsWith('store-'));
+
+        const passesRole = requiredRoles.length === 0 || requiredRoles.includes(userRoleClass);
+        const passesStore = requiredStores.length === 0 || requiredStores.includes(userStoreClass);
+
+        module.style.display = (passesRole && passesStore) ? 'block' : 'none';
+    });
+
+    if (userRole === 'employee') {
+        document.querySelectorAll('.manager-only').forEach(el => el.style.display = 'none');
+    }
+
+    if (userStore !== 'ALL') {
+        ['kpiStoreSelect', 'weeklyKpiStoreSelect', 'bsStoreSelect', 'vw-primary'].forEach(id => {
+            const dropdown = document.getElementById(id);
+            if (dropdown && Array.from(dropdown.options).some(opt => opt.value === userStore)) {
+                dropdown.value = userStore;
+            }
+        });
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    setTimeout(() => document.body.classList.remove('preload'), 50);
+    if (localStorage.getItem('speeksSidebar') === 'collapsed') { document.querySelector('.sidebar')?.classList.add('collapsed'); document.querySelector('.main-content')?.classList.add('expanded'); document.querySelector('.sidebar-toggle')?.classList.add('collapsed'); }
+    
+    loadCMS();
+    if (document.getElementById('kbBody')) loadHotkeys();
+    if (document.getElementById('content-container') && document.getElementById('docSearch')) { loadDocs(); document.getElementById('docSearch').addEventListener('keyup', filterDocs); }
+    
+    injectGlobalAuth();
+    injectIdeaModal(); 
+    startAuthFetch();
+
+    if (sessionStorage.getItem('speeksUnlocked') === 'true') { 
+        document.getElementById('authOverlay').style.display = 'none'; 
+        document.body.style.overflow = 'auto'; 
+        applyRoleBasedUI(); 
+        initDashboardData(); 
+    } else { 
+        if(!window.location.href.includes('index.html') && document.getElementById('authOverlay')) {
+            window.location.href = "index.html"; return;
+        }
+        document.getElementById('authOverlay').style.display = 'flex'; 
+        document.body.style.overflow = 'hidden'; 
+        document.getElementById('pinInput')?.focus(); 
+    }
+    
+    ['kpiStoreSelect', 'weeklyKpiStoreSelect', 'vw-primary', 'vw-compare'].forEach(id => document.getElementById(id)?.addEventListener('change', () => id === 'kpiStoreSelect' ? fetchKPIData(false) : (id === 'weeklyKpiStoreSelect' ? fetchWeeklyKPIs() : renderVariance())));
+    
+    if (document.getElementById('mainKpiChart')) syncAllData();
+
+    fetchScorecardData();
+    fetchAlertsData();
+    fetchMasterDistrictDashboard();
+    fetchDistrictMonthlyKPIs();
 });

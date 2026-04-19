@@ -7,10 +7,6 @@
   <link rel="stylesheet" href="styles.css">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <script src="speeks.js" defer></script>
-  <style>
-    /* Hides all dynamic content globally until the JS verifies the user's role/store */
-    .dynamic-module { display: none; }
-  </style>
 </head>
 <body class="preload">
 
@@ -24,7 +20,6 @@
     <a href="index.html" class="nav-link"><i>📊</i> <span>Metrics & Leaderboards</span></a>
     <a href="docs.html" class="nav-link"><i>📚</i> <span>Processes & Policies</span></a>
     <a href="managers.html" class="nav-link"><i>🛠️</i> <span>Manager Portal</span></a>
-    <a href="dev-sandbox.html" class="nav-link dynamic-module store-lee store-corp role-district-manager role-manager"><i>🛠️</i> <span>Devbox</span></a>
   </nav>
   
   <div class="sidebar-bottom">
@@ -66,7 +61,7 @@
     </div>
     <div class="modal-body" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
         <div id="kbSearchArea" class="kb-search-bar" style="margin-bottom: 15px;">
-            <input type="text" id="kbSearch" class="kb-search-input" onkeyup="filterKB()" placeholder="Search by Brand, Device, or Task..." style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--gen-border);">
+            <input type="text" id="kbSearch" class="kb-search-input" onkeyup="filterKB()" placeholder="Search by Brand, Device, or Task..." style="width: 100%;">
         </div>
         
         <div class="kb-table-container">
@@ -124,7 +119,7 @@
     </div>
 </div>
 
-<div id="globalOverlay" class="overlay" style="display: none;"></div>
+<div id="globalOverlay" class="overlay"></div>
 
 <main class="main-content">
   <div class="page-header">
@@ -146,18 +141,17 @@
       </button>
   
       <div class="dev-dropdown-menu">
-        <a class="dev-dropdown-link dynamic-module role-district-manager" style="cursor: pointer;" onclick="toggleManageUsers()">User Permissions</a>
+        <a class="dev-dropdown-link" style="cursor: pointer;" onclick="toggleManageUsers()">User Permissions</a>
       </div>
     </div>
-
   </div>
 
   <div class="hotbars-stack">
-
       <div class="dynamic-module role-district-manager hotbar-wrapper">
         <div class="hotbar-container">
           <span class="hotbar-label">💼 DM</span>
           <div class="hotbar-links">
+            <a href="https://drive.google.com/drive/folders/1nO9KTRU6Kb9Mv-cTAPp-kffV4DVESdC8?usp=sharing" target="_blank" class="hotbar-btn">📁 Store Manager Folder</a>
             <a href="https://docs.google.com/spreadsheets/d/1i_oV37lZXq8s91f9ymzwQlrM8WY2UlQQQ0qsRP3xLJ8/edit" target="_blank" class="hotbar-btn">💰 Sales Summary</a>  
             <a href="https://docs.google.com/spreadsheets/d/1oHOnA6wDwaLQ-EP4-CiDTkKpAdP2V7y8mOay416HDME/edit" target="_blank" class="hotbar-btn">🗓️ Weekly Metrics</a>
             <a href="https://docs.google.com/spreadsheets/d/1e4mW-pcwUMJjl2Pjry6PT180P8M8nkYL5Z4GcspQmEA/edit" target="_blank" class="hotbar-btn">🧮 Monthly KPIs</a>
@@ -236,122 +230,63 @@
           </div>
         </div>
     </div>
-
   </div>
 
-  <!--TOP ALERTS ROW-->
-  <div id="top-alerts-row" style="display: flex; flex-wrap: wrap; gap: 20px; width: 100%; margin-bottom: 30px;">
-      <div class="card dynamic-module role-manager" style="flex: 1 1 250px; max-width: 350px; margin: 0; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border-radius: 12px; background: #fff;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #f4f7f9; padding-bottom: 10px;">
-              <span id="scorecard-store-name" style="font-size: 13px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 0.5px;">📊 Store Scorecard</span>
+  <div id="top-alerts-row" class="top-alerts-row">
+      <div class="card alert-card dynamic-module role-manager">
+          <div class="alert-card-header">
+              <span id="scorecard-store-name" class="alert-store-name">📊 Store Scorecard</span>
               <a href="https://docs.google.com/spreadsheets/d/1agChyBxxwJqP-3CXo10C36-95Y_dVKXTA4GboeCaRRs/edit?gid=285677074#gid=285677074" target="_blank" class="mini-action-btn">Full Sheet ↗</a>
           </div>
-          <div id="scorecard-widget-body">
-              <div class="status-message" style="padding: 20px 0; text-align: center; color: #888;">Loading...</div>
-          </div>
+          <div id="scorecard-widget-body"><div class="status-message">Loading...</div></div>
       </div>
 
-      <div class="card dynamic-module role-manager" style="flex: 2 1 350px; margin: 0; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border-radius: 12px; background: #fff; display: flex; flex-direction: column;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #f4f7f9; padding-bottom: 10px;">
-              <span id="alerts-store-name" style="font-size: 13px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 0.5px;">🚨 Action Needed - eBay Performance</span>
+      <div class="card alert-card dynamic-module role-manager" style="flex: 3 1 600px; max-width: none;">
+          <div class="alert-card-header">
+              <span id="alerts-store-name" class="alert-store-name">🚨 Action Needed - eBay Performance</span>
               <a href="https://docs.google.com/spreadsheets/d/1QVbFYJCXtVgStuYCHw0AcPDZfcoojBgqgEgMO8jYA_E/edit?gid=0#gid=0" target="_blank" class="mini-action-btn">Full Sheet ↗</a>
           </div>
-          <div id="alerts-widget-body" style="flex-grow: 1;">
-              <div class="status-message" style="width: 100%; padding: 20px 0; text-align: center; color: #888;">Loading...</div>
-          </div>
+          <div id="alerts-widget-body"><div class="status-message">Loading...</div></div>
       </div>
-
       <div style="flex: 2 1 350px; margin: 0;"></div>
   </div>
 
-    <div class="dynamic-module role-district-manager" style="margin-bottom: 40px;">
-      
+  <div class="dynamic-module role-district-manager" style="margin-bottom: 40px;">
       <div style="margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px;">
           <h3 style="font-size: 20px; font-weight: 900; color: var(--slate-charcoal); letter-spacing: -0.5px; margin-bottom: 0;">🌐 District Command Center</h3>
       </div>
 
-      <div id="district-master-body" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 15px; align-items: stretch;">
-          <div class="status-message" style="grid-column: 1 / -1;">Building Master Dashboard...</div>
+      <div id="district-master-body" class="district-master-grid">
+          <div class="status-message">Building Master Dashboard...</div>
       </div>
 
-        <div class="card" style="margin: 20px 0 0 0; padding: 0; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border-radius: 12px; background: #fff; overflow: hidden;">
-            
-          <div style="background: var(--slate-charcoal); padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-              <span style="font-size: 16px; font-weight: 900; color: white; text-transform: uppercase; letter-spacing: 0.5px;">District Monthly KPIs</span>
-              
+      <div class="card district-master-panel">
+          <div class="district-kpi-header">
+              <span class="district-kpi-title">District Monthly KPIs</span>
               <div style="display: flex; align-items: center; justify-content: center; gap: 12px;">
-                  <span style="font-size: 13px; font-weight: 900; color: #a0aab2; text-transform: uppercase; margin-top: 1px;">Month:</span>
-                  <select id="dist-kpi-month" class="kpi-select" onchange="renderDistrictKPIs()" 
-                      style="appearance: none; background-color: #ffffff; background-image: url('data:image/svg+xml;utf8,<svg fill=%22none%22 stroke=%22%23111827%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22 viewBox=%220 0 24 24%22 xmlns=%22http://www.w3.org/2000/svg%22><path d=%22M6 9l6 6 6-6%22/></svg>'); background-repeat: no-repeat; background-position: right 14px center; background-size: 16px; color: #111827; border: 1.5px solid #d1d5db; border-radius: 8px; padding: 8px 36px 8px 16px; font-size: 14px; font-weight: 900; outline: none; cursor: pointer; min-width: 140px; text-align: center; text-align-last: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-                  </select>
+                  <span style="font-size: 13px; font-weight: 900; color: #a0aab2; text-transform: uppercase;">Month:</span>
+                  <select id="dist-kpi-month" class="dist-kpi-select" onchange="renderDistrictKPIs()"></select>
               </div>
-            </div>
+          </div>
 
           <div style="overflow-x: auto; width: 100%;">
               <div style="min-width: 750px;">
-                  <div style="display: grid; grid-template-columns: minmax(180px, 2fr) repeat(5, minmax(80px, 1fr)); padding: 15px 20px; align-items: center; background: #f9fafb; border-bottom: 2px solid #f0f0f0;">
-                      <div style="font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase;">Metric</div>
-                      <div style="text-align: center; color: var(--slate-charcoal); font-size: 14px; font-weight: 900;">🟣 OVL</div>
-                      <div style="text-align: center; color: var(--slate-charcoal); font-size: 14px; font-weight: 900;">🔵 LEE</div>
-                      <div style="text-align: center; color: var(--slate-charcoal); font-size: 14px; font-weight: 900;">🟢 WSP</div>
-                      <div style="text-align: center; color: var(--slate-charcoal); font-size: 14px; font-weight: 900;">🟠 MPL</div>
-                      <div style="text-align: center; color: var(--slate-charcoal); font-size: 14px; font-weight: 900;">🔴 BAL</div>
+                  <div class="district-kpi-table-header">
+                      <div class="district-kpi-metric-lbl">Metric</div>
+                      <div class="district-kpi-store-lbl">🟣 OVL</div>
+                      <div class="district-kpi-store-lbl">🔵 LEE</div>
+                      <div class="district-kpi-store-lbl">🟢 WSP</div>
+                      <div class="district-kpi-store-lbl">🟠 MPL</div>
+                      <div class="district-kpi-store-lbl">🔴 BAL</div>
                   </div>
-
                   <div id="district-kpi-body" class="kpi-scroll-area" style="max-height: 400px; overflow-y: auto;">
-                      <div class="status-message" style="padding: 40px 0; text-align: center; color: #888;">Compiling District KPIs...</div>
+                      <div class="status-message">Compiling District KPIs...</div>
                   </div>
               </div>
-            </div>
-
-        </div>
+          </div>
       </div>
-    
+  </div>
 </main>
 
-<script>
-  document.addEventListener("DOMContentLoaded", () => {
-    // 1. Verify Authentication
-    if (sessionStorage.getItem('speeksUnlocked') !== 'true') {
-       window.location.href = "index.html"; 
-       return;
-    } 
-    
-    // 2. Personalize the Greeting
-    const userName = sessionStorage.getItem('speeksUserName') || 'User';
-    document.getElementById('userGreeting').innerText = `Welcome ${userName}!`;
-
-    // 3. Format the Session Data into Target Classes
-    const rawRole = sessionStorage.getItem('speeksUserRole') || '';
-    const rawStore = sessionStorage.getItem('speeksUserStore') || '';
-
-    // Replaces spaces with dashes so "District Manager" becomes "role-district-manager"
-    const userRoleClass = `role-${rawRole.toLowerCase().replace(/\s+/g, '-')}`; 
-    const userStoreClass = `store-${rawStore.toLowerCase()}`;
-
-    // 4. The Smart Class-Based Access Engine
-    document.querySelectorAll('.dynamic-module').forEach(module => {
-        // Get all classes on this specific module
-        const classes = Array.from(module.classList);
-        
-        // Group the restriction classes into categories
-        const requiredRoles = classes.filter(c => c.startsWith('role-'));
-        const requiredStores = classes.filter(c => c.startsWith('store-'));
-
-        // Check if the user passes each category. 
-        // If a category array is empty (length 0), it means the module doesn't 
-        // restrict that category, so the user automatically passes.
-        const passesRole = requiredRoles.length === 0 || requiredRoles.includes(userRoleClass);
-        const passesStore = requiredStores.length === 0 || requiredStores.includes(userStoreClass);
-
-        // The user must pass ALL applied categories to see the module
-        if (passesRole && passesStore) {
-            module.style.display = 'block'; 
-        } else {
-            module.style.display = 'none'; 
-        }
-    });
-  });
-</script>
 </body>
 </html>
