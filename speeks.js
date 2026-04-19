@@ -1381,7 +1381,7 @@ function applyRoleBasedUI() {
         const passesRole = requiredRoles.length === 0 || requiredRoles.includes(userRoleClass);
         const passesStore = requiredStores.length === 0 || requiredStores.includes(userStoreClass);
 
-        module.style.display = (passesRole && passesStore) ? 'block' : 'none';
+        module.style.display = (passesRole && passesStore) ? 'flex' : 'none';
     });
 
     if (userRole === 'employee') {

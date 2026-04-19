@@ -11,10 +11,13 @@
 <body class="preload">
 
 <header class="top-nav">
-  <div class="nav-left">
+  <div class="nav-left" style="display: flex; flex-direction: column; gap: 4px; max-width: 350px;">
     <div class="brand-area" style="height: auto; padding: 0; margin: 0; border: none; flex-direction: row; align-items: center; gap: 15px;">
       <img src="images/speeks_logo.png" alt="SPEEKS Logo" class="brand-logo" style="height: 50px; width: auto; margin: 0;">
     </div>
+    <p class="mission-statement">
+      To become the #1 trusted source for electronics buy back, resale and recycle in all communities that we serve!
+    </p>
   </div>
   
   <nav class="nav-bar">
@@ -27,7 +30,6 @@
   <div class="nav-right">
     <div class="user-profile-nav">
 
-      
       <div class="dev-dropdown-container dynamic-module role-district-manager" id="devDropdown">
         <button class="dev-workspace-btn" id="devWorkspaceBtn" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); color: white; height: 42px;">
           <svg class="lock-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--idea-gold);">
@@ -54,14 +56,14 @@
         🔔 <div class="notif-dot" id="notifBadge"></div>
       </div>
     </div>
+    <div class="greeting-stack">
+      <h2 id="userGreeting">Welcome!</h2>
+      <button onclick="sessionStorage.removeItem('speeksUnlocked'); location.reload();" class="sign-out-mini">Sign Out</button>
+    
+    </div>
   </div>
-
-  <p class="mission-statement">To become the #1 trusted source for electronics buy back, resale and recycle in all communities that we serve!</p>
   
-  <div class="greeting-stack">
-    <h2 id="userGreeting">Welcome!</h2>
-    <button onclick="sessionStorage.removeItem('speeksUnlocked'); location.reload();" class="sign-out-mini">Sign Out</button>
-  </div>
+  
 </header>
 
 <div class="modal-menu manage-docs-menu" id="manageUsersDropdown">
@@ -162,6 +164,19 @@
         </div>
       </div>
 
+      <div class="dynamic-module role-district-manager hotbar-wrapper">
+        <div class="hotbar-container">
+          <span class="hotbar-label">📍 STORES</span>
+          <div class="hotbar-links">
+            <a href="https://drive.google.com/drive/folders/1dd1nkndo_Pqt3kztaHcpYWL-NgOWIP-E?usp=drive_link" target="_blank" class="hotbar-btn">🟣OVL Portal</a>  
+            <a href="https://drive.google.com/drive/folders/1Xv6ICOpEXNMeWk4QJBfS7CR6tIFRuElk?usp=drive_link" target="_blank" class="hotbar-btn">🔵LEE Portal</a>
+            <a href="https://drive.google.com/drive/folders/1xGGzefFbX7rzBnusmCUEk2GnHxJaJqhC?usp=drive_link" target="_blank" class="hotbar-btn">🟢WSP Portal</a>
+            <a href="https://drive.google.com/drive/folders/1Y5MiKRorTD1mg-lLY4SccYCqw2fZUrND?usp=drive_link" target="_blank" class="hotbar-btn">🟠WPL Portal</a>
+            <a href="https://drive.google.com/drive/folders/1LnAuBH9t7MwtrB9egWK5PFJWQqPcZ-tL?usp=drive_link" target="_blank" class="hotbar-btn">🔴BAL Portal</a>
+          </div>
+        </div>
+      </div>
+
       <div class="dynamic-module role-manager hotbar-wrapper">
         <div class="hotbar-container">
           <span class="hotbar-label">👔 MGR</span>
@@ -233,8 +248,8 @@
     </div>
   </div>
 
-  <div id="top-alerts-row" class="top-alerts-row">
-      <div class="card alert-card dynamic-module role-manager">
+  <div id="top-alerts-row" class="top-alerts-row dynamic-module role-manager">
+      <div class="card alert-card ">
           <div class="alert-card-header">
               <span id="scorecard-store-name" class="alert-store-name">📊 Store Scorecard</span>
               <a href="https://docs.google.com/spreadsheets/d/1agChyBxxwJqP-3CXo10C36-95Y_dVKXTA4GboeCaRRs/edit?gid=285677074#gid=285677074" target="_blank" class="mini-action-btn">Full Sheet ↗</a>
@@ -242,7 +257,7 @@
           <div id="scorecard-widget-body"><div class="status-message">Loading...</div></div>
       </div>
 
-      <div class="card alert-card dynamic-module role-manager" style="flex: 3 1 600px; max-width: none;">
+      <div class="card alert-card" style="flex: 3 1 600px; max-width: none;">
           <div class="alert-card-header">
               <span id="alerts-store-name" class="alert-store-name">🚨 Action Needed - eBay Performance</span>
               <a href="https://docs.google.com/spreadsheets/d/1QVbFYJCXtVgStuYCHw0AcPDZfcoojBgqgEgMO8jYA_E/edit?gid=0#gid=0" target="_blank" class="mini-action-btn">Full Sheet ↗</a>
@@ -252,8 +267,8 @@
       <div style="flex: 2 1 350px; margin: 0;"></div>
   </div>
 
-  <div class="dynamic-module role-district-manager" style="margin-bottom: 40px;">
-      <div style="margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px;">
+  <div class="dynamic-module role-district-manager" style="margin-bottom: 40px; flex-wrap: wrap;">
+      <div style="margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; width: 100%;">
           <h3 style="font-size: 20px; font-weight: 900; color: var(--slate-charcoal); letter-spacing: -0.5px; margin-bottom: 0;">🌐 District Command Center</h3>
       </div>
 
