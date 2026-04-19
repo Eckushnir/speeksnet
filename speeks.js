@@ -746,6 +746,7 @@ function escapeHtml(unsafe) {
 }
 
 function injectGlobalAuth() {
+    // KEEP THIS: This part puts the login screen on every page
     if (!document.getElementById('authOverlay')) {
         const overlayHtml = `
         <div id="authOverlay" class="auth-page" style="display: none;">
@@ -772,16 +773,6 @@ function injectGlobalAuth() {
             </div>
         </div>`;
         document.body.insertAdjacentHTML('beforeend', overlayHtml);
-    }
-
-    const topActions = document.querySelector('.top-actions');
-    if (topActions && !document.getElementById('logoutBtn')) {
-        const logoutBtn = document.createElement('a'); 
-        logoutBtn.className = 'quick-link-pill logout-btn';
-        logoutBtn.id = 'logoutBtn';
-        logoutBtn.innerHTML = '🚪 Sign Out';
-        logoutBtn.onclick = (e) => { e.preventDefault(); handleSignOut(); };
-        topActions.appendChild(logoutBtn);
     }
 }
 

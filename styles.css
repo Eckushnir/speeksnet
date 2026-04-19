@@ -618,18 +618,66 @@ body.preload { visibility: hidden !important; opacity: 0 !important; }
    ========================================================= */
 .top-nav {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 100px;
+  top: 0; left: 0; right: 0;
+  min-height: 80px; /* Allows the bar to wrap slightly if needed */
+  height: auto;
   background: var(--slate-charcoal);
   color: white;
   z-index: 100;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 30px;
+  justify-content: start;
+  padding: 15px 30px;
   box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  gap: 20px;
+}
+
+/* Left Side Layout */
+.nav-left {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 350px;
+}
+
+/* Right Side Layout */
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.mission-statement {
+  font-size: 11px;
+  font-weight: 200;
+  font-style: italic;
+  color: #888;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.user-profile-nav {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  border-right: 1px solid rgba(255,255,255,0.1);
+  padding-right: 20px;
+}
+
+.greeting-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  margin-left: auto;
+}
+
+#userGreeting {
+  font-size: 14px;
+  font-weight: 800;
+  margin: 0;
+  color: white;
+  white-space: nowrap;
 }
 
 .top-nav .brand-area { 
@@ -653,11 +701,13 @@ body.preload { visibility: hidden !important; opacity: 0 !important; }
   margin-top: 0; /* Removes the top margin from the old vertical layout */
 }
 
+/* Make sure .nav-bar links stay horizontal */
 .top-nav .nav-bar {
   display: flex;
   flex-direction: row;
   gap: 10px;
   padding: 0;
+  margin: 0;
 }
 
 .top-nav .nav-link {
@@ -702,14 +752,14 @@ body.preload { visibility: hidden !important; opacity: 0 !important; }
   background: rgba(255,255,255,0.05);
   border: 1px solid rgba(255,255,255,0.1);
   color: white;
-  width: 42px;
-  height: 42px;
+  width: 58px;
+  height: 58px;
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 18px;
+  font-size: 28px;
   transition: all 0.2s ease;
   position: relative;
   text-decoration: none;
@@ -753,9 +803,8 @@ body.preload { visibility: hidden !important; opacity: 0 !important; }
   padding-right: 0; /* Removing the old padding that accommodated absolute top-actions */
 }
 
-/* Remove the old sidebar fade mask */
 .top-nav .brand-area::after {
-  display: none; 
+  display: none;
 }
 
 .sign-out-mini {
