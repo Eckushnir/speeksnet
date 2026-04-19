@@ -10,35 +10,62 @@
 </head>
 <body class="preload">
 
-<aside class="sidebar">
+<header class="top-nav">
   <div class="brand-area">
     <img src="images/speeks_logo.png" alt="SPEEKS Logo" class="brand-logo">
-    <div class="badge">QUICK PORTAL</div>
   </div>
+  <div class="page-header">
+    <div class="page-header">
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px;">
+            <h2 id="userGreeting" style="margin: 0;">Welcome!</h2>
+            <button onclick="sessionStorage.removeItem('speeksUnlocked'); location.reload();" class="sign-out-mini">
+              Sign Out
+            </button>
+        </div>
+        
+        <p style="font-size: 14px; font-weight: 600; color: var(--sage-professional); margin-top: 5px; max-width: 600px;">
+           To become the #1 trusted source for electronics buy back, resale, and recycle in all communities that we serve!
+        </p>
+    </div>
+    
+    <div class="dev-dropdown-container dynamic-module role-district-manager" style="margin-top: 15px;" id="devDropdown">
+    
+    
+    <div class="dev-dropdown-container dynamic-module role-district-manager" style="margin-top: 15px;" id="devDropdown">
+      <button class="dev-workspace-btn" id="devWorkspaceBtn">
+        <svg class="lock-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+        <span class="dev-title">SPEEKS Tools</span>
+        <svg class="chevron-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </button>
+  
+      <div class="dev-dropdown-menu">
+        <a class="dev-dropdown-link" style="cursor: pointer;" onclick="toggleManageUsers()">User Permissions</a>
+      </div>
+    </div>
+  
   <nav class="nav-bar">
     <a href="quickportal.html" class="nav-link active"><i>⚡</i> <span>QuickPortal</span></a>
     <a href="index.html" class="nav-link"><i>📊</i> <span>Metrics & Leaderboards</span></a>
     <a href="docs.html" class="nav-link"><i>📚</i> <span>Processes & Policies</span></a>
     <a href="managers.html" class="nav-link"><i>🛠️</i> <span>Manager Portal</span></a>
   </nav>
-  
-  <div class="sidebar-bottom">
-    <a href="#" onclick="toggleIdeaModal(); return false;" class="idea-btn">
-      <i>💡</i> <span>Have an Idea?</span>
-    </a>
-  </div>
-</aside>
 
-<div class="sidebar-toggle" onclick="toggleSidebar()">◀</div>
-
-<div class="top-actions">
-   <div class="action-btn" onclick="toggleModal('quickMsgDropdown'); loadQuickMessages();" title="Quick Messages">💬</div>
-   <div class="action-btn" onclick="toggleModal('hotkeysDropdown')" title="Hotkeys & Commands">⌨️</div>
-   <div class="action-btn" onclick="toggleCalendar()" title="Strategic Calendar">📅</div>
+  <div class="top-actions">
+    <a href="#" onclick="toggleIdeaModal(); return false;" class="idea-btn action-btn" title="Have an Idea?">💡</a>
+    <div class="action-btn" onclick="toggleModal('quickMsgDropdown'); loadQuickMessages();" title="Quick Messages">💬</div>
+    <div class="action-btn" onclick="toggleModal('hotkeysDropdown')" title="Hotkeys & Commands">⌨️</div>
+    <div class="action-btn" onclick="toggleCalendar()" title="Strategic Calendar">📅</div>
     <div class="action-btn" onclick="toggleNotifs()" title="Announcements">
-        🔔 <div class="notif-dot" id="notifBadge"></div>
+      🔔 <div class="notif-dot" id="notifBadge"></div>
     </div>
-</div>
+  </div>
+</header>
 
 <div class="modal-menu manage-docs-menu" id="manageUsersDropdown">
     <div class="modal-header">
@@ -122,29 +149,6 @@
 <div id="globalOverlay" class="overlay"></div>
 
 <main class="main-content">
-  <div class="page-header">
-    <div>
-        <h2 id="userGreeting">Welcome!</h2>
-        <p>Your personalized quick-access dashboard.</p>
-    </div>
-    
-    <div class="dev-dropdown-container dynamic-module role-district-manager" style="margin-top: 15px;" id="devDropdown">
-      <button class="dev-workspace-btn" id="devWorkspaceBtn">
-        <svg class="lock-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-        </svg>
-        <span class="dev-title">SPEEKS Tools</span>
-        <svg class="chevron-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="6 9 12 15 18 9"></polyline>
-        </svg>
-      </button>
-  
-      <div class="dev-dropdown-menu">
-        <a class="dev-dropdown-link" style="cursor: pointer;" onclick="toggleManageUsers()">User Permissions</a>
-      </div>
-    </div>
-  </div>
 
   <div class="hotbars-stack">
       <div class="dynamic-module role-district-manager hotbar-wrapper">

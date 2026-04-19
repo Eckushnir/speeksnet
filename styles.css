@@ -30,23 +30,6 @@ body {
 
 body.no-scroll { overflow: hidden !important; }
 
-/* =========================================================
-   SIDEBAR STYLES
-   ========================================================= */
-.sidebar { 
-  width: 260px; 
-  background: var(--slate-charcoal); 
-  color: white; 
-  position: fixed; 
-  top: 0; bottom: 0; left: 0; 
-  z-index: 100; 
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-  display: flex; 
-  flex-direction: column; 
-  white-space: nowrap; 
-  overflow: hidden; 
-  box-shadow: 4px 0 15px rgba(0,0,0,0.05); 
-}
 
 .brand-logo {
     height: 40px; 
@@ -119,8 +102,6 @@ body.no-scroll { overflow: hidden !important; }
 .nav-link:hover { background: rgba(255,255,255,0.05); color: white; transform: translateX(3px); }
 .nav-link.active { background: var(--sage-professional); color: white; box-shadow: 0 4px 12px rgba(90, 141, 59, 0.3); }
 
-.sidebar-bottom { margin-top: auto; padding: 20px 15px; border-top: 1px solid rgba(255,255,255,0.05); }
-
 .idea-btn { 
   text-decoration: none; color: white; padding: 0 13px; height: 48px; 
   background: linear-gradient(135deg, var(--idea-gold), #d97706); 
@@ -144,18 +125,9 @@ body.no-scroll { overflow: hidden !important; }
 .sidebar.collapsed .nav-link span, .sidebar.collapsed .idea-btn span { opacity: 0; width: 0; overflow: hidden; transition: opacity 0.1s ease 0s; }
 .sidebar.collapsed .brand-area::after { opacity: 1; }
 
-.sidebar-toggle { 
-  position: fixed; left: 244px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; 
-  background: var(--slate-charcoal); color: white; border-radius: 50%; display: flex; 
-  align-items: center; justify-content: center; cursor: pointer; z-index: 105; 
-  border: 4px solid var(--bg-app); transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s; font-size: 12px; 
-}
-.sidebar-toggle.collapsed { left: 60px; transform: translateY(-50%) rotate(180deg); }
-
 /* =========================================================
    TOP ACTIONS & NOTIFICATIONS
    ========================================================= */
-.top-actions { position: absolute; top: 30px; right: 50px; z-index: 200; display: flex; gap: 15px; align-items: center; }
 
 .action-btn { 
   background: white; border: 1px solid #ddd; width: 56px; height: 56px; 
@@ -640,3 +612,168 @@ body.preload { visibility: hidden !important; opacity: 0 !important; }
 .master-action-badge:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 .master-action-badge .fast-tip { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: var(--slate-charcoal); color: white; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; white-space: nowrap; opacity: 0; visibility: hidden; transition: opacity 0.15s ease, visibility 0.15s ease; pointer-events: none; z-index: 50; box-shadow: 0 6px 16px rgba(0,0,0,0.15); }
 .master-action-badge:hover .fast-tip { opacity: 1; visibility: visible; }
+
+/* =========================================================
+   TOP NAVIGATION STYLES
+   ========================================================= */
+.top-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100px;
+  background: var(--slate-charcoal);
+  color: white;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 30px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.top-nav .brand-area { 
+  height: auto; 
+  padding: 0; 
+  margin: 0; 
+  border: none; 
+  display: flex;
+  flex-direction: row; /* Stacks logo and badge side-by-side */
+  align-items: center; 
+  gap: 15px; 
+}
+
+.top-nav .brand-logo {
+  height: 28px; /* Slims down the logo to fit the 70px nav */
+  width: auto;
+  margin: 0;
+}
+
+.top-nav .badge {
+  margin-top: 0; /* Removes the top margin from the old vertical layout */
+}
+
+.top-nav .nav-bar {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  padding: 0;
+}
+
+.top-nav .nav-link {
+  text-decoration: none;
+  color: #a0aab2;
+  padding: 0 16px;
+  height: 42px;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.top-nav .nav-link:hover {
+  background: rgba(255,255,255,0.05);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.top-nav .nav-link.active {
+  background: var(--sage-professional);
+  color: white;
+  box-shadow: 0 4px 12px rgba(90, 141, 59, 0.3);
+}
+
+/* =========================================================
+   TOP ACTIONS & ICONS
+   ========================================================= */
+.top-nav .top-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  position: static; /* Resets from previous absolute positioning */
+}
+
+.top-nav .action-btn {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: white;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  transition: all 0.2s ease;
+  position: relative;
+  text-decoration: none;
+}
+
+.top-nav .action-btn:hover {
+  border-color: var(--sage-professional);
+  background: rgba(90, 141, 59, 0.1);
+  transform: translateY(-2px);
+}
+
+.top-nav .notif-dot {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 12px;
+  height: 12px;
+  background: var(--red-alert);
+  border-radius: 50%;
+  display: none;
+  border: 2px solid var(--slate-charcoal);
+}
+
+/* =========================================================
+   MAIN CONTENT ADJUSTMENTS
+   ========================================================= */
+.main-content {
+  flex-grow: 1;
+  margin-left: 0; /* Remove old sidebar margin */
+  padding: 100px 50px 50px 50px; /* Adjust top padding to clear the 70px header */
+  transition: padding 0.3s ease;
+}
+
+/* Remove old layout classes that are no longer needed */
+.main-content.expanded, 
+.sidebar-toggle {
+  display: none;
+}
+
+.page-header {
+  padding-right: 0; /* Removing the old padding that accommodated absolute top-actions */
+}
+
+/* Remove the old sidebar fade mask */
+.top-nav .brand-area::after {
+  display: none; 
+}
+
+.sign-out-mini {
+  background: transparent;
+  border: 1px solid var(--red-alert);
+  color: var(--red-alert);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sign-out-mini:hover {
+  background: var(--red-alert);
+  color: white;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
+}
