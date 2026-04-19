@@ -107,16 +107,21 @@
           <div id="alerts-widget-body"><div class="status-message">Loading...</div></div>
       </div>
 
-      <div class="card alert-card flex-col-stretch">
+        <div class="card alert-card flex-col-stretch">
           <div class="alert-card-header goals-header-mod">
               <div class="goals-title-wrapper">
                   <span class="alert-store-name">🎯 Listing Goals</span>
                   <div id="goals-pulse-dot" class="notif-dot active goals-pulse"></div>
               </div>
               
-              <div class="goal-tab-container">
-                  <div id="tab-daily" class="goal-tab active" onclick="switchGoalTab('daily')">Daily</div>
-                  <div id="tab-weekly" class="goal-tab inactive" onclick="switchGoalTab('weekly')">Weekly</div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                  <div id="goals-date-display" style="font-size: 11px; font-weight: 800; color: var(--sage-professional); text-transform: uppercase;"></div>
+                  
+                  <button id="goals-action-btn" onclick="flipGoalCard(true)" class="mini-action-btn">Update ↗</button>
+                  <div class="goal-tab-container">
+                      <div id="tab-daily" class="goal-tab active" onclick="switchGoalTab('daily')">Daily</div>
+                      <div id="tab-weekly" class="goal-tab inactive" onclick="switchGoalTab('weekly')">Weekly</div>
+                  </div>
               </div>
           </div>
 
@@ -124,11 +129,6 @@
               <div class="flip-inner" id="goals-flipper">
                   
                   <div class="flip-front" id="goals-front-view">
-                      <div class="goals-view-header">
-                          <span id="goals-status-text" class="goals-status-lbl">Active - Testing Mode</span>
-                          <button id="goals-action-btn" onclick="flipGoalCard(true)" class="mini-action-btn update-btn">Update ↗</button>
-                      </div>
-                      
                       <div class="goals-header-row">
                           <span class="goals-header-lbl">Employee & Role</span>
                           <span class="goals-header-lbl center">Goal</span>

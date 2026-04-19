@@ -992,13 +992,13 @@ async function fetchAlertsData() {
         container.innerHTML = `
         <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 15px; align-items: stretch; width: 100%; height: 100%;">
             <div style="display: flex; flex-direction: column; gap: 8px; justify-content: space-between; height: 100%;">
-                <div style="font-size: 9px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 1px; padding-left: 5px;">Current Issues</div>
+                <div style="font-size: 10px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 1px; padding-left: 5px;">Current Issues</div>
                 ${buildAlertCard('High', storeData.currentHigh, 'high')}
                 ${buildAlertCard('Very High', storeData.currentVeryHigh, 'very-high')}
             </div>
             <div style="width: 2px; background: repeating-linear-gradient(to bottom, #e2e8f0, #e2e8f0 6px, transparent 6px, transparent 12px); margin: 20px 0 0 0;"></div>
             <div style="display: flex; flex-direction: column; gap: 8px; justify-content: space-between; height: 100%;">
-                <div style="font-size: 9px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 1px; padding-left: 5px;">Projected Issues</div>
+                <div style="font-size: 10px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 1px; padding-left: 5px;">Projected Issues</div>
                 ${buildAlertCard('High', storeData.projectedHigh, 'high')}
                 ${buildAlertCard('Very High', storeData.projectedVeryHigh, 'very-high')}
             </div>
@@ -1015,11 +1015,34 @@ async function fetchAlertsData() {
 let goalsRoster = []; 
 let liveGoalsData = [];
 let goalsTargetStore = 'OVL';
+let currentAppDate = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
+
+function runScheduledTasks() {
+    const now = new Date();
+    
+    // Get exact Central Time details
+    const ctDateStr = now.toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
+    const ctTimeString = now.toLocaleString('en-US', { timeZone: 'America/Chicago', hour: 'numeric', hour12: false });
+    const hours = parseInt(ctTimeString, 10);
+    
+    // 1. Pulse Dot Logic (Active from 9:00 AM - 9:59 AM  &  7:00 PM - 7:59 PM Central)
+    const isPulseTime = (hours === 9) || (hours === 19);
+    const dot = document.getElementById('goals-pulse-dot');
+    if (dot) dot.style.display = isPulseTime ? 'block' : 'none';
+
+    // 2. Midnight Auto-Reset Logic (Visually wipes the board if left open overnight)
+    if (ctDateStr !== currentAppDate) {
+        currentAppDate = ctDateStr;
+        const activeTab = document.getElementById('tab-daily')?.classList.contains('active') ? 'daily' : 'weekly';
+        renderGoalsScoreboard(activeTab);
+    }
+}
 
 async function initListingGoals() {
-    // Overriding Time Lock for Testing Purposes
-    document.getElementById('goals-pulse-dot').style.display = 'block';
-    document.getElementById('goals-action-btn').style.display = 'block';
+    // Run scheduled checks immediately, then run in the background every 60 seconds
+    runScheduledTasks();
+    setInterval(runScheduledTasks, 60000); 
+
     await fetchLiveGoalsData();
 }
 
@@ -1064,31 +1087,56 @@ async function fetchLiveGoalsData() {
 
 function renderGoalsScoreboard(viewType = 'daily') {
     const list = document.getElementById('goals-roster-list');
+    const dateDisplay = document.getElementById('goals-date-display');
     if (!list) return;
     let totalG = 0; let totalR = 0;
     let html = '';
 
     const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
     const now = new Date();
+    
+    // Shift week start to Monday (0=Sun, 1=Mon, 2=Tue...)
+    const day = now.getDay();
+    const diffToMonday = day === 0 ? -6 : 1 - day;
     const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - now.getDay());
+    startOfWeek.setDate(now.getDate() + diffToMonday);
     startOfWeek.setHours(0,0,0,0);
+
+    // Update Date UI
+    if (dateDisplay) {
+        if (viewType === 'daily') {
+            dateDisplay.innerText = now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+        } else {
+            dateDisplay.innerText = "Week of " + startOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+    }
 
     goalsRoster.forEach(emp => {
         let empGoal = 0; let empResult = 0; let empRole = '-';
+        let dailyStats = {};
+        
         const empRecords = liveGoalsData.filter(r => r.employee === emp);
+        const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
         empRecords.forEach(record => {
             const isToday = record.date === todayStr;
-            const isThisWeek = new Date(record.date) >= startOfWeek;
+            const recDate = new Date(record.date);
+            const isThisWeek = recDate >= startOfWeek;
 
             if (viewType === 'daily' && isToday) {
                 empGoal = parseInt(record.goal) || 0;
                 empResult = parseInt(record.result) || 0;
                 empRole = record.role || '-';
             } else if (viewType === 'weekly' && isThisWeek) {
-                empGoal += parseInt(record.goal) || 0;
-                empResult += parseInt(record.result) || 0;
+                const rG = parseInt(record.goal) || 0;
+                const rR = parseInt(record.result) || 0;
+                empGoal += rG;
+                empResult += rR;
+                
+                // Track daily breakdown for the sub-row
+                const dayIdx = (recDate.getDay() + 6) % 7; 
+                const dayName = daysOfWeek[dayIdx];
+                dailyStats[dayName] = { goal: rG, result: rR };
             }
         });
 
@@ -1101,38 +1149,64 @@ function renderGoalsScoreboard(viewType = 'daily') {
             resultClass = empResult >= empGoal ? 'delta-pos' : 'delta-neg';
         }
 
-        // BUMPED FONT SIZES (13px) & PADDING
+        // Build Daily Breakdown HTML with N/A Placeholders
+        let dailyBreakdownHtml = '';
+        if (viewType === 'weekly') {
+            const currentDayIdx = (now.getDay() + 6) % 7; // Map Sun=0 to Mon=0
+            dailyBreakdownHtml = '<div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; padding-top: 4px; border-top: 1px dashed #f0f0f0;">';
+            
+            daysOfWeek.forEach((dName, idx) => {
+                if (dailyStats[dName]) {
+                    // They logged goals! Show the score.
+                    const dG = dailyStats[dName].goal;
+                    const dR = dailyStats[dName].result;
+                    const dClass = dR >= dG ? 'color: #065f46; background: #d1fae5;' : 'color: #991b1b; background: #fee2e2;';
+                    dailyBreakdownHtml += `<div style="font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; ${dClass}">${dName}: ${dR}/${dG}</div>`;
+                } else if (idx <= currentDayIdx) {
+                    // Day has passed or is today, but no data logged. Show N/A.
+                    dailyBreakdownHtml += `<div style="font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; color: #64748b; background: #f1f5f9;" title="Not Logged">${dName}: N/A</div>`;
+                } else {
+                    // Future day in the week. Show faint placeholder.
+                    dailyBreakdownHtml += `<div style="font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; color: #cbd5e1; border: 1px dashed #e2e8f0; background: transparent;">${dName}</div>`;
+                }
+            });
+            dailyBreakdownHtml += '</div>';
+        }
+
         html += `
-        <div class="goals-roster-item" style="padding: 10px 0;">
-            <div style="display: flex; flex-direction: column; gap: 4px;">
-                <span class="goals-roster-name" style="font-size: 13px;">${emp}</span>
-                ${viewType === 'daily' && empRole !== '-' ? `<span class="goals-roster-badge" style="font-size: 10px; padding: 3px 6px;">${empRole}</span>` : ''}
+        <div style="display: flex; flex-direction: column; border-bottom: 1px solid #f8fafc; padding: 6px 0;">
+            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; align-items: center;">
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <span class="goals-roster-name" style="font-size: 13px; font-weight: 800; color: var(--slate-charcoal); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${emp}</span>
+                    ${viewType === 'daily' && empRole !== '-' ? `<span class="goals-roster-badge" style="font-size: 10px; background: #e2e8f0; color: var(--slate-charcoal); padding: 3px 6px; border-radius: 4px; display: inline-block; width: fit-content;">${empRole}</span>` : ''}
+                </div>
+                <span class="goals-roster-val target" style="font-size: 13px; text-align: center; font-weight: 900; color: var(--slate-charcoal);">${empGoal || '-'}</span>
+                <span style="display: flex; justify-content: center; align-items: center;">
+                    <span class="delta-badge ${resultClass}" style="font-size: 13px; padding: 4px 12px;">${empResult || '-'}</span>
+                </span>
             </div>
-            <span class="goals-roster-val target" style="font-size: 13px;">${empGoal || '-'}</span>
-            <span style="display: flex; justify-content: center; align-items: center;">
-                <span class="delta-badge ${resultClass}" style="font-size: 13px; padding: 5px 12px;">${empResult || '-'}</span>
-            </span>
+            ${dailyBreakdownHtml}
         </div>`;
     });
 
     list.innerHTML = html;
     document.getElementById('goals-total-target').innerText = totalG;
     
-    // Dynamic Color Logic for the Overall Total
     const actualEl = document.getElementById('goals-total-actual');
     actualEl.innerText = totalR;
     
+    // Dynamic Color Logic for Overall Total
     if (totalG > 0 || totalR > 0) {
         if (totalR >= totalG) {
-            actualEl.style.backgroundColor = '#d1fae5'; // Green BG
-            actualEl.style.color = '#065f46';           // Green Text
+            actualEl.style.backgroundColor = '#d1fae5'; 
+            actualEl.style.color = '#065f46';           
         } else {
-            actualEl.style.backgroundColor = '#fee2e2'; // Red BG
-            actualEl.style.color = '#991b1b';           // Red Text
+            actualEl.style.backgroundColor = '#fee2e2'; 
+            actualEl.style.color = '#991b1b';           
         }
     } else {
-        actualEl.style.backgroundColor = '#f1f5f9';     // Neutral BG
-        actualEl.style.color = '#475569';               // Neutral Text
+        actualEl.style.backgroundColor = '#f1f5f9';     
+        actualEl.style.color = 'var(--slate-charcoal)'; 
     }
 }
 

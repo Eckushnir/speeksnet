@@ -647,8 +647,12 @@ body.preload { visibility: hidden !important; opacity: 0 !important; }
 .flip-container { perspective: 1000px; width: 100%; flex-grow: 1; display: flex; flex-direction: column; }
 .flip-inner { transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1); transform-style: preserve-3d; position: relative; width: 100%; flex-grow: 1; display: flex; }
 .flip-front, .flip-back { backface-visibility: hidden; position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; background: #fff; }
-.flip-back { transform: rotateY(180deg); }
+/* Pointer Events fix for scrolling loss */
+.flip-front { z-index: 2; pointer-events: auto; }
+.flip-back { transform: rotateY(180deg); z-index: 1; pointer-events: none; }
 .is-flipped { transform: rotateY(180deg); }
+.is-flipped .flip-front { pointer-events: none; }
+.is-flipped .flip-back { pointer-events: auto; }
 
 .role-btn { padding: 4px 8px; font-size: 9px; font-weight: 800; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; color: #888; background: #fff; transition: all 0.2s; }
 .role-btn.active { background: var(--slate-charcoal); color: #fff; border-color: var(--slate-charcoal); }
@@ -671,11 +675,12 @@ body.preload { visibility: hidden !important; opacity: 0 !important; }
 .update-btn { margin: 0; padding: 4px 12px; font-size: 10px; cursor: pointer; border: none; background: #fee2e2; color: #991b1b; }
 .update-btn:hover { background: #fecaca; color: #7f1d1d; }
 
-.goals-header-row { display: grid; grid-template-columns: 2fr 1fr 1fr; padding-bottom: 8px; border-bottom: 1px dashed #e2e8f0; margin-bottom: 8px; }
-.goals-header-lbl { font-size: 9px; font-weight: 800; color: #a0aab2; text-transform: uppercase; }
+/* REPLACING LIGHT GRAYS WITH SLATE & TIGHTENING PADDING */
+.goals-header-row { display: grid; grid-template-columns: 2fr 1fr 1fr; padding-bottom: 4px; border-bottom: 1px dashed #e2e8f0; margin-bottom: 4px; }
+.goals-header-lbl { font-size: 10px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase; }
 .goals-header-lbl.center { text-align: center; }
 
-.goals-total-row { display: grid; grid-template-columns: 2fr 1fr 1fr; padding-top: 10px; border-top: 2px solid #f4f7f9; margin-top: auto; }
+.goals-total-row { display: grid; grid-template-columns: 2fr 1fr 1fr; padding-top: 6px; border-top: 2px solid #f4f7f9; margin-top: auto; }
 .goals-total-lbl { font-size: 11px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase; }
 .goals-total-val { font-size: 12px; font-weight: 900; text-align: center; border-radius: 6px; }
 .goals-total-val.target { color: var(--slate-charcoal); background: #f1f5f9; }
@@ -697,19 +702,19 @@ body.preload { visibility: hidden !important; opacity: 0 !important; }
 .flex-col-stretch { flex: 2 1 350px; max-width: none; margin: 0; }
 
 /* LISTING GOALS WIDGET CLEANUP */
-.goals-header-mod { margin-bottom: 10px; padding-bottom: 10px; }
+.goals-header-mod { margin-bottom: 6px; padding-bottom: 6px; }
 .goals-title-wrapper { display: flex; align-items: center; gap: 8px; }
 .goals-pulse { display: none; position: relative; width: 10px; height: 10px; border-width: 2px; top: 0; right: 0; }
-.goals-view-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.goals-view-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
 .hide-by-default { display: none; }
 .goals-roster-container { display: flex; flex-direction: column; overflow-y: auto; flex-grow: 1; min-height: 0; }
-.goals-loading-msg { padding: 20px 0; }
-.goals-edit-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.goals-loading-msg { padding: 15px 0; }
+.goals-edit-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .goals-edit-title { font-size: 11px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase; }
 .goals-close-btn { background: none; border: none; color: #888; font-size: 14px; font-weight: 900; cursor: pointer; padding: 0; }
 .goals-close-btn:hover { color: var(--red-alert); }
-.goals-edit-list-container { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; flex-grow: 1; padding-right: 5px; }
-.goals-save-btn { width: 100%; padding: 10px; margin-top: 15px; font-size: 12px; }
+.goals-edit-list-container { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; flex-grow: 1; padding-right: 5px; }
+.goals-save-btn { width: 100%; padding: 10px; margin-top: 10px; font-size: 12px; }
 
 /* NEW ROLE DOTS FOR LISTING GOALS */
 .role-dot { width: 24px; height: 24px; border-radius: 50%; border: 1px solid #cbd5e1; background: #fff; color: #64748b; font-size: 9px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; padding: 0; flex-shrink: 0; }
