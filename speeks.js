@@ -994,13 +994,6 @@ function handleIframeLoad() {
 }
 
 
-
-
-
-
-
-
-
 // --- WIDGET: LIVE STORE SCORECARD (PERSONALIZED & DYNAMIC) ---
 async function fetchScorecardData() {
     const container = document.getElementById('scorecard-widget-body');

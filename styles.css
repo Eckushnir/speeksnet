@@ -834,6 +834,8 @@ body.preload { visibility: hidden !important; opacity: 0 !important; }
 .logout-btn {
   cursor: pointer;
   margin-left: 10px; /* Gives it a slight visual separation from the bell */
+  border-radius: 16px;
+  height: 56px;
 }
 .logout-btn:hover {
   border-color: var(--red-alert) !important;
