@@ -757,6 +757,7 @@ function escapeHtml(unsafe) {
 }
 
 function injectGlobalAuth() {
+    // KEEP THIS: This part puts the login screen on every page
     if (!document.getElementById('authOverlay')) {
         const overlayHtml = `
         <div id="authOverlay" class="auth-page" style="display: none;">
@@ -783,16 +784,6 @@ function injectGlobalAuth() {
             </div>
         </div>`;
         document.body.insertAdjacentHTML('beforeend', overlayHtml);
-    }
-
-    const topActions = document.querySelector('.top-actions');
-    if (topActions && !document.getElementById('logoutBtn')) {
-        const logoutBtn = document.createElement('a'); 
-        logoutBtn.className = 'quick-link-pill logout-btn';
-        logoutBtn.id = 'logoutBtn';
-        logoutBtn.innerHTML = '🚪 Sign Out';
-        logoutBtn.onclick = (e) => { e.preventDefault(); handleSignOut(); };
-        topActions.appendChild(logoutBtn);
     }
 }
 
@@ -1363,7 +1354,7 @@ function applyRoleBasedUI() {
         const passesRole = requiredRoles.length === 0 || requiredRoles.includes(userRoleClass);
         const passesStore = requiredStores.length === 0 || requiredStores.includes(userStoreClass);
 
-        module.style.display = (passesRole && passesStore) ? 'block' : 'none';
+        module.style.display = (passesRole && passesStore) ? 'flex' : 'none';
     });
 
     if (userRole === 'employee') {
@@ -1412,4 +1403,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
     fetchScorecardData();
     fetchAlertsData();
+    fetchMasterDistrictDashboard();
+    fetchDistrictMonthlyKPIs();
 });
+
+function updateMetricRing(storeId, percent, goalAmt, trackGP) {
+    // Ensure 'storeId' matches the HTML prefixes exactly (e.g., 'lee', 'ovl')
+    const pctElement = document.getElementById(`${storeId}-pct`);
+    const barElement = document.getElementById(`${storeId}-bar`);
+    const goalElement = document.getElementById(`${storeId}-goal`);
+    const gpElement = document.getElementById(`${storeId}-t-gp`);
+
+    if (!barElement) return;
+
+    // Update the card text
+    pctElement.innerText = Math.round(percent * 100) + '%';
+    goalElement.innerText = `Goal: $${goalAmt.toLocaleString()}`;
+    gpElement.innerText = `GP Track: $${trackGP.toLocaleString()}`;
+
+    // Fill the circle 
+    // A circle with r=64 has a circumference of ~402 (2 * PI * 64)
+    const circumference = 402;
+    
+    // Calculate the offset. If percent is 1 (100%), offset is 0 (full circle)
+    const offset = circumference - (percent * circumference);
+    
+    // Apply to the SVG circle
+    barElement.style.strokeDashoffset = Math.max(0, offset);
+}
+
+// Example usage when your data fetches:
+// updateMetricRing('lee', 0.85, 15000, 12750);

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SPEEKSNET | Metrics</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <script src="speeks.js" defer></script>
+</head>
+<body class="preload">
+
+<aside class="sidebar">
+  <div class="brand-area">
+    <img src="images/speeks_logo.png" alt="SPEEKS Logo" class="brand-logo">
+    <div class="badge">PERFORMANCE METRICS</div>
+  </div>
+  <nav class="nav-bar">
+    <a href="quickportal.html" class="nav-link"><i>⚡</i> <span>QuickPortal</span></a>
+    <a href="index.html" class="nav-link active"><i>📊</i> <span>Metrics & Leaderboards</span></a>
+    <a href="docs.html" class="nav-link"><i>📚</i> <span>Processes & Policies</span></a>
+    <a href="managers.html" class="nav-link"><i>🛠️</i> <span>Manager Portal</span></a>
+  </nav>
+  
+  <div class="sidebar-bottom">
+    <a href="#" onclick="toggleIdeaModal(); return false;" class="idea-btn">
+      <i>💡</i> <span>Have an Idea?</span>
+    </a>
+  </div>
+</aside>
+
+<div class="sidebar-toggle" onclick="toggleSidebar()">◀</div>
+    <div class="top-actions">
+   <div class="action-btn" onclick="toggleModal('quickMsgDropdown'); loadQuickMessages();" title="Quick Messages">💬</div>
+   <div class="action-btn" onclick="toggleModal('hotkeysDropdown')" title="Hotkeys & Commands">⌨️</div>
+   <div class="action-btn" onclick="toggleCalendar()" title="Strategic Calendar">📅</div>
+    <div class="action-btn" onclick="toggleNotifs()" title="Announcements">
+        🔔 <div class="notif-dot" id="notifBadge"></div>
+    </div>
+</div>
+
+<div id="globalOverlay" class="overlay" style="display: none;"></div>
+
+<div class="modal-menu manage-docs-menu" id="hotkeysDropdown">
+    <div class="modal-header">
+        <h3>⌨️ Hotkeys & Commands</h3>
+        <button class="modal-close-btn" onclick="closeAllModals(); document.getElementById('hotkeysDropdown').classList.remove('show');">✖</button>
+    </div>
+    <div class="modal-body" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
+        <div id="kbSearchArea" class="kb-search-bar" style="margin-bottom: 15px;">
+            <input type="text" id="kbSearch" class="kb-search-input" onkeyup="filterKB()" placeholder="Search by Brand, Device, or Task..." style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--gen-border);">
+        </div>
+        <div class="kb-table-container">
+            <table class="kb-table" style="width: 100%; text-align: left; border-collapse: collapse;">
+              <thead>
+                <tr style="border-bottom: 2px solid #eee;">
+                    <th style="width:15%; padding-bottom: 10px;">Brand</th>
+                    <th style="width:15%; padding-bottom: 10px;">Device</th>
+                    <th style="width:35%; padding-bottom: 10px;">Hotkey/Command</th>
+                    <th style="width:20%; padding-bottom: 10px;">Objective</th>
+                </tr>
+              </thead>
+              <tbody id="kbBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal-menu" id="quickMsgDropdown">
+    <div class="modal-header">
+        <h3>💬 Quick Messages</h3>
+        <button class="modal-close-btn" onclick="closeAllModals(); document.getElementById('quickMsgDropdown').classList.remove('show');">✖</button>
+    </div>
+    <div class="modal-body" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
+        <div id="qmContent">Loading messages...</div>
+    </div>
+</div>
+
+<div class="modal-menu notif-menu" id="notifDropdown">
+    <div class="modal-header">
+        <h3>Announcements</h3>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div class="notif-tabs">
+                <button id="tab-recent" class="tab-btn active" onclick="switchAnnTab('recent')">Recent</button>
+                <button id="tab-archive" class="tab-btn" onclick="switchAnnTab('archive')">Archived</button>
+            </div>
+            <button class="modal-close-btn" onclick="closeAllModals()">✖</button>
+        </div>
+    </div>
+    <div id="ann-container" class="notif-content"><div class="status-message">Syncing...</div></div>
+    <div id="archive-container" class="notif-content" style="display: none;"><div class="status-message">Syncing...</div></div>
+</div>
+
+<div class="modal-menu calendar-menu" id="calendarDropdown">
+    <div class="modal-header">
+        <h3>Strategic Calendar</h3>
+        <button class="modal-close-btn" onclick="closeAllModals()">✖</button>
+    </div>
+    <div class="calendar-content">
+        <iframe src="https://calendar.google.com/calendar/embed?src=75d63f4495d48b06d2405686eb56d8dfe7fe74175f4dddc340588565a5545980%40group.calendar.google.com&ctz=America%2FChicago"></iframe>
+    </div>
+</div>
+
+<main class="main-content">
+  <div class="page-header">
+    <div>
+      <h2>Company Performance</h2>
+      <p>Analyze trends, track MTD goals, and review historical company records.</p>
+    </div>
+    <div class="sync-zone">
+        <span class="last-synced-text" id="lastSyncedText">Last Synced: --:--</span>
+        <button onclick="syncAllData()" class="btn-primary">🔄 Sync Data</button>
+    </div>
+  </div>
+
+  <div class="page-tabs">
+      <button class="page-tab-btn active" id="tab-btn-trends" onclick="switchPageTab('trends')">MTD & Trends</button>
+      <button class="page-tab-btn" id="tab-btn-records" onclick="switchPageTab('records')">🏆 All-Time Records</button>
+  </div>
+
+  <div id="pane-trends" class="tab-pane active">
+      <div class="metrics-grid">
+        <div class="card"><div class="card-title">OVL MTD Goal</div><div class="progress-ring"><svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="ovl-bar" cx="70" cy="70" r="64"></circle></svg><div class="percentage" id="ovl-pct">0%</div></div><div class="goal-text" id="ovl-goal">Goal: --</div><div class="tracking-box">GP Track: <span id="ovl-t-gp">--</span></div></div>
+        <div class="card"><div class="card-title">LEE MTD Goal</div><div class="progress-ring"><svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="lee-bar" cx="70" cy="70" r="64"></circle></svg><div class="percentage" id="lee-pct">0%</div></div><div class="goal-text" id="lee-goal">Goal: --</div><div class="tracking-box">GP Track: <span id="lee-t-gp">--</span></div></div>
+        <div class="card"><div class="card-title">WSP MTD Goal</div><div class="progress-ring"><svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="wsp-bar" cx="70" cy="70" r="64"></circle></svg><div class="percentage" id="wsp-pct">0%</div></div><div class="goal-text" id="wsp-goal">Goal: --</div><div class="tracking-box">GP Track: <span id="wsp-t-gp">--</span></div></div>
+      </div>
+
+      <div class="card" style="text-align:left;">
+        <div class="chart-header-flex">
+          <div class="card-title" style="margin:0;">Comparison Trends</div>
+          <div class="chart-controls">
+            <div class="timeframe-toggle">
+              <button class="toggle-btn active" id="btn-4week" onclick="setTimeframe('4-Week')">4-Week</button>
+              <button class="toggle-btn" id="btn-monthly" onclick="setTimeframe('Monthly')">Monthly</button>
+            </div>
+            <select id="metricSelector" class="metric-dropdown" onchange="loadKpiData()">
+              <option value="conversion">Customer Conversion %</option>
+              <option value="margin">Buying Margin %</option>
+              <option value="nodeals">Total No Deals</option>
+              <option value="time">Transaction Time</option>
+            </select>
+          </div>
+        </div>
+        <div class="chart-container">
+          <div id="chartLoading">Updating...</div>
+          <canvas id="mainKpiChart"></canvas>
+        </div>
+      </div>
+
+      <div class="leaderboard-container">
+        <div class="card"><div class="card-title">🏆 Revenue Rank</div><div id="rev-list"></div></div>
+        <div class="card"><div class="card-title">📈 GP Rank</div><div id="gp-list"></div></div>
+      </div>
+  </div>
+
+  <div id="pane-records" class="tab-pane">
+      <div id="recordsContainer">
+        <div class="status-message">Syncing Records Data...</div>
+      </div>
+  </div>
+
+</main>
+</body>
+</html>
