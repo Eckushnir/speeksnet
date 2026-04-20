@@ -303,6 +303,31 @@
       </div>
 
   </div>
+
+  <div style="display: grid; grid-template-columns: 6fr 4fr; gap: 30px; align-items: start; margin-top: 30px; margin-bottom: 40px;">
+          
+          <div class="card" style="margin: 0; height: 100%; min-height: 300px; display: flex; align-items: center; justify-content: center; background: #f8fafc; border: 2px dashed #cbd5e1; box-shadow: none;">
+              <span style="color: #94a3b8; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">[ 60% Area Reserved for KPI / Charts ]</span>
+          </div>
+
+          <div class="card" style="padding: 25px; margin: 0; display: flex; flex-direction: column; height: 100%;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                      <span style="font-size: 18px;">🎯</span>
+                      <h3 style="font-size: 14px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 0.5px;">District Goals</h3>
+                  </div>
+                  <div class="timeframe-toggle" style="background: #f1f5f9; padding: 4px; border-radius: 8px;">
+                      <button class="toggle-btn active" id="dm-compact-tab-daily" onclick="switchCompactDmTab('daily')" style="padding: 4px 12px; font-size: 11px;">Today</button>
+                      <button class="toggle-btn" id="dm-compact-tab-weekly" onclick="switchCompactDmTab('weekly')" style="padding: 4px 12px; font-size: 11px;">Week</button>
+                  </div>
+              </div>
+
+              <div id="dm-compact-goals-container" style="flex-grow: 1; overflow-y: auto;">
+                  <div class="status-message">Syncing Network...</div>
+              </div>
+          </div>
+
+      </div>
 </main>
 </body>
 </html>
