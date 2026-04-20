@@ -1695,6 +1695,9 @@ function buildDistrictKpiDropdowns() {
     sel.value = currVal !== "" && currVal < months.length ? currVal : months.length - 1;
 }
 
+// ==========================================
+// 1. DISTRICT MONTHLY KPIS (LEFT SIDE)
+// ==========================================
 window.renderDistrictKPIs = function() {
     const container = document.getElementById('district-kpi-body');
     const mIdx = parseInt(document.getElementById('dist-kpi-month').value);
@@ -1720,7 +1723,7 @@ window.renderDistrictKPIs = function() {
         cat.metrics.forEach(m => {
             const metricName = m.name;
             const isInverse = m.inverse;
-            let rowHtml = `<div class="kpi-row" style="display: grid; grid-template-columns: minmax(180px, 2fr) repeat(5, minmax(80px, 1fr)); padding: 12px 20px; align-items: center; border-bottom: 1px solid #f8fafc;">
+            let rowHtml = `<div class="kpi-row" style="display: grid; grid-template-columns: minmax(130px, 1.5fr) repeat(5, minmax(85px, 1fr)); padding: 12px 10px; align-items: center; border-bottom: 1px solid #f8fafc;">
                             <div class="kpi-name-col"><span class="kpi-name" style="font-size: 11px; font-weight: 800; color: #555; text-transform: uppercase;">${metricName}</span></div>`;
 
             STORES.forEach(store => {
@@ -1758,7 +1761,24 @@ window.renderDistrictKPIs = function() {
                         }
                     }
 
-                    rowHtml += `<div style="text-align: center;"><span style="display: inline-block; font-size: 11px; font-weight: 900; color: ${txt}; background: ${bg}; padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.05); box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">${displayStr}</span></div>`;
+                    rowHtml += `<div style="text-align: center;">
+                                    <span style="
+                                        display: inline-flex; 
+                                        align-items: center; 
+                                        justify-content: center; 
+                                        min-width: 65px; 
+                                        font-size: 11px; 
+                                        font-weight: 900; 
+                                        color: ${txt}; 
+                                        background: ${bg}; 
+                                        padding: 4px 10px; 
+                                        border-radius: 6px; 
+                                        border: 1px solid rgba(0,0,0,0.05); 
+                                        box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+                                        box-sizing: border-box;
+                                        white-space: nowrap;
+                                    ">${displayStr}</span>
+                                </div>`;
                 } else {
                     rowHtml += `<div style="text-align: center;"><span style="font-size: 11px; color: #ccc; font-weight: 800;">-</span></div>`;
                 }
@@ -1774,6 +1794,129 @@ window.renderDistrictKPIs = function() {
     container.innerHTML = html;
 };
 
+// ==========================================
+// 2. DISTRICT GOALS WIDGET (RIGHT SIDE)
+// ==========================================
+function renderCompactDmGoals() {
+    const cont = document.getElementById('dm-compact-goals-container');
+    if (!cont) return;
+
+    const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() + (now.getDay() === 0 ? -6 : 1 - now.getDay()));
+    startOfWeek.setHours(0,0,0,0);
+
+    const stores = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
+    let html = '<div style="display: flex; flex-direction: column;">';
+
+    stores.forEach((store, idx) => {
+        const storeData = allDistrictGoalsData.filter(r => r.store === store);
+        let tGoal = 0, tResult = 0;
+        let activeEmps = new Set();
+
+        storeData.forEach(r => {
+            const recDate = new Date(r.date);
+            const isToday = r.date === todayStr;
+            const isThisWeek = recDate >= startOfWeek;
+
+            if ((currentDmGoalView === 'daily' && isToday) || (currentDmGoalView === 'weekly' && isThisWeek)) {
+                tGoal += parseInt(r.goal) || 0;
+                tResult += parseInt(r.result) || 0;
+                activeEmps.add(r.employee);
+            }
+        });
+
+        const progress = tGoal > 0 ? Math.min(100, Math.round((tResult / tGoal) * 100)) : 0;
+        const colorClass = tResult >= tGoal && tGoal > 0 ? 'var(--sage-professional)' : (tResult > 0 ? 'var(--idea-gold)' : '#cbd5e1');
+        const isMuted = tGoal === 0 && tResult === 0 ? 'opacity: 0.6;' : '';
+
+        html += `
+        <div onclick="toggleDmStoreAccordion('${store}')" class="lb-row" style="display: grid; grid-template-columns: 50px 1fr 70px 20px; align-items: center; border-bottom: 1px solid ${idx === stores.length-1 ? 'transparent' : '#f0f0f0'}; cursor: pointer; padding: 12px 15px; margin: 0; ${isMuted}">
+            <span style="font-size: 14px; font-weight: 900; color: var(--slate-charcoal);">${store}</span>
+            <div style="padding-right: 15px;">
+                <div style="width: 100%; height: 6px; background: #f1f5f9; border-radius: 3px; overflow: hidden; display: flex;">
+                    <div style="height: 100%; width: ${progress}%; background: ${colorClass}; border-radius: 3px; transition: width 0.5s ease;"></div>
+                </div>
+            </div>
+            <div style="text-align: right; font-size: 14px; font-weight: 900; color: var(--slate-charcoal);">
+                ${tResult} <span style="font-size: 11px; color: #888; font-weight: 600;">/ ${tGoal}</span>
+            </div>
+            <div id="dm-caret-${store}" class="dm-store-caret" style="text-align: right; color: #cbd5e1; font-size: 10px; transition: transform 0.3s;">▼</div>
+        </div>`;
+
+        html += `<div id="dm-roster-${store}" class="dm-store-roster" style="display: none; background: #fdfdfd; padding: 10px 20px; border-bottom: 1px solid #e2e8f0; box-shadow: inset 0 3px 6px rgba(0,0,0,0.02);">`;
+        
+        if (activeEmps.size === 0) {
+            html += `<div style="font-size: 12px; color: #888; text-align: center; font-weight: 600; padding: 10px 0;">No data logged.</div></div>`;
+            return;
+        }
+
+        Array.from(activeEmps).forEach(emp => {
+            const empRecords = storeData.filter(r => r.employee === emp);
+            let eG = 0, eR = 0;
+            let dailyStats = {}; 
+
+            empRecords.forEach(r => {
+                const recDate = new Date(r.date);
+                if ((currentDmGoalView === 'daily' && r.date === todayStr) || (currentDmGoalView === 'weekly' && recDate >= startOfWeek)) {
+                    const rG = parseInt(r.goal) || 0;
+                    const rR = parseInt(r.result) || 0;
+                    eG += rG;
+                    eR += rR;
+                    
+                    if (currentDmGoalView === 'weekly') {
+                        const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                        const dayIdx = (recDate.getDay() + 6) % 7; 
+                        dailyStats[daysOfWeek[dayIdx]] = { goal: rG, result: rR };
+                    }
+                }
+            });
+
+            const rClass = eG > 0 || eR > 0 ? (eR >= eG ? 'delta-pos' : 'delta-neg') : 'delta-neutral';
+
+            let dailyBreakdownHtml = '';
+            if (currentDmGoalView === 'weekly') {
+                const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                const currentDayIdx = (now.getDay() + 6) % 7;
+                dailyBreakdownHtml = '<div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; padding-top: 4px; width: 100%;">';
+                
+                daysOfWeek.forEach((dName, dIdx) => {
+                    if (dailyStats[dName]) {
+                        const dG = dailyStats[dName].goal;
+                        const dR = dailyStats[dName].result;
+                        const dClass = dR >= dG ? 'color: #065f46; background: #d1fae5;' : 'color: #991b1b; background: #fee2e2;';
+                        dailyBreakdownHtml += `<div style="font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; ${dClass}">${dName}: ${dR}/${dG}</div>`;
+                    } else if (dIdx <= currentDayIdx) {
+                        dailyBreakdownHtml += `<div style="font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; color: #64748b; background: #f1f5f9;" title="Not Logged">${dName}: N/A</div>`;
+                    } else {
+                        dailyBreakdownHtml += `<div style="font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; color: #cbd5e1; border: 1px dashed #e2e8f0; background: transparent;">${dName}</div>`;
+                    }
+                });
+                dailyBreakdownHtml += '</div>';
+            }
+
+            html += `
+            <div style="display: flex; flex-direction: column; padding: 8px 0; border-bottom: 1px dashed #f0f0f0;">
+                <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 15px; align-items: center;">
+                    <span style="font-size: 13px; font-weight: 700; color: var(--slate-charcoal);">${emp}</span>
+                    <div style="display: flex; justify-content: center;">
+                        <span style="font-size: 14px; font-weight: 800; color: #64748b; width: 36px; text-align: center; display: inline-block;">${eG || '-'}</span>
+                    </div>
+                    <div style="display: flex; justify-content: center; align-items: center;">
+                        <span class="delta-badge ${rClass}" style="font-size: 14px; width: 36px; height: 26px; padding: 0; display: inline-flex; justify-content: center; align-items: center;">${eR || '-'}</span>
+                    </div>
+                </div>
+                ${dailyBreakdownHtml}
+            </div>`;
+        });
+        
+        html += `</div>`; 
+    });
+
+    html += '</div>'; 
+    cont.innerHTML = html;
+}
 
 // ============================================================================
 // WIDGET: COMPACT DISTRICT COMMAND - LISTING GOALS
@@ -1822,96 +1965,6 @@ function toggleDmStoreAccordion(store) {
     }
 }
 
-function renderCompactDmGoals() {
-    const cont = document.getElementById('dm-compact-goals-container');
-    if (!cont) return;
-
-    const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
-    const now = new Date();
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() + (now.getDay() === 0 ? -6 : 1 - now.getDay()));
-    startOfWeek.setHours(0,0,0,0);
-
-    const stores = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
-    let html = '<div style="border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; background: white;">';
-
-    stores.forEach((store, idx) => {
-        const storeData = allDistrictGoalsData.filter(r => r.store === store);
-        let tGoal = 0, tResult = 0;
-        let activeEmps = new Set();
-
-        // Calculate Totals & Find Active Employees
-        storeData.forEach(r => {
-            const recDate = new Date(r.date);
-            const isToday = r.date === todayStr;
-            const isThisWeek = recDate >= startOfWeek;
-
-            if ((currentDmGoalView === 'daily' && isToday) || (currentDmGoalView === 'weekly' && isThisWeek)) {
-                tGoal += parseInt(r.goal) || 0;
-                tResult += parseInt(r.result) || 0;
-                activeEmps.add(r.employee);
-            }
-        });
-
-        const progress = tGoal > 0 ? Math.min(100, Math.round((tResult / tGoal) * 100)) : 0;
-        const colorClass = tResult >= tGoal && tGoal > 0 ? 'var(--sage-professional)' : (tResult > 0 ? 'var(--idea-gold)' : '#cbd5e1');
-        const isMuted = tGoal === 0 && tResult === 0 ? 'opacity: 0.6;' : '';
-
-        // Top Level Store Row (Standardized with lb-row classes)
-        html += `
-        <div onclick="toggleDmStoreAccordion('${store}')" class="lb-row" style="display: grid; grid-template-columns: 50px 1fr 70px 20px; align-items: center; border-bottom: 1px solid ${idx === stores.length-1 ? 'transparent' : '#f0f0f0'}; cursor: pointer; padding: 12px 15px; margin: 0; ${isMuted}">
-            <span style="font-size: 14px; font-weight: 900; color: var(--slate-charcoal);">${store}</span>
-            <div style="padding-right: 15px;">
-                <div style="width: 100%; height: 6px; background: #f1f5f9; border-radius: 3px; overflow: hidden; display: flex;">
-                    <div style="height: 100%; width: ${progress}%; background: ${colorClass}; border-radius: 3px; transition: width 0.5s ease;"></div>
-                </div>
-            </div>
-            <div style="text-align: right; font-size: 14px; font-weight: 900; color: var(--slate-charcoal);">
-                ${tResult} <span style="font-size: 11px; color: #888; font-weight: 600;">/ ${tGoal}</span>
-            </div>
-            <div id="dm-caret-${store}" class="dm-store-caret" style="text-align: right; color: #cbd5e1; font-size: 10px; transition: transform 0.3s;">▼</div>
-        </div>`;
-
-        // The Hidden Dropdown Roster (Standardized background and strict bubble widths)
-        html += `<div id="dm-roster-${store}" class="dm-store-roster" style="display: none; background: #fdfdfd; padding: 10px 20px; border-bottom: 1px solid #e2e8f0; box-shadow: inset 0 3px 6px rgba(0,0,0,0.02);">`;
-        
-        if (activeEmps.size === 0) {
-            html += `<div style="font-size: 12px; color: #888; text-align: center; font-weight: 600; padding: 10px 0;">No data logged.</div></div>`;
-            return;
-        }
-
-        Array.from(activeEmps).forEach(emp => {
-            const empRecords = storeData.filter(r => r.employee === emp);
-            let eG = 0, eR = 0;
-
-            empRecords.forEach(r => {
-                const recDate = new Date(r.date);
-                if ((currentDmGoalView === 'daily' && r.date === todayStr) || (currentDmGoalView === 'weekly' && recDate >= startOfWeek)) {
-                    eG += parseInt(r.goal) || 0;
-                    eR += parseInt(r.result) || 0;
-                }
-            });
-
-            const rClass = eG > 0 || eR > 0 ? (eR >= eG ? 'delta-pos' : 'delta-neg') : 'delta-neutral';
-
-            html += `
-            <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 15px; align-items: center; padding: 8px 0; border-bottom: 1px dashed #f0f0f0;">
-                <span style="font-size: 13px; font-weight: 700; color: var(--slate-charcoal);">${emp}</span>
-                <div style="display: flex; justify-content: center;">
-                    <span style="font-size: 14px; font-weight: 800; color: #64748b; width: 36px; text-align: center; display: inline-block;">${eG || '-'}</span>
-                </div>
-                <div style="display: flex; justify-content: center; align-items: center;">
-                    <span class="delta-badge ${rClass}" style="font-size: 14px; width: 36px; height: 26px; padding: 0; display: inline-flex; justify-content: center; align-items: center;">${eR || '-'}</span>
-                </div>
-            </div>`;
-        });
-        
-        html += `</div>`; 
-    });
-
-    html += '</div>'; 
-    cont.innerHTML = html;
-}
 function updateMetricRing(storeId, percent, goalAmt, trackGP) {
     // Ensure 'storeId' matches the HTML prefixes exactly (e.g., 'lee', 'ovl')
     const pctElement = document.getElementById(`${storeId}-pct`);
@@ -1939,3 +1992,72 @@ function updateMetricRing(storeId, percent, goalAmt, trackGP) {
 
 // Example usage when your data fetches:
 // updateMetricRing('lee', 0.85, 15000, 12750);
+
+// ============================================================================
+// ENGINE: ZERO-FLICKER SINGLE PAGE APP (SPA) ROUTER
+// ============================================================================
+document.addEventListener('click', async (e) => {
+    const link = e.target.closest('.nav-link'); 
+    
+    // 1. Intercept internal navigation clicks on your top menu
+    if (link && link.href && link.href.startsWith(window.location.origin) && !link.href.includes('#')) {
+        e.preventDefault(); // STOP the browser from doing a hard page reload!
+        
+        const targetUrl = link.href;
+        if (targetUrl === window.location.href) return; // Ignore if clicking the active tab
+        
+        try {
+            // 2. Fetch the new page invisibly in the background
+            const response = await fetch(targetUrl);
+            const html = await response.text();
+            
+            // 3. Parse the new HTML
+            const parser = new DOMParser();
+            const newDoc = parser.parseFromString(html, 'text/html');
+            
+            // 4. Swap ONLY the main content area seamlessly
+            const currentMain = document.querySelector('.main-content');
+            const newMain = newDoc.querySelector('.main-content');
+            
+            if (currentMain && newMain) {
+                currentMain.innerHTML = newMain.innerHTML;
+            }
+
+            // 5. Update the active tab styling in the header
+            document.querySelectorAll('.nav-link').forEach(nav => nav.classList.remove('active'));
+            const newActiveLink = Array.from(document.querySelectorAll('.nav-link')).find(n => n.href === targetUrl);
+            if (newActiveLink) newActiveLink.classList.add('active');
+
+            // 6. Update Browser History / URL bar so the back button still works
+            window.history.pushState({ path: targetUrl }, '', targetUrl);
+            document.title = newDoc.title;
+
+            // 7. Reboot Page-Specific JavaScript dynamically
+            applyRoleBasedUI();
+            closeAllModals();
+
+            if (targetUrl.includes('docs.html')) {
+                if (typeof loadDocs === 'function') loadDocs();
+                const docSearch = document.getElementById('docSearch');
+                if (docSearch) docSearch.addEventListener('keyup', filterDocs);
+            } else {
+                // Reboot Dashboards for QuickPortal, Managers, or Metrics
+                if (typeof initDashboardData === 'function') initDashboardData();
+                if (document.getElementById('mainKpiChart') && typeof syncAllData === 'function') syncAllData();
+                if (typeof fetchScorecardData === 'function') fetchScorecardData();
+                if (typeof fetchAlertsData === 'function') fetchAlertsData();
+                if (typeof fetchMasterDistrictDashboard === 'function') fetchMasterDistrictDashboard();
+                if (typeof fetchDistrictMonthlyKPIs === 'function') fetchDistrictMonthlyKPIs();
+            }
+
+        } catch (err) {
+            console.error("SPA Routing failed, falling back to hard load", err);
+            window.location.href = targetUrl; // Safety fallback
+        }
+    }
+});
+
+// Handle browser Back/Forward buttons smoothly
+window.addEventListener('popstate', () => {
+    window.location.reload(); 
+});

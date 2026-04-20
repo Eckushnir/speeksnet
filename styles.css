@@ -18,6 +18,10 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+html {
+  overflow-y: scroll; /* Forces scrollbar track to prevent horizontal page shifting */
+}
+
 body { 
   font-family: 'Inter', -apple-system, sans-serif; 
   background: var(--bg-app); 
@@ -584,8 +588,8 @@ body.preload { visibility: hidden !important; opacity: 0 !important; }
 .alert-val { font-size: 11px; font-weight: 900; padding: 8px 10px; border-radius: 6px; width: 100%; min-height: 46px; height: auto; display: flex; align-items: center; justify-content: center; text-align: center; line-height: 1.3; box-sizing: border-box; white-space: normal; word-break: break-word; overflow-wrap: break-word; }
 
 .district-master-grid { display: grid; width: 100%; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 15px; align-items: stretch; }
-.district-master-panel { margin: 20px 0 0 0; padding: 0; width: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border-radius: 12px; background: #fff; overflow: hidden; }
-.district-kpi-header { background: var(--slate-charcoal); padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+.district-master-panel { margin: 20px 0 0 0; padding: 0; width: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border-radius: 16px; background: #fff; overflow: hidden; }
+.district-kpi-header { background: var(--slate-charcoal); padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; border-top-left-radius: 16px; border-top-right-radius: 16px; }
 .district-kpi-title { font-size: 16px; font-weight: 900; color: white; text-transform: uppercase; letter-spacing: 0.5px; }
 .dist-kpi-select { appearance: none; background-color: #ffffff; background-image: url('data:image/svg+xml;utf8,<svg fill="%23111827" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 9l6 6 6-6"/></svg>'); background-repeat: no-repeat; background-position: right 14px center; background-size: 16px; color: #111827; border: 1.5px solid #d1d5db; border-radius: 8px; padding: 8px 36px 8px 16px; font-size: 14px; font-weight: 900; outline: none; cursor: pointer; min-width: 140px; text-align: center; text-align-last: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
 .dist-kpi-select option { text-align: left; }
@@ -595,10 +599,10 @@ body.preload { visibility: hidden !important; opacity: 0 !important; }
 .district-kpi-store-lbl { text-align: center; color: var(--slate-charcoal); font-size: 14px; font-weight: 900; }
 
 .master-card { display: flex; flex-direction: column; height: 100%; margin: 0; padding: 0; }
-.master-card-header { background: var(--slate-charcoal); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
+.master-card-header { background: var(--slate-charcoal); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; border-top-left-radius: 16px; border-top-right-radius: 16px; }
 .master-card-title { font-size: 16px; font-weight: 900; color: white; display: flex; align-items: center; gap: 8px; }
 .master-card-score-box { display: flex; flex-direction: column; align-items: flex-end; }
-.master-card-score { font-size: 14px; font-weight: 900; padding: 3px 10px; border-radius: 8px; line-height: 1; }
+.master-card-score { font-size: 14px; font-weight: 900; padding: 4px 0; border-radius: 8px; line-height: 1; width: 58px; display: flex; justify-content: center; align-items: center; box-sizing: border-box; }
 .master-card-date { font-size: 10px; font-weight: 800; color: #a0aab2; margin-top: 4px; text-transform: uppercase; }
 .master-card-body { padding: 16px; flex-grow: 1; display: flex; flex-direction: column; gap: 16px; }
 .master-section-title { font-size: 10px; font-weight: 900; color: #a0aab2; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px; }
@@ -606,7 +610,7 @@ body.preload { visibility: hidden !important; opacity: 0 !important; }
 .master-stat-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
 .master-stat-row.dashed { border-bottom: 1px dashed #e2e8f0; padding-bottom: 10px; margin-bottom: 10px; }
 .master-stat-label { font-size: 10px; font-weight: 800; color: #888; }
-.master-stat-val { font-size: 11px; font-weight: 900; padding: 3px 8px; border-radius: 6px; }
+.master-stat-val { font-size: 11px; font-weight: 900; padding: 4px 0; border-radius: 6px; width: 58px; display: flex; justify-content: center; align-items: center; box-sizing: border-box; }
 
 .master-action-badge { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 48px; font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 8px; text-align: center; line-height: 1.2; width: 100%; box-sizing: border-box; cursor: pointer; border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 2px 4px rgba(0,0,0,0.03); transition: transform 0.2s ease, box-shadow 0.2s ease; margin-bottom: 8px; }
 .master-action-badge:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
@@ -767,9 +771,19 @@ body.preload { visibility: hidden !important; opacity: 0 !important; }
   text-decoration: none;
 }
 
-.top-nav .action-btn:hover {
+/* Standard Action Buttons (Chat, Keyboard, Calendar, Bell) -> Green Glow */
+.top-nav .action-btn:not(.idea-btn):hover {
   border-color: var(--sage-professional);
   background: rgba(90, 141, 59, 0.1);
+  box-shadow: 0 0 15px rgba(90, 141, 59, 0.4);
+  transform: translateY(-2px);
+}
+
+/* Idea Button (Lightbulb) -> Orange Glow */
+.top-nav .idea-btn.action-btn:hover {
+  border-color: var(--idea-gold);
+  background: rgba(245, 158, 11, 0.1);
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
   transform: translateY(-2px);
 }
 
@@ -912,3 +926,15 @@ body.preload { visibility: hidden !important; opacity: 0 !important; }
 .role-dot:hover { border-color: var(--sage-professional); color: var(--sage-professional); }
 .role-dot.active { background: var(--slate-charcoal); color: #fff; border-color: var(--slate-charcoal); }
 .goals-edit-roles { display: flex; gap: 6px; align-items: center; }
+
+/* Responsive adjustments for the 60/40 split */
+.district-kpi-table-header, 
+#district-kpi-body .kpi-row {
+    /* minmax changed to 85px to perfectly fit the fixed-width bubbles */
+    grid-template-columns: minmax(130px, 1.5fr) repeat(5, minmax(85px, 1fr)) !important;
+    padding: 12px 10px !important;
+}
+
+.district-kpi-store-lbl {
+    font-size: 11px !important; 
+}

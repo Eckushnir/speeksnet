@@ -165,7 +165,7 @@
 
       <div class="dynamic-module role-district-manager hotbar-wrapper">
         <div class="hotbar-container">
-          <span class="hotbar-label">📍 STORES</span>
+          <span class="hotbar-label">📍 PORTALS</span>
           <div class="hotbar-links">
             <a href="https://drive.google.com/drive/folders/1dd1nkndo_Pqt3kztaHcpYWL-NgOWIP-E?usp=drive_link" target="_blank" class="hotbar-btn">🟣OVL Portal</a>  
             <a href="https://drive.google.com/drive/folders/1Xv6ICOpEXNMeWk4QJBfS7CR6tIFRuElk?usp=drive_link" target="_blank" class="hotbar-btn">🔵LEE Portal</a>
@@ -267,42 +267,67 @@
       <div style="flex: 2 1 350px; margin: 0;"></div>
   </div>
 
-  <div class="dynamic-module role-district-manager" style="margin-bottom: 40px; flex-wrap: wrap;">
+  <div class="dynamic-module role-district-manager" style="margin-bottom: 40px; flex-direction: column; width: 100%;">
       <div style="margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; width: 100%;">
           <h3 style="font-size: 20px; font-weight: 900; color: var(--slate-charcoal); letter-spacing: -0.5px; margin-bottom: 0;">🌐 District Command Center</h3>
       </div>
 
-      <div id="district-master-body" class="district-master-grid">
+      <div id="district-master-body" class="district-master-grid" style="margin-bottom: 30px;">
           <div class="status-message">Building Master Dashboard...</div>
       </div>
 
-      <div class="card district-master-panel">
-          <div class="district-kpi-header">
-              <span class="district-kpi-title">District Monthly KPIs</span>
-              <div style="display: flex; align-items: center; justify-content: center; gap: 12px;">
-                  <span style="font-size: 13px; font-weight: 900; color: #a0aab2; text-transform: uppercase;">Month:</span>
-                  <select id="dist-kpi-month" class="dist-kpi-select" onchange="renderDistrictKPIs()"></select>
+      <div style="display: grid; grid-template-columns: 6fr 4fr; gap: 30px; align-items: stretch; width: 100%;">
+          
+          <div class="card district-master-panel" style="margin: 0; display: flex; flex-direction: column; height: 100%;">
+              <div class="district-kpi-header">
+                  <span class="district-kpi-title">District Monthly KPIs</span>
+                  <div style="display: flex; align-items: center; justify-content: center; gap: 12px;">
+                      <span style="font-size: 13px; font-weight: 900; color: #a0aab2; text-transform: uppercase;">Month:</span>
+                      <select id="dist-kpi-month" class="dist-kpi-select" onchange="renderDistrictKPIs()"></select>
+                  </div>
+              </div>
+
+              <div style="overflow-x: auto; width: 100%; flex-grow: 1;">
+                  <div style="min-width: 580px;">
+                      <div class="district-kpi-table-header">
+                          <div class="district-kpi-metric-lbl">Metric</div>
+                          <div class="district-kpi-store-lbl">🟣 OVL</div>
+                          <div class="district-kpi-store-lbl">🔵 LEE</div>
+                          <div class="district-kpi-store-lbl">🟢 WSP</div>
+                          <div class="district-kpi-store-lbl">🟠 MPL</div>
+                          <div class="district-kpi-store-lbl">🔴 BAL</div>
+                      </div>
+                      <div id="district-kpi-body" class="kpi-scroll-area" style="max-height: 280px; overflow-y: auto;">
+                          <div class="status-message">Compiling District KPIs...</div>
+                      </div>
+                  </div>
               </div>
           </div>
 
-          <div style="overflow-x: auto; width: 100%;">
-              <div style="min-width: 750px;">
-                  <div class="district-kpi-table-header">
-                      <div class="district-kpi-metric-lbl">Metric</div>
-                      <div class="district-kpi-store-lbl">🟣 OVL</div>
-                      <div class="district-kpi-store-lbl">🔵 LEE</div>
-                      <div class="district-kpi-store-lbl">🟢 WSP</div>
-                      <div class="district-kpi-store-lbl">🟠 MPL</div>
-                      <div class="district-kpi-store-lbl">🔴 BAL</div>
-                  </div>
-                  <div id="district-kpi-body" class="kpi-scroll-area" style="max-height: 400px; overflow-y: auto;">
-                      <div class="status-message">Compiling District KPIs...</div>
+          <div class="card district-master-panel" style="margin: 0; display: flex; flex-direction: column; height: 100%;">
+              <div class="district-kpi-header">
+                  <span class="district-kpi-title">Daily/Weekly Listing Goals</span>
+                  <style>
+                      .dark-toggle .toggle-btn { color: #a0aab2; }
+                      .dark-toggle .toggle-btn:hover:not(.active) { color: white; }
+                      .dark-toggle .toggle-btn.active { color: var(--slate-charcoal); background: white; }
+                  </style>
+                  <div class="timeframe-toggle dark-toggle" style="background: rgba(255,255,255,0.1); padding: 4px; border-radius: 8px;">
+                      <button class="toggle-btn active" id="dm-compact-tab-daily" onclick="switchCompactDmTab('daily')" style="padding: 4px 12px; font-size: 11px;">Today</button>
+                      <button class="toggle-btn" id="dm-compact-tab-weekly" onclick="switchCompactDmTab('weekly')" style="padding: 4px 12px; font-size: 11px;">Week</button>
                   </div>
               </div>
+              
+              <div style="padding: 20px; flex-grow: 1; display: flex; flex-direction: column; justify-content: center;">
+                  
+                  <div id="dm-compact-goals-container" style="border: 1px solid #e2e8f0; border-radius: 10px; background: white; overflow-y: auto; max-height: 280px; width: 100%;">
+                      <div class="status-message">Syncing Network...</div>
+                  </div>
+                  
+              </div>
           </div>
+
       </div>
-  </div>
 </main>
-
 </body>
 </html>
