@@ -938,3 +938,78 @@ body.preload { visibility: hidden !important; opacity: 0 !important; }
 .district-kpi-store-lbl {
     font-size: 11px !important; 
 }
+
+/* =========================================================
+   EMPLOYEE DASHBOARD WIDGETS
+   ========================================================= */
+.employee-dashboard-row {
+    display: flex;
+    gap: 30px;
+    margin-top: 10px;
+    margin-bottom: 30px;
+}
+
+.employee-spacer {
+    flex: 1 1 calc(33.33% - 20px);
+    max-width: calc(33.33% - 20px);
+}
+
+.employee-widget-card {
+    flex: 1 1 calc(33.33% - 20px);
+    max-width: calc(33.33% - 20px);
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.employee-widget-body {
+    padding: 20px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    background: white;
+    height: 215px; /* STRICTLY LOCKS THE COMPACT HEIGHT */
+    overflow: hidden; /* Prevents scrolling on this specific widget */
+}
+
+.employee-kpi-body {
+    padding: 10px 20px 15px 20px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    background: white;
+    height: 215px; /* MATCHES EXACTLY, FORCING THE OVERFLOW TO SCROLL */
+    overflow-y: auto;
+}
+
+/* Header Utilities */
+.district-kpi-title-wrapper { display: flex; align-items: center; gap: 8px; }
+.district-kpi-date-wrapper { display: flex; align-items: center; gap: 10px; }
+.emp-kpi-date { font-size: 10px; font-weight: 800; color: #a0aab2; text-transform: uppercase; }
+
+/* Goals Inner Styles */
+.emp-goals-top-row { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 25px; }
+.emp-goal-col { display: flex; flex-direction: column; gap: 4px; }
+.emp-goal-col-right { text-align: right; }
+.emp-goal-label { font-size: 11px; font-weight: 900; color: #888; letter-spacing: 0.5px; text-transform: uppercase; }
+.emp-goal-value { font-size: 36px; font-weight: 900; color: var(--slate-charcoal); line-height: 1; }
+.emp-week-section { display: flex; flex-direction: column; gap: 8px; border-top: 2px solid #f4f7f9; padding-top: 20px; }
+
+/* Daily Breakdown Pills */
+.emp-pill-container { display: flex; gap: 8px; margin-top: 5px; width: 100%; }
+.emp-daily-pill { flex: 1; min-width: 0; text-align: center; font-size: 10px; font-weight: 800; padding: 6px 2px; border-radius: 6px; white-space: nowrap; }
+.pill-pass { color: #065f46; background: #d1fae5; }
+.pill-fail { color: #991b1b; background: #fee2e2; }
+.pill-null { color: #64748b; background: #f1f5f9; }
+.pill-future { color: #cbd5e1; border: 1px dashed #e2e8f0; background: transparent; }
+
+/* Weekly KPI Inner Styles */
+.emp-kpi-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #f0f0f0; }
+.emp-kpi-info { display: flex; flex-direction: column; gap: 4px; }
+.emp-kpi-title { font-size: 11px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase; }
+.emp-kpi-avg { font-size: 11px; font-weight: 700; color: #a0aab2; text-transform: uppercase; }
+.emp-kpi-avg strong { color: #888; }
+.emp-kpi-badge { padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 900; }
+.badge-pass { background: #d1fae5; color: #065f46; }
+.badge-fail { background: #fee2e2; color: #991b1b; }
+.badge-null { background: #f1f5f9; color: #888; }

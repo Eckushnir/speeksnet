@@ -607,6 +607,8 @@ function initDashboardData() {
     setTimeout(preloadAllStores, 4000); 
     setTimeout(initListingGoals, 200);
     setTimeout(fetchDmGoalsData, 1000);
+    setTimeout(fetchAndRenderEmployeeGoals, 1100);
+    setTimeout(fetchAndRenderEmployeeKPIs, 1200);
 }
 
 // --- 8. MODULE: METRICS (CHARTS & RECORDS) ---
@@ -672,7 +674,7 @@ function renderRecords() {
     const map = {}; recordsCache.forEach(r => { let l = String(r.label).trim(), s = String(r.section).toUpperCase().trim(); if (!map[l]) map[l] = { c: null, s: [] }; if (s === 'COMPANY' || s === 'COMPANY WIDE') map[l].c = r; else map[l].s.push(r); });
     let bC = 0; cont.innerHTML = '<div class="records-masonry-grid">' + Object.keys(map).map(l => {
         let d = map[l]; bC++; let oId = 'overflow-board-' + bC; d.s.sort((a, b) => parseNum(b.value) - parseNum(a.value)); let cR = d.c || d.s[0];
-        return `<div class="record-metric-card"><div class="rmc-header">${l}</div>${cR ? `<div class="rmc-champion"><div class="rmc-crown">👑 Company Record</div><div class="rmc-champ-val">${cR.value || '-'}</div><div class="rmc-champ-sub">${cR.subtext || ''}</div></div>` : ''}${d.s.length ? `<div class="rmc-list">${d.s.slice(0, 3).map((s, i) => `<div class="rmc-list-item"><div class="rmc-rank">${i===0?'🥇':(i===1?'🥈':'🥉')}</div><div class="rmc-store">${s.section}</div><div class="rmc-score"><span class="rmc-score-val">${s.value || '-'}</span><span class="rmc-score-date">${s.subtext || ''}</span></div></div>`).join('')}${d.s.length > 3 ? `<div id="${oId}" class="hidden-board">${d.s.slice(3).map((s, i) => `<div class="rmc-list-item"><div class="rmc-rank" style="font-size:11px; color:#999;">#${i+4}</div><div class="rmc-store">${s.section}</div><div class="rmc-score"><span class="rmc-score-val">${s.value || '-'}</span><span class="rmc-score-date">${s.subtext || ''}</span></div></div>`).join('')}</div><button class="rmc-expand-btn" onclick="toggleBoard('${oId}', this)">See Full Leaderboard ▾</button>` : ''}</div>` : ''}</div>`;
+        return `<div class="record-metric-card"><div class="rmc-header" style="background: var(--slate-charcoal);">${l}</div>${cR ? `<div class="rmc-champion"><div class="rmc-crown">👑 Company Record</div><div class="rmc-champ-val">${cR.value || '-'}</div><div class="rmc-champ-sub">${cR.subtext || ''}</div></div>` : ''}${d.s.length ? `<div class="rmc-list">${d.s.slice(0, 3).map((s, i) => `<div class="rmc-list-item"><div class="rmc-rank">${i===0?'🥇':(i===1?'🥈':'🥉')}</div><div class="rmc-store">${s.section}</div><div class="rmc-score"><span class="rmc-score-val">${s.value || '-'}</span><span class="rmc-score-date">${s.subtext || ''}</span></div></div>`).join('')}${d.s.length > 3 ? `<div id="${oId}" class="hidden-board">${d.s.slice(3).map((s, i) => `<div class="rmc-list-item"><div class="rmc-rank" style="font-size:11px; color:#999;">#${i+4}</div><div class="rmc-store">${s.section}</div><div class="rmc-score"><span class="rmc-score-val">${s.value || '-'}</span><span class="rmc-score-date">${s.subtext || ''}</span></div></div>`).join('')}</div><button class="rmc-expand-btn" onclick="toggleBoard('${oId}', this)">See Full Leaderboard ▾</button>` : ''}</div>` : ''}</div>`;
     }).join('') + '</div>';
 }
 
@@ -1252,12 +1254,14 @@ function buildGoalsEditForm() {
     const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
     let html = '';
 
+    // Dynamic Roles based on roster size
+    const availableRoles = goalsRoster.length <= 3 ? ['B1', 'B2', 'L1'] : ['B1', 'B2', 'L1', 'L2'];
+
     goalsRoster.forEach((emp, idx) => {
         const todayRecord = liveGoalsData.find(r => r.employee === emp && r.date === todayStr) || { role: '', goal: '', result: '' };
         
-        const roles = ['B1', 'B2', 'L1', 'L2'];
         let rolesHtml = '';
-        roles.forEach(r => {
+        availableRoles.forEach(r => {
             const isActive = todayRecord.role === r ? 'active' : '';
             rolesHtml += `<button type="button" class="role-dot ${isActive}" onclick="selectRole(this, '${emp}', '${r}')">${r}</button>`;
         });
@@ -1573,7 +1577,7 @@ async function fetchMasterDistrictDashboard() {
             // BUILD HTML USING NEW CSS CLASSES
             html += `
             <div class="card master-card">
-                <div class="master-card-header">
+                <div class="master-card-header" style="background: var(--slate-charcoal);">
                     <span class="master-card-title">${icon} ${store}</span>
                     <div class="master-card-score-box">
                         <span class="master-card-score" style="background: ${sBg}; color: ${sColor};">${scoreNum.toFixed(1)}</span>
@@ -1808,6 +1812,8 @@ function renderCompactDmGoals() {
     startOfWeek.setHours(0,0,0,0);
 
     const stores = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
+    
+    // Removed the inline border here to prevent double borders
     let html = '<div style="display: flex; flex-direction: column;">';
 
     stores.forEach((store, idx) => {
@@ -1879,18 +1885,22 @@ function renderCompactDmGoals() {
             if (currentDmGoalView === 'weekly') {
                 const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
                 const currentDayIdx = (now.getDay() + 6) % 7;
-                dailyBreakdownHtml = '<div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; padding-top: 4px; width: 100%;">';
+                
+                // Style applied to ensure even stretching of the bubbles
+                const pillStyle = "flex: 1; min-width: 0; text-align: center; font-size: 9px; font-weight: 800; padding: 4px 2px; border-radius: 4px; white-space: nowrap;";
+                
+                dailyBreakdownHtml = '<div style="display: flex; gap: 6px; margin-top: 4px; padding-top: 4px; width: 100%;">';
                 
                 daysOfWeek.forEach((dName, dIdx) => {
                     if (dailyStats[dName]) {
                         const dG = dailyStats[dName].goal;
                         const dR = dailyStats[dName].result;
                         const dClass = dR >= dG ? 'color: #065f46; background: #d1fae5;' : 'color: #991b1b; background: #fee2e2;';
-                        dailyBreakdownHtml += `<div style="font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; ${dClass}">${dName}: ${dR}/${dG}</div>`;
+                        dailyBreakdownHtml += `<div style="${pillStyle} ${dClass}">${dName}: ${dR}/${dG}</div>`;
                     } else if (dIdx <= currentDayIdx) {
-                        dailyBreakdownHtml += `<div style="font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; color: #64748b; background: #f1f5f9;" title="Not Logged">${dName}: N/A</div>`;
+                        dailyBreakdownHtml += `<div style="${pillStyle} color: #64748b; background: #f1f5f9;" title="Not Logged">${dName}</div>`;
                     } else {
-                        dailyBreakdownHtml += `<div style="font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; color: #cbd5e1; border: 1px dashed #e2e8f0; background: transparent;">${dName}</div>`;
+                        dailyBreakdownHtml += `<div style="${pillStyle} color: #cbd5e1; border: 1px dashed #e2e8f0; background: transparent;">${dName}</div>`;
                     }
                 });
                 dailyBreakdownHtml += '</div>';
@@ -2061,3 +2071,229 @@ document.addEventListener('click', async (e) => {
 window.addEventListener('popstate', () => {
     window.location.reload(); 
 });
+
+// ==========================================
+// 3. EMPLOYEE SPECIFIC LISTING GOALS WIDGET
+// ==========================================
+async function fetchAndRenderEmployeeGoals() {
+    const container = document.getElementById('employee-goals-widget-body');
+    const dateLabel = document.getElementById('emp-goals-date');
+    const pulseDot = document.getElementById('emp-goals-pulse-dot');
+    if (!container) return;
+
+    const userName = sessionStorage.getItem('speeksUserName') || '';
+    let store = sessionStorage.getItem('speeksUserStore') || 'OVL';
+    if (store === 'ALL' || store === 'CORP') store = 'OVL';
+
+    const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() + (now.getDay() === 0 ? -6 : 1 - now.getDay()));
+    startOfWeek.setHours(0,0,0,0);
+
+    const ctTimeString = now.toLocaleString('en-US', { timeZone: 'America/Chicago', hour: 'numeric', hour12: false });
+    const hours = parseInt(ctTimeString, 10);
+    if (pulseDot) {
+        pulseDot.style.display = (hours === 9) ? 'block' : 'none';
+    }
+
+    if (dateLabel) {
+        dateLabel.innerText = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    }
+
+    try {
+        const res = await fetch(`${GOALS_API_URL}?store=${store}&v=${Date.now()}`);
+        const data = await res.json();
+        
+        const myRecords = data.filter(r => {
+            const dbName = String(r.employee).trim().toLowerCase();
+            const sessionName = String(userName).trim().toLowerCase();
+            if (dbName === sessionName) return true; 
+            const dbFirstName = dbName.split(' ')[0];
+            const sessionFirstName = sessionName.split(' ')[0];
+            if (dbFirstName.length > 2 && sessionFirstName.length > 2) {
+                if (dbFirstName.startsWith(sessionFirstName) || sessionFirstName.startsWith(dbFirstName)) return true;
+            }
+            return false;
+        });
+        
+        let todayGoal = 0;
+        let todayRole = '';
+        let dailyStats = {};
+
+        myRecords.forEach(r => {
+            const recDate = new Date(r.date);
+            const g = parseInt(r.goal) || 0;
+            const resVal = parseInt(r.result) || 0;
+
+            if (r.date === todayStr) {
+                todayGoal += g;
+                if (r.role && r.role !== '-') todayRole = r.role;
+            }
+            
+            if (recDate >= startOfWeek) {
+                const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                const dayIdx = (recDate.getDay() + 6) % 7; 
+                dailyStats[daysOfWeek[dayIdx]] = { goal: g, result: resVal };
+            }
+        });
+
+        const roleTranslations = { 'B1': 'Buyer 1', 'B2': 'Buyer 2', 'L1': 'Lister 1', 'L2': 'Lister 2' };
+        const displayRole = roleTranslations[todayRole] || todayRole;
+
+        const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        const currentDayIdx = (now.getDay() + 6) % 7;
+        
+        // Build Pills using clean CSS classes
+        let dailyBreakdownHtml = '<div class="emp-pill-container">';
+        
+        daysOfWeek.forEach((dName, dIdx) => {
+            if (dailyStats[dName]) {
+                const dG = dailyStats[dName].goal;
+                const dR = dailyStats[dName].result;
+                const dClass = dR >= dG ? 'pill-pass' : 'pill-fail';
+                dailyBreakdownHtml += `<div class="emp-daily-pill ${dClass}">${dName}: ${dR}/${dG}</div>`;
+            } else if (dIdx <= currentDayIdx) {
+                dailyBreakdownHtml += `<div class="emp-daily-pill pill-null" title="Not Logged">${dName}</div>`;
+            } else {
+                dailyBreakdownHtml += `<div class="emp-daily-pill pill-future">${dName}</div>`;
+            }
+        });
+        dailyBreakdownHtml += '</div>';
+
+        container.innerHTML = `
+            <div class="emp-goals-top-row">
+                <div class="emp-goal-col">
+                    <span class="emp-goal-label">TODAY'S TARGET</span>
+                    <span class="emp-goal-value">${todayGoal > 0 ? todayGoal : '-'}</span>
+                </div>
+                <div class="emp-goal-col emp-goal-col-right">
+                    <span class="emp-goal-label">MY ROLE</span>
+                    <span class="emp-goal-value">${displayRole || '-'}</span>
+                </div>
+            </div>
+
+            <div class="emp-week-section">
+                <span class="emp-goal-label">THIS WEEK'S BREAKDOWN</span>
+                ${dailyBreakdownHtml}
+            </div>
+        `;
+    } catch (e) {
+        container.innerHTML = '<div class="status-message" style="color:var(--red-alert);">Failed to sync goals.</div>';
+    }
+}
+
+// ==========================================
+// 4. EMPLOYEE SPECIFIC WEEKLY KPI WIDGET
+// ==========================================
+async function fetchAndRenderEmployeeKPIs() {
+    const container = document.getElementById('employee-kpi-widget-body');
+    const periodLabel = document.getElementById('emp-kpi-period');
+    if (!container) return;
+
+    const userName = sessionStorage.getItem('speeksUserName') || '';
+    let store = sessionStorage.getItem('speeksUserStore') || 'OVL';
+    if (store === 'ALL' || store === 'CORP') store = 'OVL';
+
+    try {
+        const d = await fetch(`${WEEKLY_KPI_URL}?store=${store}&time=4-Week&v=${Date.now()}`).then(r => r.json());
+        
+        let sAvg = {};
+        let myData = {};
+        let fIdx = -1;
+        let sIdx = d.findLastIndex(r => String(r[0]).trim().toLowerCase() === "store" || String(r[0]).trim().toLowerCase() === "store total");
+        
+        if (sIdx !== -1) {
+            let st = d[sIdx];
+            sAvg = { buyVal: st[2], buyMargin: st[5], customers: st[6], conversion: st[8], time: formatTime(st[12]), noDeals: st[14], listed: st[20] };
+            
+            const sessionName = String(userName).trim().toLowerCase();
+            const sessionFirstName = sessionName.split(' ')[0];
+
+            for (let i = Math.max(0, sIdx - 6); i <= Math.min(d.length - 1, sIdx + 6); i++) {
+                if (i === sIdx) continue;
+                let n = String(d[i][0]).trim();
+                let dbName = n.toLowerCase();
+                
+                if (n && !["name", "employee", "store", "store total", "ovl", "lee", "wsp", "mpl", "bal"].includes(dbName) && !dbName.includes("average") && !dbName.includes("week")) {
+                    
+                    let isMatch = false;
+                    if (dbName === sessionName) {
+                        isMatch = true;
+                    } else {
+                        const dbFirstName = dbName.split(' ')[0];
+                        if (dbFirstName.length > 2 && sessionFirstName.length > 2) {
+                            if (dbFirstName.startsWith(sessionFirstName) || sessionFirstName.startsWith(dbFirstName)) {
+                                isMatch = true;
+                            }
+                        }
+                    }
+
+                    if (isMatch) {
+                        fIdx = i;
+                        myData = { buyVal: d[i][2], buyMargin: d[i][5], customers: d[i][6], conversion: d[i][8], time: formatTime(d[i][12]), noDeals: d[i][14], listed: d[i][20] };
+                        break; 
+                    }
+                }
+            }
+        }
+
+        let pTxt = "";
+        if (sIdx !== -1) {
+            let headerRowIdx = fIdx !== -1 ? fIdx : sIdx;
+            let hrScan = d[headerRowIdx - 3] || d[headerRowIdx - 2];
+            if (hrScan && hrScan[2] && hrScan[4] && hrScan[6]) {
+                pTxt = `${String(hrScan[2]).replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/ig, m => ({"Jan":"January","Feb":"February","Mar":"March","Apr":"April","May":"May","Jun":"June","Jul":"July","Aug":"August","Sep":"September","Oct":"October","Nov":"November","Dec":"December"}[m.charAt(0).toUpperCase() + m.slice(1).toLowerCase()] || m))} ${hrScan[4]}-${hrScan[6]}`;
+            }
+        }
+        if (periodLabel) periodLabel.innerText = pTxt;
+
+        if (Object.keys(myData).length === 0) {
+            container.innerHTML = '<div class="status-message">No KPI data found for your user this week.</div>';
+            return;
+        }
+
+        // Updated buildStatRow function with dynamic labels and bubble toggles
+        const buildStatRow = (title, myVal, storeVal, ruleStr, isPercent = false, prefixLabel = "Store Avg:", showBubble = true) => {
+            const myIsBad = ruleStr ? checkRule(ruleStr, myVal) : false;
+            
+            let displayMyVal = myVal || '-';
+            if (displayMyVal !== '-' && isPercent && !String(displayMyVal).includes('%')) displayMyVal += '%';
+            
+            let displayStoreVal = storeVal || '-';
+            if (displayStoreVal !== '-' && isPercent && !String(displayStoreVal).includes('%')) displayStoreVal += '%';
+
+            let rightSideHtml = '';
+
+            if (showBubble) {
+                const badgeClass = displayMyVal === '-' ? 'badge-null' : (myIsBad ? 'badge-fail' : 'badge-pass');
+                rightSideHtml = `<div class="emp-kpi-badge ${badgeClass}">${displayMyVal}</div>`;
+            } else {
+                // Raw text style for metrics that shouldn't have a colored bubble
+                rightSideHtml = `<div style="font-size: 14px; font-weight: 900; color: var(--slate-charcoal); padding-right: 5px;">${displayMyVal}</div>`;
+            }
+
+            return `
+            <div class="emp-kpi-row">
+                <div class="emp-kpi-info">
+                    <span class="emp-kpi-title">${title}</span>
+                    <span class="emp-kpi-avg">${prefixLabel} <strong>${displayStoreVal}</strong></span>
+                </div>
+                ${rightSideHtml}
+            </div>`;
+        };
+
+        container.innerHTML = `
+            <div>
+                ${buildStatRow('Buying Value', myData.buyVal, sAvg.buyVal, null, false, 'Store Total:', false)}
+                ${buildStatRow('Buying Margin', myData.buyMargin, sAvg.buyMargin, 'margin', true, 'Store Avg:', true)}
+                ${buildStatRow('Customer Conversion', myData.conversion, sAvg.conversion, 'conversion', true, 'Store Avg:', true)}
+                ${buildStatRow('No Deals', myData.noDeals, sAvg.noDeals, 'nodeals', false, 'Store Avg:', true)}
+                ${buildStatRow('Avg Trans. Time', myData.time, sAvg.time, 'time', false, 'Store Avg:', true)}
+                ${buildStatRow('Listed Devices', myData.listed, sAvg.listed, null, false, 'Store Total:', false)}
+            </div>
+        `;
+    } catch (e) {
+        container.innerHTML = '<div class="status-message" style="color:var(--red-alert);">Failed to sync KPIs.</div>';
+    }
+}
