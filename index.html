@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SPEEKSNET | QuickPortal</title>
   <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <script src="speeks.js" defer></script>
 </head>
@@ -29,7 +31,7 @@
   <div class="nav-right">
     <div class="user-profile-nav">
 
-      <div class="dev-dropdown-container dynamic-module role-district-manager" id="devDropdown">
+      <div class="dev-dropdown-container dynamic-module-flex role-district-manager" id="devDropdown">
         <button class="dev-workspace-btn" id="devWorkspaceBtn" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); color: white; height: 42px;">
           <svg class="lock-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--idea-gold);">
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
@@ -149,7 +151,7 @@
 <main class="main-content">
 
   <div class="hotbars-stack">
-      <div class="dynamic-module role-district-manager hotbar-wrapper">
+      <div class="dynamic-module-flex role-district-manager hotbar-wrapper">
         <div class="hotbar-container">
           <span class="hotbar-label">💼 DM</span>
           <div class="hotbar-links">
@@ -163,7 +165,7 @@
         </div>
       </div>
 
-      <div class="dynamic-module role-district-manager hotbar-wrapper">
+      <div class="dynamic-module-flex role-district-manager hotbar-wrapper">
         <div class="hotbar-container">
           <span class="hotbar-label">📍 STORES</span>
           <div class="hotbar-links">
@@ -176,7 +178,7 @@
         </div>
       </div>
 
-      <div class="dynamic-module role-manager hotbar-wrapper">
+      <div class="dynamic-module-flex role-manager hotbar-wrapper">
         <div class="hotbar-container">
           <span class="hotbar-label">👔 MGR</span>
           <div class="hotbar-links">
@@ -189,7 +191,7 @@
         </div>
       </div>
 
-      <div class="dynamic-module store-lee hotbar-wrapper">
+      <div class="dynamic-module-flex store-lee hotbar-wrapper">
         <div class="hotbar-container">
           <span class="hotbar-label">📍 LEE</span>
           <div class="hotbar-links">
@@ -201,7 +203,7 @@
         </div>
       </div>
 
-      <div class="dynamic-module store-ovl hotbar-wrapper">
+      <div class="dynamic-module-flex store-ovl hotbar-wrapper">
         <div class="hotbar-container">
           <span class="hotbar-label">📍 OVL</span>
           <div class="hotbar-links">
@@ -213,7 +215,7 @@
         </div>
       </div>
 
-      <div class="dynamic-module store-wsp hotbar-wrapper">
+      <div class="dynamic-module-flex store-wsp hotbar-wrapper">
         <div class="hotbar-container">
           <span class="hotbar-label">📍 WSP</span>
           <div class="hotbar-links">
@@ -224,7 +226,7 @@
         </div>
       </div>
 
-    <div class="dynamic-module store-mpl hotbar-wrapper">
+    <div class="dynamic-module-flex store-mpl hotbar-wrapper">
         <div class="hotbar-container">
           <span class="hotbar-label">📍 MPL</span>
           <div class="hotbar-links">
@@ -235,7 +237,7 @@
         </div>
     </div>
     
-    <div class="dynamic-module store-bal hotbar-wrapper">
+    <div class="dynamic-module-flex store-bal hotbar-wrapper">
         <div class="hotbar-container">
           <span class="hotbar-label">📍 BAL</span>
           <div class="hotbar-links">
@@ -247,14 +249,143 @@
     </div>
   </div>
 
-   <div id="pane-trends" class="tab-pane active">
-      <div class="metrics-grid">
-        <div class="card"><div class="card-title">OVL MTD Goal</div><div class="progress-ring"><svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="ovl-bar" cx="70" cy="70" r="64"></circle></svg><div class="percentage" id="ovl-pct">0%</div></div><div class="goal-text" id="ovl-goal">Goal: --</div><div class="tracking-box">GP Track: <span id="ovl-t-gp">--</span></div></div>
-        <div class="card"><div class="card-title">LEE MTD Goal</div><div class="progress-ring"><svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="lee-bar" cx="70" cy="70" r="64"></circle></svg><div class="percentage" id="lee-pct">0%</div></div><div class="goal-text" id="lee-goal">Goal: --</div><div class="tracking-box">GP Track: <span id="lee-t-gp">--</span></div></div>
-        <div class="card"><div class="card-title">WSP MTD Goal</div><div class="progress-ring"><svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="wsp-bar" cx="70" cy="70" r="64"></circle></svg><div class="percentage" id="wsp-pct">0%</div></div><div class="goal-text" id="wsp-goal">Goal: --</div><div class="tracking-box">GP Track: <span id="wsp-t-gp">--</span></div></div>
+  <div id="top-alerts-row" class="top-alerts-row dynamic-module-flex role-manager">
+    
+      <div class="card alert-card ">
+          <div class="alert-card-header">
+              <span id="scorecard-store-name" class="alert-store-name">📊 Store Scorecard</span>
+              <a href="https://docs.google.com/spreadsheets/d/1agChyBxxwJqP-3CXo10C36-95Y_dVKXTA4GboeCaRRs/edit?gid=285677074#gid=285677074" target="_blank" class="mini-action-btn">Full Sheet ↗</a>
+          </div>
+          <div id="scorecard-widget-body"><div class="status-message">Loading...</div></div>
       </div>
 
-      <div class="card" style="text-align:left;">
+      <div class="card alert-card" style="flex: 3 1 600px; max-width: none;">
+          <div class="alert-card-header">
+              <span id="alerts-store-name" class="alert-store-name">🚨 Action Needed - eBay Performance</span>
+              <a href="https://docs.google.com/spreadsheets/d/1QVbFYJCXtVgStuYCHw0AcPDZfcoojBgqgEgMO8jYA_E/edit?gid=0#gid=0" target="_blank" class="mini-action-btn">Full Sheet ↗</a>
+          </div>
+          <div id="alerts-widget-body"><div class="status-message">Loading...</div></div>
+      </div>
+      <div style="flex: 2 1 350px; margin: 0;"></div>
+
+      
+  </div>
+
+   <div id="pane-trends" class="tab-pane active">
+
+      <div class="metrics-grid">
+
+        <div class="card dynamic-module-block role-employee store-ovl"><div class="card-title">OVL MTD Goal</div><div class="progress-ring"><svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="ovl-bar" cx="70" cy="70" r="64"></circle></svg><div class="percentage" id="ovl-pct">0%</div></div><div class="goal-text" id="ovl-goal">Goal: --</div><div class="tracking-box">GP Track: <span id="ovl-t-gp">--</span></div></div>
+        <div class="card dynamic-module-block role-employee store-lee" style="display: block;"><div class="card-title">LEE MTD Goal</div><div class="progress-ring"><svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="lee-bar" cx="70" cy="70" r="64"></circle></svg><div class="percentage" id="lee-pct">0%</div></div><div class="goal-text" id="lee-goal">Goal: --</div><div class="tracking-box">GP Track: <span id="lee-t-gp">--</span></div></div>
+        <div class="card dynamic-module-block role-employee store-wsp"><div class="card-title">WSP MTD Goal</div><div class="progress-ring"><svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="wsp-bar" cx="70" cy="70" r="64"></circle></svg><div class="percentage" id="wsp-pct">0%</div></div><div class="goal-text" id="wsp-goal">Goal: --</div><div class="tracking-box">GP Track: <span id="wsp-t-gp">--</span></div></div>
+
+      <div class="dynamic-module-block role-manager buying-sales-module">
+        <div class="card" style="padding: 25px; margin-bottom: 0;">
+          <div class="card-title" style="margin-bottom: 15px; border-bottom: none; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;">
+            <span>🛒 Buying & Sales</span>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <select id="bsStoreSelect" class="kpi-select" onchange="renderBuyingSales()">
+                <option value="OVL">OVL</option>
+                <option value="LEE">LEE</option>
+                <option value="WSP">WSP</option>
+                <option value="MPL">MPL</option>
+                <option value="BAL">BAL</option>
+              </select>
+              <a href="https://docs.google.com/spreadsheets/d/1i_oV37lZXq8s91f9ymzwQlrM8WY2UlQQQ0qsRP3xLJ8/edit?usp=sharing" target="_blank" class="mini-action-btn">Full Sheet ↗</a>
+            </div>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: center; border: 1px solid #eee; border-radius: 12px; background: #f9fafb; padding: 20px;">
+            <div style="padding-right: 20px; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; justify-content: center; height: 100%;">
+               <h4 style="font-size: 14px; font-weight: 800; color: var(--slate-charcoal); margin-bottom: 15px; text-align: center; text-transform: uppercase;">Buying (MTD)</h4>
+               
+               <div style="margin-bottom: 12px; text-align: center;">
+                 <div style="font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase;">Value Purchased</div>
+                 <div style="font-size: 22px; font-weight: 900; color: var(--slate-charcoal);" id="bs-buy-val">$0</div>
+               </div>
+               
+               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                 <span style="font-size: 12px; font-weight: 700; color: #666;">Margin</span>
+                 <span class="delta-badge delta-neutral" id="bs-buy-margin" style="font-size: 12px;">0%</span>
+               </div>
+               
+               <div style="display: flex; justify-content: space-between; align-items: center;">
+                 <span style="font-size: 11px; font-weight: 700; color: #666;">Tracking Value</span>
+                 <span style="font-size: 13px; font-weight: 800; color: var(--slate-charcoal);" id="bs-buy-proj">$0</span>
+               </div>
+            </div>
+            
+            <div style="text-align: center;">
+               <h4 style="font-size: 14px; font-weight: 800; color: var(--slate-charcoal); margin-bottom: 10px; text-transform: uppercase;">Sales (MTD)</h4>
+               <div class="progress-ring" style="transform: scale(0.85); margin: -10px auto -10px;">
+                 <svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="bs-bar" cx="70" cy="70" r="64"></circle></svg>
+                 <div class="percentage" id="bs-pct" style="font-size: 28px;">0%</div>
+               </div>
+               <div class="goal-text" id="bs-goal">Goal: --</div>
+               <div class="tracking-box">GP Track: <span id="bs-t-gp">--</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card dynamic-module-flex role-manager role-employee" style="flex-direction: column;">
+          <div class="alert-card-header goals-header-mod">
+              <div class="goals-title-wrapper">
+                  <span class="alert-store-name">🎯 Listing Goals</span>
+                  <div id="goals-pulse-dot" class="notif-dot active goals-pulse"></div>
+              </div>
+              
+              <div style="display: flex; align-items: center; gap: 10px;">
+                  <div id="goals-date-display" style="font-size: 11px; font-weight: 800; color: var(--sage-professional); text-transform: uppercase;"></div>
+                  
+                  <button id="goals-action-btn" onclick="flipGoalCard(true)" class="mini-action-btn">Update ↗</button>
+                  <div class="goal-tab-container">
+                      <div id="tab-daily" class="goal-tab active" onclick="switchGoalTab('daily')">Daily</div>
+                      <div id="tab-weekly" class="goal-tab inactive" onclick="switchGoalTab('weekly')">Weekly</div>
+                  </div>
+              </div>
+          </div>
+
+          <div class="flip-container">
+              <div class="flip-inner" id="goals-flipper">
+                  
+                  <div class="flip-front" id="goals-front-view">
+                      <div class="goals-header-row">
+                          <span class="goals-header-lbl">Employee & Role</span>
+                          <span class="goals-header-lbl center">Goal</span>
+                          <span class="goals-header-lbl center">Result</span>
+                      </div>
+
+                      <div id="goals-roster-list" class="goals-roster-container">
+                          <div class="status-message goals-loading-msg">Loading Roster...</div>
+                      </div>
+
+                      <div class="goals-total-row">
+                          <span class="goals-total-lbl">Total</span>
+                          <span id="goals-total-target" class="goals-total-val target">0</span>
+                          <span id="goals-total-actual" class="goals-total-val actual">0</span>
+                      </div>
+                  </div>
+
+                  <div class="flip-back">
+                      <div class="goals-edit-header">
+                          <span id="goals-input-title" class="goals-edit-title">Set Goals & Log Results</span>
+                          <button onclick="flipGoalCard(false)" class="goals-close-btn">✖</button>
+                      </div>
+
+                      <div id="goals-edit-list" class="goals-edit-list-container">
+                          </div>
+
+                      <button onclick="saveGoalsData()" id="saveGoalsBtn" class="btn-primary goals-save-btn">Save Changes</button>
+                  </div>
+
+              </div>
+          </div>
+      </div>
+
+    </div>
+
+      <div class="card" style="text-align:left; width: 50%;">
         <div class="chart-header-flex">
           <div class="card-title" style="margin:0;">Comparison Trends</div>
           <div class="chart-controls">
@@ -282,27 +413,7 @@
       </div>
   </div>
 
-  <div id="top-alerts-row" class="top-alerts-row dynamic-module role-manager">
-    
-      <div class="card alert-card ">
-          <div class="alert-card-header">
-              <span id="scorecard-store-name" class="alert-store-name">📊 Store Scorecard</span>
-              <a href="https://docs.google.com/spreadsheets/d/1agChyBxxwJqP-3CXo10C36-95Y_dVKXTA4GboeCaRRs/edit?gid=285677074#gid=285677074" target="_blank" class="mini-action-btn">Full Sheet ↗</a>
-          </div>
-          <div id="scorecard-widget-body"><div class="status-message">Loading...</div></div>
-      </div>
-
-      <div class="card alert-card" style="flex: 3 1 600px; max-width: none;">
-          <div class="alert-card-header">
-              <span id="alerts-store-name" class="alert-store-name">🚨 Action Needed - eBay Performance</span>
-              <a href="https://docs.google.com/spreadsheets/d/1QVbFYJCXtVgStuYCHw0AcPDZfcoojBgqgEgMO8jYA_E/edit?gid=0#gid=0" target="_blank" class="mini-action-btn">Full Sheet ↗</a>
-          </div>
-          <div id="alerts-widget-body"><div class="status-message">Loading...</div></div>
-      </div>
-      <div style="flex: 2 1 350px; margin: 0;"></div>
-  </div>
-
-  <div class="dynamic-module role-district-manager" style="margin-bottom: 40px; flex-wrap: wrap;">
+  <div class="dynamic-module-flex role-district-manager" style="margin-bottom: 40px; flex-wrap: wrap;">
       <div style="margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; width: 100%;">
           <h3 style="font-size: 20px; font-weight: 900; color: var(--slate-charcoal); letter-spacing: -0.5px; margin-bottom: 0;">🌐 District Command Center</h3>
       </div>
