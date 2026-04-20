@@ -10,35 +10,60 @@
 </head>
 <body class="preload">
 
-<aside class="sidebar">
-  <div class="brand-area">
-    <img src="images/speeks_logo.png" alt="SPEEKS Logo" class="brand-logo">
-    <div class="badge">QUICK PORTAL</div>
-  </div>
-  <nav class="nav-bar">
-    <a href="quickportal.html" class="nav-link active"><i>⚡</i> <span>QuickPortal</span></a>
-    <a href="index.html" class="nav-link"><i>📊</i> <span>Metrics & Leaderboards</span></a>
-    <a href="docs.html" class="nav-link"><i>📚</i> <span>Processes & Policies</span></a>
-    <a href="managers.html" class="nav-link"><i>🛠️</i> <span>Manager Portal</span></a>
-  </nav>
-  
-  <div class="sidebar-bottom">
-    <a href="#" onclick="toggleIdeaModal(); return false;" class="idea-btn">
-      <i>💡</i> <span>Have an Idea?</span>
-    </a>
-  </div>
-</aside>
-
-<div class="sidebar-toggle" onclick="toggleSidebar()">◀</div>
-
-<div class="top-actions">
-   <div class="action-btn" onclick="toggleModal('quickMsgDropdown'); loadQuickMessages();" title="Quick Messages">💬</div>
-   <div class="action-btn" onclick="toggleModal('hotkeysDropdown')" title="Hotkeys & Commands">⌨️</div>
-   <div class="action-btn" onclick="toggleCalendar()" title="Strategic Calendar">📅</div>
-    <div class="action-btn" onclick="toggleNotifs()" title="Announcements">
-        🔔 <div class="notif-dot" id="notifBadge"></div>
+<header class="top-nav">
+  <div class="nav-left" style="display: flex; flex-direction: column; gap: 4px; max-width: 350px;">
+    <div class="brand-area" style="height: auto; padding: 0; margin: 0; border: none; flex-direction: row; align-items: center; gap: 15px;">
+      <img src="images/speeks_logo.png" alt="SPEEKS Logo" class="brand-logo" style="height: 50px; width: auto; margin: 0;">
     </div>
-</div>
+    <p class="mission-statement">
+      To become the #1 trusted source for electronics buy back, resale and recycle in all communities that we serve!
+    </p>
+  </div>
+  
+  <nav class="nav-bar">
+    <a href="index.html" class="nav-link"><i>⚡</i> <span>QuickPortal</span></a>
+    <a href="docs.html" class="nav-link"><i>📚</i> <span>Processes & Policies</span></a>
+    <a href="test.html" class="nav-link active"><i>📚</i> <span>TEST</span></a>
+  </nav>
+
+  <div class="nav-right">
+    <div class="user-profile-nav">
+
+      <div class="dev-dropdown-container dynamic-module role-district-manager" id="devDropdown">
+        <button class="dev-workspace-btn" id="devWorkspaceBtn" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); color: white; height: 42px;">
+          <svg class="lock-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--idea-gold);">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          <span class="dev-title">SPEEKS Tools</span>
+          <svg class="chevron-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+        <div class="dev-dropdown-menu">
+          <a class="dev-dropdown-link" style="cursor: pointer;" onclick="toggleManageUsers()">User Permissions</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="top-actions">
+      <a href="#" onclick="toggleIdeaModal(); return false;" class="idea-btn action-btn" title="Have an Idea?">💡</a>
+      <div class="action-btn" onclick="toggleModal('quickMsgDropdown'); loadQuickMessages();" title="Quick Messages">💬</div>
+      <div class="action-btn" onclick="toggleModal('hotkeysDropdown')" title="Hotkeys & Commands">⌨️</div>
+      <div class="action-btn" onclick="toggleCalendar()" title="Strategic Calendar">📅</div>
+      <div class="action-btn" onclick="toggleNotifs()" title="Announcements">
+        🔔 <div class="notif-dot" id="notifBadge"></div>
+      </div>
+    </div>
+    <div class="greeting-stack">
+      <h2 id="userGreeting">Welcome!</h2>
+      <button onclick="sessionStorage.removeItem('speeksUnlocked'); location.reload();" class="sign-out-mini">Sign Out</button>
+    
+    </div>
+  </div>
+  
+  
+</header>
 
 <div class="modal-menu manage-docs-menu" id="manageUsersDropdown">
     <div class="modal-header">
@@ -122,29 +147,6 @@
 <div id="globalOverlay" class="overlay"></div>
 
 <main class="main-content">
-  <div class="page-header">
-    <div>
-        <h2 id="userGreeting">Welcome!</h2>
-        <p>Your personalized quick-access dashboard.</p>
-    </div>
-    
-    <div class="dev-dropdown-container dynamic-module role-district-manager" style="margin-top: 15px;" id="devDropdown">
-      <button class="dev-workspace-btn" id="devWorkspaceBtn">
-        <svg class="lock-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-        </svg>
-        <span class="dev-title">SPEEKS Tools</span>
-        <svg class="chevron-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="6 9 12 15 18 9"></polyline>
-        </svg>
-      </button>
-  
-      <div class="dev-dropdown-menu">
-        <a class="dev-dropdown-link" style="cursor: pointer;" onclick="toggleManageUsers()">User Permissions</a>
-      </div>
-    </div>
-  </div>
 
   <div class="hotbars-stack">
       <div class="dynamic-module role-district-manager hotbar-wrapper">
@@ -157,6 +159,19 @@
             <a href="https://docs.google.com/spreadsheets/d/1e4mW-pcwUMJjl2Pjry6PT180P8M8nkYL5Z4GcspQmEA/edit" target="_blank" class="hotbar-btn">🧮 Monthly KPIs</a>
             <a href="https://drive.google.com/drive/folders/12Fjxp44sY6T-o6OlrG6n_YtrHow4bE2f?usp=sharing" target="_blank" class="hotbar-btn">⚖️ Variance</a>
             <a href="https://docs.google.com/spreadsheets/d/1agChyBxxwJqP-3CXo10C36-95Y_dVKXTA4GboeCaRRs/edit" target="_blank" class="hotbar-btn">📊 Scorecard</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="dynamic-module role-district-manager hotbar-wrapper">
+        <div class="hotbar-container">
+          <span class="hotbar-label">📍 STORES</span>
+          <div class="hotbar-links">
+            <a href="https://drive.google.com/drive/folders/1dd1nkndo_Pqt3kztaHcpYWL-NgOWIP-E?usp=drive_link" target="_blank" class="hotbar-btn">🟣OVL Portal</a>  
+            <a href="https://drive.google.com/drive/folders/1Xv6ICOpEXNMeWk4QJBfS7CR6tIFRuElk?usp=drive_link" target="_blank" class="hotbar-btn">🔵LEE Portal</a>
+            <a href="https://drive.google.com/drive/folders/1xGGzefFbX7rzBnusmCUEk2GnHxJaJqhC?usp=drive_link" target="_blank" class="hotbar-btn">🟢WSP Portal</a>
+            <a href="https://drive.google.com/drive/folders/1Y5MiKRorTD1mg-lLY4SccYCqw2fZUrND?usp=drive_link" target="_blank" class="hotbar-btn">🟠WPL Portal</a>
+            <a href="https://drive.google.com/drive/folders/1LnAuBH9t7MwtrB9egWK5PFJWQqPcZ-tL?usp=drive_link" target="_blank" class="hotbar-btn">🔴BAL Portal</a>
           </div>
         </div>
       </div>
@@ -232,8 +247,9 @@
     </div>
   </div>
 
-  <div id="top-alerts-row" class="top-alerts-row">
-      <div class="card alert-card dynamic-module role-manager">
+  <div id="top-alerts-row" class="top-alerts-row dynamic-module role-manager">
+    
+      <div class="card alert-card ">
           <div class="alert-card-header">
               <span id="scorecard-store-name" class="alert-store-name">📊 Store Scorecard</span>
               <a href="https://docs.google.com/spreadsheets/d/1agChyBxxwJqP-3CXo10C36-95Y_dVKXTA4GboeCaRRs/edit?gid=285677074#gid=285677074" target="_blank" class="mini-action-btn">Full Sheet ↗</a>
@@ -241,7 +257,7 @@
           <div id="scorecard-widget-body"><div class="status-message">Loading...</div></div>
       </div>
 
-      <div class="card alert-card dynamic-module role-manager" style="flex: 3 1 600px; max-width: none;">
+      <div class="card alert-card" style="flex: 3 1 600px; max-width: none;">
           <div class="alert-card-header">
               <span id="alerts-store-name" class="alert-store-name">🚨 Action Needed - eBay Performance</span>
               <a href="https://docs.google.com/spreadsheets/d/1QVbFYJCXtVgStuYCHw0AcPDZfcoojBgqgEgMO8jYA_E/edit?gid=0#gid=0" target="_blank" class="mini-action-btn">Full Sheet ↗</a>
@@ -251,8 +267,8 @@
       <div style="flex: 2 1 350px; margin: 0;"></div>
   </div>
 
-  <div class="dynamic-module role-district-manager" style="margin-bottom: 40px;">
-      <div style="margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px;">
+  <div class="dynamic-module role-district-manager" style="margin-bottom: 40px; flex-wrap: wrap;">
+      <div style="margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; width: 100%;">
           <h3 style="font-size: 20px; font-weight: 900; color: var(--slate-charcoal); letter-spacing: -0.5px; margin-bottom: 0;">🌐 District Command Center</h3>
       </div>
 
