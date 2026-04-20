@@ -606,6 +606,7 @@ function initDashboardData() {
     setTimeout(fetchKPIData, 700); 
     setTimeout(preloadAllStores, 4000); 
     setTimeout(initListingGoals, 200);
+    setTimeout(fetchDmGoalsData, 1000);
 }
 
 // --- 8. MODULE: METRICS (CHARTS & RECORDS) ---
@@ -1175,6 +1176,7 @@ function renderGoalsScoreboard(viewType = 'daily') {
             dailyBreakdownHtml += '</div>';
         }
 
+        // Build the HTML with strict fixed-width bubbles (36x26) for perfect alignment
         html += `
         <div style="display: flex; flex-direction: column; border-bottom: 1px solid #f8fafc; padding: 6px 0;">
             <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; align-items: center;">
@@ -1182,10 +1184,12 @@ function renderGoalsScoreboard(viewType = 'daily') {
                     <span class="goals-roster-name" style="font-size: 13px; font-weight: 800; color: var(--slate-charcoal); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${emp}</span>
                     ${viewType === 'daily' && empRole !== '-' ? `<span class="goals-roster-badge" style="font-size: 10px; background: #e2e8f0; color: var(--slate-charcoal); padding: 3px 6px; border-radius: 4px; display: inline-block; width: fit-content;">${empRole}</span>` : ''}
                 </div>
-                <span class="goals-roster-val target" style="font-size: 13px; text-align: center; font-weight: 900; color: var(--slate-charcoal);">${empGoal || '-'}</span>
-                <span style="display: flex; justify-content: center; align-items: center;">
-                    <span class="delta-badge ${resultClass}" style="font-size: 13px; padding: 4px 12px;">${empResult || '-'}</span>
-                </span>
+                <div style="display: flex; justify-content: center;">
+                    <span class="goals-roster-val target" style="font-size: 14px; text-align: center; font-weight: 900; color: var(--slate-charcoal); width: 36px; display: inline-block;">${empGoal || '-'}</span>
+                </div>
+                <div style="display: flex; justify-content: center; align-items: center;">
+                    <span class="delta-badge ${resultClass}" style="font-size: 14px; width: 36px; height: 26px; padding: 0; display: inline-flex; justify-content: center; align-items: center;">${empResult || '-'}</span>
+                </div>
             </div>
             ${dailyBreakdownHtml}
         </div>`;
@@ -1413,3 +1417,141 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchScorecardData();
     fetchAlertsData();
 });
+
+// ============================================================================
+// WIDGET: COMPACT DISTRICT COMMAND - LISTING GOALS
+// ============================================================================
+
+let allDistrictGoalsData = [];
+let currentDmGoalView = 'daily';
+
+async function fetchDmGoalsData() {
+    const cont = document.getElementById('dm-compact-goals-container');
+    if (!cont) return;
+
+    const stores = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
+    
+    try {
+        const fetches = stores.map(s => fetch(`${GOALS_API_URL}?store=${s}&v=${Date.now()}`).then(r => r.json()));
+        const results = await Promise.all(fetches);
+        allDistrictGoalsData = results.flat();
+        renderCompactDmGoals();
+    } catch (e) {
+        console.error("Failed to sync district goals:", e);
+        cont.innerHTML = '<div class="status-message" style="color:var(--red-alert);">Network Sync Failed.</div>';
+    }
+}
+
+function switchCompactDmTab(view) {
+    currentDmGoalView = view;
+    document.getElementById('dm-compact-tab-daily').classList.toggle('active', view === 'daily');
+    document.getElementById('dm-compact-tab-weekly').classList.toggle('active', view === 'weekly');
+    renderCompactDmGoals();
+}
+
+function toggleDmStoreAccordion(store) {
+    const rosterDiv = document.getElementById(`dm-roster-${store}`);
+    const caret = document.getElementById(`dm-caret-${store}`);
+    const isOpen = rosterDiv.style.display === 'block';
+    
+    // Close all other accordions first
+    document.querySelectorAll('.dm-store-roster').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.dm-store-caret').forEach(el => el.style.transform = 'rotate(0deg)');
+
+    // Toggle the clicked one
+    if (!isOpen) {
+        rosterDiv.style.display = 'block';
+        caret.style.transform = 'rotate(180deg)';
+    }
+}
+
+function renderCompactDmGoals() {
+    const cont = document.getElementById('dm-compact-goals-container');
+    if (!cont) return;
+
+    const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() + (now.getDay() === 0 ? -6 : 1 - now.getDay()));
+    startOfWeek.setHours(0,0,0,0);
+
+    const stores = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
+    let html = '<div style="border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; background: white;">';
+
+    stores.forEach((store, idx) => {
+        const storeData = allDistrictGoalsData.filter(r => r.store === store);
+        let tGoal = 0, tResult = 0;
+        let activeEmps = new Set();
+
+        // Calculate Totals & Find Active Employees
+        storeData.forEach(r => {
+            const recDate = new Date(r.date);
+            const isToday = r.date === todayStr;
+            const isThisWeek = recDate >= startOfWeek;
+
+            if ((currentDmGoalView === 'daily' && isToday) || (currentDmGoalView === 'weekly' && isThisWeek)) {
+                tGoal += parseInt(r.goal) || 0;
+                tResult += parseInt(r.result) || 0;
+                activeEmps.add(r.employee);
+            }
+        });
+
+        const progress = tGoal > 0 ? Math.min(100, Math.round((tResult / tGoal) * 100)) : 0;
+        const colorClass = tResult >= tGoal && tGoal > 0 ? 'var(--sage-professional)' : (tResult > 0 ? 'var(--idea-gold)' : '#cbd5e1');
+        const isMuted = tGoal === 0 && tResult === 0 ? 'opacity: 0.6;' : '';
+
+        // Top Level Store Row (Standardized with lb-row classes)
+        html += `
+        <div onclick="toggleDmStoreAccordion('${store}')" class="lb-row" style="display: grid; grid-template-columns: 50px 1fr 70px 20px; align-items: center; border-bottom: 1px solid ${idx === stores.length-1 ? 'transparent' : '#f0f0f0'}; cursor: pointer; padding: 12px 15px; margin: 0; ${isMuted}">
+            <span style="font-size: 14px; font-weight: 900; color: var(--slate-charcoal);">${store}</span>
+            <div style="padding-right: 15px;">
+                <div style="width: 100%; height: 6px; background: #f1f5f9; border-radius: 3px; overflow: hidden; display: flex;">
+                    <div style="height: 100%; width: ${progress}%; background: ${colorClass}; border-radius: 3px; transition: width 0.5s ease;"></div>
+                </div>
+            </div>
+            <div style="text-align: right; font-size: 14px; font-weight: 900; color: var(--slate-charcoal);">
+                ${tResult} <span style="font-size: 11px; color: #888; font-weight: 600;">/ ${tGoal}</span>
+            </div>
+            <div id="dm-caret-${store}" class="dm-store-caret" style="text-align: right; color: #cbd5e1; font-size: 10px; transition: transform 0.3s;">▼</div>
+        </div>`;
+
+        // The Hidden Dropdown Roster (Standardized background and strict bubble widths)
+        html += `<div id="dm-roster-${store}" class="dm-store-roster" style="display: none; background: #fdfdfd; padding: 10px 20px; border-bottom: 1px solid #e2e8f0; box-shadow: inset 0 3px 6px rgba(0,0,0,0.02);">`;
+        
+        if (activeEmps.size === 0) {
+            html += `<div style="font-size: 12px; color: #888; text-align: center; font-weight: 600; padding: 10px 0;">No data logged.</div></div>`;
+            return;
+        }
+
+        Array.from(activeEmps).forEach(emp => {
+            const empRecords = storeData.filter(r => r.employee === emp);
+            let eG = 0, eR = 0;
+
+            empRecords.forEach(r => {
+                const recDate = new Date(r.date);
+                if ((currentDmGoalView === 'daily' && r.date === todayStr) || (currentDmGoalView === 'weekly' && recDate >= startOfWeek)) {
+                    eG += parseInt(r.goal) || 0;
+                    eR += parseInt(r.result) || 0;
+                }
+            });
+
+            const rClass = eG > 0 || eR > 0 ? (eR >= eG ? 'delta-pos' : 'delta-neg') : 'delta-neutral';
+
+            html += `
+            <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 15px; align-items: center; padding: 8px 0; border-bottom: 1px dashed #f0f0f0;">
+                <span style="font-size: 13px; font-weight: 700; color: var(--slate-charcoal);">${emp}</span>
+                <div style="display: flex; justify-content: center;">
+                    <span style="font-size: 14px; font-weight: 800; color: #64748b; width: 36px; text-align: center; display: inline-block;">${eG || '-'}</span>
+                </div>
+                <div style="display: flex; justify-content: center; align-items: center;">
+                    <span class="delta-badge ${rClass}" style="font-size: 14px; width: 36px; height: 26px; padding: 0; display: inline-flex; justify-content: center; align-items: center;">${eR || '-'}</span>
+                </div>
+            </div>`;
+        });
+        
+        html += `</div>`; 
+    });
+
+    html += '</div>'; 
+    cont.innerHTML = html;
+}
