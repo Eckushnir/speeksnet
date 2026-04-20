@@ -1411,6 +1411,370 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchDistrictMonthlyKPIs();
 });
 
+async function fetchDistrictMonthlyKPIs() {
+    const container = document.getElementById('district-kpi-body');
+    if (!container) return;
+
+    const STORES = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
+    const MONTHLY_KPI_URL = 'https://script.google.com/macros/s/AKfycby0ihq9A4yUQvdZdeAF9euC5jih24hP2XGG-J_balNtxop2RHBuIuigw_mH3XTeCkkhow/exec';
+
+    const cachedStr = localStorage.getItem('speeksDistKpiData');
+    if (cachedStr) {
+        try {
+            districtKpiCache = JSON.parse(cachedStr);
+            buildDistrictKpiDropdowns();
+            renderDistrictKPIs();
+        } catch(e) {}
+    }
+
+    try {
+        const promises = STORES.map(store => 
+            fetch(`${MONTHLY_KPI_URL}?store=${store}&v=${Date.now()}`)
+            .then(r => r.json())
+            .then(data => ({store, data}))
+            .catch(e => ({store, error: true}))
+        );
+        
+        const results = await Promise.all(promises);
+        districtKpiCache = { masterMonths: [], stores: {} };
+
+        results.forEach(res => {
+            if (res.store === 'OVL' && res.data && res.data.months) { districtKpiCache.masterMonths = res.data.months; }
+            if (res.data && !res.data.error && res.data.data) {
+                districtKpiCache.stores[res.store] = { months: res.data.months || [], data: res.data.data };
+            } else {
+                districtKpiCache.stores[res.store] = { months: [], data: [] }; 
+            }
+        });
+
+        localStorage.setItem('speeksDistKpiData', JSON.stringify(districtKpiCache));
+        buildDistrictKpiDropdowns();
+        renderDistrictKPIs();
+        
+    } catch (e) {
+        if (!cachedStr) container.innerHTML = '<div style="color: var(--red-alert); font-weight: bold; text-align: center; padding: 20px;">Failed to load District KPIs.</div>';
+    }
+}
+
+async function fetchMasterDistrictDashboard() {
+    const container = document.getElementById('district-master-body');
+    if (!container) return;
+
+    const STORES = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
+    const STORE_ICONS = { 'OVL': '🟣', 'LEE': '🔵', 'WSP': '🟢', 'MPL': '🟠', 'BAL': '🔴' };
+    const SCORECARD_URL = 'https://script.google.com/macros/s/AKfycbwvelWpXnlXCJZQGagZX5llMCN1k6CjronBpIcenNVDTjUdPISjF0mYhHYy2ry0Vdg0_Q/exec';
+    const ALERTS_URL = 'https://script.google.com/macros/s/AKfycbxap-4Jgdn5-ntkv_X-vFZLTWlTB29_bDLdwcFxhWd2su3ZQJ0ZS7UpUgZAK08lOIV6/exec';
+
+    const renderMasterBoard = (hubData, varData, scoreData, alertsData, weeklyResults) => {
+        let html = '';
+        STORES.forEach(store => {
+            const sLower = store.toLowerCase();
+            const icon = STORE_ICONS[store];
+
+            // 1. SCORECARD & HEADER
+            const sScore = scoreData.data?.find(s => s.store.toUpperCase() === store) || {};
+            const scoreNum = parseFloat(sScore.score) || 0;
+            let sColor = scoreNum > 8 ? '#065f46' : (scoreNum >= 6 ? '#92400e' : '#991b1b');
+            let sBg = scoreNum > 8 ? '#d1fae5' : (scoreNum >= 6 ? '#fef3c7' : '#fee2e2');
+
+            let displayDate = "Recent";
+            if (sScore.date) {
+                const parsedDate = new Date(sScore.date);
+                if (!isNaN(parsedDate.getTime())) {
+                    const day = parsedDate.getUTCDay();
+                    const diffToMonday = day === 0 ? -6 : 1 - day;
+                    const mondayDate = new Date(parsedDate);
+                    mondayDate.setUTCDate(parsedDate.getUTCDate() + diffToMonday);
+                    displayDate = mondayDate.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' });
+                }
+            }
+
+            // 2. ACTION NEEDED
+            const issues = [];
+            const sAlerts = alertsData.data?.find(a => a.store.toUpperCase() === store) || {};
+            if (sAlerts.currentVeryHigh) issues.push({text: sAlerts.currentVeryHigh, type: 'red', tip: 'Active Issue: Very High'});
+            if (sAlerts.currentHigh) issues.push({text: sAlerts.currentHigh, type: 'yellow', tip: 'Active Issue: High'});
+            if (sAlerts.projectedVeryHigh) issues.push({text: sAlerts.projectedVeryHigh, type: 'red', tip: 'Projected Issue: Very High'});
+            if (sAlerts.projectedHigh) issues.push({text: sAlerts.projectedHigh, type: 'yellow', tip: 'Projected Issue: High'});
+            if (issues.length === 0) issues.push({text: 'All Clear', type: 'green', tip: 'No active or projected alerts.'});
+
+            // 3. BUYING & SELLING SNAPSHOT
+            let rawPctStr = String(hubData[`${sLower}Pct`]);
+            let rawPct = parseFloat(rawPctStr) || 0;
+            let salesPctNum = (!rawPctStr.includes('%') && rawPct > 0 && rawPct <= 1.5) ? (rawPct * 100) : rawPct;
+            const salesPct = Number.isInteger(salesPctNum) ? salesPctNum : salesPctNum.toFixed(2);
+            
+            const gpTrack = Math.round(parseFloat(hubData[`${sLower}TrackGP`])) || 0;
+            const buyProj = Math.round(parseFloat(hubData[`${sLower}BuyProj`])) || 0;
+            
+            let sellMarginNum = 0;
+            const rev = parseFloat(hubData[`${sLower}Rev`]) || 0;
+            const gp = parseFloat(hubData[`${sLower}GP`]) || 0;
+            if (hubData[`${sLower}SellMargin`]) {
+                let smRaw = parseFloat(hubData[`${sLower}SellMargin`]);
+                sellMarginNum = (!String(hubData[`${sLower}SellMargin`]).includes('%') && smRaw > 0 && smRaw <= 1.5) ? (smRaw * 100) : smRaw;
+            } else if (rev > 0) {
+                sellMarginNum = (gp / rev) * 100;
+            }
+            const sellMargin = Number.isInteger(sellMarginNum) ? sellMarginNum : sellMarginNum.toFixed(2);
+
+            let rawMarginStr = String(hubData[`${sLower}BuyMargin`]);
+            let rawMargin = parseFloat(rawMarginStr) || 0;
+            let buyMarginNum = (!rawMarginStr.includes('%') && rawMargin > 0 && rawMargin <= 1.5) ? (rawMargin * 100) : rawMargin;
+            const buyMargin = Number.isInteger(buyMarginNum) ? buyMarginNum : buyMarginNum.toFixed(2);
+
+            const pctColor = salesPctNum >= 100 ? '#065f46' : '#991b1b';
+            const pctBg = salesPctNum >= 100 ? '#d1fae5' : '#fee2e2';
+            const sellMarginColor = sellMarginNum >= 55.5 ? '#065f46' : '#991b1b';
+            const sellMarginBg = sellMarginNum >= 55.5 ? '#d1fae5' : '#fee2e2';
+            const marginColor = (buyMarginNum > 0 && buyMarginNum < 51) ? '#991b1b' : '#065f46';
+            const marginBg = (buyMarginNum > 0 && buyMarginNum < 51) ? '#fee2e2' : '#d1fae5';
+
+            // 4. LIVE VARIANCE
+            const sVar = varData[store] || {};
+            const totalVar = parseFloat(sVar.total) || 0;
+            const vColor = totalVar < 0 ? '#991b1b' : (totalVar > 0 ? '#065f46' : '#64748b');
+            const vBg = totalVar < 0 ? '#fee2e2' : (totalVar > 0 ? '#d1fae5' : '#f1f5f9');
+            const vSign = totalVar > 0 ? '+' : '';
+
+            // 5. WEEKLY METRICS
+            const sWeekData = weeklyResults.find(w => w.store === store);
+            const wAvg = sWeekData?.sAvg || {};
+
+            const renderLineStat = (label, val, ruleType) => {
+                let isBad = false;
+                let displayVal = val || '-';
+                if (displayVal !== '-' && (ruleType === 'margin' || ruleType === 'conversion') && !String(displayVal).includes('%')) displayVal += '%';
+                
+                if (val && val !== '-') {
+                    let n = parseFloat(String(val).replace(/[^0-9.-]/g, ''));
+                    if (ruleType === 'margin') isBad = n < 51;
+                    if (ruleType === 'conversion') isBad = n < 85;
+                    if (ruleType === 'nodeals') isBad = n > 7;
+                    if (ruleType === 'time') {
+                        let t = String(val);
+                        let timeVal = t.includes(':') ? parseInt(t.split(':')[0]) + (parseInt(t.split(':')[1])/60) : n;
+                        isBad = timeVal > 13;
+                    }
+                }
+                
+                let bg = ruleType === 'nobg' ? 'transparent' : (ruleType === null ? '#f1f5f9' : (isBad ? '#fee2e2' : '#d1fae5'));
+                let txt = ruleType === 'nobg' ? 'var(--slate-charcoal)' : (ruleType === null ? 'var(--slate-charcoal)' : (isBad ? '#991b1b' : '#065f46'));
+                let pad = ruleType === 'nobg' ? '0' : '3px 8px';
+                if (displayVal === '-') { bg = '#f1f5f9'; txt = '#888'; pad = '3px 8px'; }
+                
+                return `
+                <div class="master-stat-row">
+                    <span class="master-stat-label">${label}</span>
+                    <span class="master-stat-val" style="color: ${txt}; background: ${bg}; padding: ${pad};">${displayVal}</span>
+                </div>`;
+            };
+
+            // BUILD HTML USING NEW CSS CLASSES
+            html += `
+            <div class="card master-card">
+                <div class="master-card-header">
+                    <span class="master-card-title">${icon} ${store}</span>
+                    <div class="master-card-score-box">
+                        <span class="master-card-score" style="background: ${sBg}; color: ${sColor};">${scoreNum.toFixed(1)}</span>
+                        <span class="master-card-date">Week of ${displayDate}</span>
+                    </div>
+                </div>
+
+                <div class="master-card-body">
+                    <div>
+                        <div class="master-section-title">💰 Buying & Selling Snapshot</div>
+                        <div class="master-stat-box">
+                            <div class="master-stat-row"><span class="master-stat-label">Sales vs Goal</span><span class="master-stat-val" style="color: ${pctColor}; background: ${pctBg};">${salesPct}%</span></div>
+                            <div class="master-stat-row"><span class="master-stat-label">GP Track</span><span class="master-stat-val" style="color: var(--slate-charcoal);">$${gpTrack.toLocaleString()}</span></div>
+                            <div class="master-stat-row"><span class="master-stat-label">Sell Margin</span><span class="master-stat-val" style="color: ${sellMarginColor}; background: ${sellMarginBg};">${sellMarginNum > 0 ? sellMargin + '%' : '-'}</span></div>
+                            <div class="master-stat-row"><span class="master-stat-label">Buy Track</span><span class="master-stat-val" style="color: var(--slate-charcoal);">$${buyProj.toLocaleString()}</span></div>
+                            <div class="master-stat-row dashed"><span class="master-stat-label">Buy Margin</span><span class="master-stat-val" style="color: ${marginColor}; background: ${marginBg};">${buyMargin}%</span></div>
+                            <div class="master-stat-row"><span class="master-stat-label">Variance Total</span><span class="master-stat-val" style="color: ${vColor}; background: ${vBg};">${vSign}${totalVar.toFixed(2)}%</span></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="master-section-title">🗓️ Weekly Metrics</div>
+                        <div class="master-stat-box">
+                            ${renderLineStat('Conversion', wAvg.conversion, 'conversion')}
+                            ${renderLineStat('Margin', wAvg.buyMargin, 'margin')}
+                            ${renderLineStat('Trans. Time', wAvg.time, 'time')}
+                            ${renderLineStat('No Deals', wAvg.noDeals, 'nodeals')}
+                            <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #e2e8f0;">
+                                ${renderLineStat('Listed Devices', wAvg.listed, 'nobg')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="flex-grow: 1; display: flex; flex-direction: column;">
+                        <div class="master-section-title">🚨 Action Needed - eBay Performance</div>
+                        <div style="display: flex; flex-direction: column; gap: 6px; flex-grow: 1;">
+                            ${issues.map(b => {
+                                let bg = b.type === 'red' ? '#fee2e2' : (b.type === 'yellow' ? '#fef3c7' : '#d1fae5');
+                                let txt = b.type === 'red' ? '#991b1b' : (b.type === 'yellow' ? '#92400e' : '#065f46');
+                                let pulse = b.type === 'red' ? `<div class="notif-dot active" style="display:block; position:absolute; top:-4px; right:-4px; width:12px; height:12px; border-width: 2px;"></div>` : '';
+                                return `<div class="master-action-badge" style="color: ${txt}; background: ${bg};">${pulse}<span>${b.text}</span><div class="fast-tip">${b.tip}</div></div>`;
+                            }).join('')}
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        });
+
+        container.innerHTML = html;
+    };
+
+    const cachedHtml = localStorage.getItem('speeksDistMasterHtml');
+    if (cachedHtml) container.innerHTML = cachedHtml;
+
+    try {
+        const [hubData, varData, scoreData, alertsData] = await Promise.all([
+            fetch(`${HUB_URL}?v=${Date.now()}`).then(r => r.json()),
+            fetch(`${VARIANCE_API_URL}?v=${Date.now()}`).then(r => r.json()),
+            fetch(SCORECARD_URL).then(r => r.json()),
+            fetch(ALERTS_URL).then(r => r.json())
+        ]);
+
+        const weeklyPromises = STORES.map(async (store) => {
+            const d = await fetch(`${WEEKLY_KPI_URL}?store=${store}&time=4-Week&v=${Date.now()}`).then(r => r.json());
+            let sAvg = {};
+            const formatTime = (val) => {
+                if (!val) return ""; let s = String(val).trim();
+                if (!s.includes(':')) return s.includes('.') ? s.split('.')[0] + ':' + (s.split('.')[1] + '0').substring(0,2) : (!isNaN(s) ? s + ':00' : s);
+                return s.length <= 5 ? s : s;
+            };
+            let sIdx = d.findLastIndex(r => String(r[0]).trim().toLowerCase() === "store" || String(r[0]).trim().toLowerCase() === "store total");
+            if (sIdx !== -1) {
+                let st = d[sIdx];
+                sAvg = { buyMargin: st[5], conversion: st[8], time: formatTime(st[12]), noDeals: st[14], listed: st[20] };
+            }
+            return { store, sAvg };
+        });
+
+        const weeklyResults = await Promise.all(weeklyPromises);
+        renderMasterBoard(hubData, varData, scoreData, alertsData, weeklyResults);
+        localStorage.setItem('speeksDistMasterHtml', container.innerHTML);
+
+    } catch (error) { 
+        if (!cachedHtml) container.innerHTML = '<div style="color: var(--red-alert); font-weight: bold; text-align: center; grid-column: 1 / -1;">Error compiling Master Dashboard.</div>'; 
+    }
+}
+
+let districtKpiCache = null;
+
+function buildDistrictKpiDropdowns() {
+    if (!districtKpiCache || !districtKpiCache.masterMonths) return;
+    const sel = document.getElementById('dist-kpi-month');
+    if (!sel) return;
+
+    const months = districtKpiCache.masterMonths;
+    const currVal = sel.value;
+    sel.innerHTML = '';
+    
+    const monthsMap = {
+        "Jan": "January", "Feb": "February", "Mar": "March", "Apr": "April",
+        "May": "May", "Jun": "June", "Jul": "July", "Aug": "August",
+        "Sep": "September", "Oct": "October", "Nov": "November", "Dec": "December"
+    };
+
+    months.forEach((m, i) => {
+        let displayText = m;
+        let parts = String(m).trim().split(/[- ]/);
+        if (parts.length >= 2) {
+            let monthPart = parts[0];
+            monthPart = monthPart.charAt(0).toUpperCase() + monthPart.slice(1).toLowerCase();
+            let fullM = monthsMap[monthPart] || monthPart;
+            let y = parts[parts.length - 1];
+            let fullY = y.length === 2 ? "20" + y : y; 
+            displayText = `${fullM} ${fullY}`;
+        }
+        sel.add(new Option(displayText, i));
+    });
+
+    sel.value = currVal !== "" && currVal < months.length ? currVal : months.length - 1;
+}
+
+window.renderDistrictKPIs = function() {
+    const container = document.getElementById('district-kpi-body');
+    const mIdx = parseInt(document.getElementById('dist-kpi-month').value);
+    if (!districtKpiCache || !districtKpiCache.stores['OVL']) return;
+
+    const targetMonthRaw = districtKpiCache.masterMonths[mIdx];
+    if (!targetMonthRaw) return;
+    const targetMonthClean = String(targetMonthRaw).replace(/[^a-z0-9]/gi, '').toLowerCase();
+
+    const STORES = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
+    const baseline = districtKpiCache.stores['OVL'].data; 
+    let html = '';
+    if (!baseline) return;
+
+    baseline.forEach(cat => {
+        html += `<div class="kpi-category">
+                    <div class="kpi-category-header" onclick="toggleCategory(this)">
+                        ${cat.category}
+                        <span class="chevron">▼</span>
+                    </div>
+                    <div class="kpi-category-content">`;
+
+        cat.metrics.forEach(m => {
+            const metricName = m.name;
+            const isInverse = m.inverse;
+            let rowHtml = `<div class="kpi-row" style="display: grid; grid-template-columns: minmax(180px, 2fr) repeat(5, minmax(80px, 1fr)); padding: 12px 20px; align-items: center; border-bottom: 1px solid #f8fafc;">
+                            <div class="kpi-name-col"><span class="kpi-name" style="font-size: 11px; font-weight: 800; color: #555; text-transform: uppercase;">${metricName}</span></div>`;
+
+            STORES.forEach(store => {
+                const storeObj = districtKpiCache.stores[store];
+                const storeMonthIdx = storeObj.months.findIndex(m => String(m).replace(/[^a-z0-9]/gi, '').toLowerCase() === targetMonthClean);
+                const storeCat = storeObj.data?.find(c => c.category === cat.category);
+                const storeMetric = storeCat?.metrics.find(sm => sm.name === metricName);
+
+                if (storeMetric && storeMonthIdx !== -1 && storeMetric.values[storeMonthIdx] !== undefined) {
+                    const rawVal = storeMetric.values[storeMonthIdx];
+                    const numVal = parseNum(rawVal);
+                    let displayStr = rawVal;
+                    
+                    if (rawVal === "" || rawVal === null) {
+                        rowHtml += `<div style="text-align: center;"><span style="font-size: 11px; color: #ccc; font-weight: 800;">-</span></div>`;
+                        return; 
+                    } else if (!isNaN(numVal) && rawVal !== "") {
+                        if (metricName.toLowerCase().match(/%|rate|variance|margin|gm|cogs/) && !String(rawVal).includes('%')) {
+                            displayStr = `${numVal.toFixed(2).replace(/\.00$/, '')}%`;
+                        } else if (!isNaN(numVal) && typeof rawVal === 'number') {
+                            displayStr = formatSmartValue(numVal, metricName);
+                        }
+                    }
+
+                    let bg = '#f1f5f9'; let txt = 'var(--slate-charcoal)';
+
+                    if (storeMonthIdx > 0 && storeMetric.values[storeMonthIdx - 1] !== undefined && storeMetric.values[storeMonthIdx - 1] !== "") {
+                        const prevVal = parseNum(storeMetric.values[storeMonthIdx - 1]);
+                        const dNum = numVal - prevVal;
+                        
+                        if (Math.abs(dNum) > 0.001) {
+                            const isPositiveImpact = dNum > 0 ? !isInverse : isInverse;
+                            if (isPositiveImpact) { bg = '#d1fae5'; txt = '#065f46'; } 
+                            else { bg = '#fee2e2'; txt = '#991b1b'; }
+                        }
+                    }
+
+                    rowHtml += `<div style="text-align: center;"><span style="display: inline-block; font-size: 11px; font-weight: 900; color: ${txt}; background: ${bg}; padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.05); box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">${displayStr}</span></div>`;
+                } else {
+                    rowHtml += `<div style="text-align: center;"><span style="font-size: 11px; color: #ccc; font-weight: 800;">-</span></div>`;
+                }
+            });
+
+            rowHtml += `</div>`;
+            html += rowHtml;
+        });
+
+        html += `</div></div>`;
+    });
+
+    container.innerHTML = html;
+};
+
+
 // ============================================================================
 // WIDGET: COMPACT DISTRICT COMMAND - LISTING GOALS
 // ============================================================================
