@@ -1433,3 +1433,31 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchMasterDistrictDashboard();
     fetchDistrictMonthlyKPIs();
 });
+
+function updateMetricRing(storeId, percent, goalAmt, trackGP) {
+    // Ensure 'storeId' matches the HTML prefixes exactly (e.g., 'lee', 'ovl')
+    const pctElement = document.getElementById(`${storeId}-pct`);
+    const barElement = document.getElementById(`${storeId}-bar`);
+    const goalElement = document.getElementById(`${storeId}-goal`);
+    const gpElement = document.getElementById(`${storeId}-t-gp`);
+
+    if (!barElement) return;
+
+    // Update the card text
+    pctElement.innerText = Math.round(percent * 100) + '%';
+    goalElement.innerText = `Goal: $${goalAmt.toLocaleString()}`;
+    gpElement.innerText = `GP Track: $${trackGP.toLocaleString()}`;
+
+    // Fill the circle 
+    // A circle with r=64 has a circumference of ~402 (2 * PI * 64)
+    const circumference = 402;
+    
+    // Calculate the offset. If percent is 1 (100%), offset is 0 (full circle)
+    const offset = circumference - (percent * circumference);
+    
+    // Apply to the SVG circle
+    barElement.style.strokeDashoffset = Math.max(0, offset);
+}
+
+// Example usage when your data fetches:
+// updateMetricRing('lee', 0.85, 15000, 12750);
