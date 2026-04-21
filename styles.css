@@ -489,12 +489,39 @@ body.preload { visibility: hidden !important; opacity: 0 !important; }
 .kb-table tr:last-child td { border-bottom: none; }
 .kb-table tr:hover { background: #f9fafb; }
 
-.bubble { display: inline-flex; align-items: center; justify-content: center; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+.bubble { 
+  display: inline-flex; 
+  align-items: center; 
+  justify-content: center; 
+  padding: 6px 12px; 
+  border-radius: 6px; /* Changed from 20px to 6px for the rounded rectangle look! */
+  font-size: 11px; 
+  font-weight: 800; 
+  text-transform: uppercase; 
+  letter-spacing: 0.5px; 
+}
 .b-apple { background: var(--apple-bg); color: var(--apple-text); border: 1px solid var(--apple-border); }
 .b-windows { background: var(--win-bg); color: var(--win-text); border: 1px solid var(--win-border); }
 .b-generic { background: var(--gen-bg); color: var(--gen-text); border: 1px solid var(--gen-border); }
 
-.status-message { padding: 40px; text-align: center; color: #888; font-weight: 600; font-size: 14px; grid-column: 1 / -1; animation: pulseOpacity 2s infinite; }
+.status-message { 
+  padding: 20px; 
+  text-align: center; 
+  color: #888; 
+  font-weight: 600; 
+  font-size: 14px; 
+  grid-column: 1 / -1; 
+  animation: pulseOpacity 2s infinite; 
+  
+  /* PERFECT CENTERING LOGIC */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  margin: auto;
+  box-sizing: border-box;
+}
 @keyframes pulseOpacity { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
 
 .btn-primary { background: var(--sage-professional); color: white; border: none; padding: 12px 24px; border-radius: 10px; font-weight: 800; font-size: 13px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.2s ease; box-shadow: 0 4px 12px rgba(90, 141, 59, 0.2); display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
@@ -549,23 +576,58 @@ body.preload { visibility: hidden !important; opacity: 0 !important; }
 .hotbar-btn:hover { border-color: var(--sage-professional); color: var(--sage-professional); box-shadow: 0 4px 8px rgba(90, 141, 59, 0.08); transform: translateY(-2px); }
 
 /* =========================================================
-   QUICK MESSAGES MODULE
+   QUICK MESSAGES MODULE (SLICK ACCORDION)
    ========================================================= */
-.qm-category { font-weight: 800; cursor: pointer; padding: 10px 15px; background: var(--gen-bg); color: var(--slate-charcoal); margin-bottom: 5px; border-radius: 6px; border: 1px solid var(--gen-border); user-select: none; transition: background 0.2s; }
-.qm-category:hover { background: #e8eaed; }
-.qm-category-items { display: none; margin-left: 15px; padding-left: 10px; border-left: 2px solid var(--gen-border); margin-bottom: 15px; }
+.qm-category-wrapper { margin-bottom: 12px; }
+
+.qm-category { 
+    font-weight: 800; font-size: 14px; cursor: pointer; padding: 16px 20px; 
+    background: #ffffff; color: var(--slate-charcoal); border-radius: 12px; 
+    border: 1px solid #e2e8f0; user-select: none; transition: all 0.2s ease; 
+    display: flex; justify-content: space-between; align-items: center; 
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02); margin-bottom: 0; 
+}
+.qm-category:hover { 
+    border-color: var(--sage-professional); 
+    box-shadow: 0 4px 12px rgba(90, 141, 59, 0.08); 
+    transform: translateY(-2px); 
+}
+.qm-category.open { 
+    border-color: #cbd5e1; 
+    background: #f8fafc; 
+    border-bottom-left-radius: 0; 
+    border-bottom-right-radius: 0; 
+    border-bottom: none; 
+    transform: none; 
+    box-shadow: none; 
+}
+.qm-category.open .qm-caret { 
+    transform: rotate(180deg); 
+    color: var(--sage-professional); 
+}
+
+.qm-category-items { 
+    display: none; padding: 15px; border: 1px solid #cbd5e1; 
+    background: #f8fafc; border-bottom-left-radius: 12px; border-top: none; 
+    border-bottom-right-radius: 12px; margin-left: 0; 
+}
 .qm-category-items.open { display: block; }
-.qm-item { margin-bottom: 8px; padding: 8px; border-bottom: 1px solid var(--gen-border); }
-.qm-item:last-child { border-bottom: none; }
-.qm-item-header { display: flex; justify-content: flex-start; align-items: center; }
-.qm-item-name { cursor: pointer; color: var(--text-dark); font-weight: 600; user-select: none; }
+
+/* Keep the inner items clean and distinct */
+.qm-item { margin-bottom: 10px; padding: 12px 15px; border-radius: 8px; background: white; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+.qm-item:last-child { margin-bottom: 0; }
+.qm-item-header { display: flex; justify-content: space-between; align-items: center; }
+.qm-item-name { cursor: pointer; color: var(--slate-charcoal); font-weight: 800; font-size: 13px; user-select: none; flex-grow: 1; transition: color 0.2s; display: flex; align-items: center; gap: 8px;}
 .qm-item-name:hover { color: var(--sage-professional); }
-.qm-copy-btn { background: none; border: none; cursor: pointer; font-size: 1.2em; padding: 4px; border-radius: 4px; transition: background 0.2s; }
-.qm-copy-btn:hover { background: var(--gen-border); }
-.qm-item-message { display: none; margin-top: 8px; font-size: 0.9em; color: var(--gen-text); background: #ffffff; padding: 10px; border-radius: 4px; border: 1px dashed var(--gen-border); }
+
+.qm-copy-btn { background: #f1f5f9; border: 1px solid #e2e8f0; color: var(--slate-charcoal); cursor: pointer; font-size: 1.1em; padding: 6px 10px; border-radius: 6px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+.qm-copy-btn:hover { background: white; border-color: var(--sage-professional); box-shadow: 0 2px 4px rgba(90, 141, 59, 0.1); transform: translateY(-1px); }
+
+.qm-item-message { display: none; margin-top: 12px; font-size: 13px; color: #555; background: #f8fafc; padding: 15px; border-radius: 6px; border: 1px dashed #cbd5e1; line-height: 1.5; }
 .qm-item-message.open { display: block; }
 
-#quickMsgDropdown { width: 600px; max-width: 90vw; }
+#quickMsgDropdown { width: 650px; max-width: 95vw; }
+#quickMsgDropdown .modal-body { max-height: 70vh; }
 
 /* =========================================================
    CONSOLIDATED WIDGETS & COMMAND CENTER (Dev Sandbox Refactor)

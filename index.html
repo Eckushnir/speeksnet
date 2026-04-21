@@ -81,7 +81,7 @@
 
 <div class="modal-menu manage-docs-menu" id="hotkeysDropdown">
     <div class="modal-header">
-        <h3>⌨️ Hotkeys & Commands</h3>
+        <h3>Hotkeys & Commands</h3>
         <button class="modal-close-btn" onclick="closeAllModals(); document.getElementById('hotkeysDropdown').classList.remove('show');">✖</button>
     </div>
     <div class="modal-body" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
@@ -107,11 +107,17 @@
 
 <div class="modal-menu" id="quickMsgDropdown">
     <div class="modal-header">
-        <h3>💬 Quick Messages</h3>
-        <button class="modal-close-btn" onclick="closeAllModals(); document.getElementById('quickMsgDropdown').classList.remove('show');">✖</button>
+        <h3>Quick Messages</h3>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div class="notif-tabs">
+                <button id="qm-tab-common" class="tab-btn active" onclick="switchQMTab('common')">Common</button>
+                <button id="qm-tab-nodeals" class="tab-btn" onclick="switchQMTab('nodeals')">No Deals</button>
+            </div>
+            <button class="modal-close-btn" onclick="closeAllModals(); document.getElementById('quickMsgDropdown').classList.remove('show');">✖</button>
+        </div>
     </div>
     <div class="modal-body" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
-        <div id="qmContent">Loading messages...</div>
+        <div id="qmContent">Syncing Data...</div>
     </div>
 </div>
 
@@ -127,10 +133,10 @@
             </div>
         </div>
     <div id="ann-container" class="notif-content">
-        <div class="status-message">Syncing...</div>
+        <div class="status-message">Syncing Data...</div>
     </div>
     <div id="archive-container" class="notif-content" style="display: none;">
-        <div class="status-message">Syncing...</div>
+        <div class="status-message">Syncing Data...</div>
     </div>
 </div>
 
@@ -254,7 +260,7 @@
               <span id="scorecard-store-name" class="alert-store-name">📊 Store Scorecard</span>
               <a href="https://docs.google.com/spreadsheets/d/1agChyBxxwJqP-3CXo10C36-95Y_dVKXTA4GboeCaRRs/edit?gid=285677074#gid=285677074" target="_blank" class="mini-action-btn">Full Sheet ↗</a>
           </div>
-          <div id="scorecard-widget-body"><div class="status-message">Loading...</div></div>
+          <div id="scorecard-widget-body"><div class="status-message">Syncing Data...</div></div>
       </div>
 
       <div class="card alert-card" style="flex: 3 1 600px; max-width: none;">
@@ -262,7 +268,7 @@
               <span id="alerts-store-name" class="alert-store-name">🚨 Action Needed - eBay Performance</span>
               <a href="https://docs.google.com/spreadsheets/d/1QVbFYJCXtVgStuYCHw0AcPDZfcoojBgqgEgMO8jYA_E/edit?gid=0#gid=0" target="_blank" class="mini-action-btn">Full Sheet ↗</a>
           </div>
-          <div id="alerts-widget-body"><div class="status-message">Loading...</div></div>
+         <div id="alerts-widget-body"><div class="status-message">Syncing Data...</div></div>
       </div>
       <div style="flex: 2 1 350px; margin: 0;"></div>
   </div>
@@ -273,7 +279,7 @@
       </div>
 
       <div id="district-master-body" class="district-master-grid" style="margin-bottom: 30px;">
-          <div class="status-message">Building Master Dashboard...</div>
+          <div class="status-message">Syncing Data...</div>
       </div>
 
       <div style="display: grid; grid-template-columns: 6fr 4fr; gap: 30px; align-items: stretch; width: 100%;">
@@ -298,7 +304,7 @@
                           <div class="district-kpi-store-lbl">🔴 BAL</div>
                       </div>
                       <div id="district-kpi-body" class="kpi-scroll-area" style="max-height: 280px; overflow-y: auto;">
-                          <div class="status-message">Compiling District KPIs...</div>
+                          <div class="status-message">Syncing Data...</div>
                       </div>
                   </div>
               </div>
@@ -321,7 +327,7 @@
               <div style="padding: 20px; flex-grow: 1; display: flex; flex-direction: column; justify-content: center;">
                   
                   <div id="dm-compact-goals-container" style="border: 1px solid #e2e8f0; border-radius: 10px; background: white; overflow-y: auto; max-height: 280px; width: 100%;">
-                      <div class="status-message">Syncing Network...</div>
+                      <div class="status-message">Syncing Data...</div>
                   </div>
                   
               </div>

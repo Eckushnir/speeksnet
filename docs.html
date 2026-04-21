@@ -66,7 +66,7 @@
 <div id="globalOverlay" class="overlay" style="display: none;"></div>
 <div class="modal-menu manage-docs-menu" id="hotkeysDropdown">
     <div class="modal-header">
-        <h3>⌨️ Hotkeys & Commands</h3>
+        <h3>Hotkeys & Commands</h3>
         <button class="modal-close-btn" onclick="closeAllModals(); document.getElementById('hotkeysDropdown').classList.remove('show');">✖</button>
     </div>
     <div class="modal-body" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
@@ -92,11 +92,17 @@
 
 <div class="modal-menu" id="quickMsgDropdown">
     <div class="modal-header">
-        <h3>💬 Quick Messages</h3>
-        <button class="modal-close-btn" onclick="closeAllModals(); document.getElementById('quickMsgDropdown').classList.remove('show');">✖</button>
+        <h3>Quick Messages</h3>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div class="notif-tabs">
+                <button id="qm-tab-common" class="tab-btn active" onclick="switchQMTab('common')">Common</button>
+                <button id="qm-tab-nodeals" class="tab-btn" onclick="switchQMTab('nodeals')">No Deals</button>
+            </div>
+            <button class="modal-close-btn" onclick="closeAllModals(); document.getElementById('quickMsgDropdown').classList.remove('show');">✖</button>
+        </div>
     </div>
     <div class="modal-body" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
-        <div id="qmContent">Loading messages...</div>
+        <div id="qmContent">Syncing Data...</div>
     </div>
 </div>
 
@@ -125,10 +131,10 @@
             </div>
         </div>
     <div id="ann-container" class="notif-content">
-        <div class="status-message">Syncing...</div>
+        <div class="status-message">Syncing Data...</div>
     </div>
     <div id="archive-container" class="notif-content" style="display: none;">
-        <div class="status-message">Syncing...</div>
+        <div class="status-message">Syncing Data...</div>
     </div>
 </div>
 
@@ -156,7 +162,7 @@
   </div>
 
   <div id="content-container">
-      <div class="empty-state">Loading Documents...</div>
+      <div class="empty-state">Syncing Data...</div>
   </div>
   <div id="noResults" class="empty-state hidden">No documents found matching your search.</div>
 </main>

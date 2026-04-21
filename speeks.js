@@ -237,12 +237,13 @@ async function loadHotkeys() {
         tbody.innerHTML = data.map(row => {
             const cols = Object.values(row), brand = cols[1] || "";
             if (brand.toLowerCase() === "brand" || !brand) return '';
-            const bClass = brand.toLowerCase().includes('apple') ? 'b-apple' : (['dell','hp','lenovo','asus'].some(x => brand.toLowerCase().includes(x)) ? 'b-windows' : 'b-generic');
-            return `<tr><td><span class="bubble ${bClass}">${brand}</span></td><td>${cols[2]}</td><td>${cols[3]}</td><td>${cols[4]}</td></tr>`;
+            
+            // FIX: Forcing every single brand to use the standard gray "b-generic" class
+            return `<tr><td><span class="bubble b-generic">${brand}</span></td><td>${cols[2]}</td><td>${cols[3]}</td><td>${cols[4]}</td></tr>`;
+            
         }).join('');
     } catch (e) {}
 }
-
 function filterKB() {
     const filter = document.getElementById("kbSearch").value.toUpperCase();
     const rows = document.getElementById("kbBody").getElementsByTagName("tr");
@@ -330,7 +331,7 @@ function renderDocs(docs) {
 async function loadDocs() {
     const cached = localStorage.getItem('speeksDocsData');
     if (cached) try { renderDocs(globalDocsData = JSON.parse(cached)); } catch (e) {}
-    else document.getElementById('content-container').innerHTML = '<div class="empty-state">Loading Documents...</div>';
+    else document.getElementById('content-container').innerHTML = '<div class="empty-state">Syncing Data...</div>';
 
     try {
         globalDocsData = await (await fetch(`${DOCS_URL}?v=${Date.now()}`)).json();
@@ -543,7 +544,7 @@ async function fetchWeeklyKPIs() {
     }
 
     let msg = document.getElementById('weekly-fetch-msg') || Object.assign(document.createElement('div'), { id: 'weekly-fetch-msg', style: 'padding: 40px; text-align: center; color: #888; font-weight: 600; grid-column: 1 / -1;' });
-    if(!document.getElementById('weekly-fetch-msg')) cont.appendChild(msg); msg.innerText = 'Syncing...'; msg.style.display = 'block';
+    if(!document.getElementById('weekly-fetch-msg')) cont.appendChild(msg); msg.innerText = 'Syncing Data...'; msg.style.display = 'block';
 
     try {
         const d = await (await fetch(`${WEEKLY_KPI_URL}?store=${store}&time=4-Week&v=${Date.now()}`)).json();
@@ -688,7 +689,7 @@ async function fetchRecordsData() { try { recordsCache = await (await fetch(`${R
 
 function renderRecords() {
     const cont = document.getElementById('recordsContainer'); if(!cont) return;
-    if (!recordsCache?.length) return cont.innerHTML = '<div style="padding: 40px; text-align: center; color: #888; font-weight: 600;">Syncing Live Records...</div>';
+    if (!recordsCache?.length) return cont.innerHTML = '<div class="status-message">Syncing Data...</div>';
     const map = {}; recordsCache.forEach(r => { let l = String(r.label).trim(), s = String(r.section).toUpperCase().trim(); if (!map[l]) map[l] = { c: null, s: [] }; if (s === 'COMPANY' || s === 'COMPANY WIDE') map[l].c = r; else map[l].s.push(r); });
     let bC = 0; cont.innerHTML = '<div class="records-masonry-grid">' + Object.keys(map).map(l => {
         let d = map[l]; bC++; let oId = 'overflow-board-' + bC; d.s.sort((a, b) => parseNum(b.value) - parseNum(a.value)); let cR = d.c || d.s[0];
@@ -701,61 +702,222 @@ function syncAllData() { if (kpiChartCache[currentTimeframe]) renderKpiChart(kpi
 
 
 // --- QUICK MESSAGES MODULE ---
+let quickMsgCache = null;
+let currentQMTab = 'common';
+
 async function loadQuickMessages() {
     const contentDiv = document.getElementById('qmContent');
-    if (contentDiv.innerHTML !== 'Loading messages...' && contentDiv.innerHTML.trim() !== '') return; 
+    
+    if (quickMsgCache && contentDiv.querySelector('.qm-item')) return; 
+
+    contentDiv.innerHTML = '<div class="status-message">Syncing Data...</div>';
 
     try {
         const response = await fetch(QUICK_MSG_URL);
-        const data = await response.json();
-        if (!data || data.length === 0) {
-            contentDiv.innerHTML = '<p>No messages found in the Google Sheet.</p>';
-            return;
-        }
+        quickMsgCache = await response.json(); 
+        
+        renderQMTab(currentQMTab);
+    } catch (error) {
+        console.error("Error loading Quick Messages:", error);
+        contentDiv.innerHTML = '<div class="status-message" style="color: var(--red-alert);">Failed to load messages. Ensure Apps Script is deployed as a "New Version".</div>';
+    }
+}
 
-        const headers = Object.keys(data[0]);
-        const categoryCol = headers[0]; 
-        const nameCol = headers[1];     
-        const msgCol = headers[2];      
+function switchQMTab(tab) {
+    currentQMTab = tab;
+    
+    const btnCommon = document.getElementById('qm-tab-common');
+    const btnNoDeals = document.getElementById('qm-tab-nodeals');
+    if (btnCommon && btnNoDeals) {
+        btnCommon.classList.toggle('active', tab === 'common');
+        btnNoDeals.classList.toggle('active', tab === 'nodeals');
+    }
+    
+    renderQMTab(tab);
+}
 
-        const groupedData = {};
-        data.forEach(row => {
-            const category = row[categoryCol];
+function renderQMTab(tab) {
+    const contentDiv = document.getElementById('qmContent');
+    if (!quickMsgCache) return;
+
+    const rawData = tab === 'common' ? quickMsgCache.common : quickMsgCache.noDeals;
+    
+    let userStore = sessionStorage.getItem('speeksUserStore') || 'OVL';
+    if (userStore === 'ALL') userStore = 'CORP';
+
+    if (!rawData || rawData.length === 0) {
+        contentDiv.innerHTML = '<div style="padding: 20px; color: #888; text-align: center; font-weight: 600;">No messages found in this tab.</div>';
+        return;
+    }
+
+    const groupedData = {};
+    
+    rawData.forEach(row => {
+        const rowStore = String(row.store || "Everyone").trim().toUpperCase();
+        if (rowStore === 'EVERYONE' || rowStore === userStore.toUpperCase()) {
+            const category = row.category;
             if (!groupedData[category]) groupedData[category] = [];
             groupedData[category].push(row);
-        });
+        }
+    });
 
-        let html = '';
+    let html = '';
+
+    if (tab === 'common') {
         for (const [category, items] of Object.entries(groupedData)) {
             html += `
             <div class="qm-category-wrapper">
-                <div class="qm-category" onclick="this.nextElementSibling.classList.toggle('open')">
-                    📁 ${escapeHtml(category)}
+                <div class="qm-category" onclick="this.classList.toggle('open'); this.nextElementSibling.classList.toggle('open')">
+                    <span>> ${escapeHtml(category)}</span>
+                    <span class="qm-caret" style="font-size:10px; color:#a0aab2; transition: transform 0.3s;">▼</span>
                 </div>
                 <div class="qm-category-items">
                     ${items.map(item => `
                         <div class="qm-item">
                             <div class="qm-item-header">
                                 <div class="qm-item-name" onclick="this.parentElement.nextElementSibling.classList.toggle('open')">
-                                    ${escapeHtml(item[nameCol])}
+                                    ${escapeHtml(item.name)}
                                 </div>
-                                <button class="qm-copy-btn" title="Copy Message" data-message="${escapeHtml(item[msgCol])}" onclick="copyQMToClipboard(this)">
+                                <button class="qm-copy-btn" title="Copy Message" data-message="${escapeHtml(item.message)}" onclick="copyQMToClipboard(this)">
                                     📋
                                 </button>
                             </div>
                             <div class="qm-item-message">
-                                ${escapeHtml(item[msgCol])}
+                                ${escapeHtml(item.message)}
                             </div>
                         </div>
                     `).join('')}
                 </div>
             </div>`;
         }
-        contentDiv.innerHTML = html;
-    } catch (error) {
-        console.error("Error loading Quick Messages:", error);
-        contentDiv.innerHTML = '<p style="color:red;">Error loading messages. Check console.</p>';
+    } 
+    else {
+        html += '<div class="qm-category-items open" style="margin-left: 0; padding-left: 0; border: none; background: transparent;">';
+        for (const [category, items] of Object.entries(groupedData)) {
+            html += items.map(item => `
+                <div class="qm-item">
+                    <div class="qm-item-header">
+                        <div class="qm-item-name" onclick="this.parentElement.nextElementSibling.classList.toggle('open')">
+                            ${escapeHtml(item.name)}
+                        </div>
+                        <button class="qm-copy-btn" title="Copy Message" data-message="${escapeHtml(item.message)}" onclick="copyQMToClipboard(this)">
+                            📋
+                        </button>
+                    </div>
+                    <div class="qm-item-message">
+                        ${escapeHtml(item.message)}
+                    </div>
+                </div>
+            `).join('');
+        }
+        html += '</div>';
     }
+    
+    if (html === '' || html === '<div class="qm-category-items open" style="margin-left: 0; padding-left: 0; border: none; background: transparent;"></div>') {
+        html = '<div style="padding: 20px; color: #888; text-align: center; font-weight: 600;">No messages available for your location.</div>';
+    }
+    
+    contentDiv.innerHTML = html;
+}
+
+function switchQMTab(tab) {
+    currentQMTab = tab;
+    
+    // Toggle the active button styles
+    const btnCommon = document.getElementById('qm-tab-common');
+    const btnNoDeals = document.getElementById('qm-tab-nodeals');
+    if (btnCommon && btnNoDeals) {
+        btnCommon.classList.toggle('active', tab === 'common');
+        btnNoDeals.classList.toggle('active', tab === 'nodeals');
+    }
+    
+    // Render the new list instantly!
+    renderQMTab(tab);
+}
+
+function renderQMTab(tab) {
+    const contentDiv = document.getElementById('qmContent');
+    if (!quickMsgCache) return;
+
+    const rawData = tab === 'common' ? quickMsgCache.common : quickMsgCache.noDeals;
+    
+    let userStore = sessionStorage.getItem('speeksUserStore') || 'OVL';
+    if (userStore === 'ALL') userStore = 'CORP';
+
+    if (!rawData || rawData.length === 0) {
+        contentDiv.innerHTML = '<div style="padding: 20px; color: #888; text-align: center; font-weight: 600;">No messages found in this tab.</div>';
+        return;
+    }
+
+    const groupedData = {};
+    
+    rawData.forEach(row => {
+        const rowStore = String(row.store || "Everyone").trim().toUpperCase();
+        if (rowStore === 'EVERYONE' || rowStore === userStore.toUpperCase()) {
+            const category = row.category;
+            if (!groupedData[category]) groupedData[category] = [];
+            groupedData[category].push(row);
+        }
+    });
+
+    let html = '';
+
+    // LOGIC SPLIT: If we are on the Common tab, build the Category Folders
+    if (tab === 'common') {
+        for (const [category, items] of Object.entries(groupedData)) {
+            html += `
+            <div class="qm-category-wrapper">
+                <div class="qm-category" onclick="this.nextElementSibling.classList.toggle('open')">
+                    📂 ${escapeHtml(category)}
+                </div>
+                <div class="qm-category-items">
+                    ${items.map(item => `
+                        <div class="qm-item">
+                            <div class="qm-item-header">
+                                <div class="qm-item-name" onclick="this.parentElement.nextElementSibling.classList.toggle('open')">
+                                     ${escapeHtml(item.name)}
+                                </div>
+                                <button class="qm-copy-btn" title="Copy Message" data-message="${escapeHtml(item.message)}" onclick="copyQMToClipboard(this)">
+                                    📋
+                                </button>
+                            </div>
+                            <div class="qm-item-message">
+                                ${escapeHtml(item.message)}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>`;
+        }
+    } 
+    // LOGIC SPLIT: If we are on the No Deals tab, just list them flat!
+    else {
+        html += '<div class="qm-category-items open" style="margin-left: 0; padding-left: 0; border: none;">';
+        for (const [category, items] of Object.entries(groupedData)) {
+            html += items.map(item => `
+                <div class="qm-item">
+                    <div class="qm-item-header">
+                        <div class="qm-item-name" onclick="this.parentElement.nextElementSibling.classList.toggle('open')">
+                             ${escapeHtml(item.name)}
+                        </div>
+                        <button class="qm-copy-btn" title="Copy Message" data-message="${escapeHtml(item.message)}" onclick="copyQMToClipboard(this)">
+                            📋
+                        </button>
+                    </div>
+                    <div class="qm-item-message">
+                        ${escapeHtml(item.message)}
+                    </div>
+                </div>
+            `).join('');
+        }
+        html += '</div>';
+    }
+    
+    if (html === '' || html === '<div class="qm-category-items open" style="margin-left: 0; padding-left: 0; border: none;"></div>') {
+        html = '<div style="padding: 20px; color: #888; text-align: center; font-weight: 600;">No messages available for your location.</div>';
+    }
+    
+    contentDiv.innerHTML = html;
 }
 
 function copyQMToClipboard(button) {
@@ -824,7 +986,7 @@ function injectIdeaModal() {
         <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;" onload="handleIframeLoad()"></iframe>
         <div class="modal-menu idea-menu" id="ideaModal">
             <div class="modal-header">
-                <h3>💡 Submit an Idea</h3>
+                <h3>Submit an Idea</h3>
                 <button class="modal-close-btn" onclick="closeAllModals()">✖</button>
             </div>
             <div class="modal-content" style="padding: 25px;">
@@ -1061,7 +1223,7 @@ async function initListingGoals() {
 async function fetchLiveGoalsData() {
     const list = document.getElementById('goals-roster-list');
     if (!list) return;
-    list.innerHTML = '<div class="status-message" style="text-align: center; color: #888; padding: 20px 0;">Syncing Live Goals...</div>';
+    list.innerHTML = '<div class="status-message">Syncing Data...</div>';
 
     goalsTargetStore = sessionStorage.getItem('speeksUserStore') || 'OVL';
     if (goalsTargetStore === 'ALL' || goalsTargetStore === 'CORP') goalsTargetStore = 'OVL'; 
@@ -2408,41 +2570,73 @@ function drawLeaderboard() {
     // --- CALCULATE RANKS FOR THE DATALABELS ---
     let finalScores = [];
     datasets.forEach((ds, i) => {
-        // Find the very last valid day this store had data
         let lastIdx = ds.data.findLastIndex(v => v !== null);
         let lastVal = lastIdx !== -1 ? ds.data[lastIdx] : 0;
         finalScores.push({ index: i, val: lastVal, lastIdx: lastIdx });
     });
     
-    // Sort highest to lowest
     finalScores.sort((a, b) => b.val - a.val);
 
-    // Assign top 3 ranks
     let ranks = {};
     finalScores.forEach((item, pos) => {
         if (pos < 3) ranks[item.index] = { rank: pos + 1, lastIdx: item.lastIdx };
     });
 
+    // --- NEW: THE CHECKERED FINISH LINE PLUGIN ---
+    const checkeredPlugin = {
+        id: 'checkeredFinishLine',
+        // This hook guarantees the flag is drawn UNDER the data lines!
+        beforeDatasetsDraw: (chart) => {
+            const { ctx, chartArea } = chart;
+            if (!chartArea) return;
+            const { top, bottom, right } = chartArea;
+            
+            const totalHeight = bottom - top;
+            
+            // Targets ~12px per square to make them smaller and add more cubes!
+            const rowCount = Math.round(totalHeight / 12); 
+            const squareSize = totalHeight / rowCount; 
+            
+            const cols = 2; // 2 columns wide
+            const lineWidth = squareSize * cols;
+            const startX = right - lineWidth;
+
+            ctx.save();
+            
+            for (let row = 0; row < rowCount; row++) {
+                const currentY = top + (row * squareSize);
+                for (let col = 0; col < cols; col++) {
+                    // Alternates between your Light Gray and dark Slate Charcoal
+                    ctx.fillStyle = ((col + row) % 2 === 0) ? '#e2e8f0' : '#1a1c1e';
+                    
+                    // The +0.5 prevents tiny invisible hairline gaps between squares
+                    ctx.fillRect(startX + (col * squareSize), currentY, squareSize + 0.5, squareSize + 0.5);
+                }
+            }
+            ctx.restore();
+        }
+    };
+
     try {
         const ctx = canvas.getContext('2d');
         if (leaderboardChartInstance) leaderboardChartInstance.destroy(); 
 
+        // Load both the datalabels and our new Checkered Finish Line
+        let activePlugins = typeof ChartDataLabels !== 'undefined' ? [ChartDataLabels, checkeredPlugin] : [checkeredPlugin];
+
         leaderboardChartInstance = new Chart(ctx, {
             type: 'line',
-            // Load the datalabels plugin safely
-            plugins: typeof ChartDataLabels !== 'undefined' ? [ChartDataLabels] : [],
+            plugins: activePlugins,
             data: { labels: dateLabels, datasets: datasets },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: false },
                 layout: {
-                    // Gives padding on the right so the medals don't get cut off!
                     padding: { right: 50 } 
                 },
                 plugins: {
                     tooltip: {
-                        // FORCES TOOLTIP TO SORT GREATEST TO SMALLEST!
                         itemSort: function(a, b) {
                             return b.parsed.y - a.parsed.y;
                         },
@@ -2464,21 +2658,21 @@ function drawLeaderboard() {
                     datalabels: {
                         display: function(context) {
                             const rankInfo = ranks[context.datasetIndex];
-                            if (!rankInfo) return false; // Only show for top 3
-                            return context.dataIndex === rankInfo.lastIdx; // Only show on the last tip of the line
+                            if (!rankInfo) return false; 
+                            return context.dataIndex === rankInfo.lastIdx; 
                         },
                         formatter: function(value, context) {
                             const r = ranks[context.datasetIndex].rank;
                             return r === 1 ? '🥇 1st' : (r === 2 ? '🥈 2nd' : '🥉 3rd');
                         },
                         backgroundColor: function(context) {
-                            return context.dataset.backgroundColor; // Matches the store's color
+                            return context.dataset.backgroundColor; 
                         },
                         color: 'white',
                         borderRadius: 6,
                         font: { size: 10, weight: 'bold', family: "'Inter', sans-serif" },
                         padding: { top: 4, bottom: 4, left: 8, right: 8 },
-                        align: 'right',  // Pushes it to the right of the dot
+                        align: 'right',  
                         anchor: 'center',
                         offset: 4
                     }

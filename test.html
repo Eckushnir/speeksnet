@@ -85,7 +85,7 @@
 
 <div class="modal-menu manage-docs-menu" id="hotkeysDropdown">
     <div class="modal-header">
-        <h3>⌨️ Hotkeys & Commands</h3>
+        <h3>Hotkeys & Commands</h3>
         <button class="modal-close-btn" onclick="closeAllModals(); document.getElementById('hotkeysDropdown').classList.remove('show');">✖</button>
     </div>
     <div class="modal-body" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
@@ -111,11 +111,17 @@
 
 <div class="modal-menu" id="quickMsgDropdown">
     <div class="modal-header">
-        <h3>💬 Quick Messages</h3>
-        <button class="modal-close-btn" onclick="closeAllModals(); document.getElementById('quickMsgDropdown').classList.remove('show');">✖</button>
+        <h3>Quick Messages</h3>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div class="notif-tabs">
+                <button id="qm-tab-common" class="tab-btn active" onclick="switchQMTab('common')">Common</button>
+                <button id="qm-tab-nodeals" class="tab-btn" onclick="switchQMTab('nodeals')">No Deals</button>
+            </div>
+            <button class="modal-close-btn" onclick="closeAllModals(); document.getElementById('quickMsgDropdown').classList.remove('show');">✖</button>
+        </div>
     </div>
     <div class="modal-body" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
-        <div id="qmContent">Loading messages...</div>
+        <div id="qmContent">Syncing Data...</div>
     </div>
 </div>
 
@@ -131,10 +137,10 @@
             </div>
         </div>
     <div id="ann-container" class="notif-content">
-        <div class="status-message">Syncing...</div>
+        <div class="status-message">Syncing Data...</div>
     </div>
     <div id="archive-container" class="notif-content" style="display: none;">
-        <div class="status-message">Syncing...</div>
+        <div class="status-message">Syncing Data...</div>
     </div>
 </div>
 
@@ -269,7 +275,7 @@
                       </div>
 
                       <div id="goals-roster-list" class="goals-roster-container">
-                          <div class="status-message goals-loading-msg">Loading Roster...</div>
+                          <div class="status-message goals-loading-msg">Syncing Data...</div>
                       </div>
 
                       <div class="goals-total-row">
@@ -314,7 +320,7 @@
           </div>
           
           <div id="employee-goals-widget-body" class="employee-widget-body">
-              <div class="status-message">Syncing My Goals...</div>
+              <div class="status-message">Syncing Data...</div>
           </div>
       </div>
 
@@ -329,7 +335,7 @@
           </div>
           
           <div id="employee-kpi-widget-body" class="employee-kpi-body">
-              <div class="status-message">Syncing My KPIs...</div>
+              <div class="status-message">Syncing Data...</div>
           </div>
       </div>
       
@@ -352,7 +358,7 @@
         </div>
         
         <div id="lb-wrapper" style="flex-grow: 1; position: relative; padding: 20px; display: flex;">
-            <div class="status-message" style="margin: auto;">Syncing Live Data...</div>
+            <div class="status-message">Syncing Data...</div>
         </div>
 
     </div>
