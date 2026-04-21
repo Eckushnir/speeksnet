@@ -580,7 +580,24 @@ async function fetchWeeklyKPIs() {
 }
 
 async function fetchHubData() {
-    try { hubDataCache = await (await fetch(`${HUB_URL}?v=${Date.now()}`)).json(); if (document.getElementById('bs-buy-val')) renderBuyingSales(); if (document.getElementById('rev-list')) renderLiveData(hubDataCache); } catch(e) {}
+    try {
+        hubDataCache = await (await fetch(`${HUB_URL}?v=${Date.now()}`)).json();
+        
+        if (document.getElementById('bs-buy-val')) renderBuyingSales();
+        if (document.getElementById('rev-list')) renderLiveData(hubDataCache);
+        
+        // Let the Hub power the Leaderboard automatically!
+        if (document.getElementById('lb-wrapper')) {
+            if (hubDataCache.leaderboard) {
+                cachedLeaderboardData = hubDataCache.leaderboard;
+                drawLeaderboard();
+            } else {
+                document.getElementById('lb-wrapper').innerHTML = '<div class="status-message" style="color:var(--red-alert);">Please Deploy "New Version" of Hub App Script!</div>';
+            }
+        }
+    } catch(e) {
+        console.error("Hub Sync Failed", e);
+    }
 }
 
 function renderBuyingSales() {
@@ -609,6 +626,7 @@ function initDashboardData() {
     setTimeout(fetchDmGoalsData, 1000);
     setTimeout(fetchAndRenderEmployeeGoals, 1100);
     setTimeout(fetchAndRenderEmployeeKPIs, 1200);
+    setTimeout(renderLeaderboardChart, 1500);
 }
 
 // --- 8. MODULE: METRICS (CHARTS & RECORDS) ---
@@ -2184,7 +2202,7 @@ async function fetchAndRenderEmployeeGoals() {
 }
 
 // ==========================================
-// 4. EMPLOYEE SPECIFIC WEEKLY KPI WIDGET
+// 4. EMPLOYEE SPECIFIC WEEKLY KPI WIDGET (GRID LAYOUT)
 // ==========================================
 async function fetchAndRenderEmployeeKPIs() {
     const container = document.getElementById('employee-kpi-widget-body');
@@ -2240,10 +2258,36 @@ async function fetchAndRenderEmployeeKPIs() {
 
         let pTxt = "";
         if (sIdx !== -1) {
-            let headerRowIdx = fIdx !== -1 ? fIdx : sIdx;
-            let hrScan = d[headerRowIdx - 3] || d[headerRowIdx - 2];
-            if (hrScan && hrScan[2] && hrScan[4] && hrScan[6]) {
-                pTxt = `${String(hrScan[2]).replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/ig, m => ({"Jan":"January","Feb":"February","Mar":"March","Apr":"April","May":"May","Jun":"June","Jul":"July","Aug":"August","Sep":"September","Oct":"October","Nov":"November","Dec":"December"}[m.charAt(0).toUpperCase() + m.slice(1).toLowerCase()] || m))} ${hrScan[4]}-${hrScan[6]}`;
+            // FIX: We must find the VERY FIRST employee to anchor to the header row correctly
+            let firstEmpIdx = -1;
+            for (let i = Math.max(0, sIdx - 6); i <= Math.min(d.length - 1, sIdx + 6); i++) {
+                let n = String(d[i][0]).trim(), lN = n.toLowerCase();
+                if (n && !["name", "employee", "store", "store total", "ovl", "lee", "wsp", "mpl", "bal"].includes(lN) && !lN.includes("average") && !lN.includes("week")) {
+                    if (String(d[i][2]).trim() !== "" || String(d[i][20]).trim() !== "") {
+                        firstEmpIdx = i;
+                        break; // Stop at the first employee found
+                    }
+                }
+            }
+
+            if (firstEmpIdx !== -1) {
+                let hR = d[firstEmpIdx - 3] || d[firstEmpIdx - 2];
+                if (hR && hR[2] && hR[4] && hR[6]) {
+                    
+                    // Add "th", "st", "nd", "rd"
+                    const getOrdinal = (n) => {
+                        let val = parseInt(String(n).replace(/\D/g, ''));
+                        if (isNaN(val)) return n;
+                        let s = ["th", "st", "nd", "rd"], v = val % 100;
+                        return val + (s[(v - 20) % 10] || s[v] || s[0]);
+                    };
+                    
+                    let monthName = String(hR[2]).replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/ig, m => ({"Jan":"January","Feb":"February","Mar":"March","Apr":"April","May":"May","Jun":"June","Jul":"July","Aug":"August","Sep":"September","Oct":"October","Nov":"November","Dec":"December"}[m.charAt(0).toUpperCase() + m.slice(1).toLowerCase()] || m));
+                    let startDay = getOrdinal(hR[4]);
+                    let endDay = getOrdinal(hR[6]);
+                    
+                    pTxt = `${monthName} ${startDay} - ${endDay}`;
+                }
             }
         }
         if (periodLabel) periodLabel.innerText = pTxt;
@@ -2253,8 +2297,8 @@ async function fetchAndRenderEmployeeKPIs() {
             return;
         }
 
-        // Updated buildStatRow function with dynamic labels and bubble toggles
-        const buildStatRow = (title, myVal, storeVal, ruleStr, isPercent = false, prefixLabel = "Store Avg:", showBubble = true) => {
+        // Updated function to build grid cells instead of full rows
+        const buildStatGridItem = (title, myVal, storeVal, ruleStr, isPercent = false, prefixLabel = "Store:", showBubble = true) => {
             const myIsBad = ruleStr ? checkRule(ruleStr, myVal) : false;
             
             let displayMyVal = myVal || '-';
@@ -2263,37 +2307,197 @@ async function fetchAndRenderEmployeeKPIs() {
             let displayStoreVal = storeVal || '-';
             if (displayStoreVal !== '-' && isPercent && !String(displayStoreVal).includes('%')) displayStoreVal += '%';
 
-            let rightSideHtml = '';
-
+            let centerHtml = '';
             if (showBubble) {
                 const badgeClass = displayMyVal === '-' ? 'badge-null' : (myIsBad ? 'badge-fail' : 'badge-pass');
-                rightSideHtml = `<div class="emp-kpi-badge ${badgeClass}">${displayMyVal}</div>`;
+                centerHtml = `<div class="emp-kpi-badge ${badgeClass}" style="margin: 4px 0; padding: 4px 6px; font-size: 11px;">${displayMyVal}</div>`;
             } else {
-                // Raw text style for metrics that shouldn't have a colored bubble
-                rightSideHtml = `<div style="font-size: 14px; font-weight: 900; color: var(--slate-charcoal); padding-right: 5px;">${displayMyVal}</div>`;
+                centerHtml = `<div style="font-size: 13px; font-weight: 900; color: var(--slate-charcoal); margin: 4px 0; padding: 4px 0;">${displayMyVal}</div>`;
             }
 
             return `
-            <div class="emp-kpi-row">
-                <div class="emp-kpi-info">
-                    <span class="emp-kpi-title">${title}</span>
-                    <span class="emp-kpi-avg">${prefixLabel} <strong>${displayStoreVal}</strong></span>
-                </div>
-                ${rightSideHtml}
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 4px; border: 1px dashed #e2e8f0; border-radius: 6px; background: #fdfdfd;">
+                <span style="font-size: 9px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase; line-height: 1;">${title}</span>
+                ${centerHtml}
+                <span style="font-size: 8px; font-weight: 700; color: #a0aab2; text-transform: uppercase;">${prefixLabel} <strong>${displayStoreVal}</strong></span>
             </div>`;
         };
 
+        // Render the 2x3 Grid
         container.innerHTML = `
-            <div>
-                ${buildStatRow('Buying Value', myData.buyVal, sAvg.buyVal, null, false, 'Store Total:', false)}
-                ${buildStatRow('Buying Margin', myData.buyMargin, sAvg.buyMargin, 'margin', true, 'Store Avg:', true)}
-                ${buildStatRow('Customer Conversion', myData.conversion, sAvg.conversion, 'conversion', true, 'Store Avg:', true)}
-                ${buildStatRow('No Deals', myData.noDeals, sAvg.noDeals, 'nodeals', false, 'Store Avg:', true)}
-                ${buildStatRow('Avg Trans. Time', myData.time, sAvg.time, 'time', false, 'Store Avg:', true)}
-                ${buildStatRow('Listed Devices', myData.listed, sAvg.listed, null, false, 'Store Total:', false)}
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; height: 100%;">
+                ${buildStatGridItem('Buying Value', myData.buyVal, sAvg.buyVal, null, false, 'Store:', false)}
+                ${buildStatGridItem('Margin', myData.buyMargin, sAvg.buyMargin, 'margin', true, 'Store:', true)}
+                ${buildStatGridItem('Conversion', myData.conversion, sAvg.conversion, 'conversion', true, 'Store:', true)}
+                ${buildStatGridItem('No Deals', myData.noDeals, sAvg.noDeals, 'nodeals', false, 'Store:', true)}
+                ${buildStatGridItem('Trans. Time', myData.time, sAvg.time, 'time', false, 'Store:', true)}
+                ${buildStatGridItem('Listed Dev.', myData.listed, sAvg.listed, null, false, 'Store:', false)}
             </div>
         `;
     } catch (e) {
         container.innerHTML = '<div class="status-message" style="color:var(--red-alert);">Failed to sync KPIs.</div>';
+    }
+}
+
+// ============================================================================
+// WIDGET: MONTHLY PERFORMANCE LEADERBOARD
+// ============================================================================
+let leaderboardChartInstance = null;
+let currentLeaderboardMetric = 'Revenue'; 
+let cachedLeaderboardData = null; 
+
+function switchLeaderboardMetric(metric) {
+    currentLeaderboardMetric = metric;
+    
+    const revBtn = document.getElementById('lb-tab-rev');
+    const gpBtn = document.getElementById('lb-tab-gp');
+    
+    if (revBtn && gpBtn) {
+        revBtn.classList.toggle('active', metric === 'Revenue');
+        revBtn.style.color = metric === 'Revenue' ? 'var(--slate-charcoal)' : '#a0aab2';
+        
+        gpBtn.classList.toggle('active', metric === 'GP');
+        gpBtn.style.color = metric === 'GP' ? 'var(--slate-charcoal)' : '#a0aab2';
+    }
+    
+    drawLeaderboard(); 
+}
+
+function drawLeaderboard() {
+    const wrapper = document.getElementById('lb-wrapper');
+    const monthLabel = document.getElementById('lb-month-display');
+    
+    if (!wrapper || !cachedLeaderboardData || !cachedLeaderboardData.activeStores) return;
+
+    if (typeof Chart === 'undefined') {
+        setTimeout(drawLeaderboard, 100); 
+        return;
+    }
+
+    const now = new Date();
+    if (monthLabel) {
+        monthLabel.innerText = `- ${now.toLocaleString('default', { month: 'long', year: 'numeric' }).toUpperCase()}`;
+    }
+
+    wrapper.style.display = 'block';
+    wrapper.innerHTML = '<canvas id="leaderboardCanvas" style="width: 100%; height: 100%;"></canvas>';
+    const canvas = document.getElementById('leaderboardCanvas');
+
+    const colors = { 'OVL': '#a855f7', 'LEE': '#3b82f6', 'WSP': '#22c55e', 'MPL': '#f97316', 'BAL': '#ef4444' };
+    const daysInMonthCount = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const dateLabels = Array.from({length: daysInMonthCount}, (_, i) => `${now.getMonth() + 1}/${i + 1}`);
+
+    let datasets = [];
+    const dataPacket = currentLeaderboardMetric === 'Revenue' ? cachedLeaderboardData.revenue : cachedLeaderboardData.gp;
+
+    cachedLeaderboardData.activeStores.forEach(store => {
+        if (dataPacket[store]) {
+            datasets.push({
+                label: '   ' + store + '   ', 
+                data: dataPacket[store],
+                borderColor: colors[store],
+                backgroundColor: colors[store],
+                borderWidth: 2,
+                pointRadius: 0,
+                pointHoverRadius: 6,
+                tension: 0.1
+            });
+        }
+    });
+
+    // --- CALCULATE RANKS FOR THE DATALABELS ---
+    let finalScores = [];
+    datasets.forEach((ds, i) => {
+        // Find the very last valid day this store had data
+        let lastIdx = ds.data.findLastIndex(v => v !== null);
+        let lastVal = lastIdx !== -1 ? ds.data[lastIdx] : 0;
+        finalScores.push({ index: i, val: lastVal, lastIdx: lastIdx });
+    });
+    
+    // Sort highest to lowest
+    finalScores.sort((a, b) => b.val - a.val);
+
+    // Assign top 3 ranks
+    let ranks = {};
+    finalScores.forEach((item, pos) => {
+        if (pos < 3) ranks[item.index] = { rank: pos + 1, lastIdx: item.lastIdx };
+    });
+
+    try {
+        const ctx = canvas.getContext('2d');
+        if (leaderboardChartInstance) leaderboardChartInstance.destroy(); 
+
+        leaderboardChartInstance = new Chart(ctx, {
+            type: 'line',
+            // Load the datalabels plugin safely
+            plugins: typeof ChartDataLabels !== 'undefined' ? [ChartDataLabels] : [],
+            data: { labels: dateLabels, datasets: datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                layout: {
+                    // Gives padding on the right so the medals don't get cut off!
+                    padding: { right: 50 } 
+                },
+                plugins: {
+                    tooltip: {
+                        // FORCES TOOLTIP TO SORT GREATEST TO SMALLEST!
+                        itemSort: function(a, b) {
+                            return b.parsed.y - a.parsed.y;
+                        },
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label.trim() || ''; 
+                                if (label) label += ': ';
+                                if (context.parsed.y !== null) {
+                                    label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y);
+                                }
+                                return label;
+                            }
+                        }
+                    },
+                    legend: {
+                        position: 'bottom',
+                        labels: { font: { size: 13, family: "'Inter', sans-serif", weight: 'bold' }, usePointStyle: true, boxWidth: 8, padding: 20 }
+                    },
+                    datalabels: {
+                        display: function(context) {
+                            const rankInfo = ranks[context.datasetIndex];
+                            if (!rankInfo) return false; // Only show for top 3
+                            return context.dataIndex === rankInfo.lastIdx; // Only show on the last tip of the line
+                        },
+                        formatter: function(value, context) {
+                            const r = ranks[context.datasetIndex].rank;
+                            return r === 1 ? '🥇 1st' : (r === 2 ? '🥈 2nd' : '🥉 3rd');
+                        },
+                        backgroundColor: function(context) {
+                            return context.dataset.backgroundColor; // Matches the store's color
+                        },
+                        color: 'white',
+                        borderRadius: 6,
+                        font: { size: 10, weight: 'bold', family: "'Inter', sans-serif" },
+                        padding: { top: 4, bottom: 4, left: 8, right: 8 },
+                        align: 'right',  // Pushes it to the right of the dot
+                        anchor: 'center',
+                        offset: 4
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: datasets.length === 0 ? 1000 : undefined, 
+                        ticks: { callback: function(value) { return '$' + (value / 1000) + 'k'; } },
+                        grid: { borderDash: [4, 4] }
+                    },
+                    x: { 
+                        grid: { display: false },
+                        ticks: { font: { size: 11, weight: 'bold', family: "'Inter', sans-serif" }, color: '#a0aab2', maxRotation: 45, minRotation: 45 }
+                    }
+                }
+            }
+        });
+    } catch (e) {
+        console.error("Chart.js failed to draw.", e);
     }
 }

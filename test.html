@@ -6,6 +6,10 @@
   <title>SPEEKSNET | QuickPortal</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+  
   <script src="speeks.js" defer></script>
 </head>
 <body class="preload">
@@ -49,7 +53,7 @@
     <div class="top-actions">
       <a href="#" onclick="toggleIdeaModal(); return false;" class="idea-btn action-btn" title="Have an Idea?">💡</a>
       <div class="action-btn" onclick="toggleModal('quickMsgDropdown'); loadQuickMessages();" title="Quick Messages">💬</div>
-      <div class="action-btn" onclick="toggleModal('hotkeysDropdown')" title="Hotkeys & Commands">⌨️</div>
+      <div class="action-btn" onclick="toggleModal('hotkeysDropdown')" title="Hotkeys & Commands">🚀</div>
       <div class="action-btn" onclick="toggleCalendar()" title="Strategic Calendar">📅</div>
       <div class="action-btn" onclick="toggleNotifs()" title="Announcements">
         🔔 <div class="notif-dot" id="notifBadge"></div>
@@ -302,7 +306,7 @@
           <div class="district-kpi-header">
               <div class="district-kpi-title-wrapper">
                   <span class="district-kpi-title">My Listing Goals</span>
-                  <div id="emp-goals-pulse-dot" class="notif-dot active goals-pulse"></div>
+                  <div id="emp-goals-pulse-dot" class="notif-dot active goals-pulse" style="display: none;"></div>
               </div>
               <div class="district-kpi-date-wrapper">
                   <span id="emp-goals-date" class="emp-kpi-date"></span>
@@ -330,6 +334,32 @@
       </div>
       
   </div>
+
+  <div class="dashboard-layout" style="margin-bottom: 30px;">
+    
+    <div class="card master-card" style="padding: 0; display: flex; flex-direction: column; height: 400px; overflow: hidden; margin: 0;">
+        
+        <div class="master-card-header" style="background: var(--slate-charcoal);">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="master-card-title" style="text-transform: uppercase; font-size: 14px; letter-spacing: 0.5px;">Monthly Performance Leaderboard</span>
+                <span id="lb-month-display" style="color: #a0aab2; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;"></span>
+            </div>
+            
+            <div class="timeframe-toggle" style="background: rgba(255,255,255,0.1);">
+                <button class="toggle-btn active" id="lb-tab-rev" onclick="switchLeaderboardMetric('Revenue')" style="color: var(--slate-charcoal);">Revenue</button>
+                <button class="toggle-btn" id="lb-tab-gp" onclick="switchLeaderboardMetric('GP')" style="color: #a0aab2;">Gross Profit</button>
+            </div>
+        </div>
+        
+        <div id="lb-wrapper" style="flex-grow: 1; position: relative; padding: 20px; display: flex;">
+            <div class="status-message" style="margin: auto;">Syncing Live Data...</div>
+        </div>
+
+    </div>
+
+    <div></div>
+
+</div>
 
 </body>
 </html>
