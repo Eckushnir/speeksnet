@@ -37,7 +37,7 @@ function toggleSidebar() {
 }
 
 function closeAllModals() {
-    ['notifDropdown', 'calendarDropdown', 'manageDocsDropdown', 'manageUsersDropdown', 'hotkeysDropdown', 'globalOverlay', 'ideaModal', 'quickMsgDropdown'].forEach(id => {
+    ['notifDropdown', 'calendarDropdown', 'manageDocsDropdown', 'manageUsersDropdown', 'hotkeysDropdown', 'globalOverlay', 'ideaModal', 'quickMsgDropdown', 'manageAlertsDropdown'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.remove('show');
     });
@@ -62,7 +62,7 @@ async function toggleManageUsers() {
         document.body.classList.add('no-scroll');
 
         const list = document.getElementById('manageUsersList');
-        list.innerHTML = '<div style="text-align:center; padding:20px; color:#999;">Loading user database...</div>';
+        list.innerHTML = '<div style="text-align:center; padding:20px; color:#999;">Syncing Data...</div>';
         
         try {
             const res = await fetch(`${AUTH_URL}?v=${Date.now()}`);
@@ -70,7 +70,7 @@ async function toggleManageUsers() {
             globalUsersData = data.users || [];
             populateUsersModal();
         } catch (e) {
-            list.innerHTML = '<div style="color:var(--red-alert); padding:20px;">Failed to load users.</div>';
+            list.innerHTML = '<div style="color:var(--red-alert); padding:20px;">Failed to sync data.</div>';
         }
     }
 }
@@ -253,11 +253,33 @@ function filterKB() {
 // --- 6. MODULE: DOCS & POLICIES ---
 let globalDocsData = []; 
 
-function toggleManageDocs() {
-  const dropdown = document.getElementById('manageDocsDropdown');
-  if(!dropdown) return;
-  populateManageModal();
-  toggleModal('manageDocsDropdown');
+async function toggleManageDocs() {
+    const dropdown = document.getElementById('manageDocsDropdown');
+    if(!dropdown) return;
+    const isOpen = dropdown.classList.contains('show');
+    closeAllModals();
+    
+    if (!isOpen) {
+        dropdown.classList.add('show');
+        document.getElementById('globalOverlay')?.classList.add('show');
+        document.body.classList.add('no-scroll');
+
+        const list = document.getElementById('manageDocsList');
+        
+        // If data isn't loaded yet (because we are on index.html), fetch it!
+        if (!globalDocsData || globalDocsData.length === 0) {
+            list.innerHTML = '<div class="status-message">Syncing Data...</div>';
+            try {
+                globalDocsData = await (await fetch(`${DOCS_URL}?v=${Date.now()}`)).json();
+                localStorage.setItem('speeksDocsData', JSON.stringify(globalDocsData));
+                populateManageModal();
+            } catch (e) {
+                list.innerHTML = '<div style="color:var(--red-alert); padding:20px; text-align:center;">Failed to load policies.</div>';
+            }
+        } else {
+            populateManageModal();
+        }
+    }
 }
 
 function populateManageModal() {
@@ -1902,6 +1924,25 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchAlertsData();
     fetchMasterDistrictDashboard();
     fetchDistrictMonthlyKPIs();
+
+    // --- SPEEKS Tools Dropdown Toggle ---
+  const devDropdown = document.getElementById('devDropdown');
+  const devWorkspaceBtn = document.getElementById('devWorkspaceBtn');
+  
+  if (devWorkspaceBtn && devDropdown) {
+      // Toggle dropdown on click
+      devWorkspaceBtn.addEventListener('click', (e) => {
+          e.stopPropagation(); // Prevents the window click listener from immediately closing it
+          devDropdown.classList.toggle('open');
+      });
+      
+      // Close dropdown if clicking outside of it
+      document.addEventListener('click', (e) => {
+          if (!devDropdown.contains(e.target)) {
+              devDropdown.classList.remove('open');
+          }
+      });
+  }
 });
 
 async function fetchDistrictMonthlyKPIs() {
@@ -2998,5 +3039,108 @@ function drawLeaderboard() {
         });
     } catch (e) {
         console.error("Chart.js failed to draw.", e);
+    }
+}
+
+// --- MANAGE EBAY ALERTS / PERFORMANCE METRICS MODULE ---
+let globalAlertsData = [];
+const EBAY_ALERTS_URL = 'https://script.google.com/macros/s/AKfycbxap-4Jgdn5-ntkv_X-vFZLTWlTB29_bDLdwcFxhWd2su3ZQJ0ZS7UpUgZAK08lOIV6/exec';
+
+async function toggleManageAlerts() {
+    const dropdown = document.getElementById('manageAlertsDropdown');
+    if (!dropdown) return;
+    const isOpen = dropdown.classList.contains('show');
+    closeAllModals(); 
+    
+    if (!isOpen) {
+        dropdown.classList.add('show');
+        document.getElementById('globalOverlay')?.classList.add('show');
+        document.body.classList.add('no-scroll');
+
+        const list = document.getElementById('manageAlertsList');
+        list.innerHTML = '<div class="status-message">Syncing Data...</div>';
+        
+        try {
+            const res = await fetch(`${EBAY_ALERTS_URL}?v=${Date.now()}`);
+            const json = await res.json();
+            if (json.success && json.data) {
+                globalAlertsData = json.data;
+                populateAlertsModal();
+            } else {
+                throw new Error("Invalid data format");
+            }
+        } catch (e) {
+            list.innerHTML = '<div style="color:var(--red-alert); padding:20px; text-align:center;">Failed to load metrics.</div>';
+        }
+    }
+}
+
+function populateAlertsModal() {
+    const list = document.getElementById('manageAlertsList');
+    const STORES = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
+    
+    let html = `
+        <div style="display: grid; grid-template-columns: 60px 1fr 1fr 1fr 1fr; gap: 10px; padding-bottom: 10px; border-bottom: 2px solid #eee; margin-bottom: 10px;">
+            <div style="font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase;">Store</div>
+            <div style="font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase;">Current High</div>
+            <div style="font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase;">Current Very High</div>
+            <div style="font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase;">Projected High</div>
+            <div style="font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase;">Proj. Very High</div>
+        </div>
+    `;
+
+    STORES.forEach(storeName => {
+        let sData = globalAlertsData.find(s => s.store.toUpperCase() === storeName) || { store: storeName, currentHigh: '', currentVeryHigh: '', projectedHigh: '', projectedVeryHigh: '' };
+        html += `
+            <div class="alert-manage-row" data-store="${storeName}" style="display: grid; grid-template-columns: 60px 1fr 1fr 1fr 1fr; gap: 10px; align-items: center; margin-bottom: 10px;">
+                <div style="font-weight: 900; color: var(--slate-charcoal); font-size: 14px;">${storeName}</div>
+                <input type="text" class="a-ch" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${sData.currentHigh || ''}">
+                <input type="text" class="a-cvh" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${sData.currentVeryHigh || ''}">
+                <input type="text" class="a-ph" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${sData.projectedHigh || ''}">
+                <input type="text" class="a-pvh" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${sData.projectedVeryHigh || ''}">
+            </div>
+        `;
+    });
+
+    list.innerHTML = html;
+}
+
+async function saveAlertsData() {
+    const btn = document.getElementById('saveAlertsBtn');
+    btn.textContent = "Saving...";
+    btn.style.opacity = "0.7";
+
+    const updatedAlerts = [];
+    document.querySelectorAll('.alert-manage-row').forEach(row => {
+        updatedAlerts.push({
+            store: row.getAttribute('data-store'),
+            currentHigh: row.querySelector('.a-ch').value.trim(),
+            currentVeryHigh: row.querySelector('.a-cvh').value.trim(),
+            projectedHigh: row.querySelector('.a-ph').value.trim(),
+            projectedVeryHigh: row.querySelector('.a-pvh').value.trim()
+        });
+    });
+
+    try {
+        const res = await fetch(EBAY_ALERTS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ data: updatedAlerts }) 
+        });
+
+        if (res.ok) {
+            alert("eBay Performance Metrics successfully updated!");
+            closeAllModals();
+            if (typeof fetchAlertsData === 'function') fetchAlertsData(); 
+            if (typeof fetchMasterDistrictDashboard === 'function') fetchMasterDistrictDashboard();
+        } else {
+            alert("Error saving metrics.");
+        }
+    } catch (e) {
+        console.error(e);
+        alert("Failed to connect to server.");
+    } finally {
+        btn.textContent = "Save Changes";
+        btn.style.opacity = "1";
     }
 }
