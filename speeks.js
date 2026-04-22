@@ -690,36 +690,17 @@ function setChartMode(mode) {
 
 function setTimeframe(t) { currentTimeframe = t; document.getElementById('btn-4week')?.classList.toggle('active', t === '4-Week'); document.getElementById('btn-monthly')?.classList.toggle('active', t === 'Monthly'); loadKpiData(); }
 
-function loadKpiData() { const m = document.getElementById('metricSelector')?.value; if (!m) return; kpiChartCache[currentTimeframe] ? renderKpiChart(kpiChartCache[currentTimeframe], m) : fetchChartData(currentTimeframe); }
-
-async function fetchChartData(tf) {
-    try {
-        // FIX: Now fetching all 5 stores so MPL and BAL teams show up!
-        const d = await Promise.all([
-            fetch(`${WEEKLY_KPI_URL}?store=OVL&time=${tf}`), 
-            fetch(`${WEEKLY_KPI_URL}?store=LEE&time=${tf}`), 
-            fetch(`${WEEKLY_KPI_URL}?store=WSP&time=${tf}`),
-            fetch(`${WEEKLY_KPI_URL}?store=MPL&time=${tf}`),
-            fetch(`${WEEKLY_KPI_URL}?store=BAL&time=${tf}`)
-        ]).then(rs => Promise.all(rs.map(r => r.json())));
-        
-        kpiChartCache[tf] = d; 
-        try { localStorage.setItem('speeksKpiChartCache', JSON.stringify(kpiChartCache)); } catch(e) {}
-        
-        if (currentTimeframe === tf) {
-            renderKpiChart(d, document.getElementById('metricSelector').value);
-        }
-    } catch (e) {} finally { 
-        if (document.getElementById('chartLoading')) document.getElementById('chartLoading').style.display = 'none'; 
-    }
-}
-
 function renderKpiChart(allData, metric) {
     if(!document.getElementById('mainKpiChart')) return;
-    const loader = document.getElementById('chartLoading');
-    if (loader) loader.style.display = 'none';
 
-    if (typeof Chart === 'undefined') { if (loader) { loader.innerText = "Chart.js Library Missing!"; loader.style.display = 'flex'; } return; }
+    if (typeof Chart === 'undefined') { 
+        const loader = document.getElementById('chartLoading');
+        if (loader) { 
+            loader.innerText = "Chart.js Library Missing!"; 
+            loader.style.display = 'flex'; 
+        } 
+        return; 
+    }
 
     const t = { 'conversion': 'Customer Conversion %', 'margin': 'Buying Margin %', 'nodeals': 'Total No Deals', 'time': 'Transaction Time' }[metric];
     const unit = metric === 'time' ? '' : (metric === 'nodeals' ? '' : '%'); 
@@ -758,7 +739,9 @@ function renderKpiChart(allData, metric) {
         return (isPct && p <= 1.1 && p > 0) ? p * 100 : p;
     };
 
-    // LOGIC 1: Standard Store Averages
+    const dmDropdown = document.getElementById('dmChartStoreSelector');
+    if (dmDropdown) dmDropdown.style.display = currentChartMode === 'averages' ? 'none' : 'block';
+
     if (currentChartMode === 'averages') {
         allData.forEach((d, idx) => {
             let sData = [], sr=-1, sc=-1;
@@ -768,7 +751,6 @@ function renderKpiChart(allData, metric) {
             } 
             if(sr === -1) return;
             
-            // FIX 1: Lock directly onto exactly ONE column to the left for the Months (Column AC)
             let monthCol = sc - 1;
             let sCol = -1;
             
@@ -812,17 +794,18 @@ function renderKpiChart(allData, metric) {
             });
             
             if (idx < strs.length) {
-                fData.push({ label: strs[idx].label, data: sData, borderColor: strs[idx].color, backgroundColor: strs[idx].color, tension: 0.4, pointRadius: 5, spanGaps: true });
+                // FIXED: Added spacing around the labels!
+                fData.push({ label: '   ' + strs[idx].label + '   ', data: sData, borderColor: strs[idx].color, backgroundColor: strs[idx].color, tension: 0.4, pointRadius: 5, spanGaps: true });
             }
         });
-    } 
-    // LOGIC 2: Role-Based Employee Breakdown
-    else {
-        let userStore = sessionStorage.getItem('speeksUserStore') || 'OVL';
+    } else {
+        // Look for the DM Dropdown first, fallback to session storage for standard employees!
+        let userStore = dmDropdown ? dmDropdown.value : (sessionStorage.getItem('speeksUserStore') || 'OVL');
+        
         if (userStore === 'ALL' || userStore === 'CORP') userStore = 'OVL';
         
         let storeIdx = strs.findIndex(s => s.key === userStore);
-        if (storeIdx === -1) storeIdx = 0; 
+        if (storeIdx === -1) storeIdx = 0;
         
         let d = allData[storeIdx];
         if (d) {
@@ -874,7 +857,8 @@ function renderKpiChart(allData, metric) {
                     
                     if (sData.some(val => val !== null)) {
                         let color = empColors[eIdx % empColors.length];
-                        fData.push({ label: emp.name, data: sData, borderColor: color, backgroundColor: color, tension: 0.4, pointRadius: 5, spanGaps: true });
+                        // FIXED: Added spacing around the labels!
+                        fData.push({ label: '   ' + emp.name + '   ', data: sData, borderColor: color, backgroundColor: color, tension: 0.4, pointRadius: 5, spanGaps: true });
                     }
                 });
             }
@@ -933,7 +917,8 @@ function renderKpiChart(allData, metric) {
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            let label = context.dataset.label || '';
+                            // FIXED: Added .trim() here so the tooltips don't look weird!
+                            let label = context.dataset.label.trim() || '';
                             if (label) label += ': ';
                             if (context.parsed.y !== null) {
                                 label += metric === 'time' ? formatTimeStr(context.parsed.y) : (Math.round(context.parsed.y*10)/10 + unit);
@@ -955,6 +940,9 @@ function renderKpiChart(allData, metric) {
             } 
         } 
     });
+
+    const activeLoader = document.getElementById('chartLoading');
+    if (activeLoader) activeLoader.style.display = 'none';
 }
 
 function renderLiveData(d) {
@@ -985,23 +973,86 @@ function renderRecords() {
 }
 
 function toggleBoard(id, btn) { const el = document.getElementById(id); el.classList.toggle('open'); btn.innerText = el.classList.contains('open') ? 'Hide Leaderboard ▴' : 'See Full Leaderboard ▾'; }
-function syncAllData() { 
-    // 1. INSTANT CACHE DRAW: Prevent flickering by instantly drawing what we already know!
-    if (kpiChartCache[currentTimeframe]) {
-        renderKpiChart(kpiChartCache[currentTimeframe], document.getElementById('metricSelector')?.value); 
-    }
-    if (cachedLeaderboardData) {
-        drawLeaderboard();
-    }
-    if (hubDataCache) {
-        renderLiveData(hubDataCache); 
+function loadKpiData() { 
+    const mSelect = document.getElementById('metricSelector');
+    if (!mSelect) return;
+    const m = mSelect.value;
+    
+    // Force the loader to show immediately upon switching metrics/tabs
+    const loader = document.getElementById('chartLoading');
+    if (loader) {
+        loader.style.display = 'flex';
+        loader.innerHTML = '<div class="status-message">Syncing Data...</div>';
     }
     
-    // 2. BACKGROUND SYNC: Silently fetch fresh data from Google Sheets in the background
+    if (kpiChartCache[currentTimeframe] && Array.isArray(kpiChartCache[currentTimeframe]) && kpiChartCache[currentTimeframe].length > 0) {
+        try {
+            renderKpiChart(kpiChartCache[currentTimeframe], m); 
+        } catch(e) {
+            fetchChartData(currentTimeframe);
+        }
+    } else {
+        fetchChartData(currentTimeframe); 
+    }
+}
+
+async function fetchChartData(tf) {
+    const loader = document.getElementById('chartLoading');
+    if (loader) {
+        loader.style.display = 'flex';
+        loader.innerHTML = '<div class="status-message">Syncing Data...</div>';
+    }
+    
+    try {
+        const d = await Promise.all([
+            fetch(`${WEEKLY_KPI_URL}?store=OVL&time=${tf}`).then(r => r.json()), 
+            fetch(`${WEEKLY_KPI_URL}?store=LEE&time=${tf}`).then(r => r.json()), 
+            fetch(`${WEEKLY_KPI_URL}?store=WSP&time=${tf}`).then(r => r.json()),
+            fetch(`${WEEKLY_KPI_URL}?store=MPL&time=${tf}`).then(r => r.json()),
+            fetch(`${WEEKLY_KPI_URL}?store=BAL&time=${tf}`).then(r => r.json())
+        ]);
+        
+        kpiChartCache[tf] = d; 
+        try { localStorage.setItem('speeksKpiChartCache', JSON.stringify(kpiChartCache)); } catch(e) {}
+        
+        if (currentTimeframe === tf) {
+            const mSelect = document.getElementById('metricSelector');
+            if (mSelect) renderKpiChart(d, mSelect.value);
+        }
+    } catch (e) {
+        console.error("fetchChartData error:", e);
+        if (loader) {
+            loader.innerHTML = '<div class="status-message" style="color:var(--red-alert);">Failed to load chart data.</div>';
+        }
+    } 
+}
+
+function syncAllData() { 
+    // Safely isolate every widget update so a delay in one never crashes the others
+    try {
+        const mSelect = document.getElementById('metricSelector');
+        if (typeof kpiChartCache !== 'undefined' && kpiChartCache && kpiChartCache[currentTimeframe] && mSelect) {
+            renderKpiChart(kpiChartCache[currentTimeframe], mSelect.value); 
+        }
+    } catch (e) {}
+    
+    try {
+        if (typeof cachedLeaderboardData !== 'undefined' && cachedLeaderboardData) {
+            drawLeaderboard();
+        }
+    } catch (e) {}
+    
+    try {
+        if (typeof hubDataCache !== 'undefined' && hubDataCache) {
+            renderLiveData(hubDataCache); 
+        }
+    } catch (e) {}
+    
+    // Trigger background syncs safely
     fetchChartData(currentTimeframe); 
     fetchHubData(); 
-    loadCMS(); 
-    fetchRecordsData(); 
+    if (typeof loadCMS === 'function') loadCMS(); 
+    if (typeof fetchRecordsData === 'function') fetchRecordsData(); 
 }
 
 
@@ -2975,11 +3026,12 @@ function drawLeaderboard() {
             plugins: activePlugins,
             data: { labels: dateLabels, datasets: datasets },
             options: {
+                animation: false, // STOPS THE LOADING GLITCH
                 responsive: true,
                 maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: false },
                 layout: {
-                    padding: { right: 50 } 
+                    padding: { right: 50, left: 10 } // Locks the left side padding
                 },
                 plugins: {
                     tooltip: {
@@ -3025,6 +3077,9 @@ function drawLeaderboard() {
                 },
                 scales: {
                     y: {
+                        // THIS IS THE AXIS LOCK: Forces it to be 75px wide every single time!
+                        afterFit: function(scale) { scale.width = 75; },
+                        
                         beginAtZero: true,
                         max: datasets.length === 0 ? 1000 : undefined, 
                         ticks: { callback: function(value) { return '$' + (value / 1000) + 'k'; } },

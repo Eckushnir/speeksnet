@@ -6,7 +6,11 @@
   <title>SPEEKSNET | QuickPortal</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+  
   <script src="speeks.js" defer></script>
+</head>
 </head>
 <body class="preload">
 
@@ -311,58 +315,130 @@
           <div class="status-message">Syncing Data...</div>
       </div>
 
-      <div style="display: grid; grid-template-columns: 6fr 4fr; gap: 30px; align-items: stretch; width: 100%;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start; width: 100%;">
           
-          <div class="card district-master-panel" style="margin: 0; display: flex; flex-direction: column; height: 100%;">
-              <div class="district-kpi-header" style="background: var(--slate-charcoal); min-height: 72px;">
-                  <span class="district-kpi-title">District Monthly KPIs</span>
-                  <div style="display: flex; align-items: center; justify-content: center; gap: 12px;">
-                      <span style="font-size: 13px; font-weight: 900; color: #a0aab2; text-transform: uppercase;">Month:</span>
-                      <select id="dist-kpi-month" class="dist-kpi-select" onchange="renderDistrictKPIs()"></select>
+          <div style="display: flex; flex-direction: column; gap: 30px; width: 100%;">
+              
+              <div class="card district-master-panel" style="margin: 0; display: flex; flex-direction: column; height: auto;">
+                  <div class="district-kpi-header" style="background: var(--slate-charcoal); min-height: 72px;">
+                      <span class="district-kpi-title">District Monthly KPIs</span>
+                      <div style="display: flex; align-items: center; justify-content: center; gap: 12px;">
+                          <span style="font-size: 13px; font-weight: 900; color: #a0aab2; text-transform: uppercase;">Month:</span>
+                          <select id="dist-kpi-month" class="dist-kpi-select" onchange="renderDistrictKPIs()"></select>
+                      </div>
+                  </div>
+
+                  <div style="overflow-x: auto; width: 100%; flex-grow: 1;">
+                      <div style="min-width: 580px;">
+                          <div class="district-kpi-table-header">
+                              <div class="district-kpi-metric-lbl">Metric</div>
+                              <div class="district-kpi-store-lbl">🟣 OVL</div>
+                              <div class="district-kpi-store-lbl">🔵 LEE</div>
+                              <div class="district-kpi-store-lbl">🟢 WSP</div>
+                              <div class="district-kpi-store-lbl">🟠 MPL</div>
+                              <div class="district-kpi-store-lbl">🔴 BAL</div>
+                          </div>
+                          <div id="district-kpi-body" class="kpi-scroll-area" style="max-height: 280px; overflow-y: auto;">
+                              <div class="status-message">Syncing Data...</div>
+                          </div>
+                      </div>
                   </div>
               </div>
 
-              <div style="overflow-x: auto; width: 100%; flex-grow: 1;">
-                  <div style="min-width: 580px;">
-                      <div class="district-kpi-table-header">
-                          <div class="district-kpi-metric-lbl">Metric</div>
-                          <div class="district-kpi-store-lbl">🟣 OVL</div>
-                          <div class="district-kpi-store-lbl">🔵 LEE</div>
-                          <div class="district-kpi-store-lbl">🟢 WSP</div>
-                          <div class="district-kpi-store-lbl">🟠 MPL</div>
-                          <div class="district-kpi-store-lbl">🔴 BAL</div>
+              <div class="card district-master-panel" style="margin: 0; padding: 0; display: flex; flex-direction: column; height: 400px; overflow: hidden; background: white;">
+                  <div class="district-kpi-header" style="background: var(--slate-charcoal); min-height: 72px;">
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                          <span class="district-kpi-title" style="text-transform: uppercase; font-size: 15px; letter-spacing: 0.5px;">Performance Leaderboard</span>
+                          <span id="lb-month-display" style="color: #a0aab2; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;"></span>
                       </div>
-                      <div id="district-kpi-body" class="kpi-scroll-area" style="max-height: 280px; overflow-y: auto;">
+                      <div class="timeframe-toggle dark-toggle" style="background: rgba(255,255,255,0.1); padding: 4px; border-radius: 8px;">
+                          <button class="toggle-btn active" id="lb-tab-rev" onclick="switchLeaderboardMetric('Revenue')" style="padding: 4px 12px; font-size: 11px;">Revenue</button>
+                          <button class="toggle-btn" id="lb-tab-gp" onclick="switchLeaderboardMetric('GP')" style="padding: 4px 12px; font-size: 11px;">Gross Profit</button>
+                      </div>
+                  </div>
+                  
+                  <div id="lb-wrapper" style="flex-grow: 1; position: relative; padding: 20px; display: flex;">
+                      <div id="lbLoading" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: white; z-index: 10;">
                           <div class="status-message">Syncing Data...</div>
                       </div>
                   </div>
               </div>
+
           </div>
 
-          <div class="card district-master-panel" style="margin: 0; display: flex; flex-direction: column; height: 100%;">
-              <div class="district-kpi-header" style="background: var(--slate-charcoal); min-height: 72px;">
-                  <span class="district-kpi-title">Daily/Weekly Listing Goals</span>
-                  <style>
-                      .dark-toggle .toggle-btn { color: #a0aab2; }
-                      .dark-toggle .toggle-btn:hover:not(.active) { color: white; }
-                      .dark-toggle .toggle-btn.active { color: var(--slate-charcoal); background: white; }
-                  </style>
-                  <div class="timeframe-toggle dark-toggle" style="background: rgba(255,255,255,0.1); padding: 4px; border-radius: 8px;">
-                      <button class="toggle-btn active" id="dm-compact-tab-daily" onclick="switchCompactDmTab('daily')" style="padding: 4px 12px; font-size: 11px;">Today</button>
-                      <button class="toggle-btn" id="dm-compact-tab-weekly" onclick="switchCompactDmTab('weekly')" style="padding: 4px 12px; font-size: 11px;">Week</button>
-                  </div>
-              </div>
+          <div style="display: flex; flex-direction: column; gap: 30px; width: 100%;">
               
-              <div style="padding: 20px; flex-grow: 1; display: flex; flex-direction: column; justify-content: center;">
-                  
-                  <div id="dm-compact-goals-container" style="border: 1px solid #e2e8f0; border-radius: 10px; background: white; overflow-y: auto; max-height: 280px; width: 100%;">
-                      <div class="status-message">Syncing Data...</div>
+              <div style="display: flex; flex-direction: column; gap: 30px; width: 100%;">
+              
+              <div class="card district-master-panel" style="margin: 0; display: flex; flex-direction: column; height: max-content;">
+                  <div class="district-kpi-header" style="background: var(--slate-charcoal); min-height: 72px;">
+                      <span class="district-kpi-title">Daily/Weekly Listing Goals</span>
+                      <style>
+                          .dark-toggle .toggle-btn { color: #a0aab2; }
+                          .dark-toggle .toggle-btn:hover:not(.active) { color: white; }
+                          .dark-toggle .toggle-btn.active { color: var(--slate-charcoal); background: white; }
+                      </style>
+                      <div class="timeframe-toggle dark-toggle" style="background: rgba(255,255,255,0.1); padding: 4px; border-radius: 8px;">
+                          <button class="toggle-btn active" id="dm-compact-tab-daily" onclick="switchCompactDmTab('daily')" style="padding: 4px 12px; font-size: 11px;">Today</button>
+                          <button class="toggle-btn" id="dm-compact-tab-weekly" onclick="switchCompactDmTab('weekly')" style="padding: 4px 12px; font-size: 11px;">Week</button>
+                      </div>
                   </div>
                   
+                  <div style="padding: 20px;">
+                      <div id="dm-compact-goals-container" style="border: 1px solid #e2e8f0; border-radius: 10px; background: white; overflow-y: auto; height: 285px; width: 100%;">
+                          <div class="status-message">Syncing Data...</div>
+                      </div>
+                  </div>
               </div>
-          </div>
 
+              <div class="card district-master-panel" style="margin: 0; padding: 0; display: flex; flex-direction: column; height: 400px; overflow: hidden; background: white;">
+                  <div class="district-kpi-header" style="background: var(--slate-charcoal); min-height: 72px;">
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                          <span class="district-kpi-title" style="text-transform: uppercase; font-size: 15px; letter-spacing: 0.5px;">Comparison Trends</span>
+                      </div>
+                      
+                      <div class="chart-controls" style="display: flex; gap: 10px; align-items: center;">
+                          
+                          <select id="dmChartStoreSelector" class="metric-dropdown" onchange="loadKpiData()" style="padding: 4px 10px; font-size: 11px; height: 28px; border-radius: 6px; display: none;">
+                              <option value="OVL">OVL Team</option>
+                              <option value="LEE">LEE Team</option>
+                              <option value="WSP">WSP Team</option>
+                              <option value="MPL">MPL Team</option>
+                              <option value="BAL">BAL Team</option>
+                          </select>
+
+                          <div class="timeframe-toggle dark-toggle" style="background: rgba(255,255,255,0.1); padding: 4px; border-radius: 8px;">
+                              <button class="toggle-btn active" id="btn-chart-avg" onclick="setChartMode('averages')" style="padding: 4px 12px; font-size: 11px;">Averages</button>
+                              <button class="toggle-btn" id="btn-chart-emp" onclick="setChartMode('employees')" style="padding: 4px 12px; font-size: 11px;">My Team</button>
+                          </div>
+                          
+                          <div class="timeframe-toggle dark-toggle" style="background: rgba(255,255,255,0.1); padding: 4px; border-radius: 8px;">
+                              <button class="toggle-btn active" id="btn-4week" onclick="setTimeframe('4-Week')" style="padding: 4px 12px; font-size: 11px;">4-Week</button>
+                              <button class="toggle-btn" id="btn-monthly" onclick="setTimeframe('Monthly')" style="padding: 4px 12px; font-size: 11px;">Monthly</button>
+                          </div>
+                          
+                          <select id="metricSelector" class="metric-dropdown" onchange="loadKpiData()" style="padding: 4px 10px; font-size: 11px; height: 28px; border-radius: 6px;">
+                              <option value="conversion">Conversion %</option>
+                              <option value="margin">Margin %</option>
+                              <option value="nodeals">Total No Deals</option>
+                              <option value="time">Trans. Time</option>
+                          </select>
+                          
+                      </div>
+                  </div>
+
+                  <div class="chart-container" style="flex-grow: 1; position: relative; padding: 15px 20px 20px 20px; min-height: 0;">
+                      <div id="chartLoading" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: white; z-index: 10;">
+                          <div class="status-message">Syncing Data...</div>
+                      </div>
+                      <canvas id="mainKpiChart"></canvas>
+                  </div>
+              </div>
+
+          </div>
+          
       </div>
+          
 </main>
 </body>
 </html>
