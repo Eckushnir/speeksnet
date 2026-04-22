@@ -823,15 +823,16 @@ function renderQMTab(tab) {
 function switchQMTab(tab) {
     currentQMTab = tab;
     
-    // Toggle the active button styles
     const btnCommon = document.getElementById('qm-tab-common');
     const btnNoDeals = document.getElementById('qm-tab-nodeals');
-    if (btnCommon && btnNoDeals) {
+    const btnReviews = document.getElementById('qm-tab-reviews'); // New Button
+    
+    if (btnCommon && btnNoDeals && btnReviews) {
         btnCommon.classList.toggle('active', tab === 'common');
         btnNoDeals.classList.toggle('active', tab === 'nodeals');
+        btnReviews.classList.toggle('active', tab === 'reviews');
     }
     
-    // Render the new list instantly!
     renderQMTab(tab);
 }
 
@@ -839,7 +840,10 @@ function renderQMTab(tab) {
     const contentDiv = document.getElementById('qmContent');
     if (!quickMsgCache) return;
 
-    const rawData = tab === 'common' ? quickMsgCache.common : quickMsgCache.noDeals;
+    // Route the data to the correct tab
+    let rawData = quickMsgCache.common;
+    if (tab === 'nodeals') rawData = quickMsgCache.noDeals;
+    if (tab === 'reviews') rawData = quickMsgCache.reviews;
     
     let userStore = sessionStorage.getItem('speeksUserStore') || 'OVL';
     if (userStore === 'ALL') userStore = 'CORP';
@@ -862,20 +866,21 @@ function renderQMTab(tab) {
 
     let html = '';
 
-    // LOGIC SPLIT: If we are on the Common tab, build the Category Folders
+    // 1. COMMON TAB (Folders)
     if (tab === 'common') {
         for (const [category, items] of Object.entries(groupedData)) {
             html += `
             <div class="qm-category-wrapper">
-                <div class="qm-category" onclick="this.nextElementSibling.classList.toggle('open')">
-                    📂 ${escapeHtml(category)}
+                <div class="qm-category" onclick="this.classList.toggle('open'); this.nextElementSibling.classList.toggle('open')">
+                    <span> 🗂️ ${escapeHtml(category)}</span>
+                    <span class="qm-caret" style="font-size:10px; color:#a0aab2; transition: transform 0.3s;">▼</span>
                 </div>
                 <div class="qm-category-items">
                     ${items.map(item => `
                         <div class="qm-item">
                             <div class="qm-item-header">
                                 <div class="qm-item-name" onclick="this.parentElement.nextElementSibling.classList.toggle('open')">
-                                     ${escapeHtml(item.name)}
+                                    ${escapeHtml(item.name)}
                                 </div>
                                 <button class="qm-copy-btn" title="Copy Message" data-message="${escapeHtml(item.message)}" onclick="copyQMToClipboard(this)">
                                     📋
@@ -890,15 +895,37 @@ function renderQMTab(tab) {
             </div>`;
         }
     } 
-    // LOGIC SPLIT: If we are on the No Deals tab, just list them flat!
-    else {
-        html += '<div class="qm-category-items open" style="margin-left: 0; padding-left: 0; border: none;">';
+    // 2. NO DEALS TAB (Single Column Flat List)
+    else if (tab === 'nodeals') {
+        html += '<div class="qm-category-items open" style="margin-left: 0; padding-left: 0; border: none; background: transparent;">';
         for (const [category, items] of Object.entries(groupedData)) {
             html += items.map(item => `
                 <div class="qm-item">
                     <div class="qm-item-header">
                         <div class="qm-item-name" onclick="this.parentElement.nextElementSibling.classList.toggle('open')">
-                             ${escapeHtml(item.name)}
+                            ${escapeHtml(item.name)}
+                        </div>
+                        <button class="qm-copy-btn" title="Copy Message" data-message="${escapeHtml(item.message)}" onclick="copyQMToClipboard(this)">
+                            📋
+                        </button>
+                    </div>
+                    <div class="qm-item-message">
+                        ${escapeHtml(item.message)}
+                    </div>
+                </div>
+            `).join('');
+        }
+        html += '</div>';
+    }
+    // 3. REVIEWS TAB (2-Column Grid Layout!)
+    else if (tab === 'reviews') {
+        html += '<div class="qm-category-items open" style="margin-left: 0; padding-left: 0; border: none; background: transparent; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start;">';
+        for (const [category, items] of Object.entries(groupedData)) {
+            html += items.map(item => `
+                <div class="qm-item" style="margin-bottom: 0;">
+                    <div class="qm-item-header">
+                        <div class="qm-item-name" onclick="this.parentElement.nextElementSibling.classList.toggle('open')">
+                            ${escapeHtml(item.name)}
                         </div>
                         <button class="qm-copy-btn" title="Copy Message" data-message="${escapeHtml(item.message)}" onclick="copyQMToClipboard(this)">
                             📋
@@ -913,7 +940,7 @@ function renderQMTab(tab) {
         html += '</div>';
     }
     
-    if (html === '' || html === '<div class="qm-category-items open" style="margin-left: 0; padding-left: 0; border: none;"></div>') {
+    if (html === '' || html.includes('style="margin-left: 0; padding-left: 0; border: none; background: transparent;"></div>') || html.includes('style="margin-left: 0; padding-left: 0; border: none; background: transparent; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start;"></div>')) {
         html = '<div style="padding: 20px; color: #888; text-align: center; font-weight: 600;">No messages available for your location.</div>';
     }
     
@@ -1600,16 +1627,9 @@ async function fetchDistrictMonthlyKPIs() {
     if (!container) return;
 
     const STORES = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
-    const MONTHLY_KPI_URL = 'https://script.google.com/macros/s/AKfycby0ihq9A4yUQvdZdeAF9euC5jih24hP2XGG-J_balNtxop2RHBuIuigw_mH3XTeCkkhow/exec';
-
-    const cachedStr = localStorage.getItem('speeksDistKpiData');
-    if (cachedStr) {
-        try {
-            districtKpiCache = JSON.parse(cachedStr);
-            buildDistrictKpiDropdowns();
-            renderDistrictKPIs();
-        } catch(e) {}
-    }
+    
+    // FLUSH BAD CACHE
+    localStorage.removeItem('speeksDistKpiData');
 
     try {
         const promises = STORES.map(store => 
@@ -1636,7 +1656,8 @@ async function fetchDistrictMonthlyKPIs() {
         renderDistrictKPIs();
         
     } catch (e) {
-        if (!cachedStr) container.innerHTML = '<div style="color: var(--red-alert); font-weight: bold; text-align: center; padding: 20px;">Failed to load District KPIs.</div>';
+        console.error("District KPI Error:", e);
+        container.innerHTML = '<div style="color: var(--red-alert); font-weight: bold; text-align: center; padding: 20px;">Failed to load District KPIs. Connection Timed Out.</div>';
     }
 }
 
