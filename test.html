@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SPEEKSNET | QuickPortal</title>
+  <title>SPEEKSNET</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   
@@ -345,13 +345,11 @@
   <div class="dashboard-layout" style="margin-bottom: 30px;">
     
     <div class="card master-card" style="padding: 0; display: flex; flex-direction: column; height: 400px; overflow: hidden; margin: 0;">
-        
         <div class="master-card-header" style="background: var(--slate-charcoal);">
             <div style="display: flex; align-items: center; gap: 8px;">
                 <span class="master-card-title" style="text-transform: uppercase; font-size: 14px; letter-spacing: 0.5px;">Monthly Performance Leaderboard</span>
                 <span id="lb-month-display" style="color: #a0aab2; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;"></span>
             </div>
-            
             <div class="timeframe-toggle" style="background: rgba(255,255,255,0.1);">
                 <button class="toggle-btn active" id="lb-tab-rev" onclick="switchLeaderboardMetric('Revenue')" style="color: var(--slate-charcoal);">Revenue</button>
                 <button class="toggle-btn" id="lb-tab-gp" onclick="switchLeaderboardMetric('GP')" style="color: #a0aab2;">Gross Profit</button>
@@ -359,14 +357,52 @@
         </div>
         
         <div id="lb-wrapper" style="flex-grow: 1; position: relative; padding: 20px; display: flex;">
-            <div class="status-message">Syncing Data...</div>
+            <div id="lbLoading" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: white; z-index: 10;">
+                <div class="status-message">Syncing Data...</div>
+            </div>
+        </div>
+    </div> <div class="card master-card" style="padding: 0; display: flex; flex-direction: column; height: 400px; overflow: hidden; margin: 0; text-align: left;">
+        <div class="master-card-header" style="background: var(--slate-charcoal);">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="master-card-title" style="text-transform: uppercase; font-size: 14px; letter-spacing: 0.5px;">Comparison Trends</span>
+            </div>
+            
+            <style>
+                .chart-controls .dark-toggle .toggle-btn { color: #a0aab2; }
+                .chart-controls .dark-toggle .toggle-btn:hover:not(.active) { color: white; }
+                .chart-controls .dark-toggle .toggle-btn.active { color: var(--slate-charcoal) !important; background: white !important; }
+            </style>
+            
+            <div class="chart-controls" style="display: flex; gap: 10px; align-items: center;">
+                <div class="timeframe-toggle dark-toggle" style="background: rgba(255,255,255,0.1);">
+                    <button class="toggle-btn active" id="btn-chart-avg" onclick="setChartMode('averages')">Averages</button>
+                    <button class="toggle-btn" id="btn-chart-emp" onclick="setChartMode('employees')">My Team</button>
+                </div>
+                
+                <div class="timeframe-toggle dark-toggle" style="background: rgba(255,255,255,0.1);">
+                    <button class="toggle-btn active" id="btn-4week" onclick="setTimeframe('4-Week')">4-Week</button>
+                    <button class="toggle-btn" id="btn-monthly" onclick="setTimeframe('Monthly')">Monthly</button>
+                </div>
+                
+                <select id="metricSelector" class="metric-dropdown" onchange="loadKpiData()" style="padding: 4px 10px; font-size: 11px; height: 28px; border-radius: 6px;">
+                    <option value="conversion">Customer Conversion %</option>
+                    <option value="margin">Buying Margin %</option>
+                    <option value="nodeals">Total No Deals</option>
+                    <option value="time">Transaction Time</option>
+                </select>
+            </div>
         </div>
 
+        <div class="chart-container" style="flex-grow: 1; position: relative; padding: 15px 20px 20px 20px; min-height: 0;">
+            <div id="chartLoading" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: white; z-index: 10;">
+                <div class="status-message">Syncing Data...</div>
+            </div>
+            <canvas id="mainKpiChart"></canvas>
+        </div>
     </div>
 
-    <div></div>
+  </div>
 
-</div>
-
+</main>
 </body>
 </html>

@@ -617,17 +617,36 @@ async function preloadAllStores() {
 }
 
 function initDashboardData() { 
-    if (typeof initChecklists === 'function') initChecklists(); 
-    setTimeout(fetchHubData, 100); 
-    setTimeout(fetchVarianceData, 300); 
-    setTimeout(fetchWeeklyKPIs, 500); 
-    setTimeout(fetchKPIData, 700); 
-    setTimeout(preloadAllStores, 4000); 
-    setTimeout(initListingGoals, 200);
-    setTimeout(fetchDmGoalsData, 1000);
-    setTimeout(fetchAndRenderEmployeeGoals, 1100);
-    setTimeout(fetchAndRenderEmployeeKPIs, 1200);
-    setTimeout(renderLeaderboardChart, 1500);
+    const runInit = () => {
+        if (typeof initChecklists === 'function') initChecklists(); 
+        setTimeout(fetchHubData, 100); 
+        setTimeout(fetchVarianceData, 300); 
+        setTimeout(fetchWeeklyKPIs, 500); 
+        setTimeout(fetchKPIData, 700); 
+        setTimeout(preloadAllStores, 4000); 
+        setTimeout(initListingGoals, 200);
+        setTimeout(fetchDmGoalsData, 1000);
+        setTimeout(fetchAndRenderEmployeeGoals, 1100);
+        setTimeout(fetchAndRenderEmployeeKPIs, 1200);
+        
+        // FIX: Removed the 1.5s and 1.6s delays! The charts will now handle their own instant loading.
+    };
+
+    // SPA Auto-Loader. If the router forgot to load Chart.js, we inject it dynamically!
+    if (typeof Chart === 'undefined') {
+        const s1 = document.createElement('script'); 
+        s1.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+        const s2 = document.createElement('script'); 
+        s2.src = 'https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0';
+        
+        s1.onload = () => { 
+            document.head.appendChild(s2); 
+            s2.onload = runInit; 
+        };
+        document.head.appendChild(s1);
+    } else {
+        runInit();
+    }
 }
 
 // --- 8. MODULE: METRICS (CHARTS & RECORDS) ---
@@ -638,36 +657,282 @@ function switchPageTab(tab) {
     if (tab === 'records') renderRecords();
 }
 
+let currentChartMode = 'averages';
+
+function setChartMode(mode) {
+    currentChartMode = mode;
+    document.getElementById('btn-chart-avg')?.classList.toggle('active', mode === 'averages');
+    document.getElementById('btn-chart-emp')?.classList.toggle('active', mode === 'employees');
+    loadKpiData(); // Re-draws the chart instantly
+}
+
 function setTimeframe(t) { currentTimeframe = t; document.getElementById('btn-4week')?.classList.toggle('active', t === '4-Week'); document.getElementById('btn-monthly')?.classList.toggle('active', t === 'Monthly'); loadKpiData(); }
 
 function loadKpiData() { const m = document.getElementById('metricSelector')?.value; if (!m) return; kpiChartCache[currentTimeframe] ? renderKpiChart(kpiChartCache[currentTimeframe], m) : fetchChartData(currentTimeframe); }
 
 async function fetchChartData(tf) {
     try {
-        const d = await Promise.all([fetch(`${WEEKLY_KPI_URL}?store=OVL&time=${tf}`), fetch(`${WEEKLY_KPI_URL}?store=LEE&time=${tf}`), fetch(`${WEEKLY_KPI_URL}?store=WSP&time=${tf}`)]).then(rs => Promise.all(rs.map(r => r.json())));
-        if (JSON.stringify(kpiChartCache[tf]) !== JSON.stringify(d) && currentTimeframe === tf) renderKpiChart(d, document.getElementById('metricSelector').value);
-        kpiChartCache[tf] = d; try { localStorage.setItem('speeksKpiChartCache', JSON.stringify(kpiChartCache)); } catch(e) {}
-    } catch (e) {} finally { if (document.getElementById('chartLoading')) document.getElementById('chartLoading').style.display = 'none'; }
+        // FIX: Now fetching all 5 stores so MPL and BAL teams show up!
+        const d = await Promise.all([
+            fetch(`${WEEKLY_KPI_URL}?store=OVL&time=${tf}`), 
+            fetch(`${WEEKLY_KPI_URL}?store=LEE&time=${tf}`), 
+            fetch(`${WEEKLY_KPI_URL}?store=WSP&time=${tf}`),
+            fetch(`${WEEKLY_KPI_URL}?store=MPL&time=${tf}`),
+            fetch(`${WEEKLY_KPI_URL}?store=BAL&time=${tf}`)
+        ]).then(rs => Promise.all(rs.map(r => r.json())));
+        
+        kpiChartCache[tf] = d; 
+        try { localStorage.setItem('speeksKpiChartCache', JSON.stringify(kpiChartCache)); } catch(e) {}
+        
+        if (currentTimeframe === tf) {
+            renderKpiChart(d, document.getElementById('metricSelector').value);
+        }
+    } catch (e) {} finally { 
+        if (document.getElementById('chartLoading')) document.getElementById('chartLoading').style.display = 'none'; 
+    }
 }
 
 function renderKpiChart(allData, metric) {
     if(!document.getElementById('mainKpiChart')) return;
-    if (typeof Chart === 'undefined') { const l = document.getElementById('chartLoading'); if (l) { l.innerText = "Chart.js Library Missing!"; l.style.display = 'flex'; } return; }
+    const loader = document.getElementById('chartLoading');
+    if (loader) loader.style.display = 'none';
 
-    const t = { 'conversion': 'Customer Conversion %', 'margin': 'Buying Margin %', 'nodeals': 'Total No Deals', 'time': 'Transaction Time' }[metric], unit = metric === 'time' ? 'm' : (metric === 'nodeals' ? '' : '%'), isPct = metric === 'conversion' || metric === 'margin', strs = [ { key: 'OVL', color: '#5a8d3b', label: 'OVL Average' }, { key: 'LEE', color: '#0ea5e9', label: 'LEE Average' }, { key: 'WSP', color: '#f97316', label: 'WSP Average' } ];
-    let lbls = [], fData = [], nums = [];
-    allData.forEach((d, idx) => {
-        let sData = [], sr=-1, sc=-1;
-        for(let i=0; i<d.length; i++) { for(let j=0; j<d[i].length; j++) if(d[i][j] && String(d[i][j]).trim() === t) { sr=i; sc=j; break; } if(sr!==-1) break; } if(sr === -1) return;
-        let sCol = d[sr+1].findIndex(v => String(v).toLowerCase() === 'store');
-        if(!lbls.length) { for (let i = sr + 2; i < d.length; i++) { let l = String(d[i][sc - 1]).trim(); if (!l || l.includes('Store') || l.includes('%')) break; lbls.push(l); } }
-        lbls.forEach((_, i) => { let v = d[sr+2+i][sCol]; if (v !== undefined && v !== "") { let p = parseNum(v); p = (isPct && p <= 1.1 && p > 0) ? p * 100 : p; sData.push(p); nums.push(p); } else sData.push(null); });
-        fData.push({ label: strs[idx].label, data: sData, borderColor: strs[idx].color, backgroundColor: strs[idx].color, tension: 0.4, pointRadius: 5, spanGaps: true });
-    });
+    if (typeof Chart === 'undefined') { if (loader) { loader.innerText = "Chart.js Library Missing!"; loader.style.display = 'flex'; } return; }
+
+    const t = { 'conversion': 'Customer Conversion %', 'margin': 'Buying Margin %', 'nodeals': 'Total No Deals', 'time': 'Transaction Time' }[metric];
+    const unit = metric === 'time' ? '' : (metric === 'nodeals' ? '' : '%'); 
+    const isPct = metric === 'conversion' || metric === 'margin';
     
-    let yMin = 0, yMax = 100; if (nums.length) { let mx = Math.max(...nums), mn = Math.min(...nums); isPct ? (yMin = Math.max(0, Math.floor(mn/10)*10 - 10), yMax = Math.min(100, Math.ceil(mx/10)*10 + 10)) : (yMin = 0, yMax = Math.ceil(mx * 1.2)); }
+    const strs = [ 
+        { key: 'OVL', color: '#a855f7', label: 'OVL' }, 
+        { key: 'LEE', color: '#3b82f6', label: 'LEE' }, 
+        { key: 'WSP', color: '#22c55e', label: 'WSP' },
+        { key: 'MPL', color: '#f97316', label: 'MPL' },
+        { key: 'BAL', color: '#ef4444', label: 'BAL' } 
+    ];
+    
+    let lbls = [], fData = [], nums = [];
+
+    const parseChartVal = (v) => {
+        if (v === undefined || v === "" || v === null) return null;
+        if (metric === 'time') {
+            let s = String(v).trim();
+            if (s.includes(':')) {
+                let parts = s.split(':');
+                return parseInt(parts[0] || 0) + (parseInt(parts[1] || 0) / 60);
+            }
+            if (s.includes('.')) {
+                let parts = s.split('.');
+                let mins = parseInt(parts[0] || 0);
+                let secsStr = parts[1] || '0';
+                if (secsStr.length === 1) secsStr += '0'; 
+                let secs = parseInt(secsStr.substring(0,2)) || 0;
+                return mins + (secs / 60);
+            }
+            let p = parseFloat(s.replace(/[^0-9.-]/g, ''));
+            return isNaN(p) ? null : p;
+        }
+        let p = parseNum(v);
+        return (isPct && p <= 1.1 && p > 0) ? p * 100 : p;
+    };
+
+    // LOGIC 1: Standard Store Averages
+    if (currentChartMode === 'averages') {
+        allData.forEach((d, idx) => {
+            let sData = [], sr=-1, sc=-1;
+            for(let i=0; i<d.length; i++) { 
+                for(let j=0; j<d[i].length; j++) if(d[i][j] && String(d[i][j]).trim() === t) { sr=i; sc=j; break; } 
+                if(sr!==-1) break; 
+            } 
+            if(sr === -1) return;
+            
+            // FIX 1: Lock directly onto exactly ONE column to the left for the Months (Column AC)
+            let monthCol = sc - 1;
+            let sCol = -1;
+            
+            for(let c = sc; c < d[sr+1].length; c++) {
+                let val = String(d[sr+1][c]).trim().toLowerCase();
+                if (val === 'store' || val === 'store total') { sCol = c; break; }
+            }
+            if(sCol === -1) sCol = d[sr+1].length - 1; 
+            
+            if(!lbls.length) { 
+                for (let i = sr + 2; i < d.length; i++) { 
+                    let l = String(d[i][monthCol]).trim(); 
+                    if (!l || l.includes('Store') || l.includes('%')) break; 
+                    lbls.push(l); 
+                } 
+            }
+            
+            lbls.forEach((_, i) => { 
+                let v = d[sr+2+i][sCol]; 
+                let parsed = parseChartVal(v);
+                
+                if (metric === 'time' && parsed !== null) {
+                    let empCols = [];
+                    for(let c = sc; c < sCol; c++) {
+                        let colName = String(d[sr+1][c]).trim().toLowerCase();
+                        if (colName && colName !== 'store' && colName !== 'store total' && !colName.includes('average') && colName !== t.toLowerCase() && !strs.some(s => s.key.toLowerCase() === colName)) {
+                            empCols.push(c);
+                        }
+                    }
+                    
+                    let totalTime = 0, validEmps = 0;
+                    empCols.forEach(cIdx => {
+                        let eTime = parseChartVal(d[sr+2+i][cIdx]);
+                        if (eTime !== null && eTime > 0) { totalTime += eTime; validEmps++; }
+                    });
+                    if (validEmps > 0) parsed = totalTime / validEmps; 
+                }
+
+                sData.push(parsed);
+                if (parsed !== null) nums.push(parsed);
+            });
+            
+            if (idx < strs.length) {
+                fData.push({ label: strs[idx].label, data: sData, borderColor: strs[idx].color, backgroundColor: strs[idx].color, tension: 0.4, pointRadius: 5, spanGaps: true });
+            }
+        });
+    } 
+    // LOGIC 2: Role-Based Employee Breakdown
+    else {
+        let userStore = sessionStorage.getItem('speeksUserStore') || 'OVL';
+        if (userStore === 'ALL' || userStore === 'CORP') userStore = 'OVL';
+        
+        let storeIdx = strs.findIndex(s => s.key === userStore);
+        if (storeIdx === -1) storeIdx = 0; 
+        
+        let d = allData[storeIdx];
+        if (d) {
+            let sr=-1, sc=-1;
+            for(let i=0; i<d.length; i++) { 
+                for(let j=0; j<d[i].length; j++) if(d[i][j] && String(d[i][j]).trim() === t) { sr=i; sc=j; break; } 
+                if(sr!==-1) break; 
+            }
+            if(sr !== -1) {
+                let monthCol = sc - 1;
+                let sCol = -1;
+                
+                for(let c = sc; c < d[sr+1].length; c++) {
+                    let val = String(d[sr+1][c]).trim().toLowerCase();
+                    if (val === 'store' || val === 'store total') { sCol = c; break; }
+                }
+                if (sCol === -1) sCol = d[sr+1].length - 1;
+
+                if(!lbls.length) { 
+                    for (let i = sr + 2; i < d.length; i++) { 
+                        let l = String(d[i][monthCol]).trim(); 
+                        if (!l || l.includes('Store') || l.includes('%')) break; 
+                        lbls.push(l); 
+                    } 
+                }
+
+                let empCols = [];
+                for(let c = sc; c < sCol; c++) {
+                    let colName = String(d[sr+1][c]).trim();
+                    if (!colName) continue; 
+                    let lowerName = colName.toLowerCase();
+                    if(!lowerName.includes('average') && lowerName !== 'store' && lowerName !== 'store total' && lowerName !== t.toLowerCase() && !strs.some(s => s.key.toLowerCase() === lowerName)) {
+                        if (!empCols.some(e => e.name === colName)) empCols.push({ name: colName, idx: c });
+                    }
+                }
+
+                const empColors = ['#a855f7', '#3b82f6', '#22c55e', '#f97316', '#ef4444', '#14b8a6', '#eab308', '#ec4899'];
+                
+                empCols.forEach((emp, eIdx) => {
+                    let sData = [];
+                    lbls.forEach((_, i) => { 
+                        let rowIdx = sr+2+i;
+                        if (rowIdx < d.length) {
+                            let parsed = parseChartVal(d[rowIdx][emp.idx]);
+                            sData.push(parsed);
+                            if (parsed !== null) nums.push(parsed);
+                        } else { sData.push(null); }
+                    });
+                    
+                    if (sData.some(val => val !== null)) {
+                        let color = empColors[eIdx % empColors.length];
+                        fData.push({ label: emp.name, data: sData, borderColor: color, backgroundColor: color, tension: 0.4, pointRadius: 5, spanGaps: true });
+                    }
+                });
+            }
+        }
+    }
+
+    let yMin = 0, yMax = 100; 
+    if (nums.length) { 
+        let mx = Math.max(...nums), mn = Math.min(...nums); 
+        if (isPct) {
+            yMin = Math.max(0, Math.floor(mn/10)*10 - 10); 
+            yMax = Math.min(100, Math.ceil(mx/10)*10 + 10);
+        } else if (metric === 'time') {
+            yMin = Math.max(0, Math.floor(mn) - 1);
+            yMax = Math.ceil(mx) + 1;
+        } else {
+            yMin = 0; 
+            yMax = Math.ceil(mx * 1.2);
+        }
+    }
+
+    const formatTimeStr = (v) => {
+        let mins = Math.floor(v);
+        let secs = Math.round((v - mins) * 60);
+        if (secs === 60) { mins++; secs = 0; }
+        return mins + ':' + (secs < 10 ? '0' : '') + secs;
+    };
+
     if (mainChartInstance) mainChartInstance.destroy();
-    mainChartInstance = new Chart(document.getElementById('mainKpiChart').getContext('2d'), { type: 'line', plugins: typeof ChartDataLabels !== 'undefined' ? [ChartDataLabels] : [], data: { labels: lbls, datasets: fData }, options: { responsive: true, maintainAspectRatio: false, animation: { duration: 400 }, plugins: { legend: { position: 'top' }, datalabels: { align: 'top', anchor: 'end', formatter: v => v !== null ? (Math.round(v*10)/10 + unit) : '' } }, scales: { y: { min: yMin, max: yMax, ticks: { callback: v => v + unit } }, x: { grid: { display: false } } } } });
+    
+    mainChartInstance = new Chart(document.getElementById('mainKpiChart').getContext('2d'), { 
+        type: 'line', 
+        plugins: typeof ChartDataLabels !== 'undefined' ? [ChartDataLabels] : [], 
+        data: { labels: lbls, datasets: fData }, 
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            layout: { padding: { top: 35, right: 20, left: 10, bottom: 0 } }, 
+            animation: { duration: 400 }, 
+            plugins: { 
+                legend: { 
+                    position: 'bottom', 
+                    labels: { font: { size: 13, family: "'Inter', sans-serif", weight: 'bold' }, usePointStyle: true, boxWidth: 8, padding: 20 }
+                }, 
+                datalabels: { 
+                    align: 'top', 
+                    anchor: 'end', 
+                    formatter: v => {
+                        if (v === null) return '';
+                        return metric === 'time' ? formatTimeStr(v) : (Math.round(v*10)/10 + unit);
+                    },
+                    font: { size: 11, weight: 'bold' },
+                    color: '#666',
+                    offset: 4
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) label += ': ';
+                            if (context.parsed.y !== null) {
+                                label += metric === 'time' ? formatTimeStr(context.parsed.y) : (Math.round(context.parsed.y*10)/10 + unit);
+                            }
+                            return label;
+                        }
+                    }
+                }
+            }, 
+            scales: { 
+                y: { 
+                    min: yMin, 
+                    max: yMax, 
+                    ticks: { 
+                        callback: v => metric === 'time' ? formatTimeStr(v) : (v + unit) 
+                    } 
+                }, 
+                x: { grid: { display: false } } 
+            } 
+        } 
+    });
 }
 
 function renderLiveData(d) {
@@ -698,7 +963,24 @@ function renderRecords() {
 }
 
 function toggleBoard(id, btn) { const el = document.getElementById(id); el.classList.toggle('open'); btn.innerText = el.classList.contains('open') ? 'Hide Leaderboard ▴' : 'See Full Leaderboard ▾'; }
-function syncAllData() { if (kpiChartCache[currentTimeframe]) renderKpiChart(kpiChartCache[currentTimeframe], document.getElementById('metricSelector')?.value); if (hubDataCache) renderLiveData(hubDataCache); fetchChartData(currentTimeframe); fetchHubData(); loadCMS(); fetchRecordsData(); }
+function syncAllData() { 
+    // 1. INSTANT CACHE DRAW: Prevent flickering by instantly drawing what we already know!
+    if (kpiChartCache[currentTimeframe]) {
+        renderKpiChart(kpiChartCache[currentTimeframe], document.getElementById('metricSelector')?.value); 
+    }
+    if (cachedLeaderboardData) {
+        drawLeaderboard();
+    }
+    if (hubDataCache) {
+        renderLiveData(hubDataCache); 
+    }
+    
+    // 2. BACKGROUND SYNC: Silently fetch fresh data from Google Sheets in the background
+    fetchChartData(currentTimeframe); 
+    fetchHubData(); 
+    loadCMS(); 
+    fetchRecordsData(); 
+}
 
 
 // --- QUICK MESSAGES MODULE ---
@@ -2252,13 +2534,15 @@ document.addEventListener('click', async (e) => {
                 const docSearch = document.getElementById('docSearch');
                 if (docSearch) docSearch.addEventListener('keyup', filterDocs);
             } else {
-                // Reboot Dashboards for QuickPortal, Managers, or Metrics
-                if (typeof initDashboardData === 'function') initDashboardData();
-                if (document.getElementById('mainKpiChart') && typeof syncAllData === 'function') syncAllData();
-                if (typeof fetchScorecardData === 'function') fetchScorecardData();
-                if (typeof fetchAlertsData === 'function') fetchAlertsData();
-                if (typeof fetchMasterDistrictDashboard === 'function') fetchMasterDistrictDashboard();
-                if (typeof fetchDistrictMonthlyKPIs === 'function') fetchDistrictMonthlyKPIs();
+                // FIX: 100ms delay ensures Canvas tags are fully rendered before Chart.js draws
+                setTimeout(() => {
+                    if (typeof initDashboardData === 'function') initDashboardData();
+                    if (document.getElementById('mainKpiChart') && typeof syncAllData === 'function') syncAllData();
+                    if (typeof fetchScorecardData === 'function') fetchScorecardData();
+                    if (typeof fetchAlertsData === 'function') fetchAlertsData();
+                    if (typeof fetchMasterDistrictDashboard === 'function') fetchMasterDistrictDashboard();
+                    if (typeof fetchDistrictMonthlyKPIs === 'function') fetchDistrictMonthlyKPIs();
+                }, 100);
             }
 
         } catch (err) {
