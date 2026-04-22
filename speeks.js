@@ -36,15 +36,27 @@ function toggleSidebar() {
     localStorage.setItem('speeksSidebar', sidebar?.classList.contains('collapsed') ? 'collapsed' : 'expanded');
 }
 
+// THE MASTER LOCK: Drop this into any function to instantly blur and lock the screen!
+function lockAndBlurScreen() {
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    const overlay = document.getElementById('globalOverlay');
+    if (overlay) overlay.classList.add('show');
+}
+
+
 function closeAllModals() {
-    ['notifDropdown', 'calendarDropdown', 'manageDocsDropdown', 'manageUsersDropdown', 'hotkeysDropdown', 'globalOverlay', 'ideaModal', 'quickMsgDropdown', 'manageAlertsDropdown'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.classList.remove('show');
-    });
+    // Unlocks BOTH possible scroll containers
+    document.body.style.overflow = '';
+    document.documentElement.style.overflow = '';
     
-    if (!document.getElementById('authOverlay') || sessionStorage.getItem('speeksUnlocked') === 'true') {
-        document.body.classList.remove('no-scroll');
-    }
+    const overlay = document.getElementById('globalOverlay');
+    if (overlay) overlay.classList.remove('show');
+
+    const modals = document.querySelectorAll('.modal-menu');
+    modals.forEach(modal => {
+        modal.classList.remove('show');
+    });
 }
 
 // --- MANAGE USERS MODULE ---
@@ -53,13 +65,22 @@ let globalUsersData = [];
 async function toggleManageUsers() {
     const dropdown = document.getElementById('manageUsersDropdown');
     if (!dropdown) return;
+    
+    // Check if it's already open BEFORE we close everything
     const isOpen = dropdown.classList.contains('show');
+    
+    // This clears out any other open menus and UNLOCKS the screen
     closeAllModals(); 
     
+    // If it wasn't open, open it now and LOCK the screen!
     if (!isOpen) {
         dropdown.classList.add('show');
-        document.getElementById('globalOverlay')?.classList.add('show');
-        document.body.classList.add('no-scroll');
+        
+        // Locks BOTH scroll containers and triggers the blur AFTER closing others
+        document.body.style.overflow = 'hidden';
+        document.documentElement.style.overflow = 'hidden';
+        const overlay = document.getElementById('globalOverlay');
+        if (overlay) overlay.classList.add('show');
 
         const list = document.getElementById('manageUsersList');
         list.innerHTML = '<div style="text-align:center; padding:20px; color:#999;">Syncing Data...</div>';
@@ -230,6 +251,9 @@ async function loadCMS() {
 
 // --- 5. MODULE: HUB / HOTKEYS ---
 async function loadHotkeys() {
+    // 1. Instantly lock the screen and blur the background!
+    lockAndBlurScreen();
+
     const tbody = document.getElementById('kbBody');
     if (!tbody) return;
     try {
@@ -244,6 +268,7 @@ async function loadHotkeys() {
         }).join('');
     } catch (e) {}
 }
+
 function filterKB() {
     const filter = document.getElementById("kbSearch").value.toUpperCase();
     const rows = document.getElementById("kbBody").getElementsByTagName("tr");
@@ -256,13 +281,22 @@ let globalDocsData = [];
 async function toggleManageDocs() {
     const dropdown = document.getElementById('manageDocsDropdown');
     if(!dropdown) return;
+    
+    // 1. Check if it's already open BEFORE we close everything
     const isOpen = dropdown.classList.contains('show');
+    
+    // 2. This clears out any other open menus and UNLOCKS the screen
     closeAllModals();
     
+    // 3. If it wasn't open, open it now and LOCK the screen!
     if (!isOpen) {
         dropdown.classList.add('show');
-        document.getElementById('globalOverlay')?.classList.add('show');
-        document.body.classList.add('no-scroll');
+        
+        // LOCK SCROLL AND BLUR (Moved down here!)
+        document.body.style.overflow = 'hidden';
+        document.documentElement.style.overflow = 'hidden';
+        const overlay = document.getElementById('globalOverlay');
+        if (overlay) overlay.classList.add('show');
 
         const list = document.getElementById('manageDocsList');
         
@@ -3104,13 +3138,22 @@ const EBAY_ALERTS_URL = 'https://script.google.com/macros/s/AKfycbxap-4Jgdn5-ntk
 async function toggleManageAlerts() {
     const dropdown = document.getElementById('manageAlertsDropdown');
     if (!dropdown) return;
+    
+    // 1. Check if it's already open BEFORE we close everything
     const isOpen = dropdown.classList.contains('show');
+    
+    // 2. This clears out any other open menus and UNLOCKS the screen
     closeAllModals(); 
     
+    // 3. If it wasn't open, open it now and LOCK the screen!
     if (!isOpen) {
         dropdown.classList.add('show');
-        document.getElementById('globalOverlay')?.classList.add('show');
-        document.body.classList.add('no-scroll');
+        
+        // LOCK SCROLL AND BLUR (Moved down here!)
+        document.body.style.overflow = 'hidden';
+        document.documentElement.style.overflow = 'hidden';
+        const overlay = document.getElementById('globalOverlay');
+        if (overlay) overlay.classList.add('show');
 
         const list = document.getElementById('manageAlertsList');
         list.innerHTML = '<div class="status-message">Syncing Data...</div>';
@@ -3197,5 +3240,109 @@ async function saveAlertsData() {
     } finally {
         btn.textContent = "Save Changes";
         btn.style.opacity = "1";
+    }
+}
+
+// ==========================================
+// ANNOUNCEMENT PUBLISHER LOGIC
+// ==========================================
+
+// UPDATE THIS URL to your newly deployed App Script URL!
+const ANNOUNCEMENTS_WRITE_URL = 'https://script.google.com/macros/s/AKfycbxZviJiiQKcQYyp3SK4tcNBHrHXkID7cmwwuONStVPE9DHCSAMappqAs9dBns7ufECI/exec'; 
+
+function toggleManageAnnouncements() {
+    closeAllModals();
+    document.getElementById('manageAnnouncementsDropdown').classList.add('show');
+    
+    // Locks BOTH scroll containers and triggers the blur
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    const overlay = document.getElementById('globalOverlay');
+    if (overlay) overlay.classList.add('show');
+    
+    // Clear out the form so it's a blank slate
+    document.getElementById('annTitleInput').value = '';
+    document.getElementById('annPriorityInput').checked = false;
+    document.getElementById('annBodyInput').innerHTML = '';
+    checkActiveFormats(); 
+}
+
+// Applies formatting AND instantly updates button highlights
+function formatText(command) {
+    const editor = document.getElementById('annBodyInput');
+    editor.focus(); // Force focus back to the text before executing!
+    document.execCommand(command, false, null);
+    checkActiveFormats();
+}
+
+// Checks cursor position to highlight formatting buttons
+function checkActiveFormats() {
+    document.getElementById('btn-fmt-bold')?.classList.toggle('active-format', document.queryCommandState('bold'));
+    document.getElementById('btn-fmt-italic')?.classList.toggle('active-format', document.queryCommandState('italic'));
+    document.getElementById('btn-fmt-underline')?.classList.toggle('active-format', document.queryCommandState('underline'));
+    document.getElementById('btn-fmt-list')?.classList.toggle('active-format', document.queryCommandState('insertUnorderedList'));
+}
+
+// Attach listeners so buttons update as you type or click around
+document.addEventListener('DOMContentLoaded', () => {
+    const editor = document.getElementById('annBodyInput');
+    if (editor) {
+        editor.addEventListener('keyup', checkActiveFormats);
+        editor.addEventListener('mouseup', checkActiveFormats);
+        editor.addEventListener('click', checkActiveFormats);
+    }
+});
+
+async function publishAnnouncement() {
+    const title = document.getElementById('annTitleInput').value.trim();
+    const body = document.getElementById('annBodyInput').innerHTML.trim();
+    const isPriority = document.getElementById('annPriorityInput').checked;
+    const btn = document.getElementById('publishAnnBtn');
+
+    if (!title || !body) {
+        alert("Wait! You must fill out both a Title and a Message before publishing.");
+        return;
+    }
+
+    btn.innerHTML = "Publishing... ⏳";
+    btn.style.opacity = "0.7";
+    btn.style.pointerEvents = "none";
+
+    let compiledMessage = "";
+    if (isPriority) {
+        compiledMessage += `<span style="color: #ef4444; font-weight: 900; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">🚨 HIGH PRIORITY</span><br>`;
+    }
+    compiledMessage += `<strong style="font-size: 16px; color: var(--slate-charcoal); display: block; margin-bottom: 8px;">${title}</strong>`;
+    compiledMessage += body;
+
+    const payload = {
+        text: compiledMessage,
+        date: new Date().toLocaleDateString('en-US'), 
+        author: sessionStorage.getItem('speeksUserName') || 'Executive Team'
+    };
+
+    try {
+        // THE FIX: no-cors forces the data through. We don't try to parse the response!
+        await fetch(ANNOUNCEMENTS_WRITE_URL, {
+            method: 'POST',
+            mode: 'no-cors', // Bypasses the strict Google CORS block
+            headers: {
+                'Content-Type': 'text/plain;charset=utf-8'
+            },
+            body: JSON.stringify(payload)
+        });
+        
+        // Because no-cors makes the response unreadable, we assume success if no network crash occurred!
+        alert("Success! Your announcement has been published to all stores.");
+        closeAllModals(); 
+        syncAllData(); 
+        
+    } catch (error) {
+        console.error("Error publishing announcement:", error);
+        alert("Failed to connect to the server. Check your Apps Script deployment settings.");
+    } finally {
+        btn.innerHTML = "<span>Publish to All Stores</span> 🚀";
+        btn.style.opacity = "1";
+        btn.style.pointerEvents = "auto";
     }
 }
