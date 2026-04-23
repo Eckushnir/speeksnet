@@ -3,9 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SPEEKSNET | QuickPortal</title>
+  <title>SPEEKSNET</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+  
   <script src="speeks.js" defer></script>
 </head>
 <body class="preload">
@@ -29,27 +33,28 @@
   <div class="nav-right">
     <div class="user-profile-nav">
 
-      <div class="dev-dropdown-container dynamic-module role-district-manager" id="devDropdown">
-        <button class="dev-workspace-btn" id="devWorkspaceBtn" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); color: white; height: 42px;">
-          <svg class="lock-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--idea-gold);">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-          </svg>
-          <span class="dev-title">SPEEKS Tools</span>
-          <svg class="chevron-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="6 9 12 15 18 9"></polyline>
-          </svg>
-        </button>
-        <div class="dev-dropdown-menu">
-          <a class="dev-dropdown-link" style="cursor: pointer;" onclick="toggleManageUsers()">User Permissions</a>
-        </div>
-      </div>
-    </div>
+      <div class="dev-dropdown-container dynamic-module role-district-manager role-ceo" id="devDropdown">
+  <button class="dev-workspace-btn" id="devWorkspaceBtn" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); color: white; height: 42px;">
+    <svg class="lock-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--idea-gold);">
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+    </svg>
+    <span class="dev-title">SPEEKS Tools</span>
+    <svg class="chevron-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="6 9 12 15 18 9"></polyline>
+    </svg>
+  </button>
+  <div class="dev-dropdown-menu" style="min-width: 200px;">
+    <a class="dev-dropdown-link" style="cursor: pointer; white-space: nowrap;" onclick="toggleManageUsers()">User Permissions</a>
+    <a class="dev-dropdown-link dynamic-module role-district-manager" style="cursor: pointer; white-space: nowrap; width: 100%;" onclick="toggleManageAlerts()">Performance Metrics</a>
+    <a class="dev-dropdown-link dynamic-module role-district-manager" style="cursor: pointer; white-space: nowrap; width: 100%;" onclick="toggleManageDocs()">Manage Policies</a>
+  </div>
+</div>
 
     <div class="top-actions">
       <a href="#" onclick="toggleIdeaModal(); return false;" class="idea-btn action-btn" title="Have an Idea?">💡</a>
       <div class="action-btn" onclick="toggleModal('quickMsgDropdown'); loadQuickMessages();" title="Quick Messages">💬</div>
-      <div class="action-btn" onclick="toggleModal('hotkeysDropdown')" title="Hotkeys & Commands">⌨️</div>
+      <div class="action-btn" onclick="toggleModal('hotkeysDropdown')" title="Hotkeys & Commands">🚀</div>
       <div class="action-btn" onclick="toggleCalendar()" title="Strategic Calendar">📅</div>
       <div class="action-btn" onclick="toggleNotifs()" title="Announcements">
         🔔 <div class="notif-dot" id="notifBadge"></div>
@@ -65,23 +70,47 @@
   
 </header>
 
-<div class="modal-menu manage-docs-menu" id="manageUsersDropdown">
+<div class="modal-menu manage-menu" id="manageUsersDropdown">
     <div class="modal-header">
         <h3>Manage Portal Users</h3>
         <button class="modal-close-btn" onclick="closeAllModals()">✖</button>
     </div>
-    <div class="modal-body" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
-        <div id="manageUsersList" style="display: flex; flex-direction: column;"></div>
-        <button class="btn-secondary" style="margin-top: 15px;" onclick="addManageUserRow()">+ Add New User</button>
-    </div>
-    <div class="modal-footer" style="padding: 20px; border-top: 1px solid var(--gen-border); display: flex; justify-content: flex-end;">
+    <div class="manage-content" id="manageUsersList">
+        </div>
+    <div class="manage-footer">
+        <button class="btn-secondary" onclick="addManageUserRow()">+ Add New User</button>
         <button id="saveUsersBtn" class="btn-primary" onclick="saveManageUsers()">Save Changes</button>
+    </div>
+</div>
+
+<div class="modal-menu manage-menu" id="manageAlertsDropdown">
+    <div class="modal-header">
+        <h3>Performance Metrics</h3>
+        <button class="modal-close-btn" onclick="closeAllModals()">✖</button>
+    </div>
+    <div class="manage-content" id="manageAlertsList">
+        </div>
+    <div class="manage-footer" style="justify-content: flex-end;">
+        <button id="saveAlertsBtn" class="btn-primary" onclick="saveAlertsData()">Save Changes</button>
+    </div>
+</div>
+
+<div class="modal-menu manage-menu" id="manageDocsDropdown">
+    <div class="modal-header">
+        <h3>Manage Policies</h3>
+        <button class="modal-close-btn" onclick="closeAllModals()">✖</button>
+    </div>
+    <div class="manage-content" id="manageDocsList">
+        </div>
+    <div class="manage-footer">
+        <button class="btn-secondary" onclick="addManageRow()">+ Add Policy</button>
+        <button class="btn-primary" id="saveDocsBtn" onclick="saveDocs()">Save Changes</button>
     </div>
 </div>
 
 <div class="modal-menu manage-docs-menu" id="hotkeysDropdown">
     <div class="modal-header">
-        <h3>⌨️ Hotkeys & Commands</h3>
+        <h3>Hotkeys & Commands</h3>
         <button class="modal-close-btn" onclick="closeAllModals(); document.getElementById('hotkeysDropdown').classList.remove('show');">✖</button>
     </div>
     <div class="modal-body" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
@@ -107,11 +136,18 @@
 
 <div class="modal-menu" id="quickMsgDropdown">
     <div class="modal-header">
-        <h3>💬 Quick Messages</h3>
-        <button class="modal-close-btn" onclick="closeAllModals(); document.getElementById('quickMsgDropdown').classList.remove('show');">✖</button>
+        <h3>Quick Messages</h3>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div class="notif-tabs">
+                <button id="qm-tab-common" class="tab-btn active" onclick="switchQMTab('common')">Common</button>
+                <button id="qm-tab-nodeals" class="tab-btn" onclick="switchQMTab('nodeals')">No Deals</button>
+                <button id="qm-tab-reviews" class="tab-btn" onclick="switchQMTab('reviews')">Reviews</button>
+            </div>
+            <button class="modal-close-btn" onclick="closeAllModals(); document.getElementById('quickMsgDropdown').classList.remove('show');">✖</button>
+        </div>
     </div>
     <div class="modal-body" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
-        <div id="qmContent">Loading messages...</div>
+        <div id="qmContent">Syncing Data...</div>
     </div>
 </div>
 
@@ -127,10 +163,10 @@
             </div>
         </div>
     <div id="ann-container" class="notif-content">
-        <div class="status-message">Syncing...</div>
+        <div class="status-message">Syncing Data...</div>
     </div>
     <div id="archive-container" class="notif-content" style="display: none;">
-        <div class="status-message">Syncing...</div>
+        <div class="status-message">Syncing Data...</div>
     </div>
 </div>
 
@@ -148,33 +184,22 @@
 
 <main class="main-content">
 
-  <div class="hotbars-stack">
-      <div class="dynamic-module role-district-manager hotbar-wrapper">
-        <div class="hotbar-container">
-          <span class="hotbar-label">💼 DM</span>
-          <div class="hotbar-links">
-            <a href="https://drive.google.com/drive/folders/1nO9KTRU6Kb9Mv-cTAPp-kffV4DVESdC8?usp=sharing" target="_blank" class="hotbar-btn">📁 Store Manager Folder</a>
-            <a href="https://docs.google.com/spreadsheets/d/1i_oV37lZXq8s91f9ymzwQlrM8WY2UlQQQ0qsRP3xLJ8/edit" target="_blank" class="hotbar-btn">💰 Sales Summary</a>  
-            <a href="https://docs.google.com/spreadsheets/d/1oHOnA6wDwaLQ-EP4-CiDTkKpAdP2V7y8mOay416HDME/edit" target="_blank" class="hotbar-btn">🗓️ Weekly Metrics</a>
-            <a href="https://docs.google.com/spreadsheets/d/1e4mW-pcwUMJjl2Pjry6PT180P8M8nkYL5Z4GcspQmEA/edit" target="_blank" class="hotbar-btn">🧮 Monthly KPIs</a>
-            <a href="https://drive.google.com/drive/folders/12Fjxp44sY6T-o6OlrG6n_YtrHow4bE2f?usp=sharing" target="_blank" class="hotbar-btn">⚖️ Variance</a>
-            <a href="https://docs.google.com/spreadsheets/d/1agChyBxxwJqP-3CXo10C36-95Y_dVKXTA4GboeCaRRs/edit" target="_blank" class="hotbar-btn">📊 Scorecard</a>
-          </div>
+  <div class="dynamic-module role-district-manager hotbar-wrapper">
+    <div class="hotbar-container">
+        <span class="hotbar-label">💼 DM</span>
+        <div class="hotbar-links">
+        <a href="https://drive.google.com/drive/folders/1nO9KTRU6Kb9Mv-cTAPp-kffV4DVESdC8?usp=sharing" target="_blank" class="hotbar-btn">📁 Store Manager Folder</a>
+        
+        <a href="https://docs.google.com/spreadsheets/d/1NkIdw8dlvwXmQ6kdpo73zqRwnPd4kIAkgJ7yAG2XCt4/edit?usp=sharing" target="_blank" class="hotbar-btn">🎯 Listing Goals</a>  
+        
+        <a href="https://docs.google.com/spreadsheets/d/1i_oV37lZXq8s91f9ymzwQlrM8WY2UlQQQ0qsRP3xLJ8/edit" target="_blank" class="hotbar-btn">💰 Sales Summary</a>  
+        <a href="https://docs.google.com/spreadsheets/d/1oHOnA6wDwaLQ-EP4-CiDTkKpAdP2V7y8mOay416HDME/edit" target="_blank" class="hotbar-btn">🗓️ Weekly Metrics</a>
+        <a href="https://docs.google.com/spreadsheets/d/1e4mW-pcwUMJjl2Pjry6PT180P8M8nkYL5Z4GcspQmEA/edit" target="_blank" class="hotbar-btn">🧮 Monthly KPIs</a>
+        <a href="https://drive.google.com/drive/folders/12Fjxp44sY6T-o6OlrG6n_YtrHow4bE2f?usp=sharing" target="_blank" class="hotbar-btn">⚖️ Variance</a>
+        <a href="https://docs.google.com/spreadsheets/d/1agChyBxxwJqP-3CXo10C36-95Y_dVKXTA4GboeCaRRs/edit" target="_blank" class="hotbar-btn">📊 Scorecard</a>
         </div>
-      </div>
-
-      <div class="dynamic-module role-district-manager hotbar-wrapper">
-        <div class="hotbar-container">
-          <span class="hotbar-label">📍 STORES</span>
-          <div class="hotbar-links">
-            <a href="https://drive.google.com/drive/folders/1dd1nkndo_Pqt3kztaHcpYWL-NgOWIP-E?usp=drive_link" target="_blank" class="hotbar-btn">🟣OVL Portal</a>  
-            <a href="https://drive.google.com/drive/folders/1Xv6ICOpEXNMeWk4QJBfS7CR6tIFRuElk?usp=drive_link" target="_blank" class="hotbar-btn">🔵LEE Portal</a>
-            <a href="https://drive.google.com/drive/folders/1xGGzefFbX7rzBnusmCUEk2GnHxJaJqhC?usp=drive_link" target="_blank" class="hotbar-btn">🟢WSP Portal</a>
-            <a href="https://drive.google.com/drive/folders/1Y5MiKRorTD1mg-lLY4SccYCqw2fZUrND?usp=drive_link" target="_blank" class="hotbar-btn">🟠WPL Portal</a>
-            <a href="https://drive.google.com/drive/folders/1LnAuBH9t7MwtrB9egWK5PFJWQqPcZ-tL?usp=drive_link" target="_blank" class="hotbar-btn">🔴BAL Portal</a>
-          </div>
-        </div>
-      </div>
+    </div>
+    </div>
 
       <div class="dynamic-module role-manager hotbar-wrapper">
         <div class="hotbar-container">
@@ -247,62 +272,164 @@
     </div>
   </div>
 
-  <div id="top-alerts-row" class="top-alerts-row dynamic-module role-manager">
-    
-      <div class="card alert-card ">
-          <div class="alert-card-header">
-              <span id="scorecard-store-name" class="alert-store-name">📊 Store Scorecard</span>
-              <a href="https://docs.google.com/spreadsheets/d/1agChyBxxwJqP-3CXo10C36-95Y_dVKXTA4GboeCaRRs/edit?gid=285677074#gid=285677074" target="_blank" class="mini-action-btn">Full Sheet ↗</a>
+<div class="top-alerts-row dynamic-module role-manager" style="margin-top: 10px; margin-bottom: 30px;">
+      
+      <div class="card alert-card flex-col-stretch" style="flex: 1 1 33.33%; max-width: 450px; min-height: 420px; margin: 0; display: flex; flex-direction: column;">
+          <div class="alert-card-header goals-header-mod">
+              <div class="goals-title-wrapper">
+                  <span class="alert-store-name">🎯 Listing Goals</span>
+                  <div id="goals-pulse-dot" class="notif-dot active goals-pulse"></div>
+              </div>
+              
+              <div style="display: flex; align-items: center; gap: 10px;">
+                  <div id="goals-date-display" style="font-size: 11px; font-weight: 800; color: var(--sage-professional); text-transform: uppercase;"></div>
+                  
+                  <button id="goals-action-btn" onclick="flipGoalCard(true)" class="mini-action-btn">Update ↗</button>
+                  <div class="goal-tab-container">
+                      <div id="tab-daily" class="goal-tab active" onclick="switchGoalTab('daily')">Daily</div>
+                      <div id="tab-weekly" class="goal-tab inactive" onclick="switchGoalTab('weekly')">Weekly</div>
+                  </div>
+              </div>
           </div>
-          <div id="scorecard-widget-body"><div class="status-message">Loading...</div></div>
-      </div>
 
-      <div class="card alert-card" style="flex: 3 1 600px; max-width: none;">
-          <div class="alert-card-header">
-              <span id="alerts-store-name" class="alert-store-name">🚨 Action Needed - eBay Performance</span>
-              <a href="https://docs.google.com/spreadsheets/d/1QVbFYJCXtVgStuYCHw0AcPDZfcoojBgqgEgMO8jYA_E/edit?gid=0#gid=0" target="_blank" class="mini-action-btn">Full Sheet ↗</a>
+          <div class="flip-container">
+              <div class="flip-inner" id="goals-flipper">
+                  
+                  <div class="flip-front" id="goals-front-view">
+                      <div class="goals-header-row">
+                          <span class="goals-header-lbl">Employee & Role</span>
+                          <span class="goals-header-lbl center">Goal</span>
+                          <span class="goals-header-lbl center">Result</span>
+                      </div>
+
+                      <div id="goals-roster-list" class="goals-roster-container">
+                          <div class="status-message goals-loading-msg">Syncing Data...</div>
+                      </div>
+
+                      <div class="goals-total-row">
+                          <span class="goals-total-lbl">Total</span>
+                          <span id="goals-total-target" class="goals-total-val target">0</span>
+                          <span id="goals-total-actual" class="goals-total-val actual">0</span>
+                      </div>
+                  </div>
+
+                  <div class="flip-back">
+                      <div class="goals-edit-header">
+                          <span id="goals-input-title" class="goals-edit-title">Set Goals & Log Results</span>
+                          <button onclick="flipGoalCard(false)" class="goals-close-btn">✖</button>
+                      </div>
+
+                      <div id="goals-edit-list" class="goals-edit-list-container">
+                          </div>
+
+                      <button onclick="saveGoalsData()" id="saveGoalsBtn" class="btn-primary goals-save-btn">Save Changes</button>
+                  </div>
+
+              </div>
           </div>
-          <div id="alerts-widget-body"><div class="status-message">Loading...</div></div>
       </div>
-      <div style="flex: 2 1 350px; margin: 0;"></div>
+      
+      <div style="flex: 2 1 60%;"></div>
   </div>
 
-  <div class="dynamic-module role-district-manager" style="margin-bottom: 40px; flex-wrap: wrap;">
-      <div style="margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; width: 100%;">
-          <h3 style="font-size: 20px; font-weight: 900; color: var(--slate-charcoal); letter-spacing: -0.5px; margin-bottom: 0;">🌐 District Command Center</h3>
-      </div>
+<div class="top-alerts-row dynamic-module role-employee employee-dashboard-row">
+      
+      <div class="employee-spacer"></div>
 
-      <div id="district-master-body" class="district-master-grid">
-          <div class="status-message">Building Master Dashboard...</div>
-      </div>
-
-      <div class="card district-master-panel">
+      <div class="card district-master-panel employee-widget-card">
           <div class="district-kpi-header">
-              <span class="district-kpi-title">District Monthly KPIs</span>
-              <div style="display: flex; align-items: center; justify-content: center; gap: 12px;">
-                  <span style="font-size: 13px; font-weight: 900; color: #a0aab2; text-transform: uppercase;">Month:</span>
-                  <select id="dist-kpi-month" class="dist-kpi-select" onchange="renderDistrictKPIs()"></select>
+              <div class="district-kpi-title-wrapper">
+                  <span class="district-kpi-title">My Listing Goals</span>
+                  <div id="emp-goals-pulse-dot" class="notif-dot active goals-pulse" style="display: none;"></div>
+              </div>
+              <div class="district-kpi-date-wrapper">
+                  <span id="emp-goals-date" class="emp-kpi-date"></span>
               </div>
           </div>
-
-          <div style="overflow-x: auto; width: 100%;">
-              <div style="min-width: 750px;">
-                  <div class="district-kpi-table-header">
-                      <div class="district-kpi-metric-lbl">Metric</div>
-                      <div class="district-kpi-store-lbl">🟣 OVL</div>
-                      <div class="district-kpi-store-lbl">🔵 LEE</div>
-                      <div class="district-kpi-store-lbl">🟢 WSP</div>
-                      <div class="district-kpi-store-lbl">🟠 MPL</div>
-                      <div class="district-kpi-store-lbl">🔴 BAL</div>
-                  </div>
-                  <div id="district-kpi-body" class="kpi-scroll-area" style="max-height: 400px; overflow-y: auto;">
-                      <div class="status-message">Compiling District KPIs...</div>
-                  </div>
-              </div>
+          
+          <div id="employee-goals-widget-body" class="employee-widget-body">
+              <div class="status-message">Syncing Data...</div>
           </div>
       </div>
-  </div>
-</main>
 
+      <div class="card district-master-panel employee-widget-card">
+          <div class="district-kpi-header">
+              <div class="district-kpi-title-wrapper">
+                  <span class="district-kpi-title">My Weekly KPIs</span>
+              </div>
+              <div class="district-kpi-date-wrapper">
+                  <span id="emp-kpi-period" class="emp-kpi-date"></span>
+              </div>
+          </div>
+          
+          <div id="employee-kpi-widget-body" class="employee-kpi-body">
+              <div class="status-message">Syncing Data...</div>
+          </div>
+      </div>
+      
+  </div>
+
+  <div class="dashboard-layout" style="margin-bottom: 30px;">
+    
+    <div class="card master-card" style="padding: 0; display: flex; flex-direction: column; height: 400px; overflow: hidden; margin: 0;">
+        <div class="master-card-header" style="background: var(--slate-charcoal);">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="master-card-title" style="text-transform: uppercase; font-size: 14px; letter-spacing: 0.5px;">Monthly Performance Leaderboard</span>
+                <span id="lb-month-display" style="color: #a0aab2; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;"></span>
+            </div>
+            <div class="timeframe-toggle" style="background: rgba(255,255,255,0.1);">
+                <button class="toggle-btn active" id="lb-tab-rev" onclick="switchLeaderboardMetric('Revenue')" style="color: var(--slate-charcoal);">Revenue</button>
+                <button class="toggle-btn" id="lb-tab-gp" onclick="switchLeaderboardMetric('GP')" style="color: #a0aab2;">Gross Profit</button>
+            </div>
+        </div>
+        
+        <div id="lb-wrapper" style="flex-grow: 1; position: relative; padding: 20px; display: flex;">
+            <div id="lbLoading" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: white; z-index: 10;">
+                <div class="status-message">Syncing Data...</div>
+            </div>
+        </div>
+    </div> <div class="card master-card" style="padding: 0; display: flex; flex-direction: column; height: 400px; overflow: hidden; margin: 0; text-align: left;">
+        <div class="master-card-header" style="background: var(--slate-charcoal);">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="master-card-title" style="text-transform: uppercase; font-size: 14px; letter-spacing: 0.5px;">Comparison Trends</span>
+            </div>
+            
+            <style>
+                .chart-controls .dark-toggle .toggle-btn { color: #a0aab2; }
+                .chart-controls .dark-toggle .toggle-btn:hover:not(.active) { color: white; }
+                .chart-controls .dark-toggle .toggle-btn.active { color: var(--slate-charcoal) !important; background: white !important; }
+            </style>
+            
+            <div class="chart-controls" style="display: flex; gap: 10px; align-items: center;">
+                <div class="timeframe-toggle dark-toggle" style="background: rgba(255,255,255,0.1);">
+                    <button class="toggle-btn active" id="btn-chart-avg" onclick="setChartMode('averages')">Averages</button>
+                    <button class="toggle-btn" id="btn-chart-emp" onclick="setChartMode('employees')">My Team</button>
+                </div>
+                
+                <div class="timeframe-toggle dark-toggle" style="background: rgba(255,255,255,0.1);">
+                    <button class="toggle-btn active" id="btn-4week" onclick="setTimeframe('4-Week')">4-Week</button>
+                    <button class="toggle-btn" id="btn-monthly" onclick="setTimeframe('Monthly')">Monthly</button>
+                </div>
+                
+                <select id="metricSelector" class="metric-dropdown" onchange="loadKpiData()" style="padding: 4px 10px; font-size: 11px; height: 28px; border-radius: 6px;">
+                    <option value="conversion">Customer Conversion %</option>
+                    <option value="margin">Buying Margin %</option>
+                    <option value="nodeals">Total No Deals</option>
+                    <option value="time">Transaction Time</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="chart-container" style="flex-grow: 1; position: relative; padding: 15px 20px 20px 20px; min-height: 0;">
+            <div id="chartLoading" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: white; z-index: 10;">
+                <div class="status-message">Syncing Data...</div>
+            </div>
+            <canvas id="mainKpiChart"></canvas>
+        </div>
+    </div>
+
+  </div>
+
+</main>
 </body>
 </html>
