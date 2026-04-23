@@ -36,15 +36,27 @@ function toggleSidebar() {
     localStorage.setItem('speeksSidebar', sidebar?.classList.contains('collapsed') ? 'collapsed' : 'expanded');
 }
 
+// THE MASTER LOCK: Drop this into any function to instantly blur and lock the screen!
+function lockAndBlurScreen() {
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    const overlay = document.getElementById('globalOverlay');
+    if (overlay) overlay.classList.add('show');
+}
+
+
 function closeAllModals() {
-    ['notifDropdown', 'calendarDropdown', 'manageDocsDropdown', 'manageUsersDropdown', 'hotkeysDropdown', 'globalOverlay', 'ideaModal', 'quickMsgDropdown'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.classList.remove('show');
-    });
+    // Unlocks BOTH possible scroll containers
+    document.body.style.overflow = '';
+    document.documentElement.style.overflow = '';
     
-    if (!document.getElementById('authOverlay') || sessionStorage.getItem('speeksUnlocked') === 'true') {
-        document.body.classList.remove('no-scroll');
-    }
+    const overlay = document.getElementById('globalOverlay');
+    if (overlay) overlay.classList.remove('show');
+
+    const modals = document.querySelectorAll('.modal-menu');
+    modals.forEach(modal => {
+        modal.classList.remove('show');
+    });
 }
 
 // --- MANAGE USERS MODULE ---
@@ -53,16 +65,25 @@ let globalUsersData = [];
 async function toggleManageUsers() {
     const dropdown = document.getElementById('manageUsersDropdown');
     if (!dropdown) return;
+    
+    // Check if it's already open BEFORE we close everything
     const isOpen = dropdown.classList.contains('show');
+    
+    // This clears out any other open menus and UNLOCKS the screen
     closeAllModals(); 
     
+    // If it wasn't open, open it now and LOCK the screen!
     if (!isOpen) {
         dropdown.classList.add('show');
-        document.getElementById('globalOverlay')?.classList.add('show');
-        document.body.classList.add('no-scroll');
+        
+        // Locks BOTH scroll containers and triggers the blur AFTER closing others
+        document.body.style.overflow = 'hidden';
+        document.documentElement.style.overflow = 'hidden';
+        const overlay = document.getElementById('globalOverlay');
+        if (overlay) overlay.classList.add('show');
 
         const list = document.getElementById('manageUsersList');
-        list.innerHTML = '<div style="text-align:center; padding:20px; color:#999;">Loading user database...</div>';
+        list.innerHTML = '<div style="text-align:center; padding:20px; color:#999;">Syncing Data...</div>';
         
         try {
             const res = await fetch(`${AUTH_URL}?v=${Date.now()}`);
@@ -70,7 +91,7 @@ async function toggleManageUsers() {
             globalUsersData = data.users || [];
             populateUsersModal();
         } catch (e) {
-            list.innerHTML = '<div style="color:var(--red-alert); padding:20px;">Failed to load users.</div>';
+            list.innerHTML = '<div style="color:var(--red-alert); padding:20px;">Failed to sync data.</div>';
         }
     }
 }
@@ -230,6 +251,9 @@ async function loadCMS() {
 
 // --- 5. MODULE: HUB / HOTKEYS ---
 async function loadHotkeys() {
+    // 1. Instantly lock the screen and blur the background!
+    lockAndBlurScreen();
+
     const tbody = document.getElementById('kbBody');
     if (!tbody) return;
     try {
@@ -237,8 +261,10 @@ async function loadHotkeys() {
         tbody.innerHTML = data.map(row => {
             const cols = Object.values(row), brand = cols[1] || "";
             if (brand.toLowerCase() === "brand" || !brand) return '';
-            const bClass = brand.toLowerCase().includes('apple') ? 'b-apple' : (['dell','hp','lenovo','asus'].some(x => brand.toLowerCase().includes(x)) ? 'b-windows' : 'b-generic');
-            return `<tr><td><span class="bubble ${bClass}">${brand}</span></td><td>${cols[2]}</td><td>${cols[3]}</td><td>${cols[4]}</td></tr>`;
+            
+            // FIX: Forcing every single brand to use the standard gray "b-generic" class
+            return `<tr><td><span class="bubble b-generic">${brand}</span></td><td>${cols[2]}</td><td>${cols[3]}</td><td>${cols[4]}</td></tr>`;
+            
         }).join('');
     } catch (e) {}
 }
@@ -252,11 +278,42 @@ function filterKB() {
 // --- 6. MODULE: DOCS & POLICIES ---
 let globalDocsData = []; 
 
-function toggleManageDocs() {
-  const dropdown = document.getElementById('manageDocsDropdown');
-  if(!dropdown) return;
-  populateManageModal();
-  toggleModal('manageDocsDropdown');
+async function toggleManageDocs() {
+    const dropdown = document.getElementById('manageDocsDropdown');
+    if(!dropdown) return;
+    
+    // 1. Check if it's already open BEFORE we close everything
+    const isOpen = dropdown.classList.contains('show');
+    
+    // 2. This clears out any other open menus and UNLOCKS the screen
+    closeAllModals();
+    
+    // 3. If it wasn't open, open it now and LOCK the screen!
+    if (!isOpen) {
+        dropdown.classList.add('show');
+        
+        // LOCK SCROLL AND BLUR (Moved down here!)
+        document.body.style.overflow = 'hidden';
+        document.documentElement.style.overflow = 'hidden';
+        const overlay = document.getElementById('globalOverlay');
+        if (overlay) overlay.classList.add('show');
+
+        const list = document.getElementById('manageDocsList');
+        
+        // If data isn't loaded yet (because we are on index.html), fetch it!
+        if (!globalDocsData || globalDocsData.length === 0) {
+            list.innerHTML = '<div class="status-message">Syncing Data...</div>';
+            try {
+                globalDocsData = await (await fetch(`${DOCS_URL}?v=${Date.now()}`)).json();
+                localStorage.setItem('speeksDocsData', JSON.stringify(globalDocsData));
+                populateManageModal();
+            } catch (e) {
+                list.innerHTML = '<div style="color:var(--red-alert); padding:20px; text-align:center;">Failed to load policies.</div>';
+            }
+        } else {
+            populateManageModal();
+        }
+    }
 }
 
 function populateManageModal() {
@@ -330,7 +387,7 @@ function renderDocs(docs) {
 async function loadDocs() {
     const cached = localStorage.getItem('speeksDocsData');
     if (cached) try { renderDocs(globalDocsData = JSON.parse(cached)); } catch (e) {}
-    else document.getElementById('content-container').innerHTML = '<div class="empty-state">Loading Documents...</div>';
+    else document.getElementById('content-container').innerHTML = '<div class="empty-state">Syncing Data...</div>';
 
     try {
         globalDocsData = await (await fetch(`${DOCS_URL}?v=${Date.now()}`)).json();
@@ -543,7 +600,7 @@ async function fetchWeeklyKPIs() {
     }
 
     let msg = document.getElementById('weekly-fetch-msg') || Object.assign(document.createElement('div'), { id: 'weekly-fetch-msg', style: 'padding: 40px; text-align: center; color: #888; font-weight: 600; grid-column: 1 / -1;' });
-    if(!document.getElementById('weekly-fetch-msg')) cont.appendChild(msg); msg.innerText = 'Syncing...'; msg.style.display = 'block';
+    if(!document.getElementById('weekly-fetch-msg')) cont.appendChild(msg); msg.innerText = 'Syncing Data...'; msg.style.display = 'block';
 
     try {
         const d = await (await fetch(`${WEEKLY_KPI_URL}?store=${store}&time=4-Week&v=${Date.now()}`)).json();
@@ -580,7 +637,24 @@ async function fetchWeeklyKPIs() {
 }
 
 async function fetchHubData() {
-    try { hubDataCache = await (await fetch(`${HUB_URL}?v=${Date.now()}`)).json(); if (document.getElementById('bs-buy-val')) renderBuyingSales(); if (document.getElementById('rev-list')) renderLiveData(hubDataCache); } catch(e) {}
+    try {
+        hubDataCache = await (await fetch(`${HUB_URL}?v=${Date.now()}`)).json();
+        
+        if (document.getElementById('bs-buy-val')) renderBuyingSales();
+        if (document.getElementById('rev-list')) renderLiveData(hubDataCache);
+        
+        // Let the Hub power the Leaderboard automatically!
+        if (document.getElementById('lb-wrapper')) {
+            if (hubDataCache.leaderboard) {
+                cachedLeaderboardData = hubDataCache.leaderboard;
+                drawLeaderboard();
+            } else {
+                document.getElementById('lb-wrapper').innerHTML = '<div class="status-message" style="color:var(--red-alert);">Please Deploy "New Version" of Hub App Script!</div>';
+            }
+        }
+    } catch(e) {
+        console.error("Hub Sync Failed", e);
+    }
 }
 
 function renderBuyingSales() {
@@ -599,14 +673,36 @@ async function preloadAllStores() {
 }
 
 function initDashboardData() { 
-    if (typeof initChecklists === 'function') initChecklists(); 
-    setTimeout(fetchHubData, 100); 
-    setTimeout(fetchVarianceData, 300); 
-    setTimeout(fetchWeeklyKPIs, 500); 
-    setTimeout(fetchKPIData, 700); 
-    setTimeout(preloadAllStores, 4000); 
-    setTimeout(initListingGoals, 200);
-    setTimeout(fetchDmGoalsData, 1000);
+    const runInit = () => {
+        if (typeof initChecklists === 'function') initChecklists(); 
+        setTimeout(fetchHubData, 100); 
+        setTimeout(fetchVarianceData, 300); 
+        setTimeout(fetchWeeklyKPIs, 500); 
+        setTimeout(fetchKPIData, 700); 
+        setTimeout(preloadAllStores, 4000); 
+        setTimeout(initListingGoals, 200);
+        setTimeout(fetchDmGoalsData, 1000);
+        setTimeout(fetchAndRenderEmployeeGoals, 1100);
+        setTimeout(fetchAndRenderEmployeeKPIs, 1200);
+        
+        // FIX: Removed the 1.5s and 1.6s delays! The charts will now handle their own instant loading.
+    };
+
+    // SPA Auto-Loader. If the router forgot to load Chart.js, we inject it dynamically!
+    if (typeof Chart === 'undefined') {
+        const s1 = document.createElement('script'); 
+        s1.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+        const s2 = document.createElement('script'); 
+        s2.src = 'https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0';
+        
+        s1.onload = () => { 
+            document.head.appendChild(s2); 
+            s2.onload = runInit; 
+        };
+        document.head.appendChild(s1);
+    } else {
+        runInit();
+    }
 }
 
 // --- 8. MODULE: METRICS (CHARTS & RECORDS) ---
@@ -617,36 +713,270 @@ function switchPageTab(tab) {
     if (tab === 'records') renderRecords();
 }
 
-function setTimeframe(t) { currentTimeframe = t; document.getElementById('btn-4week')?.classList.toggle('active', t === '4-Week'); document.getElementById('btn-monthly')?.classList.toggle('active', t === 'Monthly'); loadKpiData(); }
+let currentChartMode = 'averages';
 
-function loadKpiData() { const m = document.getElementById('metricSelector')?.value; if (!m) return; kpiChartCache[currentTimeframe] ? renderKpiChart(kpiChartCache[currentTimeframe], m) : fetchChartData(currentTimeframe); }
-
-async function fetchChartData(tf) {
-    try {
-        const d = await Promise.all([fetch(`${WEEKLY_KPI_URL}?store=OVL&time=${tf}`), fetch(`${WEEKLY_KPI_URL}?store=LEE&time=${tf}`), fetch(`${WEEKLY_KPI_URL}?store=WSP&time=${tf}`)]).then(rs => Promise.all(rs.map(r => r.json())));
-        if (JSON.stringify(kpiChartCache[tf]) !== JSON.stringify(d) && currentTimeframe === tf) renderKpiChart(d, document.getElementById('metricSelector').value);
-        kpiChartCache[tf] = d; try { localStorage.setItem('speeksKpiChartCache', JSON.stringify(kpiChartCache)); } catch(e) {}
-    } catch (e) {} finally { if (document.getElementById('chartLoading')) document.getElementById('chartLoading').style.display = 'none'; }
+function setChartMode(mode) {
+    currentChartMode = mode;
+    document.getElementById('btn-chart-avg')?.classList.toggle('active', mode === 'averages');
+    document.getElementById('btn-chart-emp')?.classList.toggle('active', mode === 'employees');
+    loadKpiData(); // Re-draws the chart instantly
 }
+
+function setTimeframe(t) { currentTimeframe = t; document.getElementById('btn-4week')?.classList.toggle('active', t === '4-Week'); document.getElementById('btn-monthly')?.classList.toggle('active', t === 'Monthly'); loadKpiData(); }
 
 function renderKpiChart(allData, metric) {
     if(!document.getElementById('mainKpiChart')) return;
-    if (typeof Chart === 'undefined') { const l = document.getElementById('chartLoading'); if (l) { l.innerText = "Chart.js Library Missing!"; l.style.display = 'flex'; } return; }
 
-    const t = { 'conversion': 'Customer Conversion %', 'margin': 'Buying Margin %', 'nodeals': 'Total No Deals', 'time': 'Transaction Time' }[metric], unit = metric === 'time' ? 'm' : (metric === 'nodeals' ? '' : '%'), isPct = metric === 'conversion' || metric === 'margin', strs = [ { key: 'OVL', color: '#5a8d3b', label: 'OVL Average' }, { key: 'LEE', color: '#0ea5e9', label: 'LEE Average' }, { key: 'WSP', color: '#f97316', label: 'WSP Average' } ];
-    let lbls = [], fData = [], nums = [];
-    allData.forEach((d, idx) => {
-        let sData = [], sr=-1, sc=-1;
-        for(let i=0; i<d.length; i++) { for(let j=0; j<d[i].length; j++) if(d[i][j] && String(d[i][j]).trim() === t) { sr=i; sc=j; break; } if(sr!==-1) break; } if(sr === -1) return;
-        let sCol = d[sr+1].findIndex(v => String(v).toLowerCase() === 'store');
-        if(!lbls.length) { for (let i = sr + 2; i < d.length; i++) { let l = String(d[i][sc - 1]).trim(); if (!l || l.includes('Store') || l.includes('%')) break; lbls.push(l); } }
-        lbls.forEach((_, i) => { let v = d[sr+2+i][sCol]; if (v !== undefined && v !== "") { let p = parseNum(v); p = (isPct && p <= 1.1 && p > 0) ? p * 100 : p; sData.push(p); nums.push(p); } else sData.push(null); });
-        fData.push({ label: strs[idx].label, data: sData, borderColor: strs[idx].color, backgroundColor: strs[idx].color, tension: 0.4, pointRadius: 5, spanGaps: true });
-    });
+    if (typeof Chart === 'undefined') { 
+        const loader = document.getElementById('chartLoading');
+        if (loader) { 
+            loader.innerText = "Chart.js Library Missing!"; 
+            loader.style.display = 'flex'; 
+        } 
+        return; 
+    }
+
+    const t = { 'conversion': 'Customer Conversion %', 'margin': 'Buying Margin %', 'nodeals': 'Total No Deals', 'time': 'Transaction Time' }[metric];
+    const unit = metric === 'time' ? '' : (metric === 'nodeals' ? '' : '%'); 
+    const isPct = metric === 'conversion' || metric === 'margin';
     
-    let yMin = 0, yMax = 100; if (nums.length) { let mx = Math.max(...nums), mn = Math.min(...nums); isPct ? (yMin = Math.max(0, Math.floor(mn/10)*10 - 10), yMax = Math.min(100, Math.ceil(mx/10)*10 + 10)) : (yMin = 0, yMax = Math.ceil(mx * 1.2)); }
+    const strs = [ 
+        { key: 'OVL', color: '#a855f7', label: 'OVL' }, 
+        { key: 'LEE', color: '#3b82f6', label: 'LEE' }, 
+        { key: 'WSP', color: '#22c55e', label: 'WSP' },
+        { key: 'MPL', color: '#f97316', label: 'MPL' },
+        { key: 'BAL', color: '#ef4444', label: 'BAL' } 
+    ];
+    
+    let lbls = [], fData = [], nums = [];
+
+    const parseChartVal = (v) => {
+        if (v === undefined || v === "" || v === null) return null;
+        if (metric === 'time') {
+            let s = String(v).trim();
+            if (s.includes(':')) {
+                let parts = s.split(':');
+                return parseInt(parts[0] || 0) + (parseInt(parts[1] || 0) / 60);
+            }
+            if (s.includes('.')) {
+                let parts = s.split('.');
+                let mins = parseInt(parts[0] || 0);
+                let secsStr = parts[1] || '0';
+                if (secsStr.length === 1) secsStr += '0'; 
+                let secs = parseInt(secsStr.substring(0,2)) || 0;
+                return mins + (secs / 60);
+            }
+            let p = parseFloat(s.replace(/[^0-9.-]/g, ''));
+            return isNaN(p) ? null : p;
+        }
+        let p = parseNum(v);
+        return (isPct && p <= 1.1 && p > 0) ? p * 100 : p;
+    };
+
+    const dmDropdown = document.getElementById('dmChartStoreSelector');
+    if (dmDropdown) dmDropdown.style.display = currentChartMode === 'averages' ? 'none' : 'block';
+
+    if (currentChartMode === 'averages') {
+        allData.forEach((d, idx) => {
+            let sData = [], sr=-1, sc=-1;
+            for(let i=0; i<d.length; i++) { 
+                for(let j=0; j<d[i].length; j++) if(d[i][j] && String(d[i][j]).trim() === t) { sr=i; sc=j; break; } 
+                if(sr!==-1) break; 
+            } 
+            if(sr === -1) return;
+            
+            let monthCol = sc - 1;
+            let sCol = -1;
+            
+            for(let c = sc; c < d[sr+1].length; c++) {
+                let val = String(d[sr+1][c]).trim().toLowerCase();
+                if (val === 'store' || val === 'store total') { sCol = c; break; }
+            }
+            if(sCol === -1) sCol = d[sr+1].length - 1; 
+            
+            if(!lbls.length) { 
+                for (let i = sr + 2; i < d.length; i++) { 
+                    let l = String(d[i][monthCol]).trim(); 
+                    if (!l || l.includes('Store') || l.includes('%')) break; 
+                    lbls.push(l); 
+                } 
+            }
+            
+            lbls.forEach((_, i) => { 
+                let v = d[sr+2+i][sCol]; 
+                let parsed = parseChartVal(v);
+                
+                if (metric === 'time' && parsed !== null) {
+                    let empCols = [];
+                    for(let c = sc; c < sCol; c++) {
+                        let colName = String(d[sr+1][c]).trim().toLowerCase();
+                        if (colName && colName !== 'store' && colName !== 'store total' && !colName.includes('average') && colName !== t.toLowerCase() && !strs.some(s => s.key.toLowerCase() === colName)) {
+                            empCols.push(c);
+                        }
+                    }
+                    
+                    let totalTime = 0, validEmps = 0;
+                    empCols.forEach(cIdx => {
+                        let eTime = parseChartVal(d[sr+2+i][cIdx]);
+                        if (eTime !== null && eTime > 0) { totalTime += eTime; validEmps++; }
+                    });
+                    if (validEmps > 0) parsed = totalTime / validEmps; 
+                }
+
+                sData.push(parsed);
+                if (parsed !== null) nums.push(parsed);
+            });
+            
+            if (idx < strs.length) {
+                // FIXED: Added spacing around the labels!
+                fData.push({ label: '   ' + strs[idx].label + '   ', data: sData, borderColor: strs[idx].color, backgroundColor: strs[idx].color, tension: 0.4, pointRadius: 5, spanGaps: true });
+            }
+        });
+    } else {
+        // Look for the DM Dropdown first, fallback to session storage for standard employees!
+        let userStore = dmDropdown ? dmDropdown.value : (sessionStorage.getItem('speeksUserStore') || 'OVL');
+        
+        if (userStore === 'ALL' || userStore === 'CORP') userStore = 'OVL';
+        
+        let storeIdx = strs.findIndex(s => s.key === userStore);
+        if (storeIdx === -1) storeIdx = 0;
+        
+        let d = allData[storeIdx];
+        if (d) {
+            let sr=-1, sc=-1;
+            for(let i=0; i<d.length; i++) { 
+                for(let j=0; j<d[i].length; j++) if(d[i][j] && String(d[i][j]).trim() === t) { sr=i; sc=j; break; } 
+                if(sr!==-1) break; 
+            }
+            if(sr !== -1) {
+                let monthCol = sc - 1;
+                let sCol = -1;
+                
+                for(let c = sc; c < d[sr+1].length; c++) {
+                    let val = String(d[sr+1][c]).trim().toLowerCase();
+                    if (val === 'store' || val === 'store total') { sCol = c; break; }
+                }
+                if (sCol === -1) sCol = d[sr+1].length - 1;
+
+                if(!lbls.length) { 
+                    for (let i = sr + 2; i < d.length; i++) { 
+                        let l = String(d[i][monthCol]).trim(); 
+                        if (!l || l.includes('Store') || l.includes('%')) break; 
+                        lbls.push(l); 
+                    } 
+                }
+
+                let empCols = [];
+                for(let c = sc; c < sCol; c++) {
+                    let colName = String(d[sr+1][c]).trim();
+                    if (!colName) continue; 
+                    let lowerName = colName.toLowerCase();
+                    if(!lowerName.includes('average') && lowerName !== 'store' && lowerName !== 'store total' && lowerName !== t.toLowerCase() && !strs.some(s => s.key.toLowerCase() === lowerName)) {
+                        if (!empCols.some(e => e.name === colName)) empCols.push({ name: colName, idx: c });
+                    }
+                }
+
+                const empColors = ['#a855f7', '#3b82f6', '#22c55e', '#f97316', '#ef4444', '#14b8a6', '#eab308', '#ec4899'];
+                
+                empCols.forEach((emp, eIdx) => {
+                    let sData = [];
+                    lbls.forEach((_, i) => { 
+                        let rowIdx = sr+2+i;
+                        if (rowIdx < d.length) {
+                            let parsed = parseChartVal(d[rowIdx][emp.idx]);
+                            sData.push(parsed);
+                            if (parsed !== null) nums.push(parsed);
+                        } else { sData.push(null); }
+                    });
+                    
+                    if (sData.some(val => val !== null)) {
+                        let color = empColors[eIdx % empColors.length];
+                        // FIXED: Added spacing around the labels!
+                        fData.push({ label: '   ' + emp.name + '   ', data: sData, borderColor: color, backgroundColor: color, tension: 0.4, pointRadius: 5, spanGaps: true });
+                    }
+                });
+            }
+        }
+    }
+
+    let yMin = 0, yMax = 100; 
+    if (nums.length) { 
+        let mx = Math.max(...nums), mn = Math.min(...nums); 
+        if (isPct) {
+            yMin = Math.max(0, Math.floor(mn/10)*10 - 10); 
+            yMax = Math.min(100, Math.ceil(mx/10)*10 + 10);
+        } else if (metric === 'time') {
+            yMin = Math.max(0, Math.floor(mn) - 1);
+            yMax = Math.ceil(mx) + 1;
+        } else {
+            yMin = 0; 
+            yMax = Math.ceil(mx * 1.2);
+        }
+    }
+
+    const formatTimeStr = (v) => {
+        let mins = Math.floor(v);
+        let secs = Math.round((v - mins) * 60);
+        if (secs === 60) { mins++; secs = 0; }
+        return mins + ':' + (secs < 10 ? '0' : '') + secs;
+    };
+
     if (mainChartInstance) mainChartInstance.destroy();
-    mainChartInstance = new Chart(document.getElementById('mainKpiChart').getContext('2d'), { type: 'line', plugins: typeof ChartDataLabels !== 'undefined' ? [ChartDataLabels] : [], data: { labels: lbls, datasets: fData }, options: { responsive: true, maintainAspectRatio: false, animation: { duration: 400 }, plugins: { legend: { position: 'top' }, datalabels: { align: 'top', anchor: 'end', formatter: v => v !== null ? (Math.round(v*10)/10 + unit) : '' } }, scales: { y: { min: yMin, max: yMax, ticks: { callback: v => v + unit } }, x: { grid: { display: false } } } } });
+    
+    mainChartInstance = new Chart(document.getElementById('mainKpiChart').getContext('2d'), { 
+        type: 'line', 
+        plugins: typeof ChartDataLabels !== 'undefined' ? [ChartDataLabels] : [], 
+        data: { labels: lbls, datasets: fData }, 
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            layout: { padding: { top: 35, right: 20, left: 10, bottom: 0 } }, 
+            animation: { duration: 400 }, 
+            plugins: { 
+                legend: { 
+                    position: 'bottom', 
+                    labels: { font: { size: 13, family: "'Inter', sans-serif", weight: 'bold' }, usePointStyle: true, boxWidth: 8, padding: 20 }
+                }, 
+                datalabels: { 
+                    align: 'top', 
+                    anchor: 'end', 
+                    formatter: v => {
+                        if (v === null) return '';
+                        return metric === 'time' ? formatTimeStr(v) : (Math.round(v*10)/10 + unit);
+                    },
+                    font: { size: 11, weight: 'bold' },
+                    color: '#666',
+                    offset: 4
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            // FIXED: Added .trim() here so the tooltips don't look weird!
+                            let label = context.dataset.label.trim() || '';
+                            if (label) label += ': ';
+                            if (context.parsed.y !== null) {
+                                label += metric === 'time' ? formatTimeStr(context.parsed.y) : (Math.round(context.parsed.y*10)/10 + unit);
+                            }
+                            return label;
+                        }
+                    }
+                }
+            }, 
+            scales: { 
+                y: { 
+                    min: yMin, 
+                    max: yMax, 
+                    ticks: { 
+                        callback: v => metric === 'time' ? formatTimeStr(v) : (v + unit) 
+                    } 
+                }, 
+                x: { grid: { display: false } } 
+            } 
+        } 
+    });
+
+    const activeLoader = document.getElementById('chartLoading');
+    if (activeLoader) activeLoader.style.display = 'none';
 }
 
 function renderLiveData(d) {
@@ -668,74 +998,342 @@ async function fetchRecordsData() { try { recordsCache = await (await fetch(`${R
 
 function renderRecords() {
     const cont = document.getElementById('recordsContainer'); if(!cont) return;
-    if (!recordsCache?.length) return cont.innerHTML = '<div style="padding: 40px; text-align: center; color: #888; font-weight: 600;">Syncing Live Records...</div>';
+    if (!recordsCache?.length) return cont.innerHTML = '<div class="status-message">Syncing Data...</div>';
     const map = {}; recordsCache.forEach(r => { let l = String(r.label).trim(), s = String(r.section).toUpperCase().trim(); if (!map[l]) map[l] = { c: null, s: [] }; if (s === 'COMPANY' || s === 'COMPANY WIDE') map[l].c = r; else map[l].s.push(r); });
     let bC = 0; cont.innerHTML = '<div class="records-masonry-grid">' + Object.keys(map).map(l => {
         let d = map[l]; bC++; let oId = 'overflow-board-' + bC; d.s.sort((a, b) => parseNum(b.value) - parseNum(a.value)); let cR = d.c || d.s[0];
-        return `<div class="record-metric-card"><div class="rmc-header">${l}</div>${cR ? `<div class="rmc-champion"><div class="rmc-crown">👑 Company Record</div><div class="rmc-champ-val">${cR.value || '-'}</div><div class="rmc-champ-sub">${cR.subtext || ''}</div></div>` : ''}${d.s.length ? `<div class="rmc-list">${d.s.slice(0, 3).map((s, i) => `<div class="rmc-list-item"><div class="rmc-rank">${i===0?'🥇':(i===1?'🥈':'🥉')}</div><div class="rmc-store">${s.section}</div><div class="rmc-score"><span class="rmc-score-val">${s.value || '-'}</span><span class="rmc-score-date">${s.subtext || ''}</span></div></div>`).join('')}${d.s.length > 3 ? `<div id="${oId}" class="hidden-board">${d.s.slice(3).map((s, i) => `<div class="rmc-list-item"><div class="rmc-rank" style="font-size:11px; color:#999;">#${i+4}</div><div class="rmc-store">${s.section}</div><div class="rmc-score"><span class="rmc-score-val">${s.value || '-'}</span><span class="rmc-score-date">${s.subtext || ''}</span></div></div>`).join('')}</div><button class="rmc-expand-btn" onclick="toggleBoard('${oId}', this)">See Full Leaderboard ▾</button>` : ''}</div>` : ''}</div>`;
+        return `<div class="record-metric-card"><div class="rmc-header" style="background: var(--slate-charcoal);">${l}</div>${cR ? `<div class="rmc-champion"><div class="rmc-crown">👑 Company Record</div><div class="rmc-champ-val">${cR.value || '-'}</div><div class="rmc-champ-sub">${cR.subtext || ''}</div></div>` : ''}${d.s.length ? `<div class="rmc-list">${d.s.slice(0, 3).map((s, i) => `<div class="rmc-list-item"><div class="rmc-rank">${i===0?'🥇':(i===1?'🥈':'🥉')}</div><div class="rmc-store">${s.section}</div><div class="rmc-score"><span class="rmc-score-val">${s.value || '-'}</span><span class="rmc-score-date">${s.subtext || ''}</span></div></div>`).join('')}${d.s.length > 3 ? `<div id="${oId}" class="hidden-board">${d.s.slice(3).map((s, i) => `<div class="rmc-list-item"><div class="rmc-rank" style="font-size:11px; color:#999;">#${i+4}</div><div class="rmc-store">${s.section}</div><div class="rmc-score"><span class="rmc-score-val">${s.value || '-'}</span><span class="rmc-score-date">${s.subtext || ''}</span></div></div>`).join('')}</div><button class="rmc-expand-btn" onclick="toggleBoard('${oId}', this)">See Full Leaderboard ▾</button>` : ''}</div>` : ''}</div>`;
     }).join('') + '</div>';
 }
 
 function toggleBoard(id, btn) { const el = document.getElementById(id); el.classList.toggle('open'); btn.innerText = el.classList.contains('open') ? 'Hide Leaderboard ▴' : 'See Full Leaderboard ▾'; }
-function syncAllData() { if (kpiChartCache[currentTimeframe]) renderKpiChart(kpiChartCache[currentTimeframe], document.getElementById('metricSelector')?.value); if (hubDataCache) renderLiveData(hubDataCache); fetchChartData(currentTimeframe); fetchHubData(); loadCMS(); fetchRecordsData(); }
+function loadKpiData() { 
+    const mSelect = document.getElementById('metricSelector');
+    if (!mSelect) return;
+    const m = mSelect.value;
+    
+    // Force the loader to show immediately upon switching metrics/tabs
+    const loader = document.getElementById('chartLoading');
+    if (loader) {
+        loader.style.display = 'flex';
+        loader.innerHTML = '<div class="status-message">Syncing Data...</div>';
+    }
+    
+    if (kpiChartCache[currentTimeframe] && Array.isArray(kpiChartCache[currentTimeframe]) && kpiChartCache[currentTimeframe].length > 0) {
+        try {
+            renderKpiChart(kpiChartCache[currentTimeframe], m); 
+        } catch(e) {
+            fetchChartData(currentTimeframe);
+        }
+    } else {
+        fetchChartData(currentTimeframe); 
+    }
+}
+
+async function fetchChartData(tf) {
+    const loader = document.getElementById('chartLoading');
+    if (loader) {
+        loader.style.display = 'flex';
+        loader.innerHTML = '<div class="status-message">Syncing Data...</div>';
+    }
+    
+    try {
+        const d = await Promise.all([
+            fetch(`${WEEKLY_KPI_URL}?store=OVL&time=${tf}`).then(r => r.json()), 
+            fetch(`${WEEKLY_KPI_URL}?store=LEE&time=${tf}`).then(r => r.json()), 
+            fetch(`${WEEKLY_KPI_URL}?store=WSP&time=${tf}`).then(r => r.json()),
+            fetch(`${WEEKLY_KPI_URL}?store=MPL&time=${tf}`).then(r => r.json()),
+            fetch(`${WEEKLY_KPI_URL}?store=BAL&time=${tf}`).then(r => r.json())
+        ]);
+        
+        kpiChartCache[tf] = d; 
+        try { localStorage.setItem('speeksKpiChartCache', JSON.stringify(kpiChartCache)); } catch(e) {}
+        
+        if (currentTimeframe === tf) {
+            const mSelect = document.getElementById('metricSelector');
+            if (mSelect) renderKpiChart(d, mSelect.value);
+        }
+    } catch (e) {
+        console.error("fetchChartData error:", e);
+        if (loader) {
+            loader.innerHTML = '<div class="status-message" style="color:var(--red-alert);">Failed to load chart data.</div>';
+        }
+    } 
+}
+
+function syncAllData() { 
+    // Safely isolate every widget update so a delay in one never crashes the others
+    try {
+        const mSelect = document.getElementById('metricSelector');
+        if (typeof kpiChartCache !== 'undefined' && kpiChartCache && kpiChartCache[currentTimeframe] && mSelect) {
+            renderKpiChart(kpiChartCache[currentTimeframe], mSelect.value); 
+        }
+    } catch (e) {}
+    
+    try {
+        if (typeof cachedLeaderboardData !== 'undefined' && cachedLeaderboardData) {
+            drawLeaderboard();
+        }
+    } catch (e) {}
+    
+    try {
+        if (typeof hubDataCache !== 'undefined' && hubDataCache) {
+            renderLiveData(hubDataCache); 
+        }
+    } catch (e) {}
+    
+    // Trigger background syncs safely
+    fetchChartData(currentTimeframe); 
+    fetchHubData(); 
+    if (typeof loadCMS === 'function') loadCMS(); 
+    if (typeof fetchRecordsData === 'function') fetchRecordsData(); 
+}
 
 
 // --- QUICK MESSAGES MODULE ---
+let quickMsgCache = null;
+let currentQMTab = 'common';
+
 async function loadQuickMessages() {
     const contentDiv = document.getElementById('qmContent');
-    if (contentDiv.innerHTML !== 'Loading messages...' && contentDiv.innerHTML.trim() !== '') return; 
+    
+    if (quickMsgCache && contentDiv.querySelector('.qm-item')) return; 
+
+    contentDiv.innerHTML = '<div class="status-message">Syncing Data...</div>';
 
     try {
         const response = await fetch(QUICK_MSG_URL);
-        const data = await response.json();
-        if (!data || data.length === 0) {
-            contentDiv.innerHTML = '<p>No messages found in the Google Sheet.</p>';
-            return;
-        }
+        quickMsgCache = await response.json(); 
+        
+        renderQMTab(currentQMTab);
+    } catch (error) {
+        console.error("Error loading Quick Messages:", error);
+        contentDiv.innerHTML = '<div class="status-message" style="color: var(--red-alert);">Failed to load messages. Ensure Apps Script is deployed as a "New Version".</div>';
+    }
+}
 
-        const headers = Object.keys(data[0]);
-        const categoryCol = headers[0]; 
-        const nameCol = headers[1];     
-        const msgCol = headers[2];      
+function switchQMTab(tab) {
+    currentQMTab = tab;
+    
+    const btnCommon = document.getElementById('qm-tab-common');
+    const btnNoDeals = document.getElementById('qm-tab-nodeals');
+    if (btnCommon && btnNoDeals) {
+        btnCommon.classList.toggle('active', tab === 'common');
+        btnNoDeals.classList.toggle('active', tab === 'nodeals');
+    }
+    
+    renderQMTab(tab);
+}
 
-        const groupedData = {};
-        data.forEach(row => {
-            const category = row[categoryCol];
+function renderQMTab(tab) {
+    const contentDiv = document.getElementById('qmContent');
+    if (!quickMsgCache) return;
+
+    const rawData = tab === 'common' ? quickMsgCache.common : quickMsgCache.noDeals;
+    
+    let userStore = sessionStorage.getItem('speeksUserStore') || 'OVL';
+    if (userStore === 'ALL') userStore = 'CORP';
+
+    if (!rawData || rawData.length === 0) {
+        contentDiv.innerHTML = '<div style="padding: 20px; color: #888; text-align: center; font-weight: 600;">No messages found in this tab.</div>';
+        return;
+    }
+
+    const groupedData = {};
+    
+    rawData.forEach(row => {
+        const rowStore = String(row.store || "Everyone").trim().toUpperCase();
+        if (rowStore === 'EVERYONE' || rowStore === userStore.toUpperCase()) {
+            const category = row.category;
             if (!groupedData[category]) groupedData[category] = [];
             groupedData[category].push(row);
-        });
+        }
+    });
 
-        let html = '';
+    let html = '';
+
+    if (tab === 'common') {
         for (const [category, items] of Object.entries(groupedData)) {
             html += `
             <div class="qm-category-wrapper">
-                <div class="qm-category" onclick="this.nextElementSibling.classList.toggle('open')">
-                    📁 ${escapeHtml(category)}
+                <div class="qm-category" onclick="this.classList.toggle('open'); this.nextElementSibling.classList.toggle('open')">
+                    <span>> ${escapeHtml(category)}</span>
+                    <span class="qm-caret" style="font-size:10px; color:#a0aab2; transition: transform 0.3s;">▼</span>
                 </div>
                 <div class="qm-category-items">
                     ${items.map(item => `
                         <div class="qm-item">
                             <div class="qm-item-header">
                                 <div class="qm-item-name" onclick="this.parentElement.nextElementSibling.classList.toggle('open')">
-                                    ${escapeHtml(item[nameCol])}
+                                    ${escapeHtml(item.name)}
                                 </div>
-                                <button class="qm-copy-btn" title="Copy Message" data-message="${escapeHtml(item[msgCol])}" onclick="copyQMToClipboard(this)">
+                                <button class="qm-copy-btn" title="Copy Message" data-message="${escapeHtml(item.message)}" onclick="copyQMToClipboard(this)">
                                     📋
                                 </button>
                             </div>
                             <div class="qm-item-message">
-                                ${escapeHtml(item[msgCol])}
+                                ${escapeHtml(item.message)}
                             </div>
                         </div>
                     `).join('')}
                 </div>
             </div>`;
         }
-        contentDiv.innerHTML = html;
-    } catch (error) {
-        console.error("Error loading Quick Messages:", error);
-        contentDiv.innerHTML = '<p style="color:red;">Error loading messages. Check console.</p>';
+    } 
+    else {
+        html += '<div class="qm-category-items open" style="margin-left: 0; padding-left: 0; border: none; background: transparent;">';
+        for (const [category, items] of Object.entries(groupedData)) {
+            html += items.map(item => `
+                <div class="qm-item">
+                    <div class="qm-item-header">
+                        <div class="qm-item-name" onclick="this.parentElement.nextElementSibling.classList.toggle('open')">
+                            ${escapeHtml(item.name)}
+                        </div>
+                        <button class="qm-copy-btn" title="Copy Message" data-message="${escapeHtml(item.message)}" onclick="copyQMToClipboard(this)">
+                            📋
+                        </button>
+                    </div>
+                    <div class="qm-item-message">
+                        ${escapeHtml(item.message)}
+                    </div>
+                </div>
+            `).join('');
+        }
+        html += '</div>';
     }
+    
+    if (html === '' || html === '<div class="qm-category-items open" style="margin-left: 0; padding-left: 0; border: none; background: transparent;"></div>') {
+        html = '<div style="padding: 20px; color: #888; text-align: center; font-weight: 600;">No messages available for your location.</div>';
+    }
+    
+    contentDiv.innerHTML = html;
+}
+
+function switchQMTab(tab) {
+    currentQMTab = tab;
+    
+    const btnCommon = document.getElementById('qm-tab-common');
+    const btnNoDeals = document.getElementById('qm-tab-nodeals');
+    const btnReviews = document.getElementById('qm-tab-reviews'); // New Button
+    
+    if (btnCommon && btnNoDeals && btnReviews) {
+        btnCommon.classList.toggle('active', tab === 'common');
+        btnNoDeals.classList.toggle('active', tab === 'nodeals');
+        btnReviews.classList.toggle('active', tab === 'reviews');
+    }
+    
+    renderQMTab(tab);
+}
+
+function renderQMTab(tab) {
+    const contentDiv = document.getElementById('qmContent');
+    if (!quickMsgCache) return;
+
+    // Route the data to the correct tab
+    let rawData = quickMsgCache.common;
+    if (tab === 'nodeals') rawData = quickMsgCache.noDeals;
+    if (tab === 'reviews') rawData = quickMsgCache.reviews;
+    
+    let userStore = sessionStorage.getItem('speeksUserStore') || 'OVL';
+    if (userStore === 'ALL') userStore = 'CORP';
+
+    if (!rawData || rawData.length === 0) {
+        contentDiv.innerHTML = '<div style="padding: 20px; color: #888; text-align: center; font-weight: 600;">No messages found in this tab.</div>';
+        return;
+    }
+
+    const groupedData = {};
+    
+    rawData.forEach(row => {
+        const rowStore = String(row.store || "Everyone").trim().toUpperCase();
+        if (rowStore === 'EVERYONE' || rowStore === userStore.toUpperCase()) {
+            const category = row.category;
+            if (!groupedData[category]) groupedData[category] = [];
+            groupedData[category].push(row);
+        }
+    });
+
+    let html = '';
+
+    // 1. COMMON TAB (Folders)
+    if (tab === 'common') {
+        for (const [category, items] of Object.entries(groupedData)) {
+            html += `
+            <div class="qm-category-wrapper">
+                <div class="qm-category" onclick="this.classList.toggle('open'); this.nextElementSibling.classList.toggle('open')">
+                    <span> 🗂️ ${escapeHtml(category)}</span>
+                    <span class="qm-caret" style="font-size:10px; color:#a0aab2; transition: transform 0.3s;">▼</span>
+                </div>
+                <div class="qm-category-items">
+                    ${items.map(item => `
+                        <div class="qm-item">
+                            <div class="qm-item-header">
+                                <div class="qm-item-name" onclick="this.parentElement.nextElementSibling.classList.toggle('open')">
+                                    ${escapeHtml(item.name)}
+                                </div>
+                                <button class="qm-copy-btn" title="Copy Message" data-message="${escapeHtml(item.message)}" onclick="copyQMToClipboard(this)">
+                                    📋
+                                </button>
+                            </div>
+                            <div class="qm-item-message">
+                                ${escapeHtml(item.message)}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>`;
+        }
+    } 
+    // 2. NO DEALS TAB (Single Column Flat List)
+    else if (tab === 'nodeals') {
+        html += '<div class="qm-category-items open" style="margin-left: 0; padding-left: 0; border: none; background: transparent;">';
+        for (const [category, items] of Object.entries(groupedData)) {
+            html += items.map(item => `
+                <div class="qm-item">
+                    <div class="qm-item-header">
+                        <div class="qm-item-name" onclick="this.parentElement.nextElementSibling.classList.toggle('open')">
+                            ${escapeHtml(item.name)}
+                        </div>
+                        <button class="qm-copy-btn" title="Copy Message" data-message="${escapeHtml(item.message)}" onclick="copyQMToClipboard(this)">
+                            📋
+                        </button>
+                    </div>
+                    <div class="qm-item-message">
+                        ${escapeHtml(item.message)}
+                    </div>
+                </div>
+            `).join('');
+        }
+        html += '</div>';
+    }
+    // 3. REVIEWS TAB (2-Column Grid Layout!)
+    else if (tab === 'reviews') {
+        html += '<div class="qm-category-items open" style="margin-left: 0; padding-left: 0; border: none; background: transparent; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start;">';
+        for (const [category, items] of Object.entries(groupedData)) {
+            html += items.map(item => `
+                <div class="qm-item" style="margin-bottom: 0;">
+                    <div class="qm-item-header">
+                        <div class="qm-item-name" onclick="this.parentElement.nextElementSibling.classList.toggle('open')">
+                            ${escapeHtml(item.name)}
+                        </div>
+                        <button class="qm-copy-btn" title="Copy Message" data-message="${escapeHtml(item.message)}" onclick="copyQMToClipboard(this)">
+                            📋
+                        </button>
+                    </div>
+                    <div class="qm-item-message">
+                        ${escapeHtml(item.message)}
+                    </div>
+                </div>
+            `).join('');
+        }
+        html += '</div>';
+    }
+    
+    if (html === '' || html.includes('style="margin-left: 0; padding-left: 0; border: none; background: transparent;"></div>') || html.includes('style="margin-left: 0; padding-left: 0; border: none; background: transparent; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start;"></div>')) {
+        html = '<div style="padding: 20px; color: #888; text-align: center; font-weight: 600;">No messages available for your location.</div>';
+    }
+    
+    contentDiv.innerHTML = html;
 }
 
 function copyQMToClipboard(button) {
@@ -804,7 +1402,7 @@ function injectIdeaModal() {
         <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;" onload="handleIframeLoad()"></iframe>
         <div class="modal-menu idea-menu" id="ideaModal">
             <div class="modal-header">
-                <h3>💡 Submit an Idea</h3>
+                <h3>Submit an Idea</h3>
                 <button class="modal-close-btn" onclick="closeAllModals()">✖</button>
             </div>
             <div class="modal-content" style="padding: 25px;">
@@ -1041,7 +1639,7 @@ async function initListingGoals() {
 async function fetchLiveGoalsData() {
     const list = document.getElementById('goals-roster-list');
     if (!list) return;
-    list.innerHTML = '<div class="status-message" style="text-align: center; color: #888; padding: 20px 0;">Syncing Live Goals...</div>';
+    list.innerHTML = '<div class="status-message">Syncing Data...</div>';
 
     goalsTargetStore = sessionStorage.getItem('speeksUserStore') || 'OVL';
     if (goalsTargetStore === 'ALL' || goalsTargetStore === 'CORP') goalsTargetStore = 'OVL'; 
@@ -1252,12 +1850,14 @@ function buildGoalsEditForm() {
     const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
     let html = '';
 
+    // Dynamic Roles based on roster size
+    const availableRoles = goalsRoster.length <= 3 ? ['B1', 'B2', 'L1'] : ['B1', 'B2', 'L1', 'L2'];
+
     goalsRoster.forEach((emp, idx) => {
         const todayRecord = liveGoalsData.find(r => r.employee === emp && r.date === todayStr) || { role: '', goal: '', result: '' };
         
-        const roles = ['B1', 'B2', 'L1', 'L2'];
         let rolesHtml = '';
-        roles.forEach(r => {
+        availableRoles.forEach(r => {
             const isActive = todayRecord.role === r ? 'active' : '';
             rolesHtml += `<button type="button" class="role-dot ${isActive}" onclick="selectRole(this, '${emp}', '${r}')">${r}</button>`;
         });
@@ -1420,6 +2020,25 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchAlertsData();
     fetchMasterDistrictDashboard();
     fetchDistrictMonthlyKPIs();
+
+    // --- SPEEKS Tools Dropdown Toggle ---
+  const devDropdown = document.getElementById('devDropdown');
+  const devWorkspaceBtn = document.getElementById('devWorkspaceBtn');
+  
+  if (devWorkspaceBtn && devDropdown) {
+      // Toggle dropdown on click
+      devWorkspaceBtn.addEventListener('click', (e) => {
+          e.stopPropagation(); // Prevents the window click listener from immediately closing it
+          devDropdown.classList.toggle('open');
+      });
+      
+      // Close dropdown if clicking outside of it
+      document.addEventListener('click', (e) => {
+          if (!devDropdown.contains(e.target)) {
+              devDropdown.classList.remove('open');
+          }
+      });
+  }
 });
 
 async function fetchDistrictMonthlyKPIs() {
@@ -1427,16 +2046,9 @@ async function fetchDistrictMonthlyKPIs() {
     if (!container) return;
 
     const STORES = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
-    const MONTHLY_KPI_URL = 'https://script.google.com/macros/s/AKfycby0ihq9A4yUQvdZdeAF9euC5jih24hP2XGG-J_balNtxop2RHBuIuigw_mH3XTeCkkhow/exec';
-
-    const cachedStr = localStorage.getItem('speeksDistKpiData');
-    if (cachedStr) {
-        try {
-            districtKpiCache = JSON.parse(cachedStr);
-            buildDistrictKpiDropdowns();
-            renderDistrictKPIs();
-        } catch(e) {}
-    }
+    
+    // FLUSH BAD CACHE
+    localStorage.removeItem('speeksDistKpiData');
 
     try {
         const promises = STORES.map(store => 
@@ -1463,7 +2075,8 @@ async function fetchDistrictMonthlyKPIs() {
         renderDistrictKPIs();
         
     } catch (e) {
-        if (!cachedStr) container.innerHTML = '<div style="color: var(--red-alert); font-weight: bold; text-align: center; padding: 20px;">Failed to load District KPIs.</div>';
+        console.error("District KPI Error:", e);
+        container.innerHTML = '<div style="color: var(--red-alert); font-weight: bold; text-align: center; padding: 20px;">Failed to load District KPIs. Connection Timed Out.</div>';
     }
 }
 
@@ -1584,7 +2197,7 @@ async function fetchMasterDistrictDashboard() {
             // BUILD HTML USING NEW CSS CLASSES
             html += `
             <div class="card master-card">
-                <div class="master-card-header">
+                <div class="master-card-header" style="background: var(--slate-charcoal);">
                     <span class="master-card-title">${icon} ${store}</span>
                     <div class="master-card-score-box">
                         <span class="master-card-score" style="background: ${sBg}; color: ${sColor};">${scoreNum.toFixed(1)}</span>
@@ -1706,6 +2319,9 @@ function buildDistrictKpiDropdowns() {
     sel.value = currVal !== "" && currVal < months.length ? currVal : months.length - 1;
 }
 
+// ==========================================
+// 1. DISTRICT MONTHLY KPIS (LEFT SIDE)
+// ==========================================
 window.renderDistrictKPIs = function() {
     const container = document.getElementById('district-kpi-body');
     const mIdx = parseInt(document.getElementById('dist-kpi-month').value);
@@ -1731,7 +2347,7 @@ window.renderDistrictKPIs = function() {
         cat.metrics.forEach(m => {
             const metricName = m.name;
             const isInverse = m.inverse;
-            let rowHtml = `<div class="kpi-row" style="display: grid; grid-template-columns: minmax(180px, 2fr) repeat(5, minmax(80px, 1fr)); padding: 12px 20px; align-items: center; border-bottom: 1px solid #f8fafc;">
+            let rowHtml = `<div class="kpi-row" style="display: grid; grid-template-columns: minmax(130px, 1.5fr) repeat(5, minmax(85px, 1fr)); padding: 12px 10px; align-items: center; border-bottom: 1px solid #f8fafc;">
                             <div class="kpi-name-col"><span class="kpi-name" style="font-size: 11px; font-weight: 800; color: #555; text-transform: uppercase;">${metricName}</span></div>`;
 
             STORES.forEach(store => {
@@ -1769,7 +2385,24 @@ window.renderDistrictKPIs = function() {
                         }
                     }
 
-                    rowHtml += `<div style="text-align: center;"><span style="display: inline-block; font-size: 11px; font-weight: 900; color: ${txt}; background: ${bg}; padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.05); box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">${displayStr}</span></div>`;
+                    rowHtml += `<div style="text-align: center;">
+                                    <span style="
+                                        display: inline-flex; 
+                                        align-items: center; 
+                                        justify-content: center; 
+                                        min-width: 65px; 
+                                        font-size: 11px; 
+                                        font-weight: 900; 
+                                        color: ${txt}; 
+                                        background: ${bg}; 
+                                        padding: 4px 10px; 
+                                        border-radius: 6px; 
+                                        border: 1px solid rgba(0,0,0,0.05); 
+                                        box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+                                        box-sizing: border-box;
+                                        white-space: nowrap;
+                                    ">${displayStr}</span>
+                                </div>`;
                 } else {
                     rowHtml += `<div style="text-align: center;"><span style="font-size: 11px; color: #ccc; font-weight: 800;">-</span></div>`;
                 }
@@ -1785,6 +2418,135 @@ window.renderDistrictKPIs = function() {
     container.innerHTML = html;
 };
 
+// ==========================================
+// 2. DISTRICT GOALS WIDGET (RIGHT SIDE)
+// ==========================================
+function renderCompactDmGoals() {
+    const cont = document.getElementById('dm-compact-goals-container');
+    if (!cont) return;
+
+    const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() + (now.getDay() === 0 ? -6 : 1 - now.getDay()));
+    startOfWeek.setHours(0,0,0,0);
+
+    const stores = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
+    
+    // Removed the inline border here to prevent double borders
+    let html = '<div style="display: flex; flex-direction: column;">';
+
+    stores.forEach((store, idx) => {
+        const storeData = allDistrictGoalsData.filter(r => r.store === store);
+        let tGoal = 0, tResult = 0;
+        let activeEmps = new Set();
+
+        storeData.forEach(r => {
+            const recDate = new Date(r.date);
+            const isToday = r.date === todayStr;
+            const isThisWeek = recDate >= startOfWeek;
+
+            if ((currentDmGoalView === 'daily' && isToday) || (currentDmGoalView === 'weekly' && isThisWeek)) {
+                tGoal += parseInt(r.goal) || 0;
+                tResult += parseInt(r.result) || 0;
+                activeEmps.add(r.employee);
+            }
+        });
+
+        const progress = tGoal > 0 ? Math.min(100, Math.round((tResult / tGoal) * 100)) : 0;
+        const colorClass = tResult >= tGoal && tGoal > 0 ? 'var(--sage-professional)' : (tResult > 0 ? 'var(--idea-gold)' : '#cbd5e1');
+        const isMuted = tGoal === 0 && tResult === 0 ? 'opacity: 0.6;' : '';
+
+        html += `
+        <div onclick="toggleDmStoreAccordion('${store}')" class="lb-row" style="display: grid; grid-template-columns: 50px 1fr 70px 20px; align-items: center; border-bottom: 1px solid ${idx === stores.length-1 ? 'transparent' : '#f0f0f0'}; cursor: pointer; padding: 12px 15px; margin: 0; ${isMuted}">
+            <span style="font-size: 14px; font-weight: 900; color: var(--slate-charcoal);">${store}</span>
+            <div style="padding-right: 15px;">
+                <div style="width: 100%; height: 6px; background: #f1f5f9; border-radius: 3px; overflow: hidden; display: flex;">
+                    <div style="height: 100%; width: ${progress}%; background: ${colorClass}; border-radius: 3px; transition: width 0.5s ease;"></div>
+                </div>
+            </div>
+            <div style="text-align: right; font-size: 14px; font-weight: 900; color: var(--slate-charcoal);">
+                ${tResult} <span style="font-size: 11px; color: #888; font-weight: 600;">/ ${tGoal}</span>
+            </div>
+            <div id="dm-caret-${store}" class="dm-store-caret" style="text-align: right; color: #cbd5e1; font-size: 10px; transition: transform 0.3s;">▼</div>
+        </div>`;
+
+        html += `<div id="dm-roster-${store}" class="dm-store-roster" style="display: none; background: #fdfdfd; padding: 10px 20px; border-bottom: 1px solid #e2e8f0; box-shadow: inset 0 3px 6px rgba(0,0,0,0.02);">`;
+        
+        if (activeEmps.size === 0) {
+            html += `<div style="font-size: 12px; color: #888; text-align: center; font-weight: 600; padding: 10px 0;">No data logged.</div></div>`;
+            return;
+        }
+
+        Array.from(activeEmps).forEach(emp => {
+            const empRecords = storeData.filter(r => r.employee === emp);
+            let eG = 0, eR = 0;
+            let dailyStats = {}; 
+
+            empRecords.forEach(r => {
+                const recDate = new Date(r.date);
+                if ((currentDmGoalView === 'daily' && r.date === todayStr) || (currentDmGoalView === 'weekly' && recDate >= startOfWeek)) {
+                    const rG = parseInt(r.goal) || 0;
+                    const rR = parseInt(r.result) || 0;
+                    eG += rG;
+                    eR += rR;
+                    
+                    if (currentDmGoalView === 'weekly') {
+                        const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                        const dayIdx = (recDate.getDay() + 6) % 7; 
+                        dailyStats[daysOfWeek[dayIdx]] = { goal: rG, result: rR };
+                    }
+                }
+            });
+
+            const rClass = eG > 0 || eR > 0 ? (eR >= eG ? 'delta-pos' : 'delta-neg') : 'delta-neutral';
+
+            let dailyBreakdownHtml = '';
+            if (currentDmGoalView === 'weekly') {
+                const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                const currentDayIdx = (now.getDay() + 6) % 7;
+                
+                // Style applied to ensure even stretching of the bubbles
+                const pillStyle = "flex: 1; min-width: 0; text-align: center; font-size: 9px; font-weight: 800; padding: 4px 2px; border-radius: 4px; white-space: nowrap;";
+                
+                dailyBreakdownHtml = '<div style="display: flex; gap: 6px; margin-top: 4px; padding-top: 4px; width: 100%;">';
+                
+                daysOfWeek.forEach((dName, dIdx) => {
+                    if (dailyStats[dName]) {
+                        const dG = dailyStats[dName].goal;
+                        const dR = dailyStats[dName].result;
+                        const dClass = dR >= dG ? 'color: #065f46; background: #d1fae5;' : 'color: #991b1b; background: #fee2e2;';
+                        dailyBreakdownHtml += `<div style="${pillStyle} ${dClass}">${dName}: ${dR}/${dG}</div>`;
+                    } else if (dIdx <= currentDayIdx) {
+                        dailyBreakdownHtml += `<div style="${pillStyle} color: #64748b; background: #f1f5f9;" title="Not Logged">${dName}</div>`;
+                    } else {
+                        dailyBreakdownHtml += `<div style="${pillStyle} color: #cbd5e1; border: 1px dashed #e2e8f0; background: transparent;">${dName}</div>`;
+                    }
+                });
+                dailyBreakdownHtml += '</div>';
+            }
+
+            html += `
+            <div style="display: flex; flex-direction: column; padding: 8px 0; border-bottom: 1px dashed #f0f0f0;">
+                <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 15px; align-items: center;">
+                    <span style="font-size: 13px; font-weight: 700; color: var(--slate-charcoal);">${emp}</span>
+                    <div style="display: flex; justify-content: center;">
+                        <span style="font-size: 14px; font-weight: 800; color: #64748b; width: 36px; text-align: center; display: inline-block;">${eG || '-'}</span>
+                    </div>
+                    <div style="display: flex; justify-content: center; align-items: center;">
+                        <span class="delta-badge ${rClass}" style="font-size: 14px; width: 36px; height: 26px; padding: 0; display: inline-flex; justify-content: center; align-items: center;">${eR || '-'}</span>
+                    </div>
+                </div>
+                ${dailyBreakdownHtml}
+            </div>`;
+        });
+        
+        html += `</div>`; 
+    });
+
+    html += '</div>'; 
+    cont.innerHTML = html;
+}
 
 // ============================================================================
 // WIDGET: COMPACT DISTRICT COMMAND - LISTING GOALS
@@ -1833,96 +2595,6 @@ function toggleDmStoreAccordion(store) {
     }
 }
 
-function renderCompactDmGoals() {
-    const cont = document.getElementById('dm-compact-goals-container');
-    if (!cont) return;
-
-    const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
-    const now = new Date();
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() + (now.getDay() === 0 ? -6 : 1 - now.getDay()));
-    startOfWeek.setHours(0,0,0,0);
-
-    const stores = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
-    let html = '<div style="border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; background: white;">';
-
-    stores.forEach((store, idx) => {
-        const storeData = allDistrictGoalsData.filter(r => r.store === store);
-        let tGoal = 0, tResult = 0;
-        let activeEmps = new Set();
-
-        // Calculate Totals & Find Active Employees
-        storeData.forEach(r => {
-            const recDate = new Date(r.date);
-            const isToday = r.date === todayStr;
-            const isThisWeek = recDate >= startOfWeek;
-
-            if ((currentDmGoalView === 'daily' && isToday) || (currentDmGoalView === 'weekly' && isThisWeek)) {
-                tGoal += parseInt(r.goal) || 0;
-                tResult += parseInt(r.result) || 0;
-                activeEmps.add(r.employee);
-            }
-        });
-
-        const progress = tGoal > 0 ? Math.min(100, Math.round((tResult / tGoal) * 100)) : 0;
-        const colorClass = tResult >= tGoal && tGoal > 0 ? 'var(--sage-professional)' : (tResult > 0 ? 'var(--idea-gold)' : '#cbd5e1');
-        const isMuted = tGoal === 0 && tResult === 0 ? 'opacity: 0.6;' : '';
-
-        // Top Level Store Row (Standardized with lb-row classes)
-        html += `
-        <div onclick="toggleDmStoreAccordion('${store}')" class="lb-row" style="display: grid; grid-template-columns: 50px 1fr 70px 20px; align-items: center; border-bottom: 1px solid ${idx === stores.length-1 ? 'transparent' : '#f0f0f0'}; cursor: pointer; padding: 12px 15px; margin: 0; ${isMuted}">
-            <span style="font-size: 14px; font-weight: 900; color: var(--slate-charcoal);">${store}</span>
-            <div style="padding-right: 15px;">
-                <div style="width: 100%; height: 6px; background: #f1f5f9; border-radius: 3px; overflow: hidden; display: flex;">
-                    <div style="height: 100%; width: ${progress}%; background: ${colorClass}; border-radius: 3px; transition: width 0.5s ease;"></div>
-                </div>
-            </div>
-            <div style="text-align: right; font-size: 14px; font-weight: 900; color: var(--slate-charcoal);">
-                ${tResult} <span style="font-size: 11px; color: #888; font-weight: 600;">/ ${tGoal}</span>
-            </div>
-            <div id="dm-caret-${store}" class="dm-store-caret" style="text-align: right; color: #cbd5e1; font-size: 10px; transition: transform 0.3s;">▼</div>
-        </div>`;
-
-        // The Hidden Dropdown Roster (Standardized background and strict bubble widths)
-        html += `<div id="dm-roster-${store}" class="dm-store-roster" style="display: none; background: #fdfdfd; padding: 10px 20px; border-bottom: 1px solid #e2e8f0; box-shadow: inset 0 3px 6px rgba(0,0,0,0.02);">`;
-        
-        if (activeEmps.size === 0) {
-            html += `<div style="font-size: 12px; color: #888; text-align: center; font-weight: 600; padding: 10px 0;">No data logged.</div></div>`;
-            return;
-        }
-
-        Array.from(activeEmps).forEach(emp => {
-            const empRecords = storeData.filter(r => r.employee === emp);
-            let eG = 0, eR = 0;
-
-            empRecords.forEach(r => {
-                const recDate = new Date(r.date);
-                if ((currentDmGoalView === 'daily' && r.date === todayStr) || (currentDmGoalView === 'weekly' && recDate >= startOfWeek)) {
-                    eG += parseInt(r.goal) || 0;
-                    eR += parseInt(r.result) || 0;
-                }
-            });
-
-            const rClass = eG > 0 || eR > 0 ? (eR >= eG ? 'delta-pos' : 'delta-neg') : 'delta-neutral';
-
-            html += `
-            <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 15px; align-items: center; padding: 8px 0; border-bottom: 1px dashed #f0f0f0;">
-                <span style="font-size: 13px; font-weight: 700; color: var(--slate-charcoal);">${emp}</span>
-                <div style="display: flex; justify-content: center;">
-                    <span style="font-size: 14px; font-weight: 800; color: #64748b; width: 36px; text-align: center; display: inline-block;">${eG || '-'}</span>
-                </div>
-                <div style="display: flex; justify-content: center; align-items: center;">
-                    <span class="delta-badge ${rClass}" style="font-size: 14px; width: 36px; height: 26px; padding: 0; display: inline-flex; justify-content: center; align-items: center;">${eR || '-'}</span>
-                </div>
-            </div>`;
-        });
-        
-        html += `</div>`; 
-    });
-
-    html += '</div>'; 
-    cont.innerHTML = html;
-}
 function updateMetricRing(storeId, percent, goalAmt, trackGP) {
     // Ensure 'storeId' matches the HTML prefixes exactly (e.g., 'lee', 'ovl')
     const pctElement = document.getElementById(`${storeId}-pct`);
@@ -1950,3 +2622,738 @@ function updateMetricRing(storeId, percent, goalAmt, trackGP) {
 
 // Example usage when your data fetches:
 // updateMetricRing('lee', 0.85, 15000, 12750);
+
+// ============================================================================
+// ENGINE: ZERO-FLICKER SINGLE PAGE APP (SPA) ROUTER
+// ============================================================================
+document.addEventListener('click', async (e) => {
+    const link = e.target.closest('.nav-link'); 
+    
+    // 1. Intercept internal navigation clicks on your top menu
+    if (link && link.href && link.href.startsWith(window.location.origin) && !link.href.includes('#')) {
+        e.preventDefault(); // STOP the browser from doing a hard page reload!
+        
+        const targetUrl = link.href;
+        if (targetUrl === window.location.href) return; // Ignore if clicking the active tab
+        
+        try {
+            // 2. Fetch the new page invisibly in the background
+            const response = await fetch(targetUrl);
+            const html = await response.text();
+            
+            // 3. Parse the new HTML
+            const parser = new DOMParser();
+            const newDoc = parser.parseFromString(html, 'text/html');
+            
+            // 4. Swap ONLY the main content area seamlessly
+            const currentMain = document.querySelector('.main-content');
+            const newMain = newDoc.querySelector('.main-content');
+            
+            if (currentMain && newMain) {
+                currentMain.innerHTML = newMain.innerHTML;
+            }
+
+            // 5. Update the active tab styling in the header
+            document.querySelectorAll('.nav-link').forEach(nav => nav.classList.remove('active'));
+            const newActiveLink = Array.from(document.querySelectorAll('.nav-link')).find(n => n.href === targetUrl);
+            if (newActiveLink) newActiveLink.classList.add('active');
+
+            // 6. Update Browser History / URL bar so the back button still works
+            window.history.pushState({ path: targetUrl }, '', targetUrl);
+            document.title = newDoc.title;
+
+            // 7. Reboot Page-Specific JavaScript dynamically
+            applyRoleBasedUI();
+            closeAllModals();
+
+            if (targetUrl.includes('docs.html')) {
+                if (typeof loadDocs === 'function') loadDocs();
+                const docSearch = document.getElementById('docSearch');
+                if (docSearch) docSearch.addEventListener('keyup', filterDocs);
+            } else {
+                // FIX: 100ms delay ensures Canvas tags are fully rendered before Chart.js draws
+                setTimeout(() => {
+                    if (typeof initDashboardData === 'function') initDashboardData();
+                    if (document.getElementById('mainKpiChart') && typeof syncAllData === 'function') syncAllData();
+                    if (typeof fetchScorecardData === 'function') fetchScorecardData();
+                    if (typeof fetchAlertsData === 'function') fetchAlertsData();
+                    if (typeof fetchMasterDistrictDashboard === 'function') fetchMasterDistrictDashboard();
+                    if (typeof fetchDistrictMonthlyKPIs === 'function') fetchDistrictMonthlyKPIs();
+                }, 100);
+            }
+
+        } catch (err) {
+            console.error("SPA Routing failed, falling back to hard load", err);
+            window.location.href = targetUrl; // Safety fallback
+        }
+    }
+});
+
+// Handle browser Back/Forward buttons smoothly
+window.addEventListener('popstate', () => {
+    window.location.reload(); 
+});
+
+// ==========================================
+// 3. EMPLOYEE SPECIFIC LISTING GOALS WIDGET
+// ==========================================
+async function fetchAndRenderEmployeeGoals() {
+    const container = document.getElementById('employee-goals-widget-body');
+    const dateLabel = document.getElementById('emp-goals-date');
+    const pulseDot = document.getElementById('emp-goals-pulse-dot');
+    if (!container) return;
+
+    const userName = sessionStorage.getItem('speeksUserName') || '';
+    let store = sessionStorage.getItem('speeksUserStore') || 'OVL';
+    if (store === 'ALL' || store === 'CORP') store = 'OVL';
+
+    const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() + (now.getDay() === 0 ? -6 : 1 - now.getDay()));
+    startOfWeek.setHours(0,0,0,0);
+
+    const ctTimeString = now.toLocaleString('en-US', { timeZone: 'America/Chicago', hour: 'numeric', hour12: false });
+    const hours = parseInt(ctTimeString, 10);
+    if (pulseDot) {
+        pulseDot.style.display = (hours === 9) ? 'block' : 'none';
+    }
+
+    if (dateLabel) {
+        dateLabel.innerText = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    }
+
+    try {
+        const res = await fetch(`${GOALS_API_URL}?store=${store}&v=${Date.now()}`);
+        const data = await res.json();
+        
+        const myRecords = data.filter(r => {
+            const dbName = String(r.employee).trim().toLowerCase();
+            const sessionName = String(userName).trim().toLowerCase();
+            if (dbName === sessionName) return true; 
+            const dbFirstName = dbName.split(' ')[0];
+            const sessionFirstName = sessionName.split(' ')[0];
+            if (dbFirstName.length > 2 && sessionFirstName.length > 2) {
+                if (dbFirstName.startsWith(sessionFirstName) || sessionFirstName.startsWith(dbFirstName)) return true;
+            }
+            return false;
+        });
+        
+        let todayGoal = 0;
+        let todayRole = '';
+        let dailyStats = {};
+
+        myRecords.forEach(r => {
+            const recDate = new Date(r.date);
+            const g = parseInt(r.goal) || 0;
+            const resVal = parseInt(r.result) || 0;
+
+            if (r.date === todayStr) {
+                todayGoal += g;
+                if (r.role && r.role !== '-') todayRole = r.role;
+            }
+            
+            if (recDate >= startOfWeek) {
+                const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                const dayIdx = (recDate.getDay() + 6) % 7; 
+                dailyStats[daysOfWeek[dayIdx]] = { goal: g, result: resVal };
+            }
+        });
+
+        const roleTranslations = { 'B1': 'Buyer 1', 'B2': 'Buyer 2', 'L1': 'Lister 1', 'L2': 'Lister 2' };
+        const displayRole = roleTranslations[todayRole] || todayRole;
+
+        const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        const currentDayIdx = (now.getDay() + 6) % 7;
+        
+        // Build Pills using clean CSS classes
+        let dailyBreakdownHtml = '<div class="emp-pill-container">';
+        
+        daysOfWeek.forEach((dName, dIdx) => {
+            if (dailyStats[dName]) {
+                const dG = dailyStats[dName].goal;
+                const dR = dailyStats[dName].result;
+                const dClass = dR >= dG ? 'pill-pass' : 'pill-fail';
+                dailyBreakdownHtml += `<div class="emp-daily-pill ${dClass}">${dName}: ${dR}/${dG}</div>`;
+            } else if (dIdx <= currentDayIdx) {
+                dailyBreakdownHtml += `<div class="emp-daily-pill pill-null" title="Not Logged">${dName}</div>`;
+            } else {
+                dailyBreakdownHtml += `<div class="emp-daily-pill pill-future">${dName}</div>`;
+            }
+        });
+        dailyBreakdownHtml += '</div>';
+
+        container.innerHTML = `
+            <div class="emp-goals-top-row">
+                <div class="emp-goal-col">
+                    <span class="emp-goal-label">TODAY'S TARGET</span>
+                    <span class="emp-goal-value">${todayGoal > 0 ? todayGoal : '-'}</span>
+                </div>
+                <div class="emp-goal-col emp-goal-col-right">
+                    <span class="emp-goal-label">MY ROLE</span>
+                    <span class="emp-goal-value">${displayRole || '-'}</span>
+                </div>
+            </div>
+
+            <div class="emp-week-section">
+                <span class="emp-goal-label">THIS WEEK'S BREAKDOWN</span>
+                ${dailyBreakdownHtml}
+            </div>
+        `;
+    } catch (e) {
+        container.innerHTML = '<div class="status-message" style="color:var(--red-alert);">Failed to sync goals.</div>';
+    }
+}
+
+// ==========================================
+// 4. EMPLOYEE SPECIFIC WEEKLY KPI WIDGET (GRID LAYOUT)
+// ==========================================
+async function fetchAndRenderEmployeeKPIs() {
+    const container = document.getElementById('employee-kpi-widget-body');
+    const periodLabel = document.getElementById('emp-kpi-period');
+    if (!container) return;
+
+    const userName = sessionStorage.getItem('speeksUserName') || '';
+    let store = sessionStorage.getItem('speeksUserStore') || 'OVL';
+    if (store === 'ALL' || store === 'CORP') store = 'OVL';
+
+    try {
+        const d = await fetch(`${WEEKLY_KPI_URL}?store=${store}&time=4-Week&v=${Date.now()}`).then(r => r.json());
+        
+        let sAvg = {};
+        let myData = {};
+        let fIdx = -1;
+        let sIdx = d.findLastIndex(r => String(r[0]).trim().toLowerCase() === "store" || String(r[0]).trim().toLowerCase() === "store total");
+        
+        if (sIdx !== -1) {
+            let st = d[sIdx];
+            sAvg = { buyVal: st[2], buyMargin: st[5], customers: st[6], conversion: st[8], time: formatTime(st[12]), noDeals: st[14], listed: st[20] };
+            
+            const sessionName = String(userName).trim().toLowerCase();
+            const sessionFirstName = sessionName.split(' ')[0];
+
+            for (let i = Math.max(0, sIdx - 6); i <= Math.min(d.length - 1, sIdx + 6); i++) {
+                if (i === sIdx) continue;
+                let n = String(d[i][0]).trim();
+                let dbName = n.toLowerCase();
+                
+                if (n && !["name", "employee", "store", "store total", "ovl", "lee", "wsp", "mpl", "bal"].includes(dbName) && !dbName.includes("average") && !dbName.includes("week")) {
+                    
+                    let isMatch = false;
+                    if (dbName === sessionName) {
+                        isMatch = true;
+                    } else {
+                        const dbFirstName = dbName.split(' ')[0];
+                        if (dbFirstName.length > 2 && sessionFirstName.length > 2) {
+                            if (dbFirstName.startsWith(sessionFirstName) || sessionFirstName.startsWith(dbFirstName)) {
+                                isMatch = true;
+                            }
+                        }
+                    }
+
+                    if (isMatch) {
+                        fIdx = i;
+                        myData = { buyVal: d[i][2], buyMargin: d[i][5], customers: d[i][6], conversion: d[i][8], time: formatTime(d[i][12]), noDeals: d[i][14], listed: d[i][20] };
+                        break; 
+                    }
+                }
+            }
+        }
+
+        let pTxt = "";
+        if (sIdx !== -1) {
+            // FIX: We must find the VERY FIRST employee to anchor to the header row correctly
+            let firstEmpIdx = -1;
+            for (let i = Math.max(0, sIdx - 6); i <= Math.min(d.length - 1, sIdx + 6); i++) {
+                let n = String(d[i][0]).trim(), lN = n.toLowerCase();
+                if (n && !["name", "employee", "store", "store total", "ovl", "lee", "wsp", "mpl", "bal"].includes(lN) && !lN.includes("average") && !lN.includes("week")) {
+                    if (String(d[i][2]).trim() !== "" || String(d[i][20]).trim() !== "") {
+                        firstEmpIdx = i;
+                        break; // Stop at the first employee found
+                    }
+                }
+            }
+
+            if (firstEmpIdx !== -1) {
+                let hR = d[firstEmpIdx - 3] || d[firstEmpIdx - 2];
+                if (hR && hR[2] && hR[4] && hR[6]) {
+                    
+                    // Add "th", "st", "nd", "rd"
+                    const getOrdinal = (n) => {
+                        let val = parseInt(String(n).replace(/\D/g, ''));
+                        if (isNaN(val)) return n;
+                        let s = ["th", "st", "nd", "rd"], v = val % 100;
+                        return val + (s[(v - 20) % 10] || s[v] || s[0]);
+                    };
+                    
+                    let monthName = String(hR[2]).replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/ig, m => ({"Jan":"January","Feb":"February","Mar":"March","Apr":"April","May":"May","Jun":"June","Jul":"July","Aug":"August","Sep":"September","Oct":"October","Nov":"November","Dec":"December"}[m.charAt(0).toUpperCase() + m.slice(1).toLowerCase()] || m));
+                    let startDay = getOrdinal(hR[4]);
+                    let endDay = getOrdinal(hR[6]);
+                    
+                    pTxt = `${monthName} ${startDay} - ${endDay}`;
+                }
+            }
+        }
+        if (periodLabel) periodLabel.innerText = pTxt;
+
+        if (Object.keys(myData).length === 0) {
+            container.innerHTML = '<div class="status-message">No KPI data found for your user this week.</div>';
+            return;
+        }
+
+        // Updated function to build grid cells instead of full rows
+        const buildStatGridItem = (title, myVal, storeVal, ruleStr, isPercent = false, prefixLabel = "Store:", showBubble = true) => {
+            const myIsBad = ruleStr ? checkRule(ruleStr, myVal) : false;
+            
+            let displayMyVal = myVal || '-';
+            if (displayMyVal !== '-' && isPercent && !String(displayMyVal).includes('%')) displayMyVal += '%';
+            
+            let displayStoreVal = storeVal || '-';
+            if (displayStoreVal !== '-' && isPercent && !String(displayStoreVal).includes('%')) displayStoreVal += '%';
+
+            let centerHtml = '';
+            if (showBubble) {
+                const badgeClass = displayMyVal === '-' ? 'badge-null' : (myIsBad ? 'badge-fail' : 'badge-pass');
+                centerHtml = `<div class="emp-kpi-badge ${badgeClass}" style="margin: 4px 0; padding: 4px 6px; font-size: 11px;">${displayMyVal}</div>`;
+            } else {
+                centerHtml = `<div style="font-size: 13px; font-weight: 900; color: var(--slate-charcoal); margin: 4px 0; padding: 4px 0;">${displayMyVal}</div>`;
+            }
+
+            return `
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 4px; border: 1px dashed #e2e8f0; border-radius: 6px; background: #fdfdfd;">
+                <span style="font-size: 9px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase; line-height: 1;">${title}</span>
+                ${centerHtml}
+                <span style="font-size: 8px; font-weight: 700; color: #a0aab2; text-transform: uppercase;">${prefixLabel} <strong>${displayStoreVal}</strong></span>
+            </div>`;
+        };
+
+        // Render the 2x3 Grid
+        container.innerHTML = `
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; height: 100%;">
+                ${buildStatGridItem('Buying Value', myData.buyVal, sAvg.buyVal, null, false, 'Store:', false)}
+                ${buildStatGridItem('Margin', myData.buyMargin, sAvg.buyMargin, 'margin', true, 'Store:', true)}
+                ${buildStatGridItem('Conversion', myData.conversion, sAvg.conversion, 'conversion', true, 'Store:', true)}
+                ${buildStatGridItem('No Deals', myData.noDeals, sAvg.noDeals, 'nodeals', false, 'Store:', true)}
+                ${buildStatGridItem('Trans. Time', myData.time, sAvg.time, 'time', false, 'Store:', true)}
+                ${buildStatGridItem('Listed Dev.', myData.listed, sAvg.listed, null, false, 'Store:', false)}
+            </div>
+        `;
+    } catch (e) {
+        container.innerHTML = '<div class="status-message" style="color:var(--red-alert);">Failed to sync KPIs.</div>';
+    }
+}
+
+// ============================================================================
+// WIDGET: MONTHLY PERFORMANCE LEADERBOARD
+// ============================================================================
+let leaderboardChartInstance = null;
+let currentLeaderboardMetric = 'Revenue'; 
+let cachedLeaderboardData = null; 
+
+function switchLeaderboardMetric(metric) {
+    currentLeaderboardMetric = metric;
+    
+    const revBtn = document.getElementById('lb-tab-rev');
+    const gpBtn = document.getElementById('lb-tab-gp');
+    
+    if (revBtn && gpBtn) {
+        revBtn.classList.toggle('active', metric === 'Revenue');
+        revBtn.style.color = metric === 'Revenue' ? 'var(--slate-charcoal)' : '#a0aab2';
+        
+        gpBtn.classList.toggle('active', metric === 'GP');
+        gpBtn.style.color = metric === 'GP' ? 'var(--slate-charcoal)' : '#a0aab2';
+    }
+    
+    drawLeaderboard(); 
+}
+
+function drawLeaderboard() {
+    const wrapper = document.getElementById('lb-wrapper');
+    const monthLabel = document.getElementById('lb-month-display');
+    
+    if (!wrapper || !cachedLeaderboardData || !cachedLeaderboardData.activeStores) return;
+
+    if (typeof Chart === 'undefined') {
+        setTimeout(drawLeaderboard, 100); 
+        return;
+    }
+
+    const now = new Date();
+    if (monthLabel) {
+        monthLabel.innerText = `- ${now.toLocaleString('default', { month: 'long', year: 'numeric' }).toUpperCase()}`;
+    }
+
+    wrapper.style.display = 'block';
+    wrapper.innerHTML = '<canvas id="leaderboardCanvas" style="width: 100%; height: 100%;"></canvas>';
+    const canvas = document.getElementById('leaderboardCanvas');
+
+    const colors = { 'OVL': '#a855f7', 'LEE': '#3b82f6', 'WSP': '#22c55e', 'MPL': '#f97316', 'BAL': '#ef4444' };
+    const daysInMonthCount = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const dateLabels = Array.from({length: daysInMonthCount}, (_, i) => `${now.getMonth() + 1}/${i + 1}`);
+
+    let datasets = [];
+    const dataPacket = currentLeaderboardMetric === 'Revenue' ? cachedLeaderboardData.revenue : cachedLeaderboardData.gp;
+
+    cachedLeaderboardData.activeStores.forEach(store => {
+        if (dataPacket[store]) {
+            datasets.push({
+                label: '   ' + store + '   ', 
+                data: dataPacket[store],
+                borderColor: colors[store],
+                backgroundColor: colors[store],
+                borderWidth: 2,
+                pointRadius: 0,
+                pointHoverRadius: 6,
+                tension: 0.1
+            });
+        }
+    });
+
+    // --- CALCULATE RANKS FOR THE DATALABELS ---
+    let finalScores = [];
+    datasets.forEach((ds, i) => {
+        let lastIdx = ds.data.findLastIndex(v => v !== null);
+        let lastVal = lastIdx !== -1 ? ds.data[lastIdx] : 0;
+        finalScores.push({ index: i, val: lastVal, lastIdx: lastIdx });
+    });
+    
+    finalScores.sort((a, b) => b.val - a.val);
+
+    let ranks = {};
+    finalScores.forEach((item, pos) => {
+        if (pos < 3) ranks[item.index] = { rank: pos + 1, lastIdx: item.lastIdx };
+    });
+
+    // --- NEW: THE CHECKERED FINISH LINE PLUGIN ---
+    const checkeredPlugin = {
+        id: 'checkeredFinishLine',
+        // This hook guarantees the flag is drawn UNDER the data lines!
+        beforeDatasetsDraw: (chart) => {
+            const { ctx, chartArea } = chart;
+            if (!chartArea) return;
+            const { top, bottom, right } = chartArea;
+            
+            const totalHeight = bottom - top;
+            
+            // Targets ~12px per square to make them smaller and add more cubes!
+            const rowCount = Math.round(totalHeight / 12); 
+            const squareSize = totalHeight / rowCount; 
+            
+            const cols = 2; // 2 columns wide
+            const lineWidth = squareSize * cols;
+            const startX = right - lineWidth;
+
+            ctx.save();
+            
+            for (let row = 0; row < rowCount; row++) {
+                const currentY = top + (row * squareSize);
+                for (let col = 0; col < cols; col++) {
+                    // Alternates between your Light Gray and dark Slate Charcoal
+                    ctx.fillStyle = ((col + row) % 2 === 0) ? '#e2e8f0' : '#1a1c1e';
+                    
+                    // The +0.5 prevents tiny invisible hairline gaps between squares
+                    ctx.fillRect(startX + (col * squareSize), currentY, squareSize + 0.5, squareSize + 0.5);
+                }
+            }
+            ctx.restore();
+        }
+    };
+
+    try {
+        const ctx = canvas.getContext('2d');
+        if (leaderboardChartInstance) leaderboardChartInstance.destroy(); 
+
+        // Load both the datalabels and our new Checkered Finish Line
+        let activePlugins = typeof ChartDataLabels !== 'undefined' ? [ChartDataLabels, checkeredPlugin] : [checkeredPlugin];
+
+        leaderboardChartInstance = new Chart(ctx, {
+            type: 'line',
+            plugins: activePlugins,
+            data: { labels: dateLabels, datasets: datasets },
+            options: {
+                animation: false, // STOPS THE LOADING GLITCH
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                layout: {
+                    padding: { right: 50, left: 10 } // Locks the left side padding
+                },
+                plugins: {
+                    tooltip: {
+                        itemSort: function(a, b) {
+                            return b.parsed.y - a.parsed.y;
+                        },
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label.trim() || ''; 
+                                if (label) label += ': ';
+                                if (context.parsed.y !== null) {
+                                    label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y);
+                                }
+                                return label;
+                            }
+                        }
+                    },
+                    legend: {
+                        position: 'bottom',
+                        labels: { font: { size: 13, family: "'Inter', sans-serif", weight: 'bold' }, usePointStyle: true, boxWidth: 8, padding: 20 }
+                    },
+                    datalabels: {
+                        display: function(context) {
+                            const rankInfo = ranks[context.datasetIndex];
+                            if (!rankInfo) return false; 
+                            return context.dataIndex === rankInfo.lastIdx; 
+                        },
+                        formatter: function(value, context) {
+                            const r = ranks[context.datasetIndex].rank;
+                            return r === 1 ? '🥇 1st' : (r === 2 ? '🥈 2nd' : '🥉 3rd');
+                        },
+                        backgroundColor: function(context) {
+                            return context.dataset.backgroundColor; 
+                        },
+                        color: 'white',
+                        borderRadius: 6,
+                        font: { size: 10, weight: 'bold', family: "'Inter', sans-serif" },
+                        padding: { top: 4, bottom: 4, left: 8, right: 8 },
+                        align: 'right',  
+                        anchor: 'center',
+                        offset: 4
+                    }
+                },
+                scales: {
+                    y: {
+                        // THIS IS THE AXIS LOCK: Forces it to be 75px wide every single time!
+                        afterFit: function(scale) { scale.width = 75; },
+                        
+                        beginAtZero: true,
+                        max: datasets.length === 0 ? 1000 : undefined, 
+                        ticks: { callback: function(value) { return '$' + (value / 1000) + 'k'; } },
+                        grid: { borderDash: [4, 4] }
+                    },
+                    x: { 
+                        grid: { display: false },
+                        ticks: { font: { size: 11, weight: 'bold', family: "'Inter', sans-serif" }, color: '#a0aab2', maxRotation: 45, minRotation: 45 }
+                    }
+                }
+            }
+        });
+    } catch (e) {
+        console.error("Chart.js failed to draw.", e);
+    }
+}
+
+// --- MANAGE EBAY ALERTS / PERFORMANCE METRICS MODULE ---
+let globalAlertsData = [];
+const EBAY_ALERTS_URL = 'https://script.google.com/macros/s/AKfycbxap-4Jgdn5-ntkv_X-vFZLTWlTB29_bDLdwcFxhWd2su3ZQJ0ZS7UpUgZAK08lOIV6/exec';
+
+async function toggleManageAlerts() {
+    const dropdown = document.getElementById('manageAlertsDropdown');
+    if (!dropdown) return;
+    
+    // 1. Check if it's already open BEFORE we close everything
+    const isOpen = dropdown.classList.contains('show');
+    
+    // 2. This clears out any other open menus and UNLOCKS the screen
+    closeAllModals(); 
+    
+    // 3. If it wasn't open, open it now and LOCK the screen!
+    if (!isOpen) {
+        dropdown.classList.add('show');
+        
+        // LOCK SCROLL AND BLUR (Moved down here!)
+        document.body.style.overflow = 'hidden';
+        document.documentElement.style.overflow = 'hidden';
+        const overlay = document.getElementById('globalOverlay');
+        if (overlay) overlay.classList.add('show');
+
+        const list = document.getElementById('manageAlertsList');
+        list.innerHTML = '<div class="status-message">Syncing Data...</div>';
+        
+        try {
+            const res = await fetch(`${EBAY_ALERTS_URL}?v=${Date.now()}`);
+            const json = await res.json();
+            if (json.success && json.data) {
+                globalAlertsData = json.data;
+                populateAlertsModal();
+            } else {
+                throw new Error("Invalid data format");
+            }
+        } catch (e) {
+            list.innerHTML = '<div style="color:var(--red-alert); padding:20px; text-align:center;">Failed to load metrics.</div>';
+        }
+    }
+}
+
+function populateAlertsModal() {
+    const list = document.getElementById('manageAlertsList');
+    const STORES = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
+    
+    let html = `
+        <div style="display: grid; grid-template-columns: 60px 1fr 1fr 1fr 1fr; gap: 10px; padding-bottom: 10px; border-bottom: 2px solid #eee; margin-bottom: 10px;">
+            <div style="font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase;">Store</div>
+            <div style="font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase;">Current High</div>
+            <div style="font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase;">Current Very High</div>
+            <div style="font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase;">Projected High</div>
+            <div style="font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase;">Proj. Very High</div>
+        </div>
+    `;
+
+    STORES.forEach(storeName => {
+        let sData = globalAlertsData.find(s => s.store.toUpperCase() === storeName) || { store: storeName, currentHigh: '', currentVeryHigh: '', projectedHigh: '', projectedVeryHigh: '' };
+        html += `
+            <div class="alert-manage-row" data-store="${storeName}" style="display: grid; grid-template-columns: 60px 1fr 1fr 1fr 1fr; gap: 10px; align-items: center; margin-bottom: 10px;">
+                <div style="font-weight: 900; color: var(--slate-charcoal); font-size: 14px;">${storeName}</div>
+                <input type="text" class="a-ch" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${sData.currentHigh || ''}">
+                <input type="text" class="a-cvh" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${sData.currentVeryHigh || ''}">
+                <input type="text" class="a-ph" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${sData.projectedHigh || ''}">
+                <input type="text" class="a-pvh" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${sData.projectedVeryHigh || ''}">
+            </div>
+        `;
+    });
+
+    list.innerHTML = html;
+}
+
+async function saveAlertsData() {
+    const btn = document.getElementById('saveAlertsBtn');
+    btn.textContent = "Saving...";
+    btn.style.opacity = "0.7";
+
+    const updatedAlerts = [];
+    document.querySelectorAll('.alert-manage-row').forEach(row => {
+        updatedAlerts.push({
+            store: row.getAttribute('data-store'),
+            currentHigh: row.querySelector('.a-ch').value.trim(),
+            currentVeryHigh: row.querySelector('.a-cvh').value.trim(),
+            projectedHigh: row.querySelector('.a-ph').value.trim(),
+            projectedVeryHigh: row.querySelector('.a-pvh').value.trim()
+        });
+    });
+
+    try {
+        const res = await fetch(EBAY_ALERTS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ data: updatedAlerts }) 
+        });
+
+        if (res.ok) {
+            alert("eBay Performance Metrics successfully updated!");
+            closeAllModals();
+            if (typeof fetchAlertsData === 'function') fetchAlertsData(); 
+            if (typeof fetchMasterDistrictDashboard === 'function') fetchMasterDistrictDashboard();
+        } else {
+            alert("Error saving metrics.");
+        }
+    } catch (e) {
+        console.error(e);
+        alert("Failed to connect to server.");
+    } finally {
+        btn.textContent = "Save Changes";
+        btn.style.opacity = "1";
+    }
+}
+
+// ==========================================
+// ANNOUNCEMENT PUBLISHER LOGIC
+// ==========================================
+
+// UPDATE THIS URL to your newly deployed App Script URL!
+const ANNOUNCEMENTS_WRITE_URL = 'https://script.google.com/macros/s/AKfycbxZviJiiQKcQYyp3SK4tcNBHrHXkID7cmwwuONStVPE9DHCSAMappqAs9dBns7ufECI/exec'; 
+
+function toggleManageAnnouncements() {
+    closeAllModals();
+    document.getElementById('manageAnnouncementsDropdown').classList.add('show');
+    
+    // Locks BOTH scroll containers and triggers the blur
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    const overlay = document.getElementById('globalOverlay');
+    if (overlay) overlay.classList.add('show');
+    
+    // Clear out the form so it's a blank slate
+    document.getElementById('annTitleInput').value = '';
+    document.getElementById('annPriorityInput').checked = false;
+    document.getElementById('annBodyInput').innerHTML = '';
+    checkActiveFormats(); 
+}
+
+// Applies formatting AND instantly updates button highlights
+function formatText(command) {
+    const editor = document.getElementById('annBodyInput');
+    editor.focus(); // Force focus back to the text before executing!
+    document.execCommand(command, false, null);
+    checkActiveFormats();
+}
+
+// Checks cursor position to highlight formatting buttons
+function checkActiveFormats() {
+    document.getElementById('btn-fmt-bold')?.classList.toggle('active-format', document.queryCommandState('bold'));
+    document.getElementById('btn-fmt-italic')?.classList.toggle('active-format', document.queryCommandState('italic'));
+    document.getElementById('btn-fmt-underline')?.classList.toggle('active-format', document.queryCommandState('underline'));
+    document.getElementById('btn-fmt-list')?.classList.toggle('active-format', document.queryCommandState('insertUnorderedList'));
+}
+
+// Attach listeners so buttons update as you type or click around
+document.addEventListener('DOMContentLoaded', () => {
+    const editor = document.getElementById('annBodyInput');
+    if (editor) {
+        editor.addEventListener('keyup', checkActiveFormats);
+        editor.addEventListener('mouseup', checkActiveFormats);
+        editor.addEventListener('click', checkActiveFormats);
+    }
+});
+
+async function publishAnnouncement() {
+    const title = document.getElementById('annTitleInput').value.trim();
+    const body = document.getElementById('annBodyInput').innerHTML.trim();
+    const isPriority = document.getElementById('annPriorityInput').checked;
+    const btn = document.getElementById('publishAnnBtn');
+
+    if (!title || !body) {
+        alert("Wait! You must fill out both a Title and a Message before publishing.");
+        return;
+    }
+
+    btn.innerHTML = "Publishing... ⏳";
+    btn.style.opacity = "0.7";
+    btn.style.pointerEvents = "none";
+
+    let compiledMessage = "";
+    if (isPriority) {
+        compiledMessage += `<span style="color: #ef4444; font-weight: 900; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">🚨 HIGH PRIORITY</span><br>`;
+    }
+    compiledMessage += `<strong style="font-size: 16px; color: var(--slate-charcoal); display: block; margin-bottom: 8px;">${title}</strong>`;
+    compiledMessage += body;
+
+    const payload = {
+        text: compiledMessage,
+        date: new Date().toLocaleDateString('en-US'), 
+        author: sessionStorage.getItem('speeksUserName') || 'Executive Team'
+    };
+
+    try {
+        // THE FIX: no-cors forces the data through. We don't try to parse the response!
+        await fetch(ANNOUNCEMENTS_WRITE_URL, {
+            method: 'POST',
+            mode: 'no-cors', // Bypasses the strict Google CORS block
+            headers: {
+                'Content-Type': 'text/plain;charset=utf-8'
+            },
+            body: JSON.stringify(payload)
+        });
+        
+        // Because no-cors makes the response unreadable, we assume success if no network crash occurred!
+        alert("Success! Your announcement has been published to all stores.");
+        closeAllModals(); 
+        syncAllData(); 
+        
+    } catch (error) {
+        console.error("Error publishing announcement:", error);
+        alert("Failed to connect to the server. Check your Apps Script deployment settings.");
+    } finally {
+        btn.innerHTML = "<span>Publish to All Stores</span> 🚀";
+        btn.style.opacity = "1";
+        btn.style.pointerEvents = "auto";
+    }
+}
