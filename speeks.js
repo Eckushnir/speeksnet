@@ -36,31 +36,35 @@ function toggleSidebar() {
     localStorage.setItem('speeksSidebar', sidebar?.classList.contains('collapsed') ? 'collapsed' : 'expanded');
 }
 
+// --- UPDATED MASTER LOCK/UNLOCK ---
 let savedScrollPosition = 0;
 
-// THE MASTER LOCK
+// --- UPDATED MASTER LOCK/UNLOCK ---
 function lockAndBlurScreen() {
-    // 1. Save the exact scroll position before locking
-    savedScrollPosition = window.scrollY;
-    
-    // 2. Lock the body using our new CSS class
+    // Simply add the CSS class. The CSS will lock scrolling but leave the track visible!
     document.body.classList.add('no-scroll');
     
-    // 3. Freeze the page exactly where it was so it doesn't jump to the top
-    document.body.style.top = `-${savedScrollPosition}px`;
-    
+    // Show your dark overlay
     const overlay = document.getElementById('globalOverlay');
     if (overlay) overlay.classList.add('show');
 }
 
 function closeAllModals() {
-    // 1. Unlock the body and remove the frozen position
+    // Remove the lock class
     document.body.classList.remove('no-scroll');
+    
+    // Safety Cleanup (Removes any lingering inline styles from older code)
+    document.body.style.overflow = '';
+    document.body.style.position = '';
     document.body.style.top = '';
+    document.body.style.paddingRight = '';
     
-    // 2. Instantly restore the user's scroll position
-    window.scrollTo(0, savedScrollPosition);
+    const topNav = document.querySelector('.top-nav');
+    if (topNav) {
+        topNav.style.paddingRight = ''; 
+    }
     
+    // Hide overlays and modals
     const overlay = document.getElementById('globalOverlay');
     if (overlay) overlay.classList.remove('show');
 
@@ -99,24 +103,18 @@ async function toggleManageUsers() {
     const dropdown = document.getElementById('manageUsersDropdown');
     if (!dropdown) return;
     
-    // Check if it's already open BEFORE we close everything
     const isOpen = dropdown.classList.contains('show');
     
-    // This clears out any other open menus and UNLOCKS the screen
+    // Close everything first to reset state
     closeAllModals(); 
     
-    // If it wasn't open, open it now and LOCK the screen!
     if (!isOpen) {
         dropdown.classList.add('show');
-        
-        // Locks BOTH scroll containers and triggers the blur AFTER closing others
-        document.body.style.overflow = 'hidden';
-        document.documentElement.style.overflow = 'hidden';
-        const overlay = document.getElementById('globalOverlay');
-        if (overlay) overlay.classList.add('show');
+        // Use the master lock function instead of manual overflow settings
+        lockAndBlurScreen(); 
 
         const list = document.getElementById('manageUsersList');
-        list.innerHTML = '<div class="status-message" style="flex-grow: 1; margin: auto;">Syncing Data...</div>';
+        list.innerHTML = '<div class="status-message">Syncing Data...</div>';
         
         try {
             const res = await fetch(`${AUTH_URL}?v=${Date.now()}`);
@@ -237,7 +235,6 @@ function switchAnnTab(tab) {
 window.addEventListener('click', (e) => { if (e.target === document.getElementById('globalOverlay')) closeAllModals(); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAllModals(); });
 
-// --- 4. GLOBAL DATA FETCHING (CMS) ---
 async function loadCMS() {
     try {
         const response = await fetch(`${CMS_URL}?v=${Date.now()}`);
@@ -245,42 +242,111 @@ async function loadCMS() {
         
         const annContainer = document.getElementById('ann-container');
         if (annContainer) {
-            let showBadge = false, recentHtml = "", archiveHtml = "", recentCount = 0, archiveCount = 0;
+            let showBadge = false;
+            let recentHtml = "";
+            let archiveHtml = "";
+            let recentCount = 0;
+            let archiveCount = 0;
+
             if (data.announcements && data.announcements.length > 0) {
+                // Sort so newest is first
                 const sortedAnns = [...data.announcements].reverse();
-                const today = new Date(); today.setHours(0,0,0,0);
+                const now = new Date();
 
                 sortedAnns.forEach(item => {
-                    let displayDate = "", isArchived = false;
+                    let displayDate = "";
+                    let isArchived = false;
+
                     if (item.date) {
                         const annDate = new Date(item.date);
                         if (!isNaN(annDate.getTime())) {
-                            displayDate = annDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-                            const diffDays = (today - new Date(annDate.getFullYear(), annDate.getMonth(), annDate.getDate())) / 86400000;
-                            if (diffDays <= 1 && diffDays >= 0) showBadge = true;
-                            if (diffDays > 2) isArchived = true;
+                            displayDate = annDate.toLocaleDateString('en-US', { 
+                                month: 'long', 
+                                day: 'numeric', 
+                                year: 'numeric' 
+                            });
+
+                            // --- PULSE DOT LOGIC ---
+                            // Calculate difference in hours
+                            const diffMs = now - annDate;
+                            const diffHours = diffMs / (1000 * 60 * 60);
+
+                            // Show red dot if announcement was made within the last 48 hours
+                            if (diffHours >= 0 && diffHours <= 48) {
+                                showBadge = true;
+                            }
+
+                            // Move to archive tab if older than 48 hours
+                            if (diffHours > 48) {
+                                isArchived = true;
+                            }
                         }
                     }
-                    const html = `<div class="notif-item"><div class="ann-header"><span class="ann-author">${item.author || 'Announcement'}</span>${displayDate ? `<small class="ann-date">${displayDate}</small>` : ''}</div><hr /><div class="ann-text">${item.text || ''}</div></div>`;
-                    isArchived ? (archiveHtml += html, archiveCount++) : (recentHtml += html, recentCount++);
+
+                    const html = `
+                        <div class="notif-item">
+                            <div class="ann-header">
+                                <span class="ann-author">${item.author || 'Announcement'}</span>
+                                ${displayDate ? `<small class="ann-date">${displayDate}</small>` : ''}
+                            </div>
+                            <hr />
+                            <div class="ann-text">${item.text || ''}</div>
+                        </div>`;
+
+                    if (isArchived) {
+                        archiveHtml += html;
+                        archiveCount++;
+                    } else {
+                        recentHtml += html;
+                        recentCount++;
+                    }
                 });
-                recentHtml = recentCount === 0 ? '<div style="padding: 20px; color:#999; text-align:center;">No recent announcements</div>' : recentHtml;
-                archiveHtml = archiveCount === 0 ? '<div style="padding: 20px; color:#999; text-align:center;">No archived announcements</div>' : archiveHtml;
+
+                recentHtml = recentCount === 0 ? 
+                    '<div style="padding: 20px; color:#999; text-align:center;">No recent announcements</div>' : recentHtml;
+                archiveHtml = archiveCount === 0 ? 
+                    '<div style="padding: 20px; color:#999; text-align:center;">No archived announcements</div>' : archiveHtml;
             } else {
                 recentHtml = archiveHtml = '<div style="padding: 20px; color:#999; text-align:center;">No announcements</div>';
             }
+
             annContainer.innerHTML = recentHtml;
-            document.getElementById('archive-container').innerHTML = archiveHtml;
-            if (showBadge) document.getElementById('notifBadge')?.classList.add('active');
+            const archiveContainer = document.getElementById('archive-container');
+            if (archiveContainer) archiveContainer.innerHTML = archiveHtml;
+
+            // --- TRIGGER THE RED DOT ---
+            // This targets the <div class="notif-dot" id="notifBadge"></div> in your nav
+            const badge = document.getElementById('notifBadge');
+            if (badge) {
+                if (showBadge) {
+                    badge.style.display = 'block'; // Force display override
+                    badge.classList.add('active'); // Trigger CSS pulse animation
+                } else {
+                    badge.style.display = 'none';
+                    badge.classList.remove('active');
+                }
+            }
         }
 
+        // Handle Active/Upcoming projects if applicable
         const activeContainer = document.getElementById('active-container');
         if (activeContainer) {
-            const act = data.active || [], upc = data.upcoming || [];
-            activeContainer.innerHTML = act.length ? act.map(t => `<div class="cms-item cms-active">${t}</div>`).join('') : '<div class="cms-item">No active projects</div>';
-            document.getElementById('upcoming-container').innerHTML = upc.length ? upc.map(t => `<div class="cms-item cms-upcoming">${t}</div>`).join('') : '<div class="cms-item">No upcoming projects</div>';
+            const act = data.active || [];
+            const upc = data.upcoming || [];
+            activeContainer.innerHTML = act.length ? 
+                act.map(t => `<div class="cms-item cms-active">${t}</div>`).join('') : 
+                '<div class="cms-item">No active projects</div>';
+            
+            const upcomingContainer = document.getElementById('upcoming-container');
+            if (upcomingContainer) {
+                upcomingContainer.innerHTML = upc.length ? 
+                    upc.map(t => `<div class="cms-item cms-upcoming">${t}</div>`).join('') : 
+                    '<div class="cms-item">No upcoming projects</div>';
+            }
         }
-    } catch (e) { console.error("CMS Failed", e); }
+    } catch (e) { 
+        console.error("CMS Sync Failed", e); 
+    }
 }
 
 // --- 5. MODULE: HUB / HOTKEYS ---
@@ -326,11 +392,7 @@ async function toggleManageDocs() {
     if (!isOpen) {
         dropdown.classList.add('show');
         
-        // LOCK SCROLL AND BLUR (Moved down here!)
-        document.body.style.overflow = 'hidden';
-        document.documentElement.style.overflow = 'hidden';
-        const overlay = document.getElementById('globalOverlay');
-        if (overlay) overlay.classList.add('show');
+        lockAndBlurScreen();
 
         const list = document.getElementById('manageDocsList');
         
@@ -2513,7 +2575,7 @@ function renderCompactDmGoals() {
             <div style="text-align: right; font-size: 14px; font-weight: 900; color: var(--slate-charcoal);">
                 ${tResult} <span style="font-size: 11px; color: #888; font-weight: 600;">/ ${tGoal}</span>
             </div>
-            <div id="dm-caret-${store}" class="dm-store-caret" style="text-align: right; color: #cbd5e1; font-size: 10px; transition: transform 0.3s;">▼</div>
+           <div id="dm-caret-${store}" class="dm-store-caret" style="text-align: right; color: #888; font-size: 10px; font-weight: 800; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); transform: rotate(-90deg);">▼</div>
         </div>`;
 
         html += `<div id="dm-roster-${store}" class="dm-store-roster" style="display: none; background: #fdfdfd; padding: 10px 20px; border-bottom: 1px solid #e2e8f0; box-shadow: inset 0 3px 6px rgba(0,0,0,0.02);">`;
@@ -2629,14 +2691,14 @@ function toggleDmStoreAccordion(store) {
     const caret = document.getElementById(`dm-caret-${store}`);
     const isOpen = rosterDiv.style.display === 'block';
     
-    // Close all other accordions first
+    // Close all other accordions first and reset their arrows to point right (-90deg)
     document.querySelectorAll('.dm-store-roster').forEach(el => el.style.display = 'none');
-    document.querySelectorAll('.dm-store-caret').forEach(el => el.style.transform = 'rotate(0deg)');
+    document.querySelectorAll('.dm-store-caret').forEach(el => el.style.transform = 'rotate(-90deg)');
 
     // Toggle the clicked one
     if (!isOpen) {
         rosterDiv.style.display = 'block';
-        caret.style.transform = 'rotate(180deg)';
+        caret.style.transform = 'rotate(0deg)'; // Point down when open
     }
 }
 
@@ -3205,11 +3267,7 @@ async function toggleManageAlerts() {
     if (!isOpen) {
         dropdown.classList.add('show');
         
-        // LOCK SCROLL AND BLUR (Moved down here!)
-        document.body.style.overflow = 'hidden';
-        document.documentElement.style.overflow = 'hidden';
-        const overlay = document.getElementById('globalOverlay');
-        if (overlay) overlay.classList.add('show');
+        lockAndBlurScreen();
 
         const list = document.getElementById('manageAlertsList');
         list.innerHTML = '<div class="status-message">Syncing Data...</div>';
@@ -3310,11 +3368,7 @@ function toggleManageAnnouncements() {
     closeAllModals();
     document.getElementById('manageAnnouncementsDropdown').classList.add('show');
     
-    // Locks BOTH scroll containers and triggers the blur
-    document.body.style.overflow = 'hidden';
-    document.documentElement.style.overflow = 'hidden';
-    const overlay = document.getElementById('globalOverlay');
-    if (overlay) overlay.classList.add('show');
+    lockAndBlurScreen();
     
     // Clear out the form so it's a blank slate
     document.getElementById('annTitleInput').value = '';
