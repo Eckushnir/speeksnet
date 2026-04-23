@@ -1075,3 +1075,4 @@ body.preload { visibility: hidden !important; opacity: 0 !important; }
 .badge-pass { background: #d1fae5; color: #065f46; }
 .badge-fail { background: #fee2e2; color: #991b1b; }
 .badge-null { background: #f1f5f9; color: #888; }
+.goals-edit-roles { display: flex; gap: 6px; align-items: center; }
