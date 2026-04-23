@@ -358,18 +358,11 @@
       
   </div>
 
-   <div id="pane-trends" class="tab-pane active">
-
-      <div class="metrics-grid">
-
-        <div class="card dynamic-module-block role-employee store-ovl"><div class="card-title">OVL MTD Goal</div><div class="progress-ring"><svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="ovl-bar" cx="70" cy="70" r="64"></circle></svg><div class="percentage" id="ovl-pct">0%</div></div><div class="goal-text" id="ovl-goal">Goal: --</div><div class="tracking-box">GP Track: <span id="ovl-t-gp">--</span></div></div>
-        <div class="card dynamic-module-block role-employee store-lee" style="display: block;"><div class="card-title">LEE MTD Goal</div><div class="progress-ring"><svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="lee-bar" cx="70" cy="70" r="64"></circle></svg><div class="percentage" id="lee-pct">0%</div></div><div class="goal-text" id="lee-goal">Goal: --</div><div class="tracking-box">GP Track: <span id="lee-t-gp">--</span></div></div>
-        <div class="card dynamic-module-block role-employee store-wsp"><div class="card-title">WSP MTD Goal</div><div class="progress-ring"><svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="wsp-bar" cx="70" cy="70" r="64"></circle></svg><div class="percentage" id="wsp-pct">0%</div></div><div class="goal-text" id="wsp-goal">Goal: --</div><div class="tracking-box">GP Track: <span id="wsp-t-gp">--</span></div></div>
-
-      <div class="dynamic-module-block role-manager buying-sales-module">
-        <div class="card" style="padding: 25px; margin-bottom: 0;">
-          <div class="card-title" style="margin-bottom: 15px; border-bottom: none; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;">
-            <span>🛒 Buying & Sales</span>
+  <div class="top-alerts-row dynamic-module role-employee employee-dashboard-row">
+      
+      <div class="card district-master-panel employee-widget-card dynamic-module-block role-manager role-employee buying-sales-module">
+          <div class="district-kpi-header" style="border-bottom: none; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;">
+            <span class="district-kpi-title">🛒 Buying & Sales</span>
             <div style="display: flex; gap: 10px; align-items: center;">
               <select id="bsStoreSelect" class="kpi-select" onchange="renderBuyingSales()">
                 <option value="OVL">OVL</option>
@@ -382,7 +375,7 @@
             </div>
           </div>
           
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: center; border: 1px solid #eee; border-radius: 12px; background: #f9fafb; padding: 20px;">
+          <div class="employee-widget-body" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: center; border: 1px solid #eee; padding: 20px;">
             <div style="padding-right: 20px; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; justify-content: center; height: 100%;">
                <h4 style="font-size: 14px; font-weight: 800; color: var(--slate-charcoal); margin-bottom: 15px; text-align: center; text-transform: uppercase;">Buying (MTD)</h4>
                
@@ -412,18 +405,36 @@
                <div class="tracking-box">GP Track: <span id="bs-t-gp">--</span></div>
             </div>
           </div>
-        </div>
       </div>
 
-      <div class="card dynamic-module-flex role-manager role-employee" style="flex-direction: column;">
-          <div class="alert-card-header goals-header-mod">
+      <div class="card dynamic-module-flex role-employee district-master-panel employee-widget-card">
+          <div class="district-kpi-header">
+              <div class="district-kpi-title-wrapper">
+                  <span class="district-kpi-title">My Listing Goals</span>
+                  <div id="emp-goals-pulse-dot" class="notif-dot active goals-pulse" style="display: none;"></div>
+              </div>
+              <div class="district-kpi-date-wrapper">
+                  <span id="emp-goals-date" class="emp-kpi-date"></span>
+              </div>
+          </div>
+          
+          <div id="employee-goals-widget-body" class="employee-widget-body">
+              <div class="status-message">Syncing Data...</div>
+          </div>
+      </div>
+
+      <div class="card dynamic-module-flex role-manager district-master-panel employee-widget-card" style="flex-direction: column;">
+          <div class="district-kpi-header">
               <div class="goals-title-wrapper">
-                  <span class="alert-store-name">🎯 Listing Goals</span>
+                  <span class="district-kpi-title">🎯 Listing Goals</span>
                   <div id="goals-pulse-dot" class="notif-dot active goals-pulse"></div>
               </div>
               
               <div style="display: flex; align-items: center; gap: 10px;">
-                  <div id="goals-date-display" style="font-size: 11px; font-weight: 800; color: var(--sage-professional); text-transform: uppercase;"></div>
+                <div class="district-kpi-date-wrapper">
+                  <div id="goals-date-display" class="emp-kpi-date"></div>
+                </div>
+                  
                   
                   <button id="goals-action-btn" onclick="flipGoalCard(true)" class="mini-action-btn">Update ↗</button>
                   <div class="goal-tab-container">
@@ -434,7 +445,7 @@
           </div>
 
           <div class="flip-container">
-              <div class="flip-inner" id="goals-flipper">
+              <div class="flip-inner " id="goals-flipper">
                   
                   <div class="flip-front" id="goals-front-view">
                       <div class="goals-header-row">
@@ -469,6 +480,27 @@
               </div>
           </div>
       </div>
+
+      <div class="card district-master-panel employee-widget-card">
+          <div class="district-kpi-header">
+              <div class="district-kpi-title-wrapper">
+                  <span class="district-kpi-title">My Weekly KPIs</span>
+              </div>
+              <div class="district-kpi-date-wrapper">
+                  <span id="emp-kpi-period" class="emp-kpi-date"></span>
+              </div>
+          </div>
+          
+          <div id="employee-kpi-widget-body" class="employee-kpi-body">
+              <div class="status-message">Syncing Data...</div>
+          </div>
+      </div>
+      
+  </div>
+
+   <div id="pane-trends" class="tab-pane active">
+
+      <div class="metrics-grid">
 
     </div>
 

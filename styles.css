@@ -1030,7 +1030,6 @@ body.preload { visibility: hidden !important; opacity: 0 !important; }
     display: flex;
     flex-direction: column;
     background: white;
-    height: 215px; /* STRICTLY LOCKS THE COMPACT HEIGHT */
     overflow: hidden; /* Prevents scrolling on this specific widget */
 }
 
