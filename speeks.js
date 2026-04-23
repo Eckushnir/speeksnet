@@ -36,33 +36,30 @@ function toggleSidebar() {
     localStorage.setItem('speeksSidebar', sidebar?.classList.contains('collapsed') ? 'collapsed' : 'expanded');
 }
 
-// --- UPDATED MASTER LOCK/UNLOCK ---
 let savedScrollPosition = 0;
 
-// --- UPDATED MASTER LOCK/UNLOCK ---
+// THE MASTER LOCK
 function lockAndBlurScreen() {
-    // Simply add the CSS class. The CSS will lock scrolling but leave the track visible!
+    // 1. Save the exact scroll position before locking
+    savedScrollPosition = window.scrollY;
+    
+    // 2. Lock the body using our new CSS class
     document.body.classList.add('no-scroll');
     
-    // Show your dark overlay
+    // 3. Freeze the page exactly where it was so it doesn't jump to the top
+    document.body.style.top = `-${savedScrollPosition}px`;
+    
     const overlay = document.getElementById('globalOverlay');
     if (overlay) overlay.classList.add('show');
 }
 
 function closeAllModals() {
-    // Remove the lock class
+    // 1. Unlock the body and remove the frozen position
     document.body.classList.remove('no-scroll');
-    
-    // Safety Cleanup (Removes any lingering inline styles from older code)
-    document.body.style.overflow = '';
-    document.body.style.position = '';
     document.body.style.top = '';
-    document.body.style.paddingRight = '';
     
-    const topNav = document.querySelector('.top-nav');
-    if (topNav) {
-        topNav.style.paddingRight = ''; 
-    }
+    // 2. Instantly restore the user's scroll position
+    window.scrollTo(0, savedScrollPosition);
     
     // Hide overlays and modals
     const overlay = document.getElementById('globalOverlay');
@@ -102,17 +99,13 @@ let globalUsersData = [];
 async function toggleManageUsers() {
     const dropdown = document.getElementById('manageUsersDropdown');
     if (!dropdown) return;
-    
     const isOpen = dropdown.classList.contains('show');
-    
-    // Close everything first to reset state
     closeAllModals(); 
     
     if (!isOpen) {
         dropdown.classList.add('show');
-        // Use the master lock function instead of manual overflow settings
-        lockAndBlurScreen(); 
-
+        lockAndBlurScreen(); // <-- Uses the clean master lock!
+        
         const list = document.getElementById('manageUsersList');
         list.innerHTML = '<div class="status-message">Syncing Data...</div>';
         
@@ -122,7 +115,7 @@ async function toggleManageUsers() {
             globalUsersData = data.users || [];
             populateUsersModal();
         } catch (e) {
-            list.innerHTML = '<div style="color:var(--red-alert); padding:20px;">Failed to sync data.</div>';
+            list.innerHTML = '<div class="status-message" style="color:var(--red-alert);">Failed to sync data.</div>';
         }
     }
 }
@@ -351,9 +344,6 @@ async function loadCMS() {
 
 // --- 5. MODULE: HUB / HOTKEYS ---
 async function loadHotkeys() {
-    // 1. Instantly lock the screen and blur the background!
-    lockAndBlurScreen();
-
     const tbody = document.getElementById('kbBody');
     if (!tbody) return;
     try {
@@ -381,22 +371,14 @@ let globalDocsData = [];
 async function toggleManageDocs() {
     const dropdown = document.getElementById('manageDocsDropdown');
     if(!dropdown) return;
-    
-    // 1. Check if it's already open BEFORE we close everything
     const isOpen = dropdown.classList.contains('show');
-    
-    // 2. This clears out any other open menus and UNLOCKS the screen
     closeAllModals();
     
-    // 3. If it wasn't open, open it now and LOCK the screen!
     if (!isOpen) {
         dropdown.classList.add('show');
-        
-        lockAndBlurScreen();
+        lockAndBlurScreen(); // <-- Uses the clean master lock!
 
         const list = document.getElementById('manageDocsList');
-        
-        // If data isn't loaded yet (because we are on index.html), fetch it!
         if (!globalDocsData || globalDocsData.length === 0) {
             list.innerHTML = '<div class="status-message">Syncing Data...</div>';
             try {
@@ -495,31 +477,29 @@ async function loadDocs() {
 function filterDocs() {
     const search = document.getElementById('docSearch')?.value.toLowerCase() || "";
     let hasVis = false;
+    
+    // 1. Filter the individual cards (Your original code)
+    document.querySelectorAll('.doc-card').forEach(c => {
+        const match = c.getAttribute('data-search').includes(search);
+        c.classList.toggle('hidden', !match);
+        if (match) hasVis = true;
+    });
 
+    // 2. Hide the categories
     document.querySelectorAll('.category-section').forEach(s => {
-        // Target just the header to check if it's the pinned section
-        const catTitle = s.querySelector('.category-title')?.innerText.toLowerCase() || "";
-        const isPinnedSection = catTitle.includes('pinned');
-
+        // Look to see if this is the Pinned section by checking its text
+        const isPinnedSection = s.innerText.toLowerCase().includes('pinned');
+        
         if (isPinnedSection && search.length > 0) {
-            // Instantly hide the ENTIRE pinned section during a search
+            // THE FIX: If they are searching, force the Pinned section to hide completely!
             s.classList.add('hidden');
-            // Ensure its nested cards don't trigger a "false positive" for results
-            s.querySelectorAll('.doc-card').forEach(c => c.classList.add('hidden'));
         } else {
-            let sectionHasVis = false;
-            s.querySelectorAll('.doc-card').forEach(c => {
-                const match = c.getAttribute('data-search').includes(search);
-                c.classList.toggle('hidden', !match);
-                if (match) sectionHasVis = true;
-            });
-            // Hide the category title if no cards inside it match
-            s.classList.toggle('hidden', !sectionHasVis);
-            if (sectionHasVis) hasVis = true;
+            // Otherwise, normal behavior: hide categories if they are empty
+            s.classList.toggle('hidden', !s.querySelectorAll('.doc-card:not(.hidden)').length);
         }
     });
 
-    // Show or hide the "No Results" message
+    // 3. Show the "No Results" message if needed (Your original code)
     document.getElementById('noResults')?.classList.toggle('hidden', hasVis || search === '');
 }
 
@@ -2134,7 +2114,6 @@ document.addEventListener("DOMContentLoaded", () => {
             window.location.href = "index.html"; return;
         }
         document.getElementById('authOverlay').style.display = 'flex'; 
-        document.body.style.overflow = 'hidden'; 
         document.getElementById('pinInput')?.focus(); 
     }
     
@@ -3256,18 +3235,12 @@ const EBAY_ALERTS_URL = 'https://script.google.com/macros/s/AKfycbxap-4Jgdn5-ntk
 async function toggleManageAlerts() {
     const dropdown = document.getElementById('manageAlertsDropdown');
     if (!dropdown) return;
-    
-    // 1. Check if it's already open BEFORE we close everything
     const isOpen = dropdown.classList.contains('show');
-    
-    // 2. This clears out any other open menus and UNLOCKS the screen
     closeAllModals(); 
     
-    // 3. If it wasn't open, open it now and LOCK the screen!
     if (!isOpen) {
         dropdown.classList.add('show');
-        
-        lockAndBlurScreen();
+        lockAndBlurScreen(); // <-- Uses the clean master lock!
 
         const list = document.getElementById('manageAlertsList');
         list.innerHTML = '<div class="status-message">Syncing Data...</div>';
@@ -3368,9 +3341,8 @@ function toggleManageAnnouncements() {
     closeAllModals();
     document.getElementById('manageAnnouncementsDropdown').classList.add('show');
     
-    lockAndBlurScreen();
+    lockAndBlurScreen(); // <-- Uses the clean master lock!
     
-    // Clear out the form so it's a blank slate
     document.getElementById('annTitleInput').value = '';
     document.getElementById('annPriorityInput').checked = false;
     document.getElementById('annBodyInput').innerHTML = '';
@@ -3460,58 +3432,47 @@ async function publishAnnouncement() {
 /* =========================================================
    CUSTOM INSTANT TOOLTIPS
    ========================================================= */
+// 1. Create the floating tooltip box once when the page loads
 const customTooltip = document.createElement('div');
 customTooltip.className = 'speeks-tooltip';
 document.body.appendChild(customTooltip);
 
-// 2. Watch where the mouse enters (Card-Level Detection)
+// 2. Watch where the mouse enters (Aggressive Failsafe Version)
 document.addEventListener('mouseover', function(e) {
-    const card = e.target.closest('.doc-card');
+    const textElement = e.target.closest('.doc-title, .doc-info p, .doc-info span, .doc-info div');
     
-    if (card) {
-        const titleEl = card.querySelector('.doc-title');
-        const descEl = card.querySelector('.doc-desc');
+    if (textElement && !textElement.classList.contains('doc-card')) {
+        const isCutOffHorizontally = textElement.scrollWidth > textElement.clientWidth;
+        const isCutOffVertically = textElement.scrollHeight > textElement.clientHeight;
         
-        if (titleEl && descEl) {
-            // Check if text is truncated
-            const isTitleCut = titleEl.scrollWidth > titleEl.clientWidth;
-            const isDescCut = descEl.scrollHeight > descEl.clientHeight;
-            
-            if (isTitleCut || isDescCut) {
-                // Inject beautifully formatted text with a SINGLE LINE title
-                customTooltip.innerHTML = `<strong style="display:block; margin-bottom: 6px; color: var(--sage-professional); font-size: 14px; white-space: nowrap;">${titleEl.innerText.trim()}</strong><span style="font-size: 12px; color: var(--slate-charcoal); line-height: 1.4;">${descEl.innerText.trim()}</span>`;
-                customTooltip.classList.add('show');
-                return;
-            }
+        if (isCutOffHorizontally || isCutOffVertically) {
+            customTooltip.textContent = textElement.innerText.trim();
+            customTooltip.classList.add('show');
+            return; // It's valid text, keep it showing!
         }
     }
+    
+    // FAILSAFE: If the mouse touches literally anything else, hide the tooltip!
     customTooltip.classList.remove('show');
 });
 
 // 3. Make the tooltip track the mouse cursor perfectly
 document.addEventListener('mousemove', function(e) {
     if (customTooltip.classList.contains('show')) {
-        let x = e.pageX + 15;
-        let y = e.pageY + 15;
-        
-        // Prevent tooltip from overflowing the right side of the screen
-        if (x + customTooltip.offsetWidth > window.innerWidth - 20) {
-            x = e.pageX - customTooltip.offsetWidth - 10;
-        }
-        
-        customTooltip.style.left = x + 'px';
-        customTooltip.style.top = y + 'px';
+        // Positions the tooltip exactly 15px below and to the right of your cursor
+        customTooltip.style.left = (e.pageX + 15) + 'px';
+        customTooltip.style.top = (e.pageY + 15) + 'px';
     }
 });
 
-// 4. Hide when leaving the card
+// 4. Hide when leaving the text
 document.addEventListener('mouseout', function(e) {
-    if (e.target.closest('.doc-card')) {
+    if (e.target.closest('.doc-title, .doc-info p, .doc-info span, .doc-info div')) {
         customTooltip.classList.remove('show');
     }
 });
 
-// 5. Hide the tooltip instantly if the user scrolls the page
+// 5. NEW: Hide the tooltip instantly if the user scrolls the page
 window.addEventListener('scroll', function() {
     customTooltip.classList.remove('show');
 }, { passive: true });
