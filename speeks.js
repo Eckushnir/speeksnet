@@ -36,19 +36,30 @@ function toggleSidebar() {
     localStorage.setItem('speeksSidebar', sidebar?.classList.contains('collapsed') ? 'collapsed' : 'expanded');
 }
 
-// THE MASTER LOCK: Drop this into any function to instantly blur and lock the screen!
+let savedScrollPosition = 0;
+
+// THE MASTER LOCK
 function lockAndBlurScreen() {
-    document.body.style.overflow = 'hidden';
-    document.documentElement.style.overflow = 'hidden';
+    // 1. Save the exact scroll position before locking
+    savedScrollPosition = window.scrollY;
+    
+    // 2. Lock the body using our new CSS class
+    document.body.classList.add('no-scroll');
+    
+    // 3. Freeze the page exactly where it was so it doesn't jump to the top
+    document.body.style.top = `-${savedScrollPosition}px`;
+    
     const overlay = document.getElementById('globalOverlay');
     if (overlay) overlay.classList.add('show');
 }
 
-
 function closeAllModals() {
-    // Unlocks BOTH possible scroll containers
-    document.body.style.overflow = '';
-    document.documentElement.style.overflow = '';
+    // 1. Unlock the body and remove the frozen position
+    document.body.classList.remove('no-scroll');
+    document.body.style.top = '';
+    
+    // 2. Instantly restore the user's scroll position
+    window.scrollTo(0, savedScrollPosition);
     
     const overlay = document.getElementById('globalOverlay');
     if (overlay) overlay.classList.remove('show');
@@ -58,6 +69,28 @@ function closeAllModals() {
         modal.classList.remove('show');
     });
 }
+
+// --- DEV TOOLS DROPDOWN GLOBAL TOGGLE ---
+function toggleDevDropdown(e) {
+    e.stopPropagation();
+    const dropdown = document.getElementById('devDropdown');
+    if (dropdown) dropdown.classList.toggle('open');
+}
+
+// --- DEV TOOLS DROPDOWN GLOBAL TOGGLE ---
+window.toggleDevDropdown = function(e) {
+    e.stopPropagation();
+    const dropdown = document.getElementById('devDropdown');
+    if (dropdown) dropdown.classList.toggle('open');
+};
+
+// Close dropdown if clicking outside
+document.addEventListener('click', (e) => {
+    const devDropdown = document.getElementById('devDropdown');
+    if (devDropdown && !devDropdown.contains(e.target)) {
+        devDropdown.classList.remove('open');
+    }
+});
 
 // --- MANAGE USERS MODULE ---
 let globalUsersData = [];
@@ -83,7 +116,7 @@ async function toggleManageUsers() {
         if (overlay) overlay.classList.add('show');
 
         const list = document.getElementById('manageUsersList');
-        list.innerHTML = '<div style="text-align:center; padding:20px; color:#999;">Syncing Data...</div>';
+        list.innerHTML = '<div class="status-message" style="flex-grow: 1; margin: auto;">Syncing Data...</div>';
         
         try {
             const res = await fetch(`${AUTH_URL}?v=${Date.now()}`);
@@ -178,13 +211,14 @@ async function saveManageUsers() {
 function toggleModal(modalId, badgeId = null) {
     const dropdown = document.getElementById(modalId);
     if (!dropdown) return;
+    
     const isOpen = dropdown.classList.contains('show');
     closeAllModals(); 
+    
     if (!isOpen) {
         dropdown.classList.add('show');
-        document.getElementById('globalOverlay')?.classList.add('show');
+        lockAndBlurScreen(); // <-- Your original working lock
         if (badgeId) document.getElementById(badgeId)?.classList.remove('active');
-        document.body.classList.add('no-scroll');
     }
 }
 
@@ -399,12 +433,31 @@ async function loadDocs() {
 function filterDocs() {
     const search = document.getElementById('docSearch')?.value.toLowerCase() || "";
     let hasVis = false;
-    document.querySelectorAll('.doc-card').forEach(c => {
-        const match = c.getAttribute('data-search').includes(search);
-        c.classList.toggle('hidden', !match);
-        if (match) hasVis = true;
+
+    document.querySelectorAll('.category-section').forEach(s => {
+        // Target just the header to check if it's the pinned section
+        const catTitle = s.querySelector('.category-title')?.innerText.toLowerCase() || "";
+        const isPinnedSection = catTitle.includes('pinned');
+
+        if (isPinnedSection && search.length > 0) {
+            // Instantly hide the ENTIRE pinned section during a search
+            s.classList.add('hidden');
+            // Ensure its nested cards don't trigger a "false positive" for results
+            s.querySelectorAll('.doc-card').forEach(c => c.classList.add('hidden'));
+        } else {
+            let sectionHasVis = false;
+            s.querySelectorAll('.doc-card').forEach(c => {
+                const match = c.getAttribute('data-search').includes(search);
+                c.classList.toggle('hidden', !match);
+                if (match) sectionHasVis = true;
+            });
+            // Hide the category title if no cards inside it match
+            s.classList.toggle('hidden', !sectionHasVis);
+            if (sectionHasVis) hasVis = true;
+        }
     });
-    document.querySelectorAll('.category-section').forEach(s => s.classList.toggle('hidden', !s.querySelectorAll('.doc-card:not(.hidden)').length));
+
+    // Show or hide the "No Results" message
     document.getElementById('noResults')?.classList.toggle('hidden', hasVis || search === '');
 }
 
@@ -442,8 +495,16 @@ async function checkPIN() {
             
             const authOverlay = document.getElementById('authOverlay');
             if (authOverlay) authOverlay.style.display = 'none'; 
-            document.body.style.overflow = 'auto';
+            
+            // THE FAILSAFE WIPE
+            document.documentElement.classList.remove('no-scroll');
             document.body.classList.remove('no-scroll');
+            document.documentElement.style.overflow = '';
+            document.body.style.overflow = '';
+            document.body.style.position = '';
+            document.body.style.top = '';
+            
+            closeAllModals(); 
             
             applyRoleBasedUI();
             if (typeof initDashboardData === 'function') initDashboardData();
@@ -2000,10 +2061,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (sessionStorage.getItem('speeksUnlocked') === 'true') { 
         document.getElementById('authOverlay').style.display = 'none'; 
-        document.body.style.overflow = 'auto'; 
+        document.body.style.overflow = '';
+        
+        closeAllModals(); // <-- ADD THIS: Clears any stuck blurs on page refresh
+        
         applyRoleBasedUI(); 
         initDashboardData(); 
-    } else { 
+    } else {
         if(!window.location.href.includes('index.html') && document.getElementById('authOverlay')) {
             window.location.href = "index.html"; return;
         }
@@ -2020,25 +2084,6 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchAlertsData();
     fetchMasterDistrictDashboard();
     fetchDistrictMonthlyKPIs();
-
-    // --- SPEEKS Tools Dropdown Toggle ---
-  const devDropdown = document.getElementById('devDropdown');
-  const devWorkspaceBtn = document.getElementById('devWorkspaceBtn');
-  
-  if (devWorkspaceBtn && devDropdown) {
-      // Toggle dropdown on click
-      devWorkspaceBtn.addEventListener('click', (e) => {
-          e.stopPropagation(); // Prevents the window click listener from immediately closing it
-          devDropdown.classList.toggle('open');
-      });
-      
-      // Close dropdown if clicking outside of it
-      document.addEventListener('click', (e) => {
-          if (!devDropdown.contains(e.target)) {
-              devDropdown.classList.remove('open');
-          }
-      });
-  }
 });
 
 async function fetchDistrictMonthlyKPIs() {
@@ -3357,3 +3402,62 @@ async function publishAnnouncement() {
         btn.style.pointerEvents = "auto";
     }
 }
+
+/* =========================================================
+   CUSTOM INSTANT TOOLTIPS
+   ========================================================= */
+const customTooltip = document.createElement('div');
+customTooltip.className = 'speeks-tooltip';
+document.body.appendChild(customTooltip);
+
+// 2. Watch where the mouse enters (Card-Level Detection)
+document.addEventListener('mouseover', function(e) {
+    const card = e.target.closest('.doc-card');
+    
+    if (card) {
+        const titleEl = card.querySelector('.doc-title');
+        const descEl = card.querySelector('.doc-desc');
+        
+        if (titleEl && descEl) {
+            // Check if text is truncated
+            const isTitleCut = titleEl.scrollWidth > titleEl.clientWidth;
+            const isDescCut = descEl.scrollHeight > descEl.clientHeight;
+            
+            if (isTitleCut || isDescCut) {
+                // Inject beautifully formatted text with a SINGLE LINE title
+                customTooltip.innerHTML = `<strong style="display:block; margin-bottom: 6px; color: var(--sage-professional); font-size: 14px; white-space: nowrap;">${titleEl.innerText.trim()}</strong><span style="font-size: 12px; color: var(--slate-charcoal); line-height: 1.4;">${descEl.innerText.trim()}</span>`;
+                customTooltip.classList.add('show');
+                return;
+            }
+        }
+    }
+    customTooltip.classList.remove('show');
+});
+
+// 3. Make the tooltip track the mouse cursor perfectly
+document.addEventListener('mousemove', function(e) {
+    if (customTooltip.classList.contains('show')) {
+        let x = e.pageX + 15;
+        let y = e.pageY + 15;
+        
+        // Prevent tooltip from overflowing the right side of the screen
+        if (x + customTooltip.offsetWidth > window.innerWidth - 20) {
+            x = e.pageX - customTooltip.offsetWidth - 10;
+        }
+        
+        customTooltip.style.left = x + 'px';
+        customTooltip.style.top = y + 'px';
+    }
+});
+
+// 4. Hide when leaving the card
+document.addEventListener('mouseout', function(e) {
+    if (e.target.closest('.doc-card')) {
+        customTooltip.classList.remove('show');
+    }
+});
+
+// 5. Hide the tooltip instantly if the user scrolls the page
+window.addEventListener('scroll', function() {
+    customTooltip.classList.remove('show');
+}, { passive: true });

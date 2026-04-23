@@ -29,23 +29,27 @@
   <div class="nav-right">
     <div class="user-profile-nav">
 
-      <div class="dev-dropdown-container dynamic-module role-district-manager role-ceo" id="devDropdown">
-  <button class="dev-workspace-btn" id="devWorkspaceBtn" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); color: white; height: 42px;">
-    <svg class="lock-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--idea-gold);">
-      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-    </svg>
-    <span class="dev-title">SPEEKS Tools</span>
-    <svg class="chevron-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="6 9 12 15 18 9"></polyline>
-    </svg>
-  </button>
-  <div class="dev-dropdown-menu" style="min-width: 200px;">
-    <a class="dev-dropdown-link" style="cursor: pointer; white-space: nowrap;" onclick="toggleManageUsers()">User Permissions</a>
-    <a class="dev-dropdown-link dynamic-module role-district-manager" style="cursor: pointer; white-space: nowrap; width: 100%;" onclick="toggleManageAlerts()">Performance Metrics</a>
-    <a class="dev-dropdown-link dynamic-module role-district-manager" style="cursor: pointer; white-space: nowrap; width: 100%;" onclick="toggleManageDocs()">Manage Policies</a>
-  </div>
-</div>
+      <div class="dev-dropdown-container dynamic-module-flex role-district-manager role-ceo" id="devDropdown">
+        
+        <button class="dev-workspace-btn" id="devWorkspaceBtn" onclick="window.toggleDevDropdown(event)" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); color: white; height: 42px;">
+          <svg class="lock-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--idea-gold);">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          <span class="dev-title">SPEEKS Tools</span>
+          <svg class="chevron-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+
+        <div class="dev-dropdown-menu" style="min-width: 200px;">
+          <a class="dev-dropdown-link dynamic-module-block role-district-manager role-ceo" style="cursor: pointer; white-space: nowrap; width: 100%;" onclick="toggleManageAnnouncements()">Announcements</a>
+          <a class="dev-dropdown-link" style="cursor: pointer; white-space: nowrap;" onclick="toggleManageUsers()">User Permissions</a>
+          <a class="dev-dropdown-link dynamic-module-block role-district-manager role-ceo" style="cursor: pointer; white-space: nowrap; width: 100%;" onclick="toggleManageAlerts()">Performance Metrics</a>
+          <a class="dev-dropdown-link dynamic-module-block role-district-manager role-ceo" style="cursor: pointer; white-space: nowrap; width: 100%;" onclick="toggleManageDocs()">Manage Policies</a>
+        </div>
+
+      </div>
 
     <div class="top-actions">
       <a href="#" onclick="toggleIdeaModal(); return false;" class="idea-btn action-btn" title="Have an Idea?">💡</a>
@@ -115,20 +119,20 @@
     </div>
     <div class="manage-content" id="manageDocsList">
         </div>
-    <div class="dev-dropdown-menu" style="min-width: 200px;">
-    <a class="dev-dropdown-link dynamic-module role-district-manager role-ceo" style="cursor: pointer; white-space: nowrap; width: 100%;" onclick="toggleManageAnnouncements()">Announcements</a>
-
-    <a class="dev-dropdown-link" style="cursor: pointer; white-space: nowrap;" onclick="toggleManageUsers()">User Permissions</a>
-    
-    <a class="dev-dropdown-link dynamic-module role-district-manager" style="cursor: pointer; white-space: nowrap; width: 100%;" onclick="toggleManageAlerts()">Performance Metrics</a>
-    <a class="dev-dropdown-link dynamic-module role-district-manager" style="cursor: pointer; white-space: nowrap; width: 100%;" onclick="toggleManageDocs()">Manage Policies</a>
-  </div>
+    <<div class="dev-dropdown-menu" style="min-width: 200px;">
+        <a class="dev-dropdown-link dynamic-module-block role-district-manager role-ceo" style="cursor: pointer; white-space: nowrap; width: 100%;" onclick="toggleManageAnnouncements()">Announcements</a>
+        
+        <a class="dev-dropdown-link" style="cursor: pointer; white-space: nowrap;" onclick="toggleManageUsers()">User Permissions</a>
+        
+        <a class="dev-dropdown-link dynamic-module-block role-district-manager" style="cursor: pointer; white-space: nowrap; width: 100%;" onclick="toggleManageAlerts()">Performance Metrics</a>
+        <a class="dev-dropdown-link dynamic-module-block role-district-manager" style="cursor: pointer; white-space: nowrap; width: 100%;" onclick="toggleManageDocs()">Manage Policies</a>
+    </div>
 </div>
 
 <div class="modal-menu manage-menu" id="manageAnnouncementsDropdown">
     <div class="modal-header">
-        <h3>📢 Publish Announcement</h3>
-        <button class="modal-close-btn" onclick="document.getElementById('manageAnnouncementsDropdown').classList.remove('show'); document.getElementById('globalOverlay').classList.remove('show'); document.body.style.overflow = '';">✖</button>
+        <h3>Publish Announcement</h3>
+        <button class="modal-close-btn" onclick="closeAllModals()">✖</button>
     </div>
     
     <style>

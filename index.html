@@ -34,26 +34,29 @@
   <div class="nav-right">
     <div class="user-profile-nav">
 
-      <div class="dev-dropdown-container dynamic-module role-district-manager role-ceo" id="devDropdown">
-  <button class="dev-workspace-btn" id="devWorkspaceBtn" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); color: white; height: 42px;">
-    <svg class="lock-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--idea-gold);">
-      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-    </svg>
-    <span class="dev-title">SPEEKS Tools</span>
-    <svg class="chevron-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="6 9 12 15 18 9"></polyline>
-    </svg>
-  </button>
-<div class="dev-dropdown-menu" style="min-width: 200px;">
-    <a class="dev-dropdown-link dynamic-module role-district-manager role-ceo" style="cursor: pointer; white-space: nowrap; width: 100%;" onclick="toggleManageAnnouncements()">Announcements</a>
+      <div class="dev-dropdown-container dynamic-module-flex role-district-manager role-ceo" id="devDropdown">
+        
+        <button class="dev-workspace-btn" id="devWorkspaceBtn" onclick="window.toggleDevDropdown(event)" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); color: white; height: 42px;">
+          <svg class="lock-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--idea-gold);">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          <span class="dev-title">SPEEKS Tools</span>
+          <svg class="chevron-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
 
-    <a class="dev-dropdown-link" style="cursor: pointer; white-space: nowrap;" onclick="toggleManageUsers()">User Permissions</a>
-    
-    <a class="dev-dropdown-link dynamic-module role-district-manager" style="cursor: pointer; white-space: nowrap; width: 100%;" onclick="toggleManageAlerts()">Performance Metrics</a>
-    <a class="dev-dropdown-link dynamic-module role-district-manager" style="cursor: pointer; white-space: nowrap; width: 100%;" onclick="toggleManageDocs()">Manage Policies</a>
-  </div>
-</div>
+        <div class="dev-dropdown-menu" style="min-width: 200px;">
+            <a class="dev-dropdown-link dynamic-module-block role-district-manager role-ceo" style="cursor: pointer; white-space: nowrap; width: 100%;" onclick="toggleManageAnnouncements()">Announcements</a>
+            
+            <a class="dev-dropdown-link" style="cursor: pointer; white-space: nowrap;" onclick="toggleManageUsers()">User Permissions</a>
+            
+            <a class="dev-dropdown-link dynamic-module-block role-district-manager" style="cursor: pointer; white-space: nowrap; width: 100%;" onclick="toggleManageAlerts()">Performance Metrics</a>
+            <a class="dev-dropdown-link dynamic-module-block role-district-manager" style="cursor: pointer; white-space: nowrap; width: 100%;" onclick="toggleManageDocs()">Manage Policies</a>
+        </div>
+
+      </div>
 
     <div class="top-actions">
       <a href="#" onclick="toggleIdeaModal(); return false;" class="idea-btn action-btn" title="Have an Idea?">💡</a>
@@ -89,8 +92,8 @@
 
 <div class="modal-menu manage-menu" id="manageAnnouncementsDropdown">
     <div class="modal-header">
-        <h3>📢 Publish Announcement</h3>
-        <button class="modal-close-btn" onclick="document.getElementById('manageAnnouncementsDropdown').classList.remove('show'); document.getElementById('globalOverlay').classList.remove('show'); document.body.style.overflow = '';">✖</button>
+        <h3>Publish Announcement</h3>
+        <button class="modal-close-btn" onclick="closeAllModals()">✖</button>
     </div>
     
     <style>
@@ -232,34 +235,36 @@
     </div>
 </div>
 
-<div id="globalOverlay" class="overlay"></div>
+<div id="globalOverlay" class="overlay" style="display: none;"></div>
 
 <main class="main-content">
 
-  <div class="dynamic-module role-district-manager hotbar-wrapper">
-    <div class="hotbar-container">
-      <span class="hotbar-label">💼 DM</span>
-      <div class="hotbar-links">
-        <a href="https://drive.google.com/drive/folders/1nO9KTRU6Kb9Mv-cTAPp-kffV4DVESdC8?usp=sharing" target="_blank" class="hotbar-btn">📁 Store Manager Folder</a>
-        <a href="https://docs.google.com/spreadsheets/d/1NkIdw8dlvwXmQ6kdpo73zqRwnPd4kIAkgJ7yAG2XCt4/edit?usp=sharing" target="_blank" class="hotbar-btn">🎯 Listing Goals</a>  
-        <a href="https://docs.google.com/spreadsheets/d/1i_oV37lZXq8s91f9ymzwQlrM8WY2UlQQQ0qsRP3xLJ8/edit" target="_blank" class="hotbar-btn">💰 Sales Summary</a>  
-        <a href="https://docs.google.com/spreadsheets/d/1oHOnA6wDwaLQ-EP4-CiDTkKpAdP2V7y8mOay416HDME/edit" target="_blank" class="hotbar-btn">🗓️ Weekly Metrics</a>
-        <a href="https://docs.google.com/spreadsheets/d/1e4mW-pcwUMJjl2Pjry6PT180P8M8nkYL5Z4GcspQmEA/edit" target="_blank" class="hotbar-btn">🧮 Monthly KPIs</a>
-        <a href="https://drive.google.com/drive/folders/12Fjxp44sY6T-o6OlrG6n_YtrHow4bE2f?usp=sharing" target="_blank" class="hotbar-btn">⚖️ Variance</a>
-        <a href="https://docs.google.com/spreadsheets/d/1agChyBxxwJqP-3CXo10C36-95Y_dVKXTA4GboeCaRRs/edit" target="_blank" class="hotbar-btn">📊 Scorecard</a>
+  <div class="hotbars-stack" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 25px;">
+      
+      <div class="dynamic-module-flex role-district-manager hotbar-wrapper">
+        <div class="hotbar-container">
+          <span class="hotbar-label">💼 DM</span>
+          <div class="hotbar-links">
+            <a href="https://drive.google.com/drive/folders/1nO9KTRU6Kb9Mv-cTAPp-kffV4DVESdC8?usp=sharing" target="_blank" class="hotbar-btn">📁 Store Manager Folder</a>
+            <a href="https://docs.google.com/spreadsheets/d/1NkIdw8dlvwXmQ6kdpo73zqRwnPd4kIAkgJ7yAG2XCt4/edit?usp=sharing" target="_blank" class="hotbar-btn">🎯 Listing Goals</a>  
+            <a href="https://docs.google.com/spreadsheets/d/1i_oV37lZXq8s91f9ymzwQlrM8WY2UlQQQ0qsRP3xLJ8/edit" target="_blank" class="hotbar-btn">💰 Sales Summary</a>  
+            <a href="https://docs.google.com/spreadsheets/d/1oHOnA6wDwaLQ-EP4-CiDTkKpAdP2V7y8mOay416HDME/edit" target="_blank" class="hotbar-btn">🗓️ Weekly Metrics</a>
+            <a href="https://docs.google.com/spreadsheets/d/1e4mW-pcwUMJjl2Pjry6PT180P8M8nkYL5Z4GcspQmEA/edit" target="_blank" class="hotbar-btn">🧮 Monthly KPIs</a>
+            <a href="https://drive.google.com/drive/folders/12Fjxp44sY6T-o6OlrG6n_YtrHow4bE2f?usp=sharing" target="_blank" class="hotbar-btn">⚖️ Variance</a>
+            <a href="https://docs.google.com/spreadsheets/d/1agChyBxxwJqP-3CXo10C36-95Y_dVKXTA4GboeCaRRs/edit" target="_blank" class="hotbar-btn">📊 Scorecard</a>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
 
       <div class="dynamic-module-flex role-district-manager hotbar-wrapper">
         <div class="hotbar-container">
           <span class="hotbar-label">📍 PORTALS</span>
           <div class="hotbar-links">
-            <a href="https://drive.google.com/drive/folders/1dd1nkndo_Pqt3kztaHcpYWL-NgOWIP-E?usp=drive_link" target="_blank" class="hotbar-btn">🟣OVL Portal</a>  
-            <a href="https://drive.google.com/drive/folders/1Xv6ICOpEXNMeWk4QJBfS7CR6tIFRuElk?usp=drive_link" target="_blank" class="hotbar-btn">🔵LEE Portal</a>
-            <a href="https://drive.google.com/drive/folders/1xGGzefFbX7rzBnusmCUEk2GnHxJaJqhC?usp=drive_link" target="_blank" class="hotbar-btn">🟢WSP Portal</a>
-            <a href="https://drive.google.com/drive/folders/1Y5MiKRorTD1mg-lLY4SccYCqw2fZUrND?usp=drive_link" target="_blank" class="hotbar-btn">🟠WPL Portal</a>
-            <a href="https://drive.google.com/drive/folders/1LnAuBH9t7MwtrB9egWK5PFJWQqPcZ-tL?usp=drive_link" target="_blank" class="hotbar-btn">🔴BAL Portal</a>
+            <a href="https://drive.google.com/drive/folders/1dd1nkndo_Pqt3kztaHcpYWL-NgOWIP-E?usp=drive_link" target="_blank" class="hotbar-btn">🟣 OVL Portal</a>  
+            <a href="https://drive.google.com/drive/folders/1Xv6ICOpEXNMeWk4QJBfS7CR6tIFRuElk?usp=drive_link" target="_blank" class="hotbar-btn">🔵 LEE Portal</a>
+            <a href="https://drive.google.com/drive/folders/1xGGzefFbX7rzBnusmCUEk2GnHxJaJqhC?usp=drive_link" target="_blank" class="hotbar-btn">🟢 WSP Portal</a>
+            <a href="https://drive.google.com/drive/folders/1Y5MiKRorTD1mg-lLY4SccYCqw2fZUrND?usp=drive_link" target="_blank" class="hotbar-btn">🟠 MPL Portal</a>
+            <a href="https://drive.google.com/drive/folders/1LnAuBH9t7MwtrB9egWK5PFJWQqPcZ-tL?usp=drive_link" target="_blank" class="hotbar-btn">🔴 BAL Portal</a>
           </div>
         </div>
       </div>
@@ -268,8 +273,8 @@
         <div class="hotbar-container">
           <span class="hotbar-label">👔 MGR</span>
           <div class="hotbar-links">
-            <a href="https://docs.google.com/spreadsheets/d/1pubURplK66yC6oXmpz7P-r8zN07DWmDiLxrtTg0rmdk/edit?usp=sharing" target="_blank" class="hotbar-btn">🎯 Listing Goals</a>  
-            <a href="https://docs.google.com/spreadsheets/d/1KdQNDYfJT-Gt6wal6cgCbh6aqOUOHxey3PEsoeyztzQ/edit?usp=sharing" target="_blank" class="hotbar-btn">📦 Aging Reports</a>
+            <a href="https://docs.google.com/spreadsheets/d/1pubURplK66yC6oXmpz7P-r8zN07DWmDiLxrtTg0rmdk/edit?usp=sharing" target="_blank" class="hotbar-btn">🎯 Daily Listing Goals</a>  
+            <a href="https://docs.google.com/spreadsheets/d/1KdQNDYfJT-Gt6wal6cgCbh6aqOUOHxey3PEsoeyztzQ/edit?usp=sharing" target="_blank" class="hotbar-btn">📦 Aging Inventory</a>
             <a href="https://docs.google.com/spreadsheets/d/1zw-jcqpAnMY6PNofERbUz4pUHA3qnlnZx6O6C_XSmLY/edit?usp=sharing" target="_blank" class="hotbar-btn">🛡️ Insurance Cases</a>
             <a href="https://docs.google.com/spreadsheets/d/1ar3tabN-bUqkjWqgy25MCHzSup2jhiaAKaGxLwZTeJ8/edit?usp=sharing" target="_blank" class="hotbar-btn">📍 Location Visits</a>
             <a href="https://drive.google.com/drive/folders/1OyRPYmb77B1s77fPj2ebUJGXYxAqPKfc?usp=sharing" target="_blank" class="hotbar-btn">📁 Misc Resources</a>
@@ -312,7 +317,7 @@
         </div>
       </div>
 
-    <div class="dynamic-module-flex store-mpl hotbar-wrapper">
+      <div class="dynamic-module-flex store-mpl hotbar-wrapper">
         <div class="hotbar-container">
           <span class="hotbar-label">📍 MPL</span>
           <div class="hotbar-links">
@@ -321,9 +326,9 @@
             <a href="https://docs.google.com/spreadsheets/d/10DiGbDO0tyHitLpltOiTix2TowoeMNzsp0a3MjOtTSY/edit" target="_blank" class="hotbar-btn">💳 Employee Purchases</a>
           </div>
         </div>
-    </div>
-    
-    <div class="dynamic-module-flex store-bal hotbar-wrapper">
+      </div>
+
+      <div class="dynamic-module-flex store-bal hotbar-wrapper">
         <div class="hotbar-container">
           <span class="hotbar-label">📍 BAL</span>
           <div class="hotbar-links">
@@ -332,7 +337,7 @@
             <a href="https://docs.google.com/spreadsheets/d/1RHnw3rK9kvNvmQznMFr6qkg82j0GpWEwUhDOIPDGfts/edit" target="_blank" class="hotbar-btn">💳 Employee Purchases</a>
           </div>
         </div>
-    </div>
+      </div>
   </div>
 
   <div id="top-alerts-row" class="top-alerts-row dynamic-module-flex role-manager">
@@ -495,9 +500,9 @@
       
   </div>
 
-  <div class="dynamic-module-block role-district-manager" style="margin-top: 25px; margin-bottom: 40px; flex-direction: column; width: 100%;">
+  <div class="dynamic-module-block role-district-manager" style="margin-top: -15px; margin-bottom: 30px; flex-direction: column; width: 100%;">
     
-    <div style="margin-bottom: 30px; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; width: 100%;">
+    <div style="margin-bottom: 40px; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; width: 100%;">
         <h3 style="font-size: 20px; font-weight: 900; color: var(--slate-charcoal); letter-spacing: -0.5px; margin-bottom: 0;">🌐 District Command Center</h3>
     </div>
 
@@ -602,10 +607,21 @@
             </style>
             
             <div class="chart-controls" style="display: flex; gap: 10px; align-items: center;">
-                <div class="timeframe-toggle dark-toggle" style="background: rgba(255,255,255,0.1);">
-                    <button class="toggle-btn active" id="btn-chart-avg" onclick="setChartMode('averages')">Averages</button>
-                    <button class="toggle-btn" id="btn-chart-emp" onclick="setChartMode('employees')">My Team</button>
-                </div>
+    
+    <div class="dynamic-module-flex role-district-manager role-ceo">
+        <select id="dmChartStoreSelector" class="metric-dropdown" onchange="loadKpiData()" style="padding: 4px 10px; font-size: 11px; height: 28px; border-radius: 6px; display: none;">
+            <option value="OVL">OVL</option>
+            <option value="LEE">LEE</option>
+            <option value="WSP">WSP</option>
+            <option value="MPL">MPL</option>
+            <option value="BAL">BAL</option>
+        </select>
+    </div>
+
+    <div class="timeframe-toggle dark-toggle" style="background: rgba(255,255,255,0.1);">
+        <button class="toggle-btn active" id="btn-chart-avg" onclick="setChartMode('averages')">Averages</button>
+        <button class="toggle-btn" id="btn-chart-emp" onclick="setChartMode('employees')">My Team</button>
+    </div>
                 
                 <div class="timeframe-toggle dark-toggle" style="background: rgba(255,255,255,0.1);">
                     <button class="toggle-btn active" id="btn-4week" onclick="setTimeframe('4-Week')">4-Week</button>
