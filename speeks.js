@@ -61,7 +61,6 @@ function closeAllModals() {
     // 2. Instantly restore the user's scroll position
     window.scrollTo(0, savedScrollPosition);
     
-    // Hide overlays and modals
     const overlay = document.getElementById('globalOverlay');
     if (overlay) overlay.classList.remove('show');
 
@@ -70,28 +69,6 @@ function closeAllModals() {
         modal.classList.remove('show');
     });
 }
-
-// --- DEV TOOLS DROPDOWN GLOBAL TOGGLE ---
-function toggleDevDropdown(e) {
-    e.stopPropagation();
-    const dropdown = document.getElementById('devDropdown');
-    if (dropdown) dropdown.classList.toggle('open');
-}
-
-// --- DEV TOOLS DROPDOWN GLOBAL TOGGLE ---
-window.toggleDevDropdown = function(e) {
-    e.stopPropagation();
-    const dropdown = document.getElementById('devDropdown');
-    if (dropdown) dropdown.classList.toggle('open');
-};
-
-// Close dropdown if clicking outside
-document.addEventListener('click', (e) => {
-    const devDropdown = document.getElementById('devDropdown');
-    if (devDropdown && !devDropdown.contains(e.target)) {
-        devDropdown.classList.remove('open');
-    }
-});
 
 // --- MANAGE USERS MODULE ---
 let globalUsersData = [];
@@ -228,6 +205,7 @@ function switchAnnTab(tab) {
 window.addEventListener('click', (e) => { if (e.target === document.getElementById('globalOverlay')) closeAllModals(); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAllModals(); });
 
+// --- 4. GLOBAL DATA FETCHING (CMS) ---
 async function loadCMS() {
     try {
         const response = await fetch(`${CMS_URL}?v=${Date.now()}`);
@@ -235,111 +213,42 @@ async function loadCMS() {
         
         const annContainer = document.getElementById('ann-container');
         if (annContainer) {
-            let showBadge = false;
-            let recentHtml = "";
-            let archiveHtml = "";
-            let recentCount = 0;
-            let archiveCount = 0;
-
+            let showBadge = false, recentHtml = "", archiveHtml = "", recentCount = 0, archiveCount = 0;
             if (data.announcements && data.announcements.length > 0) {
-                // Sort so newest is first
                 const sortedAnns = [...data.announcements].reverse();
-                const now = new Date();
+                const today = new Date(); today.setHours(0,0,0,0);
 
                 sortedAnns.forEach(item => {
-                    let displayDate = "";
-                    let isArchived = false;
-
+                    let displayDate = "", isArchived = false;
                     if (item.date) {
                         const annDate = new Date(item.date);
                         if (!isNaN(annDate.getTime())) {
-                            displayDate = annDate.toLocaleDateString('en-US', { 
-                                month: 'long', 
-                                day: 'numeric', 
-                                year: 'numeric' 
-                            });
-
-                            // --- PULSE DOT LOGIC ---
-                            // Calculate difference in hours
-                            const diffMs = now - annDate;
-                            const diffHours = diffMs / (1000 * 60 * 60);
-
-                            // Show red dot if announcement was made within the last 48 hours
-                            if (diffHours >= 0 && diffHours <= 48) {
-                                showBadge = true;
-                            }
-
-                            // Move to archive tab if older than 48 hours
-                            if (diffHours > 48) {
-                                isArchived = true;
-                            }
+                            displayDate = annDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                            const diffDays = (today - new Date(annDate.getFullYear(), annDate.getMonth(), annDate.getDate())) / 86400000;
+                            if (diffDays <= 1 && diffDays >= 0) showBadge = true;
+                            if (diffDays > 2) isArchived = true;
                         }
                     }
-
-                    const html = `
-                        <div class="notif-item">
-                            <div class="ann-header">
-                                <span class="ann-author">${item.author || 'Announcement'}</span>
-                                ${displayDate ? `<small class="ann-date">${displayDate}</small>` : ''}
-                            </div>
-                            <hr />
-                            <div class="ann-text">${item.text || ''}</div>
-                        </div>`;
-
-                    if (isArchived) {
-                        archiveHtml += html;
-                        archiveCount++;
-                    } else {
-                        recentHtml += html;
-                        recentCount++;
-                    }
+                    const html = `<div class="notif-item"><div class="ann-header"><span class="ann-author">${item.author || 'Announcement'}</span>${displayDate ? `<small class="ann-date">${displayDate}</small>` : ''}</div><hr /><div class="ann-text">${item.text || ''}</div></div>`;
+                    isArchived ? (archiveHtml += html, archiveCount++) : (recentHtml += html, recentCount++);
                 });
-
-                recentHtml = recentCount === 0 ? 
-                    '<div style="padding: 20px; color:#999; text-align:center;">No recent announcements</div>' : recentHtml;
-                archiveHtml = archiveCount === 0 ? 
-                    '<div style="padding: 20px; color:#999; text-align:center;">No archived announcements</div>' : archiveHtml;
+                recentHtml = recentCount === 0 ? '<div style="padding: 20px; color:#999; text-align:center;">No recent announcements</div>' : recentHtml;
+                archiveHtml = archiveCount === 0 ? '<div style="padding: 20px; color:#999; text-align:center;">No archived announcements</div>' : archiveHtml;
             } else {
                 recentHtml = archiveHtml = '<div style="padding: 20px; color:#999; text-align:center;">No announcements</div>';
             }
-
             annContainer.innerHTML = recentHtml;
-            const archiveContainer = document.getElementById('archive-container');
-            if (archiveContainer) archiveContainer.innerHTML = archiveHtml;
-
-            // --- TRIGGER THE RED DOT ---
-            // This targets the <div class="notif-dot" id="notifBadge"></div> in your nav
-            const badge = document.getElementById('notifBadge');
-            if (badge) {
-                if (showBadge) {
-                    badge.style.display = 'block'; // Force display override
-                    badge.classList.add('active'); // Trigger CSS pulse animation
-                } else {
-                    badge.style.display = 'none';
-                    badge.classList.remove('active');
-                }
-            }
+            document.getElementById('archive-container').innerHTML = archiveHtml;
+            if (showBadge) document.getElementById('notifBadge')?.classList.add('active');
         }
 
-        // Handle Active/Upcoming projects if applicable
         const activeContainer = document.getElementById('active-container');
         if (activeContainer) {
-            const act = data.active || [];
-            const upc = data.upcoming || [];
-            activeContainer.innerHTML = act.length ? 
-                act.map(t => `<div class="cms-item cms-active">${t}</div>`).join('') : 
-                '<div class="cms-item">No active projects</div>';
-            
-            const upcomingContainer = document.getElementById('upcoming-container');
-            if (upcomingContainer) {
-                upcomingContainer.innerHTML = upc.length ? 
-                    upc.map(t => `<div class="cms-item cms-upcoming">${t}</div>`).join('') : 
-                    '<div class="cms-item">No upcoming projects</div>';
-            }
+            const act = data.active || [], upc = data.upcoming || [];
+            activeContainer.innerHTML = act.length ? act.map(t => `<div class="cms-item cms-active">${t}</div>`).join('') : '<div class="cms-item">No active projects</div>';
+            document.getElementById('upcoming-container').innerHTML = upc.length ? upc.map(t => `<div class="cms-item cms-upcoming">${t}</div>`).join('') : '<div class="cms-item">No upcoming projects</div>';
         }
-    } catch (e) { 
-        console.error("CMS Sync Failed", e); 
-    }
+    } catch (e) { console.error("CMS Failed", e); }
 }
 
 // --- 5. MODULE: HUB / HOTKEYS ---
@@ -537,16 +446,8 @@ async function checkPIN() {
             
             const authOverlay = document.getElementById('authOverlay');
             if (authOverlay) authOverlay.style.display = 'none'; 
-            
-            // THE FAILSAFE WIPE
-            document.documentElement.classList.remove('no-scroll');
+            document.body.style.overflow = 'auto';
             document.body.classList.remove('no-scroll');
-            document.documentElement.style.overflow = '';
-            document.body.style.overflow = '';
-            document.body.style.position = '';
-            document.body.style.top = '';
-            
-            closeAllModals(); 
             
             applyRoleBasedUI();
             if (typeof initDashboardData === 'function') initDashboardData();
@@ -2103,13 +2004,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (sessionStorage.getItem('speeksUnlocked') === 'true') { 
         document.getElementById('authOverlay').style.display = 'none'; 
-        document.body.style.overflow = '';
-        
-        closeAllModals(); // <-- ADD THIS: Clears any stuck blurs on page refresh
-        
+        document.body.style.overflow = 'auto'; 
         applyRoleBasedUI(); 
         initDashboardData(); 
-    } else {
+    } else { 
         if(!window.location.href.includes('index.html') && document.getElementById('authOverlay')) {
             window.location.href = "index.html"; return;
         }
@@ -2125,6 +2023,25 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchAlertsData();
     fetchMasterDistrictDashboard();
     fetchDistrictMonthlyKPIs();
+
+    // --- SPEEKS Tools Dropdown Toggle ---
+  const devDropdown = document.getElementById('devDropdown');
+  const devWorkspaceBtn = document.getElementById('devWorkspaceBtn');
+  
+  if (devWorkspaceBtn && devDropdown) {
+      // Toggle dropdown on click
+      devWorkspaceBtn.addEventListener('click', (e) => {
+          e.stopPropagation(); // Prevents the window click listener from immediately closing it
+          devDropdown.classList.toggle('open');
+      });
+      
+      // Close dropdown if clicking outside of it
+      document.addEventListener('click', (e) => {
+          if (!devDropdown.contains(e.target)) {
+              devDropdown.classList.remove('open');
+          }
+      });
+  }
 });
 
 async function fetchDistrictMonthlyKPIs() {
@@ -2554,7 +2471,7 @@ function renderCompactDmGoals() {
             <div style="text-align: right; font-size: 14px; font-weight: 900; color: var(--slate-charcoal);">
                 ${tResult} <span style="font-size: 11px; color: #888; font-weight: 600;">/ ${tGoal}</span>
             </div>
-           <div id="dm-caret-${store}" class="dm-store-caret" style="text-align: right; color: #888; font-size: 10px; font-weight: 800; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); transform: rotate(-90deg);">▼</div>
+            <div id="dm-caret-${store}" class="dm-store-caret" style="text-align: right; color: #cbd5e1; font-size: 10px; transition: transform 0.3s;">▼</div>
         </div>`;
 
         html += `<div id="dm-roster-${store}" class="dm-store-roster" style="display: none; background: #fdfdfd; padding: 10px 20px; border-bottom: 1px solid #e2e8f0; box-shadow: inset 0 3px 6px rgba(0,0,0,0.02);">`;
@@ -2670,14 +2587,14 @@ function toggleDmStoreAccordion(store) {
     const caret = document.getElementById(`dm-caret-${store}`);
     const isOpen = rosterDiv.style.display === 'block';
     
-    // Close all other accordions first and reset their arrows to point right (-90deg)
+    // Close all other accordions first
     document.querySelectorAll('.dm-store-roster').forEach(el => el.style.display = 'none');
-    document.querySelectorAll('.dm-store-caret').forEach(el => el.style.transform = 'rotate(-90deg)');
+    document.querySelectorAll('.dm-store-caret').forEach(el => el.style.transform = 'rotate(0deg)');
 
     // Toggle the clicked one
     if (!isOpen) {
         rosterDiv.style.display = 'block';
-        caret.style.transform = 'rotate(0deg)'; // Point down when open
+        caret.style.transform = 'rotate(180deg)';
     }
 }
 
