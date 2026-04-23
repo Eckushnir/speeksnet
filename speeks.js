@@ -1954,7 +1954,7 @@ function applyRoleBasedUI() {
     const userRoleClass = `role-${userRole.toLowerCase().replace(/\s+/g, '-')}`; 
     const userStoreClass = `store-${userStore.toLowerCase()}`;
 
-    document.querySelectorAll('.dynamic-module').forEach(module => {
+    document.querySelectorAll('.dynamic-module-flex').forEach(module => {
         const classes = Array.from(module.classList);
         const requiredRoles = classes.filter(c => c.startsWith('role-'));
         const requiredStores = classes.filter(c => c.startsWith('store-'));
@@ -1963,6 +1963,17 @@ function applyRoleBasedUI() {
         const passesStore = requiredStores.length === 0 || requiredStores.includes(userStoreClass);
 
         module.style.display = (passesRole && passesStore) ? 'flex' : 'none';
+    });
+
+    document.querySelectorAll('.dynamic-module-block').forEach(module => {
+        const classes = Array.from(module.classList);
+        const requiredRoles = classes.filter(c => c.startsWith('role-'));
+        const requiredStores = classes.filter(c => c.startsWith('store-'));
+
+        const passesRole = requiredRoles.length === 0 || requiredRoles.includes(userRoleClass);
+        const passesStore = requiredStores.length === 0 || requiredStores.includes(userStoreClass);
+
+        module.style.display = (passesRole && passesStore) ? 'block' : 'none';
     });
 
     if (userRole === 'employee') {

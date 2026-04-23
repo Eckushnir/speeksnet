@@ -1191,3 +1191,4 @@ body.no-scroll {
     overflow: hidden;
     margin: 0;
 }
+.goals-edit-roles { display: flex; gap: 6px; align-items: center; }

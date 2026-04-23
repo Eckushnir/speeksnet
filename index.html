@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SPEEKSNET | QuickPortal</title>
   <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
@@ -240,9 +242,7 @@
       <span class="hotbar-label">💼 DM</span>
       <div class="hotbar-links">
         <a href="https://drive.google.com/drive/folders/1nO9KTRU6Kb9Mv-cTAPp-kffV4DVESdC8?usp=sharing" target="_blank" class="hotbar-btn">📁 Store Manager Folder</a>
-        
         <a href="https://docs.google.com/spreadsheets/d/1NkIdw8dlvwXmQ6kdpo73zqRwnPd4kIAkgJ7yAG2XCt4/edit?usp=sharing" target="_blank" class="hotbar-btn">🎯 Listing Goals</a>  
-        
         <a href="https://docs.google.com/spreadsheets/d/1i_oV37lZXq8s91f9ymzwQlrM8WY2UlQQQ0qsRP3xLJ8/edit" target="_blank" class="hotbar-btn">💰 Sales Summary</a>  
         <a href="https://docs.google.com/spreadsheets/d/1oHOnA6wDwaLQ-EP4-CiDTkKpAdP2V7y8mOay416HDME/edit" target="_blank" class="hotbar-btn">🗓️ Weekly Metrics</a>
         <a href="https://docs.google.com/spreadsheets/d/1e4mW-pcwUMJjl2Pjry6PT180P8M8nkYL5Z4GcspQmEA/edit" target="_blank" class="hotbar-btn">🧮 Monthly KPIs</a>
@@ -252,7 +252,7 @@
     </div>
   </div>
 
-      <div class="dynamic-module role-district-manager hotbar-wrapper">
+      <div class="dynamic-module-flex role-district-manager hotbar-wrapper">
         <div class="hotbar-container">
           <span class="hotbar-label">📍 PORTALS</span>
           <div class="hotbar-links">
@@ -265,7 +265,7 @@
         </div>
       </div>
 
-      <div class="dynamic-module role-manager hotbar-wrapper">
+      <div class="dynamic-module-flex role-manager hotbar-wrapper">
         <div class="hotbar-container">
           <span class="hotbar-label">👔 MGR</span>
           <div class="hotbar-links">
@@ -278,7 +278,7 @@
         </div>
       </div>
 
-      <div class="dynamic-module store-lee hotbar-wrapper">
+      <div class="dynamic-module-flex store-lee hotbar-wrapper">
         <div class="hotbar-container">
           <span class="hotbar-label">📍 LEE</span>
           <div class="hotbar-links">
@@ -290,7 +290,7 @@
         </div>
       </div>
 
-      <div class="dynamic-module store-ovl hotbar-wrapper">
+      <div class="dynamic-module-flex store-ovl hotbar-wrapper">
         <div class="hotbar-container">
           <span class="hotbar-label">📍 OVL</span>
           <div class="hotbar-links">
@@ -302,7 +302,7 @@
         </div>
       </div>
 
-      <div class="dynamic-module store-wsp hotbar-wrapper">
+      <div class="dynamic-module-flex store-wsp hotbar-wrapper">
         <div class="hotbar-container">
           <span class="hotbar-label">📍 WSP</span>
           <div class="hotbar-links">
@@ -313,7 +313,7 @@
         </div>
       </div>
 
-    <div class="dynamic-module store-mpl hotbar-wrapper">
+    <div class="dynamic-module-flex store-mpl hotbar-wrapper">
         <div class="hotbar-container">
           <span class="hotbar-label">📍 MPL</span>
           <div class="hotbar-links">
@@ -324,7 +324,7 @@
         </div>
     </div>
     
-    <div class="dynamic-module store-bal hotbar-wrapper">
+    <div class="dynamic-module-flex store-bal hotbar-wrapper">
         <div class="hotbar-container">
           <span class="hotbar-label">📍 BAL</span>
           <div class="hotbar-links">
@@ -336,7 +336,7 @@
     </div>
   </div>
 
-  <div id="top-alerts-row" class="top-alerts-row dynamic-module role-manager">
+  <div id="top-alerts-row" class="top-alerts-row dynamic-module-flex role-manager">
     
       <div class="card alert-card ">
           <div class="alert-card-header">
@@ -354,6 +354,150 @@
          <div id="alerts-widget-body"><div class="status-message">Syncing Data...</div></div>
       </div>
       <div style="flex: 2 1 350px; margin: 0;"></div>
+
+      
+  </div>
+
+   <div id="pane-trends" class="tab-pane active">
+
+      <div class="metrics-grid">
+
+        <div class="card dynamic-module-block role-employee store-ovl"><div class="card-title">OVL MTD Goal</div><div class="progress-ring"><svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="ovl-bar" cx="70" cy="70" r="64"></circle></svg><div class="percentage" id="ovl-pct">0%</div></div><div class="goal-text" id="ovl-goal">Goal: --</div><div class="tracking-box">GP Track: <span id="ovl-t-gp">--</span></div></div>
+        <div class="card dynamic-module-block role-employee store-lee" style="display: block;"><div class="card-title">LEE MTD Goal</div><div class="progress-ring"><svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="lee-bar" cx="70" cy="70" r="64"></circle></svg><div class="percentage" id="lee-pct">0%</div></div><div class="goal-text" id="lee-goal">Goal: --</div><div class="tracking-box">GP Track: <span id="lee-t-gp">--</span></div></div>
+        <div class="card dynamic-module-block role-employee store-wsp"><div class="card-title">WSP MTD Goal</div><div class="progress-ring"><svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="wsp-bar" cx="70" cy="70" r="64"></circle></svg><div class="percentage" id="wsp-pct">0%</div></div><div class="goal-text" id="wsp-goal">Goal: --</div><div class="tracking-box">GP Track: <span id="wsp-t-gp">--</span></div></div>
+
+      <div class="dynamic-module-block role-manager buying-sales-module">
+        <div class="card" style="padding: 25px; margin-bottom: 0;">
+          <div class="card-title" style="margin-bottom: 15px; border-bottom: none; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;">
+            <span>🛒 Buying & Sales</span>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <select id="bsStoreSelect" class="kpi-select" onchange="renderBuyingSales()">
+                <option value="OVL">OVL</option>
+                <option value="LEE">LEE</option>
+                <option value="WSP">WSP</option>
+                <option value="MPL">MPL</option>
+                <option value="BAL">BAL</option>
+              </select>
+              <a href="https://docs.google.com/spreadsheets/d/1i_oV37lZXq8s91f9ymzwQlrM8WY2UlQQQ0qsRP3xLJ8/edit?usp=sharing" target="_blank" class="mini-action-btn">Full Sheet ↗</a>
+            </div>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: center; border: 1px solid #eee; border-radius: 12px; background: #f9fafb; padding: 20px;">
+            <div style="padding-right: 20px; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; justify-content: center; height: 100%;">
+               <h4 style="font-size: 14px; font-weight: 800; color: var(--slate-charcoal); margin-bottom: 15px; text-align: center; text-transform: uppercase;">Buying (MTD)</h4>
+               
+               <div style="margin-bottom: 12px; text-align: center;">
+                 <div style="font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase;">Value Purchased</div>
+                 <div style="font-size: 22px; font-weight: 900; color: var(--slate-charcoal);" id="bs-buy-val">$0</div>
+               </div>
+               
+               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                 <span style="font-size: 12px; font-weight: 700; color: #666;">Margin</span>
+                 <span class="delta-badge delta-neutral" id="bs-buy-margin" style="font-size: 12px;">0%</span>
+               </div>
+               
+               <div style="display: flex; justify-content: space-between; align-items: center;">
+                 <span style="font-size: 11px; font-weight: 700; color: #666;">Tracking Value</span>
+                 <span style="font-size: 13px; font-weight: 800; color: var(--slate-charcoal);" id="bs-buy-proj">$0</span>
+               </div>
+            </div>
+            
+            <div style="text-align: center;">
+               <h4 style="font-size: 14px; font-weight: 800; color: var(--slate-charcoal); margin-bottom: 10px; text-transform: uppercase;">Sales (MTD)</h4>
+               <div class="progress-ring" style="transform: scale(0.85); margin: -10px auto -10px;">
+                 <svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="bs-bar" cx="70" cy="70" r="64"></circle></svg>
+                 <div class="percentage" id="bs-pct" style="font-size: 28px;">0%</div>
+               </div>
+               <div class="goal-text" id="bs-goal">Goal: --</div>
+               <div class="tracking-box">GP Track: <span id="bs-t-gp">--</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card dynamic-module-flex role-manager role-employee" style="flex-direction: column;">
+          <div class="alert-card-header goals-header-mod">
+              <div class="goals-title-wrapper">
+                  <span class="alert-store-name">🎯 Listing Goals</span>
+                  <div id="goals-pulse-dot" class="notif-dot active goals-pulse"></div>
+              </div>
+              
+              <div style="display: flex; align-items: center; gap: 10px;">
+                  <div id="goals-date-display" style="font-size: 11px; font-weight: 800; color: var(--sage-professional); text-transform: uppercase;"></div>
+                  
+                  <button id="goals-action-btn" onclick="flipGoalCard(true)" class="mini-action-btn">Update ↗</button>
+                  <div class="goal-tab-container">
+                      <div id="tab-daily" class="goal-tab active" onclick="switchGoalTab('daily')">Daily</div>
+                      <div id="tab-weekly" class="goal-tab inactive" onclick="switchGoalTab('weekly')">Weekly</div>
+                  </div>
+              </div>
+          </div>
+
+          <div class="flip-container">
+              <div class="flip-inner" id="goals-flipper">
+                  
+                  <div class="flip-front" id="goals-front-view">
+                      <div class="goals-header-row">
+                          <span class="goals-header-lbl">Employee & Role</span>
+                          <span class="goals-header-lbl center">Goal</span>
+                          <span class="goals-header-lbl center">Result</span>
+                      </div>
+
+                      <div id="goals-roster-list" class="goals-roster-container">
+                          <div class="status-message goals-loading-msg">Loading Roster...</div>
+                      </div>
+
+                      <div class="goals-total-row">
+                          <span class="goals-total-lbl">Total</span>
+                          <span id="goals-total-target" class="goals-total-val target">0</span>
+                          <span id="goals-total-actual" class="goals-total-val actual">0</span>
+                      </div>
+                  </div>
+
+                  <div class="flip-back">
+                      <div class="goals-edit-header">
+                          <span id="goals-input-title" class="goals-edit-title">Set Goals & Log Results</span>
+                          <button onclick="flipGoalCard(false)" class="goals-close-btn">✖</button>
+                      </div>
+
+                      <div id="goals-edit-list" class="goals-edit-list-container">
+                          </div>
+
+                      <button onclick="saveGoalsData()" id="saveGoalsBtn" class="btn-primary goals-save-btn">Save Changes</button>
+                  </div>
+
+              </div>
+          </div>
+      </div>
+
+    </div>
+
+      <div class="card" style="text-align:left; width: 50%;">
+        <div class="chart-header-flex">
+          <div class="card-title" style="margin:0;">Comparison Trends</div>
+          <div class="chart-controls">
+            <div class="timeframe-toggle">
+              <button class="toggle-btn active" id="btn-4week" onclick="setTimeframe('4-Week')">4-Week</button>
+              <button class="toggle-btn" id="btn-monthly" onclick="setTimeframe('Monthly')">Monthly</button>
+            </div>
+            <select id="metricSelector" class="metric-dropdown" onchange="loadKpiData()">
+              <option value="conversion">Customer Conversion %</option>
+              <option value="margin">Buying Margin %</option>
+              <option value="nodeals">Total No Deals</option>
+              <option value="time">Transaction Time</option>
+            </select>
+          </div>
+        </div>
+        <div class="chart-container">
+          <div id="chartLoading">Updating...</div>
+          <canvas id="mainKpiChart"></canvas>
+        </div>
+      </div>
+
+      <div class="leaderboard-container">
+        <div class="card"><div class="card-title">🏆 Revenue Rank</div><div id="rev-list"></div></div>
+        <div class="card"><div class="card-title">📈 GP Rank</div><div id="gp-list"></div></div>
+      </div>
   </div>
 
   <div class="dynamic-module role-district-manager" style="margin-top: 25px; margin-bottom: 40px; flex-direction: column; width: 100%;">
