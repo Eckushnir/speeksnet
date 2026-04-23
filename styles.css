@@ -634,12 +634,12 @@ body.preload { visibility: hidden !important; opacity: 0 !important; }
    ========================================================= */
 .dynamic-module { display: none; }
 
-.top-alerts-row { display: flex; flex-wrap: wrap; gap: 20px; width: 100%; margin-bottom: 30px; }
+.top-alerts-row { display: flex; flex-wrap: wrap; gap: 20px; width: 100%; margin-top: 30px; margin-bottom: 30px; }
 .alert-card { flex: 1 1 250px; max-width: 350px; margin: 0; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); display: flex; flex-direction: column; height: auto; min-height: max-content; }
 .alert-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #f4f7f9; padding-bottom: 10px; }
 .alert-store-name { font-size: 13px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 0.5px; }
 
-.scorecard-widget { position: relative; background: #f9fafb; padding: 25px 20px; border-radius: 12px; border: 1px solid #eee; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.scorecard-widget { height: stretch; position: relative; background: #f9fafb; padding: 25px 20px; border-radius: 12px; border: 1px solid #eee; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
 .scorecard-label { font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
 .scorecard-date { font-size: 13px; font-weight: 800; color: var(--slate-charcoal); margin-bottom: 15px; }
 .scorecard-val { font-size: 52px; font-weight: 900; line-height: 1; }
@@ -1075,3 +1075,5 @@ body.preload { visibility: hidden !important; opacity: 0 !important; }
 .badge-fail { background: #fee2e2; color: #991b1b; }
 .badge-null { background: #f1f5f9; color: #888; }
 .goals-edit-roles { display: flex; gap: 6px; align-items: center; }
+
+.scorecard-widget-body { height: stretch; }
