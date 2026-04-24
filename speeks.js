@@ -366,22 +366,25 @@ async function loadCMS() {
 
 // --- 5. MODULE: HUB / HOTKEYS ---
 async function loadHotkeys() {
-    // 1. Instantly lock the screen and blur the background!
-    lockAndBlurScreen();
-
     const tbody = document.getElementById('kbBody');
     if (!tbody) return;
+    
     try {
         const data = await (await fetch(`${HOTKEYS_URL}?v=${Date.now()}`)).json();
-        tbody.innerHTML = data.map(row => {
-            const cols = Object.values(row), brand = cols[1] || "";
+        tbody.innerHTML = data.map(item => {
+            const brand = item.brand || "";
             if (brand.toLowerCase() === "brand" || !brand) return '';
             
-            // FIX: Forcing every single brand to use the standard gray "b-generic" class
-            return `<tr><td><span class="bubble b-generic">${brand}</span></td><td>${cols[2]}</td><td>${cols[3]}</td><td>${cols[4]}</td></tr>`;
-            
+            return `<tr>
+                <td><span class="bubble b-generic">${brand}</span></td>
+                <td>${item.device}</td>
+                <td>${item.hotkey}</td>
+                <td>${item.func}</td>
+            </tr>`;
         }).join('');
-    } catch (e) {}
+    } catch (e) {
+        console.error("Failed to load hotkeys", e);
+    }
 }
 
 function filterKB() {
@@ -3610,3 +3613,111 @@ document.addEventListener('mouseout', function(e) {
 window.addEventListener('scroll', function() {
     customTooltip.classList.remove('show');
 }, { passive: true });
+
+
+// ==========================================
+// HOTKEYS MANAGER LOGIC
+// ==========================================
+let globalHotkeysData = [];
+
+async function toggleManageHotkeys() {
+    const dropdown = document.getElementById('manageHotkeysDropdown');
+    if (!dropdown) return;
+    
+    const isOpen = dropdown.classList.contains('show');
+    closeAllModals(); 
+    
+    if (!isOpen) {
+        dropdown.classList.add('show');
+        lockAndBlurScreen();
+
+        const list = document.getElementById('manageHotkeysList');
+        list.innerHTML = '<div class="status-message">Syncing Database...</div>';
+        
+        try {
+            const res = await fetch(`${HOTKEYS_URL}?v=${Date.now()}`);
+            const data = await res.json();
+            globalHotkeysData = data;
+            populateHotkeysModal();
+        } catch (e) {
+            list.innerHTML = '<div style="color:var(--red-alert); padding:20px; text-align:center;">Failed to sync data.</div>';
+        }
+    }
+}
+
+function populateHotkeysModal() {
+    const list = document.getElementById('manageHotkeysList');
+    list.innerHTML = '';
+    
+    if (!globalHotkeysData || globalHotkeysData.length === 0) {
+        addManageHotkeyRow();
+    } else {
+        globalHotkeysData.forEach(item => addManageHotkeyRow(item));
+    }
+}
+
+function addManageHotkeyRow(item = { brand: '', device: '', hotkey: '', func: '' }) {
+    const row = document.createElement('div');
+    row.className = 'hotkey-manage-row';
+
+    // Notice: The inline styles are gone. The CSS classes handle the widths now.
+    row.innerHTML = `
+        <input type="text" class="h-brand" placeholder="Brand (e.g., Apple)" value="${item.brand}">
+        <input type="text" class="h-device" placeholder="Device (e.g., MacBook)" value="${item.device}">
+        <input type="text" class="h-hotkey" placeholder="Hotkey (e.g., Cmd+R)" value="${item.hotkey}">
+        <input type="text" class="h-func" placeholder="Function" value="${item.func}">
+        <button class="del-btn" onclick="this.parentElement.remove()" title="Delete">✖</button>
+    `;
+    document.getElementById('manageHotkeysList').appendChild(row);
+}
+
+async function saveManageHotkeys() {
+    const btn = document.getElementById('saveHotkeysBtn');
+    const updatedHotkeys = [];
+
+    document.querySelectorAll('#manageHotkeysList .hotkey-manage-row').forEach(row => {
+        const brand = row.querySelector('.h-brand').value.trim();
+        const device = row.querySelector('.h-device').value.trim();
+        const hotkey = row.querySelector('.h-hotkey').value.trim();
+        const func = row.querySelector('.h-func').value.trim();
+
+        if (brand || device || hotkey || func) {
+            updatedHotkeys.push({ brand, device, hotkey, func });
+        }
+    });
+
+    // ✨ NEW: Auto-sort the array alphabetically before sending to the database!
+    updatedHotkeys.sort((a, b) => {
+        // 1. Primary Sort by Brand
+        const brandCompare = a.brand.localeCompare(b.brand, undefined, { sensitivity: 'base' });
+        if (brandCompare !== 0) return brandCompare;
+        
+        // 2. Secondary Sort by Device (keeps identical brands grouped nicely)
+        return a.device.localeCompare(b.device, undefined, { sensitivity: 'base' });
+    });
+
+    btn.textContent = "Saving...";
+    btn.style.opacity = "0.7";
+
+    try {
+        const res = await fetch(HOTKEYS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(updatedHotkeys)
+        });
+
+        if (res.ok) {
+            alert("System Hotkeys successfully updated!");
+            closeAllModals();
+            loadHotkeys(); // Force an invisible refresh so the main board is instantly updated
+        } else {
+            alert("Error saving hotkeys.");
+        }
+    } catch (e) {
+        console.error(e);
+        alert("Failed to connect to server.");
+    } finally {
+        btn.textContent = "Save Changes";
+        btn.style.opacity = "1";
+    }
+}

@@ -126,6 +126,7 @@
         
         <a class="dev-dropdown-link dynamic-module-block role-district-manager" style="cursor: pointer; white-space: nowrap; width: 100%;" onclick="toggleManageAlerts()">Performance Metrics</a>
         <a class="dev-dropdown-link dynamic-module-block role-district-manager" style="cursor: pointer; white-space: nowrap; width: 100%;" onclick="toggleManageDocs()">Manage Policies</a>
+        <a class="dev-dropdown-link dynamic-module-block role-district-manager role-ceo" style="cursor: pointer; white-space: nowrap; width: 100%;" onclick="toggleManageHotkeys()">Edit System Hotkeys</a>
     </div>
 </div>
 
@@ -190,6 +191,8 @@
     </div>
 </div>
 
+
+
 <div class="modal-menu manage-menu" id="manageAlertsDropdown">
     <div class="modal-header">
         <h3>Performance Metrics</h3>
@@ -199,6 +202,21 @@
         </div>
     <div class="manage-footer" style="justify-content: flex-end;">
         <button id="saveAlertsBtn" class="btn-primary" onclick="saveAlertsData()">Save Changes</button>
+    </div>
+</div>
+
+<div class="modal-menu manage-menu" id="manageHotkeysDropdown">
+    <div class="modal-header">
+        <h3>Edit Hotkeys</h3>
+        <button class="modal-close-btn" onclick="closeAllModals()">✖</button>
+    </div>
+    
+    <div class="manage-content" id="manageHotkeysList">
+        </div>
+    
+    <div class="manage-footer">
+        <button class="btn-secondary" onclick="addManageHotkeyRow()">+ Add Hotkey</button>
+        <button id="saveHotkeysBtn" class="btn-primary" onclick="saveManageHotkeys()">Save Changes</button>
     </div>
 </div>
 

@@ -1511,3 +1511,57 @@ body.preload { visibility: hidden !important; opacity: 0 !important; }
         text-align: center; 
     }
 }
+
+/* =========================================================
+   MANAGE HOTKEYS MODAL STYLES
+   ========================================================= */
+.hotkey-manage-row {
+    display: flex; 
+    gap: 10px; 
+    align-items: center; 
+    background: #fff; 
+    padding: 12px; 
+    border-radius: 8px; 
+    border: 1px solid var(--gen-border); 
+    margin-bottom: 8px;
+}
+
+.hotkey-manage-row input {
+    width: 100%; 
+    padding: 10px 14px; 
+    border: 1px solid #ddd; 
+    border-radius: 10px; 
+    font-size: 13px; 
+    font-family: 'Inter', sans-serif; 
+    transition: 0.2s; 
+    outline: none; 
+    background: white;
+}
+
+.hotkey-manage-row input:focus {
+    border-color: var(--sage-professional); 
+    box-shadow: 0 0 0 3px rgba(90, 141, 59, 0.1);
+}
+
+.hotkey-manage-row .del-btn {
+    background: #ef4444; 
+    color: white; 
+    border: none; 
+    border-radius: 6px; 
+    height: 36px; 
+    padding: 0 12px; 
+    cursor: pointer; 
+    font-weight: bold; 
+    transition: 0.2s; 
+    flex-shrink: 0;
+}
+
+.hotkey-manage-row .del-btn:hover { 
+    background: #dc2626; 
+}
+
+/* Input Width Allocations */
+.h-brand  { flex: 1; }
+.h-device { flex: 1.5; }
+.h-hotkey { flex: 1.5; }
+.h-func   { flex: 2; }
