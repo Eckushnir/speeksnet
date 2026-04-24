@@ -612,6 +612,7 @@ async function checkPIN() {
             document.body.style.overflow = '';
             document.body.style.position = '';
             document.body.style.top = '';
+            document.body.classList.add('is-authenticated');
             
             closeAllModals(); 
             
@@ -652,8 +653,8 @@ function generateSparklineSVG(dataArray) {
 function toggleCategory(el) { el.parentElement.classList.toggle('collapsed'); }
 
 function groupKPIs(data) {
-    const cats = { "Buying Metrics": [], "Inventory": [], "Gross Sales": [], "Net Sales & Margins": [], "Sales Channels": [], "Shipping Costs": [], "Rankings & Reviews": [], "Recycled & Confiscated": [], "Other Metrics": [] };
-    const ignore = ['ebay rank', 'defect rate', 'late shipment', 'case w/no resolution', 'tracking uploaded', 'top rated', 'cases closed'];
+    const cats = { "Buying Metrics": [], "Inventory": [], "Gross Sales": [], "Net Sales & Margins": [], "Sales Channels": [], "Shipping Costs": [], "eBay Performance": [], "Rankings & Reviews": [], "Recycled & Confiscated": [], "Other Metrics": [] };
+    const ignore = ['ebay rank', 'top rated', 'cases closed'];
     let all = [];
     if (Array.isArray(data)) data.forEach(item => item.metrics ? all.push(...item.metrics) : (item.name && all.push(item)));
     all.forEach(m => {
@@ -666,6 +667,7 @@ function groupKPIs(data) {
         else if (n.match(/net sales|cogs|gross profit/)) cats["Net Sales & Margins"].push(m);
         else if (n.match(/draft order|pos|online|non ebay/)) cats["Sales Channels"].push(m);
         else if (n.includes("shipping")) cats["Shipping Costs"].push(m);
+        else if (n.match(/defect rate|late shipment|case w\/no resolution|tracking uploaded/)) cats["eBay Performance"].push(m);
         else if (n.match(/paymore|google/)) cats["Rankings & Reviews"].push(m);
         else if (n.match(/recycled|confiscation/)) cats["Recycled & Confiscated"].push(m);
         else cats["Other Metrics"].push(m);
@@ -725,16 +727,27 @@ function formatVariancePct(num) { return Math.abs(num) < 0.001 ? '0.00%' : `${nu
 function createVarianceStoreCard(sKey) {
     if (sKey === "NONE" || !liveVarianceDataCache[sKey]?.employees) return '';
     const d = liveVarianceDataCache[sKey];
-    let pTxt = "Current", isNew = d.fileDate && (Date.now() - d.fileDate) < 604800000;
-    if (d.fileName) pTxt = d.fileName.replace(new RegExp(`${sKey}\\s*`, 'i'), '').trim().replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/ig, m => ({"Jan":"January","Feb":"February","Mar":"March","Apr":"April","May":"May","Jun":"June","Jul":"July","Aug":"August","Sep":"September","Oct":"October","Nov":"November","Dec":"December"}[m.charAt(0).toUpperCase() + m.slice(1).toLowerCase()] || m));
+    let isNew = d.fileDate && (Date.now() - d.fileDate) < 604800000;
     
-    return `<div style="border: 1px solid #eee; border-radius: 12px; background: white; overflow: hidden;"><div style="background: #f9fafb; padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: flex-start;"><div style="display: flex; flex-direction: column; gap: 8px;"><div style="display: flex; align-items: center;"><span style="font-size: 16px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase;">${sKey} TOTAL</span>${isNew ? `<span class="vw-pulse-badge" title="New Report Added This Week">🚨 NEW</span>` : ''}</div><div><span style="background: #e2e8f0; color: #334155; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">🗓️ ${pTxt}</span></div></div><span class="delta-badge ${d.total < 0 ? 'delta-neg' : (d.total > 0 ? 'delta-pos' : 'delta-neutral')}" style="font-size: 16px; padding: 8px 14px;">${formatVariancePct(d.total)}</span></div><div class="vw-scroll-area" style="display: flex; flex-direction: column;">${d.employees.map(e => `<div class="kpi-row" style="padding: 0 20px; height: 48px; grid-template-columns: 1fr auto; border-top: 1px solid #f5f5f5; border-radius: 0; border-left: none; border-right: none; margin: 0; background: white;"><span class="kpi-name">${e.name}</span><span class="delta-badge ${e.val < 0 ? 'delta-neg' : (e.val > 0 ? 'delta-pos' : 'delta-neutral')}">${formatVariancePct(e.val)}</span></div>`).join('')}</div></div>`;
+    return `<div style="border: 1px solid #eee; border-radius: 12px; background: white; overflow: hidden;"><div style="background: #f9fafb; padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: flex-start;"><div style="display: flex; flex-direction: column; gap: 8px;"><div style="display: flex; align-items: center;"><span style="font-size: 16px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase;">${sKey} TOTAL</span>${isNew ? `<div class="notif-dot active" style="display:block; position:relative; margin-left: 10px; width: 10px; height: 10px; border-width: 2px;" title="New Report Added This Week"></div>` : ''}</div></div><span class="delta-badge ${d.total < 0 ? 'delta-neg' : (d.total > 0 ? 'delta-pos' : 'delta-neutral')}" style="font-size: 16px; padding: 8px 14px;">${formatVariancePct(d.total)}</span></div><div class="vw-scroll-area" style="display: flex; flex-direction: column;">${d.employees.map(e => `<div class="kpi-row" style="padding: 0 20px; height: 48px; grid-template-columns: 1fr auto; border-top: 1px solid #f5f5f5; border-radius: 0; border-left: none; border-right: none; margin: 0; background: white;"><span class="kpi-name">${e.name}</span><span class="delta-badge ${e.val < 0 ? 'delta-neg' : (e.val > 0 ? 'delta-pos' : 'delta-neutral')}">${formatVariancePct(e.val)}</span></div>`).join('')}</div></div>`;
 }
 
 function renderVariance() {
     const p = document.getElementById('vw-primary')?.value, c = document.getElementById('vw-compare')?.value, cont = document.getElementById('vw-dashboard-container');
     if(!cont || !p) return;
-    cont.style.gridTemplateColumns = c === "NONE" ? "1fr" : "1fr 1fr"; cont.innerHTML = createVarianceStoreCard(p) + createVarianceStoreCard(c);
+    cont.style.gridTemplateColumns = c === "NONE" ? "1fr" : "1fr 1fr"; 
+    cont.innerHTML = createVarianceStoreCard(p) + createVarianceStoreCard(c);
+    
+    // Inject the date into the unified header instead of the cards
+    const dateSpan = document.getElementById('variance-date-display');
+    if (dateSpan && liveVarianceDataCache[p]) {
+        const d = liveVarianceDataCache[p];
+        let pTxt = "Current";
+        if (d.fileName) {
+            pTxt = d.fileName.replace(new RegExp(`${p}\\s*`, 'i'), '').trim().replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/ig, m => ({"Jan":"January","Feb":"February","Mar":"March","Apr":"April","May":"May","Jun":"June","Jul":"July","Aug":"August","Sep":"September","Oct":"October","Nov":"November","Dec":"December"}[m.charAt(0).toUpperCase() + m.slice(1).toLowerCase()] || m));
+        }
+        dateSpan.innerText = pTxt;
+    }
 }
 
 async function fetchVarianceData() {
@@ -792,7 +805,7 @@ async function fetchWeeklyKPIs() {
         let pTxt = "";
         if (fIdx !== -1) {
             let hR = d[fIdx - 3] || d[fIdx - 2];
-            if (hR && hR[2] && hR[4] && hR[6]) pTxt = `🗓️ ${String(hR[2]).replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/ig, m => ({"Jan":"January","Feb":"February","Mar":"March","Apr":"April","May":"May","Jun":"June","Jul":"July","Aug":"August","Sep":"September","Oct":"October","Nov":"November","Dec":"December"}[m.charAt(0).toUpperCase() + m.slice(1).toLowerCase()] || m))} ${hR[4]}-${hR[6]}`;
+            if (hR && hR[2] && hR[4] && hR[6]) pTxt = `${String(hR[2]).replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/ig, m => ({"Jan":"January","Feb":"February","Mar":"March","Apr":"April","May":"May","Jun":"June","Jul":"July","Aug":"August","Sep":"September","Oct":"October","Nov":"November","Dec":"December"}[m.charAt(0).toUpperCase() + m.slice(1).toLowerCase()] || m))} ${hR[4]}-${hR[6]}`;
         }
         weeklyKpiCache[store] = { periodText: pTxt }; pB.innerText = pTxt; pB.style.display = pTxt ? "inline-block" : "none";
 
@@ -952,7 +965,7 @@ function renderKpiChart(allData, metric) {
     if (typeof Chart === 'undefined') { 
         const loader = document.getElementById('chartLoading');
         if (loader) { 
-            loader.innerText = "Chart.js Library Missing!"; 
+            loader.innerHTML = '<div class="status-message" style="color:var(--red-alert);">Chart.js Library Missing!</div>'; 
             loader.style.display = 'flex'; 
         } 
         return; 
@@ -1000,38 +1013,47 @@ function renderKpiChart(allData, metric) {
 
     if (currentChartMode === 'averages') {
         allData.forEach((d, idx) => {
+            if (!d || !Array.isArray(d)) return;
             let sData = [], sr=-1, sc=-1;
+            
             for(let i=0; i<d.length; i++) { 
+                if (!Array.isArray(d[i])) continue;
                 for(let j=0; j<d[i].length; j++) if(d[i][j] && String(d[i][j]).trim() === t) { sr=i; sc=j; break; } 
                 if(sr!==-1) break; 
             } 
-            if(sr === -1) return;
+            if(sr === -1 || !Array.isArray(d[sr+1])) return;
             
-            let monthCol = sc - 1;
+            let monthCol = Math.max(0, sc - 1);
             let sCol = -1;
             
             for(let c = sc; c < d[sr+1].length; c++) {
-                let val = String(d[sr+1][c]).trim().toLowerCase();
+                let val = String(d[sr+1][c] || '').trim().toLowerCase();
                 if (val === 'store' || val === 'store total') { sCol = c; break; }
             }
             if(sCol === -1) sCol = d[sr+1].length - 1; 
             
             if(!lbls.length) { 
                 for (let i = sr + 2; i < d.length; i++) { 
-                    let l = String(d[i][monthCol]).trim(); 
+                    if (!Array.isArray(d[i])) continue;
+                    let l = String(d[i][monthCol] || '').trim(); 
                     if (!l || l.includes('Store') || l.includes('%')) break; 
                     lbls.push(l); 
                 } 
             }
             
             lbls.forEach((_, i) => { 
-                let v = d[sr+2+i][sCol]; 
+                let row = d[sr+2+i];
+                if (!Array.isArray(row)) {
+                    sData.push(null);
+                    return;
+                }
+                let v = row[sCol]; 
                 let parsed = parseChartVal(v);
                 
                 if (metric === 'time' && parsed !== null) {
                     let empCols = [];
                     for(let c = sc; c < sCol; c++) {
-                        let colName = String(d[sr+1][c]).trim().toLowerCase();
+                        let colName = String(d[sr+1][c] || '').trim().toLowerCase();
                         if (colName && colName !== 'store' && colName !== 'store total' && !colName.includes('average') && colName !== t.toLowerCase() && !strs.some(s => s.key.toLowerCase() === colName)) {
                             empCols.push(c);
                         }
@@ -1039,7 +1061,7 @@ function renderKpiChart(allData, metric) {
                     
                     let totalTime = 0, validEmps = 0;
                     empCols.forEach(cIdx => {
-                        let eTime = parseChartVal(d[sr+2+i][cIdx]);
+                        let eTime = parseChartVal(row[cIdx]);
                         if (eTime !== null && eTime > 0) { totalTime += eTime; validEmps++; }
                     });
                     if (validEmps > 0) parsed = totalTime / validEmps; 
@@ -1050,39 +1072,37 @@ function renderKpiChart(allData, metric) {
             });
             
             if (idx < strs.length) {
-                // FIXED: Added spacing around the labels!
                 fData.push({ label: '   ' + strs[idx].label + '   ', data: sData, borderColor: strs[idx].color, backgroundColor: strs[idx].color, tension: 0.4, pointRadius: 5, spanGaps: true });
             }
         });
     } else {
-        // Look for the DM Dropdown first, fallback to session storage for standard employees!
         let userStore = dmDropdown ? dmDropdown.value : (sessionStorage.getItem('speeksUserStore') || 'OVL');
-        
         if (userStore === 'ALL' || userStore === 'CORP') userStore = 'OVL';
-        
         let storeIdx = strs.findIndex(s => s.key === userStore);
         if (storeIdx === -1) storeIdx = 0;
         
         let d = allData[storeIdx];
-        if (d) {
+        if (d && Array.isArray(d)) {
             let sr=-1, sc=-1;
             for(let i=0; i<d.length; i++) { 
+                if (!Array.isArray(d[i])) continue;
                 for(let j=0; j<d[i].length; j++) if(d[i][j] && String(d[i][j]).trim() === t) { sr=i; sc=j; break; } 
                 if(sr!==-1) break; 
             }
-            if(sr !== -1) {
-                let monthCol = sc - 1;
+            if(sr !== -1 && Array.isArray(d[sr+1])) {
+                let monthCol = Math.max(0, sc - 1);
                 let sCol = -1;
                 
                 for(let c = sc; c < d[sr+1].length; c++) {
-                    let val = String(d[sr+1][c]).trim().toLowerCase();
+                    let val = String(d[sr+1][c] || '').trim().toLowerCase();
                     if (val === 'store' || val === 'store total') { sCol = c; break; }
                 }
                 if (sCol === -1) sCol = d[sr+1].length - 1;
 
                 if(!lbls.length) { 
                     for (let i = sr + 2; i < d.length; i++) { 
-                        let l = String(d[i][monthCol]).trim(); 
+                        if (!Array.isArray(d[i])) continue;
+                        let l = String(d[i][monthCol] || '').trim(); 
                         if (!l || l.includes('Store') || l.includes('%')) break; 
                         lbls.push(l); 
                     } 
@@ -1090,7 +1110,7 @@ function renderKpiChart(allData, metric) {
 
                 let empCols = [];
                 for(let c = sc; c < sCol; c++) {
-                    let colName = String(d[sr+1][c]).trim();
+                    let colName = String(d[sr+1][c] || '').trim();
                     if (!colName) continue; 
                     let lowerName = colName.toLowerCase();
                     if(!lowerName.includes('average') && lowerName !== 'store' && lowerName !== 'store total' && lowerName !== t.toLowerCase() && !strs.some(s => s.key.toLowerCase() === lowerName)) {
@@ -1104,7 +1124,7 @@ function renderKpiChart(allData, metric) {
                     let sData = [];
                     lbls.forEach((_, i) => { 
                         let rowIdx = sr+2+i;
-                        if (rowIdx < d.length) {
+                        if (rowIdx < d.length && Array.isArray(d[rowIdx])) {
                             let parsed = parseChartVal(d[rowIdx][emp.idx]);
                             sData.push(parsed);
                             if (parsed !== null) nums.push(parsed);
@@ -1113,7 +1133,6 @@ function renderKpiChart(allData, metric) {
                     
                     if (sData.some(val => val !== null)) {
                         let color = empColors[eIdx % empColors.length];
-                        // FIXED: Added spacing around the labels!
                         fData.push({ label: '   ' + emp.name + '   ', data: sData, borderColor: color, backgroundColor: color, tension: 0.4, pointRadius: 5, spanGaps: true });
                     }
                 });
@@ -1152,7 +1171,7 @@ function renderKpiChart(allData, metric) {
         options: { 
             responsive: true, 
             maintainAspectRatio: false, 
-            layout: { padding: { top: 35, right: 20, left: 10, bottom: 0 } }, 
+            layout: { padding: { top: 55, right: 20, left: 10, bottom: 0 } }, // Increased top to 55px!
             animation: { duration: 400 }, 
             plugins: { 
                 legend: { 
@@ -1173,7 +1192,6 @@ function renderKpiChart(allData, metric) {
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            // FIXED: Added .trim() here so the tooltips don't look weird!
                             let label = context.dataset.label.trim() || '';
                             if (label) label += ': ';
                             if (context.parsed.y !== null) {
@@ -1712,7 +1730,7 @@ async function fetchScorecardData() {
             return;
         }
 
-        if (titleElement) titleElement.innerHTML = `📊 ${storeData.store} Scorecard`;
+        if (titleElement) titleElement.innerHTML = `${storeData.store} Scorecard`;
 
         const latestScore = parseFloat(storeData.score) || 0; 
         const rawDate = storeData.date || 'Recent';
@@ -2157,7 +2175,6 @@ async function saveGoalsData() {
     }
 }
 
-// --- GLOBAL INITIALIZER ATTACHMENTS ---
 function applyRoleBasedUI() {
     const userRole = sessionStorage.getItem('speeksUserRole') || 'employee';
     const userStore = sessionStorage.getItem('speeksUserStore') || 'ALL';
@@ -2169,7 +2186,8 @@ function applyRoleBasedUI() {
     const userRoleClass = `role-${userRole.toLowerCase().replace(/\s+/g, '-')}`; 
     const userStoreClass = `store-${userStore.toLowerCase()}`;
 
-    document.querySelectorAll('.dynamic-module-flex').forEach(module => {
+    // Select ALL dynamic modules (flex, block, and standard)
+    document.querySelectorAll('.dynamic-module-flex, .dynamic-module-block, .dynamic-module').forEach(module => {
         const classes = Array.from(module.classList);
         const requiredRoles = classes.filter(c => c.startsWith('role-'));
         const requiredStores = classes.filter(c => c.startsWith('store-'));
@@ -2177,22 +2195,19 @@ function applyRoleBasedUI() {
         const passesRole = requiredRoles.length === 0 || requiredRoles.includes(userRoleClass);
         const passesStore = requiredStores.length === 0 || requiredStores.includes(userStoreClass);
 
-        module.style.display = (passesRole && passesStore) ? 'flex' : 'none';
-    });
-
-    document.querySelectorAll('.dynamic-module-block').forEach(module => {
-        const classes = Array.from(module.classList);
-        const requiredRoles = classes.filter(c => c.startsWith('role-'));
-        const requiredStores = classes.filter(c => c.startsWith('store-'));
-
-        const passesRole = requiredRoles.length === 0 || requiredRoles.includes(userRoleClass);
-        const passesStore = requiredStores.length === 0 || requiredStores.includes(userStoreClass);
-
-        module.style.display = (passesRole && passesStore) ? 'block' : 'none';
+        if (passesRole && passesStore) {
+            // Determine display type based on class
+            let displayType = 'block';
+            if (module.classList.contains('dynamic-module-flex')) displayType = 'flex';
+            module.style.setProperty('display', displayType, 'important');
+        } else {
+            // Forcefully hide if they fail the check
+            module.style.setProperty('display', 'none', 'important');
+        }
     });
 
     if (userRole === 'employee') {
-        document.querySelectorAll('.manager-only').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.manager-only').forEach(el => el.style.setProperty('display', 'none', 'important'));
     }
 
     if (userStore !== 'ALL') {
@@ -2218,6 +2233,7 @@ document.addEventListener("DOMContentLoaded", () => {
     startAuthFetch();
 
     if (sessionStorage.getItem('speeksUnlocked') === 'true') { 
+        document.body.classList.add('is-authenticated');
         document.getElementById('authOverlay').style.display = 'none'; 
         document.body.style.overflow = '';
         
@@ -2410,19 +2426,19 @@ async function fetchMasterDistrictDashboard() {
 
                 <div class="master-card-body">
                     <div>
-                        <div class="master-section-title">💰 Buying & Selling Snapshot</div>
+                        <div class="master-section-title">Buying & Selling Snapshot</div>
                         <div class="master-stat-box">
                             <div class="master-stat-row"><span class="master-stat-label">Sales vs Goal</span><span class="master-stat-val" style="color: ${pctColor}; background: ${pctBg};">${salesPct}%</span></div>
-                            <div class="master-stat-row"><span class="master-stat-label">GP Track</span><span class="master-stat-val" style="color: var(--slate-charcoal);">$${gpTrack.toLocaleString()}</span></div>
+                            <div class="master-stat-row"><span class="master-stat-label">GP Tracking</span><span class="master-stat-val" style="color: var(--slate-charcoal);">$${gpTrack.toLocaleString()}</span></div>
                             <div class="master-stat-row"><span class="master-stat-label">Sell Margin</span><span class="master-stat-val" style="color: ${sellMarginColor}; background: ${sellMarginBg};">${sellMarginNum > 0 ? sellMargin + '%' : '-'}</span></div>
-                            <div class="master-stat-row"><span class="master-stat-label">Buy Track</span><span class="master-stat-val" style="color: var(--slate-charcoal);">$${buyProj.toLocaleString()}</span></div>
+                            <div class="master-stat-row"><span class="master-stat-label">Buy Tracking</span><span class="master-stat-val" style="color: var(--slate-charcoal);">$${buyProj.toLocaleString()}</span></div>
                             <div class="master-stat-row dashed"><span class="master-stat-label">Buy Margin</span><span class="master-stat-val" style="color: ${marginColor}; background: ${marginBg};">${buyMargin}%</span></div>
                             <div class="master-stat-row"><span class="master-stat-label">Variance Total</span><span class="master-stat-val" style="color: ${vColor}; background: ${vBg};">${vSign}${totalVar.toFixed(2)}%</span></div>
                         </div>
                     </div>
 
                     <div>
-                        <div class="master-section-title">🗓️ Weekly Metrics</div>
+                        <div class="master-section-title">Weekly Metrics</div>
                         <div class="master-stat-box">
                             ${renderLineStat('Conversion', wAvg.conversion, 'conversion')}
                             ${renderLineStat('Margin', wAvg.buyMargin, 'margin')}
@@ -2435,7 +2451,7 @@ async function fetchMasterDistrictDashboard() {
                     </div>
 
                     <div style="flex-grow: 1; display: flex; flex-direction: column;">
-                        <div class="master-section-title">🚨 Action Needed - eBay Performance</div>
+                        <div class="master-section-title">Action Needed - eBay Performance</div>
                         <div style="display: flex; flex-direction: column; gap: 6px; flex-grow: 1;">
                             ${issues.map(b => {
                                 let bg = b.type === 'red' ? '#fee2e2' : (b.type === 'yellow' ? '#fef3c7' : '#d1fae5');
@@ -2810,7 +2826,7 @@ function updateMetricRing(storeId, percent, goalAmt, trackGP) {
     // Update the card text
     pctElement.innerText = Math.round(percent * 100) + '%';
     goalElement.innerText = `Goal: $${goalAmt.toLocaleString()}`;
-    gpElement.innerText = `GP Track: $${trackGP.toLocaleString()}`;
+    gpElement.innerText = `GP Tracking: $${trackGP.toLocaleString()}`;
 
     // Fill the circle 
     // A circle with r=64 has a circumference of ~402 (2 * PI * 64)
@@ -3133,9 +3149,9 @@ async function fetchAndRenderEmployeeKPIs() {
             </div>`;
         };
 
-        // Render the 2x3 Grid
+        // Render the Grid (Auto-Fitting for Mobile and Zoom)
         container.innerHTML = `
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; height: 100%;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 6px; height: 100%;">
                 ${buildStatGridItem('Buying Value', myData.buyVal, sAvg.buyVal, null, false, 'Store:', false)}
                 ${buildStatGridItem('Margin', myData.buyMargin, sAvg.buyMargin, 'margin', true, 'Store:', true)}
                 ${buildStatGridItem('Conversion', myData.conversion, sAvg.conversion, 'conversion', true, 'Store:', true)}
@@ -3186,7 +3202,8 @@ function drawLeaderboard() {
 
     const now = new Date();
     if (monthLabel) {
-        monthLabel.innerText = `- ${now.toLocaleString('default', { month: 'long', year: 'numeric' }).toUpperCase()}`;
+        // Javascript now ONLY outputs the date. The CSS handles the layout and hyphen!
+        monthLabel.innerText = now.toLocaleString('default', { month: 'long', year: 'numeric' }).toUpperCase();
     }
 
     wrapper.style.display = 'block';
@@ -3282,7 +3299,7 @@ function drawLeaderboard() {
                 maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: false },
                 layout: {
-                    padding: { right: 50, left: 10 } // Locks the left side padding
+                    padding: { top: 40, right: 50, left: 10, bottom: 0 } // Added 40px top padding!
                 },
                 plugins: {
                     tooltip: {

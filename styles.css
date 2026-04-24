@@ -172,9 +172,32 @@ html {
 .card:hover { box-shadow: 0 8px 25px rgba(0,0,0,0.06); border-color: #ccc; }
 
 .card-title, .store-name { 
-  font-size: clamp(16px, 2vw, 20px); font-weight: 800; color: var(--slate-charcoal); 
   border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 20px; 
   display: flex; justify-content: space-between; align-items: center; 
+}
+
+.district-kpi-title, 
+.master-card-title, 
+.card-title span:first-child, 
+.alert-store-name,
+.alert-card-header span {
+    font-size: 16px !important;
+    font-weight: 900 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    font-family: 'Inter', sans-serif !important;
+    white-space: nowrap !important; /* ADD THIS LINE: Forces text to stay on one line! */
+}
+
+.district-kpi-header .district-kpi-title, 
+.master-card-header .master-card-title {
+    color: white !important;
+}
+
+.card-title span:first-child, 
+.alert-store-name,
+.alert-card-header span {
+    color: var(--slate-charcoal) !important;
 }
 
 .quick-link-pill, .auth-back-btn { 
@@ -383,14 +406,78 @@ html {
 .checklist-item:hover { color: var(--sage-professional); }
 .checklist-item input[type="checkbox"] { margin-top: 2px; cursor: pointer; accent-color: var(--sage-professional); width: 16px; height: 16px; flex-shrink: 0; }
 
-.kpi-header-controls { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px;}
+.kpi-header-controls { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-left: auto; }
 .kpi-select-group { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #666; }
-.kpi-select { padding: 8px 12px; border-radius: 10px; border: 1px solid #ddd; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 12px; color: var(--slate-charcoal); outline: none; cursor: pointer; background: white; transition: 0.2s; }
-.kpi-select:focus { border-color: var(--sage-professional); box-shadow: 0 0 0 3px rgba(90, 141, 59, 0.1); }
 .auth-box input:focus { border-color: var(--sage-professional); box-shadow: 0 0 0 3px rgba(90, 141, 59, 0.1); }
 .kpi-inner-wrapper { border: 1px solid #ddd; background: white; overflow: hidden; display: flex; flex-direction: column; flex-grow: 1; min-height: 0; }
 .mini-action-btn { font-size: 11px; background: #f4f7f9; padding: 8px 12px; border-radius: 8px; color: var(--slate-charcoal); text-decoration: none; font-weight: 800; border: 1px solid #ddd; transition: all 0.2s ease; }
 .mini-action-btn:hover { background: white; border-color: var(--sage-professional); color: var(--sage-professional); box-shadow: 0 2px 6px rgba(90, 141, 59, 0.1); }
+
+/* =========================================================
+   STANDARDIZED DROPDOWNS
+   ========================================================= */
+select.kpi-select, select.metric-dropdown, select.dist-kpi-select, select.bs-hidden-select {
+    appearance: none !important;
+    background-color: #ffffff !important;
+    background-image: url('data:image/svg+xml;utf8,<svg fill="%23111827" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 9l6 6 6-6"/></svg>') !important;
+    background-repeat: no-repeat !important;
+    background-position: right 10px center !important;
+    background-size: 14px !important;
+    color: var(--slate-charcoal) !important;
+    border: 1px solid #d1d5db !important;
+    border-radius: 8px !important;
+    padding: 0 32px 0 12px !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 12px !important;
+    font-weight: 800 !important;
+    outline: none !important;
+    cursor: pointer !important;
+    height: 34px !important;
+    min-width: 90px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02) !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+select.kpi-select:focus, select.metric-dropdown:focus, select.dist-kpi-select:focus, select.bs-hidden-select:focus {
+    border-color: var(--sage-professional) !important;
+    box-shadow: 0 0 0 3px rgba(90, 141, 59, 0.1) !important;
+}
+
+select.kpi-select option, select.metric-dropdown option, select.dist-kpi-select option, select.bs-hidden-select option {
+    text-align: left !important;
+}
+
+/* =========================================================
+   STANDARDIZED WIDGET DATE BADGES (MATCHES SCREENSHOT)
+   ========================================================= */
+.widget-date-display {
+    font-size: 12px !important; /* Sized perfectly relative to the header */
+    font-weight: 800 !important;
+    color: #94a3b8 !important; /* The exact slate-grey from the screenshot */
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    margin-left: 8px !important;
+    background: transparent !important;
+    padding: 0 !important;
+    border: none !important;
+    white-space: nowrap !important;
+    font-family: 'Inter', sans-serif !important;
+}
+
+/* Auto-injects the hyphen and spaces it exactly like the image */
+.widget-date-display:not(:empty)::before {
+    content: '-';
+    margin-right: 8px;
+    color: #94a3b8 !important; 
+}
+
+/* Lighten the text so it's readable when placed on the dark slate headers */
+.master-card-header .widget-date-display,
+.district-kpi-header .widget-date-display {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
 
 .kpi-scroll-area { flex-grow: 1; min-height: 0; overflow-y: auto; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
 .kpi-scroll-area::-webkit-scrollbar { width: 6px; }
@@ -474,8 +561,6 @@ html {
 .timeframe-toggle { display: flex; background: #e2e8f0; border-radius: 8px; padding: 4px; }
 .toggle-btn { background: transparent; border: none; padding: 8px 16px; font-size: 11px; font-weight: 700; color: #64748b; border-radius: 6px; cursor: pointer; transition: 0.2s; }
 .toggle-btn.active { background: white; color: var(--slate-charcoal); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-.metric-dropdown { padding: 10px 15px; border-radius: 10px; border: 1px solid #ddd; font-weight: 600; color: var(--slate-charcoal); background: white; outline: none; font-size: 13px; cursor: pointer; transition: 0.2s; }
-.metric-dropdown:focus { border-color: var(--sage-professional); box-shadow: 0 0 0 3px rgba(90, 141, 59, 0.1); }
 .chart-container { height: 450px; position: relative; }
 #chartLoading { position: absolute; top:0; left:0; width:100%; height:100%; display:none; justify-content:center; align-items:center; background:rgba(255,255,255,0.8); z-index:10; font-weight:bold; color:#888; }
 
@@ -790,17 +875,29 @@ body.preload { visibility: hidden !important; opacity: 0 !important; }
 
 .district-master-grid { display: grid; width: 100%; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 15px; align-items: stretch; }
 .district-master-panel { margin: 20px 0 0 0; padding: 0; width: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border-radius: 16px; background: #fff; overflow: hidden; }
-.district-kpi-header { background: var(--slate-charcoal); padding: 12px 20px; min-height: 64px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; border-top-left-radius: 16px; border-top-right-radius: 16px; }
+.district-kpi-header, .master-card-header {
+    background: var(--slate-charcoal) !important;
+    padding: 15px 20px !important;
+    height: 75px !important;
+    min-height: 75px !important;
+    max-height: 75px !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 15px !important;
+    border-top-left-radius: 16px !important;
+    border-top-right-radius: 16px !important;
+    border-bottom: none !important;
+    margin: 0 !important;
+}
 .district-kpi-title { font-size: 14px; font-weight: 900; color: white; text-transform: uppercase; letter-spacing: 0.5px; }
-.dist-kpi-select { appearance: none; background-color: #ffffff; background-image: url('data:image/svg+xml;utf8,<svg fill="%23111827" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 9l6 6 6-6"/></svg>'); background-repeat: no-repeat; background-position: right 10px center; background-size: 14px; color: var(--slate-charcoal); border: 1px solid #d1d5db; border-radius: 8px; padding: 6px 28px 6px 12px; font-size: 12px; font-weight: 800; outline: none; cursor: pointer; min-width: 120px; text-align: center; text-align-last: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-.dist-kpi-select option { text-align: left; }
 
 .district-kpi-table-header { display: grid; grid-template-columns: minmax(180px, 2fr) repeat(5, minmax(80px, 1fr)); padding: 15px 20px; align-items: center; background: #f9fafb; border-bottom: 2px solid #f0f0f0; }
 .district-kpi-metric-lbl { font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase; }
 .district-kpi-store-lbl { text-align: center; color: var(--slate-charcoal); font-size: 14px; font-weight: 900; }
 
 .master-card { display: flex; flex-direction: column; height: 100%; margin: 0; padding: 0; }
-.master-card-header { background: var(--slate-charcoal); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; border-top-left-radius: 16px; border-top-right-radius: 16px; }
 .master-card-title { font-size: 16px; font-weight: 900; color: white; display: flex; align-items: center; gap: 8px; }
 .master-card-score-box { display: flex; flex-direction: column; align-items: flex-end; }
 .master-card-score { font-size: 14px; font-weight: 900; padding: 4px 0; border-radius: 8px; line-height: 1; width: 58px; display: flex; justify-content: center; align-items: center; box-sizing: border-box; }
@@ -1582,3 +1679,183 @@ body.preload { visibility: hidden !important; opacity: 0 !important; }
 .chart-controls .dark-toggle .toggle-btn { color: #a0aab2; }
 .chart-controls .dark-toggle .toggle-btn:hover:not(.active) { color: white; }
 .chart-controls .dark-toggle .toggle-btn.active { color: var(--slate-charcoal) !important; background: white !important; }
+
+/* =========================================================
+   SECURITY: PREVENT FLASH OF AUTHENTICATED CONTENT
+   ========================================================= */
+body:not(.is-authenticated) .top-nav,
+body:not(.is-authenticated) .sidebar,
+body:not(.is-authenticated) .sidebar-toggle,
+body:not(.is-authenticated) .top-actions,
+body:not(.is-authenticated) .main-content {
+    display: none !important;
+}
+
+/* =========================================================
+   STANDARDIZED COMPACT TOGGLE SWITCHES
+   ========================================================= */
+.timeframe-toggle, 
+.goal-tab-container {
+    padding: 3px !important;
+    border-radius: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    height: 34px !important; /* Matches the height of the new standard dropdowns perfectly */
+    box-sizing: border-box !important;
+}
+
+.toggle-btn, 
+.goal-tab {
+    padding: 4px 12px !important;
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    border-radius: 6px !important;
+    height: auto !important;
+    line-height: 1.2 !important;
+    text-transform: none !important; /* Prevents text stretching */
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 !important;
+    white-space: nowrap !important;
+}
+
+/* =========================================================
+   FLEXIBLE STANDARDIZED SLATE HEADERS
+   ========================================================= */
+.district-kpi-header, .master-card-header {
+    background: var(--slate-charcoal) !important;
+    padding: 15px 20px !important;
+    min-height: 75px !important;
+    height: auto !important; /* Allows the box to grow if text wraps! */
+    box-sizing: border-box !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    flex-wrap: wrap !important; /* Allows elements to stack if they run out of room */
+    gap: 15px !important;
+    border-top-left-radius: 16px !important;
+    border-top-right-radius: 16px !important;
+    border-bottom: none !important;
+    margin: 0 !important;
+}
+
+.kpi-header-controls { 
+    display: flex !important; 
+    justify-content: flex-end !important; 
+    align-items: center !important; 
+    flex-wrap: wrap !important;
+    gap: 10px !important; 
+    margin-left: auto !important; 
+}
+
+.district-kpi-title, 
+.master-card-title, 
+.card-title span:first-child, 
+.alert-store-name,
+.alert-card-header span {
+    font-size: 16px !important;
+    font-weight: 900 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    font-family: 'Inter', sans-serif !important;
+    white-space: normal !important; /* Allows text to wrap nicely on zoom! */
+    line-height: 1.3 !important;
+    word-break: break-word !important;
+}
+
+.district-kpi-header .district-kpi-title, 
+.master-card-header .master-card-title {
+    color: white !important;
+}
+
+/* =========================================================
+   ULTIMATE RESPONSIVE & ZOOM OVERRIDES
+   ========================================================= */
+/* Tablet & Medium Zoom */
+@media (max-width: 1200px) {
+    /* Allow the Employee Widgets to stack dynamically */
+    .employee-dashboard-row { 
+        flex-wrap: wrap !important; 
+    }
+    .employee-widget-card { 
+        flex: 1 1 100% !important; 
+        max-width: 100% !important; 
+    }
+    
+    /* Allow District split cards to stack */
+    .district-split-row { 
+        grid-template-columns: 1fr !important; 
+    }
+}
+
+/* Mobile Phones & High Zoom */
+@media (max-width: 768px) {
+    /* Stack headers neatly */
+    .district-kpi-header, .master-card-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+    }
+    
+    .kpi-header-controls, .chart-controls {
+        width: 100% !important;
+        justify-content: flex-start !important;
+        margin-left: 0 !important;
+    }
+    
+    /* Break all main grids into a single column */
+    .dashboard-layout, .project-grid, .metrics-grid, .checklist-grid, .bs-widget-container { 
+        grid-template-columns: 1fr !important; 
+    }
+
+    /* Force tables/scroll areas to stay inside the screen */
+    .kpi-inner-wrapper, .kb-table-container, .manage-content, .vw-scroll-area, .kpi-scroll-area {
+        overflow-x: auto !important;
+        max-width: 100vw !important;
+        width: 100% !important;
+    }
+
+    /* Make dropdowns stretch full width for easier tapping */
+    select.kpi-select, select.metric-dropdown, select.dist-kpi-select, select.bs-hidden-select, select.vw-primary, select.vw-compare {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    /* Stack Buying and Sales properly */
+    .bs-col-left { 
+        border-right: none !important; 
+        border-bottom: 1px solid #e2e8f0 !important; 
+        padding-right: 0 !important; 
+        padding-bottom: 20px !important; 
+        margin-bottom: 20px !important;
+    }
+}
+
+/* =========================================================
+   CHART RESPONSIVENESS & HEADER WRAP FIXES
+   ========================================================= */
+/* 1. Force headers to grow dynamically when toggles wrap to a second line */
+.district-kpi-header, .master-card-header {
+    max-height: none !important; 
+    height: auto !important;
+    min-height: 75px !important;
+    padding-top: 15px !important;
+    padding-bottom: 15px !important;
+}
+
+/* 2. STRICT HEIGHT locks the box to stop the infinite stretching loop! */
+#lb-wrapper, .chart-container {
+    position: relative !important;
+    height: 380px !important; /* Fixed height instead of 100% */
+    min-height: 380px !important;
+    width: 100% !important;
+    display: block !important;
+    padding-bottom: 15px !important;
+}
+
+/* 3. Force the Canvas to perfectly fill the locked 380px box */
+canvas#leaderboardCanvas, canvas#mainKpiChart {
+    max-height: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important; 
+}
