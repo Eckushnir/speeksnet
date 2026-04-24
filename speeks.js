@@ -13,9 +13,9 @@ const WEEKLY_KPI_URL = 'https://script.google.com/macros/s/AKfycbyVBos-uJuhaqfLM
 const AUTH_URL = 'https://script.google.com/macros/s/AKfycbza40UZxFtBWwtm3Z52MqAaBtxRfilN7flkMIuE-ylco-VFli38_nK9avh4gDioHNZjKg/exec';
 const RECORDS_URL = 'https://script.google.com/macros/s/AKfycbwPMcs33YfH84ewJyg3ikqIKZtOJByEI9X2PD3cONtavJk7oJCUnGYbP6sESBE6-j2RSA/exec';
 const QUICK_MSG_URL = 'https://script.google.com/macros/s/AKfycbxpPxDhcyS5gJ90plzsW_I1zkiC9bCZ6WA3Pl22XJL3NLg6K8L5QfeYX6VNN5bECstIeg/exec';
-
-// ⚠️ PASTE YOUR NEW GOALS APPS SCRIPT URL HERE:
 const GOALS_API_URL = 'https://script.google.com/macros/s/AKfycbw_eV-2Nxizf85J8atBJ6Muyq0aOAjZAsSLwlx9abPjNKJub_RlzrMBKkQuTbcRTbF2/exec';
+const SCORECARD_URL = 'https://script.google.com/macros/s/AKfycbwvelWpXnlXCJZQGagZX5llMCN1k6CjronBpIcenNVDTjUdPISjF0mYhHYy2ry0Vdg0_Q/exec';
+const EBAY_ALERTS_URL = 'https://script.google.com/macros/s/AKfycbxap-4Jgdn5-ntkv_X-vFZLTWlTB29_bDLdwcFxhWd2su3ZQJ0ZS7UpUgZAK08lOIV6/exec';
 
 // --- 2. GLOBAL HELPERS & UTILITIES ---
 function parseNum(val) {
@@ -25,35 +25,57 @@ function parseNum(val) {
     return isNaN(num) ? 0 : num;
 }
 
+function escapeHtml(unsafe) {
+    if (!unsafe) return '';
+    return unsafe.toString()
+         .replace(/&/g, "&amp;")
+         .replace(/</g, "&lt;")
+         .replace(/>/g, "&gt;")
+         .replace(/"/g, "&quot;")
+         .replace(/'/g, "&#039;");
+}
+
+function formatSmartValue(val, name) {
+    if (val === null || val === undefined || String(val).trim() === '') return '-';
+    let num = parseFloat(val);
+    let nameL = name.toLowerCase();
+    
+    if (isNaN(num)) return String(val).trim();
+    if (nameL.match(/%|rate|variance|margin|gm|cogs/)) {
+        return `${num.toFixed(2).replace(/\.00$/, '')}%`;
+    }
+    
+    const isCur = nameL.match(/sales|cost|refund|discount|profit|value|buying|confiscation/) || nameL === 'recycled inventory';       
+    if (isCur && !nameL.match(/ranking|score|reviews|#|returning|time|gm/)) {
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num).replace(/\.00$/, '');
+    }
+    
+    return new Intl.NumberFormat('en-US').format(num);
+}
+
 // --- 3. GLOBAL UI, MODALS & TABS ---
+let savedScrollPosition = 0;
+
 function toggleSidebar() {
     const sidebar = document.querySelector('.sidebar');
     const mainContent = document.querySelector('.main-content');
     const toggleBtn = document.querySelector('.sidebar-toggle');
+    
     sidebar?.classList.toggle('collapsed');
     mainContent?.classList.toggle('expanded');
     toggleBtn?.classList.toggle('collapsed');
+    
     localStorage.setItem('speeksSidebar', sidebar?.classList.contains('collapsed') ? 'collapsed' : 'expanded');
 }
 
-// --- UPDATED MASTER LOCK/UNLOCK ---
-let savedScrollPosition = 0;
-
-// --- UPDATED MASTER LOCK/UNLOCK ---
 function lockAndBlurScreen() {
-    // Simply add the CSS class. The CSS will lock scrolling but leave the track visible!
     document.body.classList.add('no-scroll');
-    
-    // Show your dark overlay
     const overlay = document.getElementById('globalOverlay');
     if (overlay) overlay.classList.add('show');
 }
 
 function closeAllModals() {
-    // Remove the lock class
     document.body.classList.remove('no-scroll');
-    
-    // Safety Cleanup (Removes any lingering inline styles from older code)
     document.body.style.overflow = '';
     document.body.style.position = '';
     document.body.style.top = '';
@@ -64,7 +86,6 @@ function closeAllModals() {
         topNav.style.paddingRight = ''; 
     }
     
-    // Hide overlays and modals
     const overlay = document.getElementById('globalOverlay');
     if (overlay) overlay.classList.remove('show');
 
@@ -74,21 +95,39 @@ function closeAllModals() {
     });
 }
 
-// --- DEV TOOLS DROPDOWN GLOBAL TOGGLE ---
-function toggleDevDropdown(e) {
-    e.stopPropagation();
-    const dropdown = document.getElementById('devDropdown');
-    if (dropdown) dropdown.classList.toggle('open');
+function toggleModal(modalId, badgeId = null) {
+    const dropdown = document.getElementById(modalId);
+    if (!dropdown) return;
+    
+    const isOpen = dropdown.classList.contains('show');
+    closeAllModals(); 
+    
+    if (!isOpen) {
+        dropdown.classList.add('show');
+        lockAndBlurScreen();
+        if (badgeId) document.getElementById(badgeId)?.classList.remove('active');
+    }
 }
 
-// --- DEV TOOLS DROPDOWN GLOBAL TOGGLE ---
+function toggleNotifs() { toggleModal('notifDropdown', 'notifBadge'); }
+function toggleCalendar() { toggleModal('calendarDropdown'); }
+function toggleIdeaModal() { toggleModal('ideaModal'); }
+
+function switchAnnTab(tab) {
+    const isRecent = tab === 'recent';
+    document.getElementById('ann-container').style.display = isRecent ? 'block' : 'none';
+    document.getElementById('archive-container').style.display = isRecent ? 'none' : 'block';
+    document.getElementById('tab-recent').classList.toggle('active', isRecent);
+    document.getElementById('tab-archive').classList.toggle('active', !isRecent);
+}
+
+// DEV TOOLS DROPDOWN GLOBAL TOGGLE
 window.toggleDevDropdown = function(e) {
     e.stopPropagation();
     const dropdown = document.getElementById('devDropdown');
     if (dropdown) dropdown.classList.toggle('open');
 };
 
-// Close dropdown if clicking outside
 document.addEventListener('click', (e) => {
     const devDropdown = document.getElementById('devDropdown');
     if (devDropdown && !devDropdown.contains(e.target)) {
@@ -96,7 +135,121 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// --- MANAGE USERS MODULE ---
+window.addEventListener('click', (e) => { 
+    if (e.target === document.getElementById('globalOverlay')) closeAllModals(); 
+});
+
+document.addEventListener('keydown', (e) => { 
+    if (e.key === 'Escape') closeAllModals(); 
+});
+
+// --- 4. MODULE: CMS (ANNOUNCEMENTS) ---
+async function loadCMS() {
+    try {
+        const response = await fetch(`${CMS_URL}?v=${Date.now()}`);
+        const data = await response.json();
+        
+        const annContainer = document.getElementById('ann-container');
+        if (annContainer) {
+            let showBadge = false;
+            let recentHtml = "";
+            let archiveHtml = "";
+            let recentCount = 0;
+            let archiveCount = 0;
+
+            if (data.announcements && data.announcements.length > 0) {
+                // Sort so newest is first
+                const sortedAnns = [...data.announcements].reverse();
+                const now = new Date();
+
+                sortedAnns.forEach(item => {
+                    let displayDate = "";
+                    let isArchived = false;
+
+                    if (item.date) {
+                        const annDate = new Date(item.date);
+                        if (!isNaN(annDate.getTime())) {
+                            displayDate = annDate.toLocaleDateString('en-US', { 
+                                month: 'long', 
+                                day: 'numeric', 
+                                year: 'numeric' 
+                            });
+
+                            // Calculate difference in hours
+                            const diffMs = now - annDate;
+                            const diffHours = diffMs / (1000 * 60 * 60);
+
+                            if (diffHours >= 0 && diffHours <= 48) showBadge = true;
+                            if (diffHours > 48) isArchived = true;
+                        }
+                    }
+
+                    const html = `
+                        <div class="notif-item">
+                            <div class="ann-header">
+                                <span class="ann-author">${item.author || 'Announcement'}</span>
+                                ${displayDate ? `<small class="ann-date">${displayDate}</small>` : ''}
+                            </div>
+                            <hr />
+                            <div class="ann-text">${item.text || ''}</div>
+                        </div>`;
+
+                    if (isArchived) {
+                        archiveHtml += html;
+                        archiveCount++;
+                    } else {
+                        recentHtml += html;
+                        recentCount++;
+                    }
+                });
+
+                recentHtml = recentCount === 0 ? 
+                    '<div style="padding: 20px; color:#999; text-align:center;">No recent announcements</div>' : recentHtml;
+                archiveHtml = archiveCount === 0 ? 
+                    '<div style="padding: 20px; color:#999; text-align:center;">No archived announcements</div>' : archiveHtml;
+            } else {
+                recentHtml = archiveHtml = '<div style="padding: 20px; color:#999; text-align:center;">No announcements</div>';
+            }
+
+            annContainer.innerHTML = recentHtml;
+            const archiveContainer = document.getElementById('archive-container');
+            if (archiveContainer) archiveContainer.innerHTML = archiveHtml;
+
+            // Trigger the red dot if needed
+            const badge = document.getElementById('notifBadge');
+            if (badge) {
+                if (showBadge) {
+                    badge.style.display = 'block'; 
+                    badge.classList.add('active'); 
+                } else {
+                    badge.style.display = 'none';
+                    badge.classList.remove('active');
+                }
+            }
+        }
+
+        // Handle Active/Upcoming projects if applicable
+        const activeContainer = document.getElementById('active-container');
+        if (activeContainer) {
+            const act = data.active || [];
+            const upc = data.upcoming || [];
+            activeContainer.innerHTML = act.length ? 
+                act.map(t => `<div class="cms-item cms-active">${t}</div>`).join('') : 
+                '<div class="cms-item">No active projects</div>';
+            
+            const upcomingContainer = document.getElementById('upcoming-container');
+            if (upcomingContainer) {
+                upcomingContainer.innerHTML = upc.length ? 
+                    upc.map(t => `<div class="cms-item cms-upcoming">${t}</div>`).join('') : 
+                    '<div class="cms-item">No upcoming projects</div>';
+            }
+        }
+    } catch (e) { 
+        console.error("CMS Sync Failed", e); 
+    }
+}
+
+// --- 5. MODULE: USER MANAGEMENT ---
 let globalUsersData = [];
 
 async function toggleManageUsers() {
@@ -104,8 +257,6 @@ async function toggleManageUsers() {
     if (!dropdown) return;
     
     const isOpen = dropdown.classList.contains('show');
-    
-    // Close everything first to reset state
     closeAllModals(); 
     
     if (!isOpen) {
@@ -116,11 +267,9 @@ async function toggleManageUsers() {
         list.innerHTML = '<div class="status-message">Loading...</div>';
         
         try {
-            // Try cache first so it loads instantly!
             let cachedData = localStorage.getItem('speeksAuthCache');
             let data = cachedData ? JSON.parse(cachedData) : null;
             
-            // If no cache, fetch it live
             if (!data) {
                 list.innerHTML = '<div class="status-message">Syncing Database...</div>';
                 const res = await fetch(`${AUTH_URL}?v=${Date.now()}`);
@@ -131,7 +280,6 @@ async function toggleManageUsers() {
             globalUsersData = data.users || [];
             populateUsersModal();
             
-            // Background sync to ensure it's fully up to date if changes were made elsewhere
             fetch(`${AUTH_URL}?v=${Date.now()}`).then(r => r.json()).then(newData => {
                 localStorage.setItem('speeksAuthCache', JSON.stringify(newData));
             }).catch(e => {});
@@ -206,7 +354,7 @@ async function saveManageUsers() {
 
         if (res.ok) {
             alert("Database successfully updated!");
-            startAuthFetch(); 
+            if (typeof startAuthFetch === 'function') startAuthFetch(); 
             closeAllModals();
         } else {
             alert("Error saving users.");
@@ -220,157 +368,15 @@ async function saveManageUsers() {
     }
 }
 
-// Universal Modal Engine
-function toggleModal(modalId, badgeId = null) {
-    const dropdown = document.getElementById(modalId);
-    if (!dropdown) return;
-    
-    const isOpen = dropdown.classList.contains('show');
-    closeAllModals(); 
-    
-    if (!isOpen) {
-        dropdown.classList.add('show');
-        lockAndBlurScreen(); // <-- Your original working lock
-        if (badgeId) document.getElementById(badgeId)?.classList.remove('active');
-    }
-}
-
-function toggleNotifs() { toggleModal('notifDropdown', 'notifBadge'); }
-function toggleCalendar() { toggleModal('calendarDropdown'); }
-function toggleIdeaModal() { toggleModal('ideaModal'); }
-
-function switchAnnTab(tab) {
-    const isRecent = tab === 'recent';
-    document.getElementById('ann-container').style.display = isRecent ? 'block' : 'none';
-    document.getElementById('archive-container').style.display = isRecent ? 'none' : 'block';
-    document.getElementById('tab-recent').classList.toggle('active', isRecent);
-    document.getElementById('tab-archive').classList.toggle('active', !isRecent);
-}
-
-window.addEventListener('click', (e) => { if (e.target === document.getElementById('globalOverlay')) closeAllModals(); });
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAllModals(); });
-
-async function loadCMS() {
-    try {
-        const response = await fetch(`${CMS_URL}?v=${Date.now()}`);
-        const data = await response.json();
-        
-        const annContainer = document.getElementById('ann-container');
-        if (annContainer) {
-            let showBadge = false;
-            let recentHtml = "";
-            let archiveHtml = "";
-            let recentCount = 0;
-            let archiveCount = 0;
-
-            if (data.announcements && data.announcements.length > 0) {
-                // Sort so newest is first
-                const sortedAnns = [...data.announcements].reverse();
-                const now = new Date();
-
-                sortedAnns.forEach(item => {
-                    let displayDate = "";
-                    let isArchived = false;
-
-                    if (item.date) {
-                        const annDate = new Date(item.date);
-                        if (!isNaN(annDate.getTime())) {
-                            displayDate = annDate.toLocaleDateString('en-US', { 
-                                month: 'long', 
-                                day: 'numeric', 
-                                year: 'numeric' 
-                            });
-
-                            // --- PULSE DOT LOGIC ---
-                            // Calculate difference in hours
-                            const diffMs = now - annDate;
-                            const diffHours = diffMs / (1000 * 60 * 60);
-
-                            // Show red dot if announcement was made within the last 48 hours
-                            if (diffHours >= 0 && diffHours <= 48) {
-                                showBadge = true;
-                            }
-
-                            // Move to archive tab if older than 48 hours
-                            if (diffHours > 48) {
-                                isArchived = true;
-                            }
-                        }
-                    }
-
-                    const html = `
-                        <div class="notif-item">
-                            <div class="ann-header">
-                                <span class="ann-author">${item.author || 'Announcement'}</span>
-                                ${displayDate ? `<small class="ann-date">${displayDate}</small>` : ''}
-                            </div>
-                            <hr />
-                            <div class="ann-text">${item.text || ''}</div>
-                        </div>`;
-
-                    if (isArchived) {
-                        archiveHtml += html;
-                        archiveCount++;
-                    } else {
-                        recentHtml += html;
-                        recentCount++;
-                    }
-                });
-
-                recentHtml = recentCount === 0 ? 
-                    '<div style="padding: 20px; color:#999; text-align:center;">No recent announcements</div>' : recentHtml;
-                archiveHtml = archiveCount === 0 ? 
-                    '<div style="padding: 20px; color:#999; text-align:center;">No archived announcements</div>' : archiveHtml;
-            } else {
-                recentHtml = archiveHtml = '<div style="padding: 20px; color:#999; text-align:center;">No announcements</div>';
-            }
-
-            annContainer.innerHTML = recentHtml;
-            const archiveContainer = document.getElementById('archive-container');
-            if (archiveContainer) archiveContainer.innerHTML = archiveHtml;
-
-            // --- TRIGGER THE RED DOT ---
-            // This targets the <div class="notif-dot" id="notifBadge"></div> in your nav
-            const badge = document.getElementById('notifBadge');
-            if (badge) {
-                if (showBadge) {
-                    badge.style.display = 'block'; // Force display override
-                    badge.classList.add('active'); // Trigger CSS pulse animation
-                } else {
-                    badge.style.display = 'none';
-                    badge.classList.remove('active');
-                }
-            }
-        }
-
-        // Handle Active/Upcoming projects if applicable
-        const activeContainer = document.getElementById('active-container');
-        if (activeContainer) {
-            const act = data.active || [];
-            const upc = data.upcoming || [];
-            activeContainer.innerHTML = act.length ? 
-                act.map(t => `<div class="cms-item cms-active">${t}</div>`).join('') : 
-                '<div class="cms-item">No active projects</div>';
-            
-            const upcomingContainer = document.getElementById('upcoming-container');
-            if (upcomingContainer) {
-                upcomingContainer.innerHTML = upc.length ? 
-                    upc.map(t => `<div class="cms-item cms-upcoming">${t}</div>`).join('') : 
-                    '<div class="cms-item">No upcoming projects</div>';
-            }
-        }
-    } catch (e) { 
-        console.error("CMS Sync Failed", e); 
-    }
-}
-
-// --- 5. MODULE: HUB / HOTKEYS ---
+// --- 6. MODULE: HUB / HOTKEYS ---
 async function loadHotkeys() {
     const tbody = document.getElementById('kbBody');
     if (!tbody) return;
     
     try {
-        const data = await (await fetch(`${HOTKEYS_URL}?v=${Date.now()}`)).json();
+        const response = await fetch(`${HOTKEYS_URL}?v=${Date.now()}`);
+        const data = await response.json();
+        
         tbody.innerHTML = data.map(item => {
             const brand = item.brand || "";
             if (brand.toLowerCase() === "brand" || !brand) return '';
@@ -390,35 +396,34 @@ async function loadHotkeys() {
 function filterKB() {
     const filter = document.getElementById("kbSearch").value.toUpperCase();
     const rows = document.getElementById("kbBody").getElementsByTagName("tr");
-    for (let i = 0; i < rows.length; i++) rows[i].style.display = (rows[i].textContent || rows[i].innerText).toUpperCase().includes(filter) ? "" : "none";
+    
+    for (let i = 0; i < rows.length; i++) {
+        const textContent = rows[i].textContent || rows[i].innerText;
+        rows[i].style.display = textContent.toUpperCase().includes(filter) ? "" : "none";
+    }
 }
 
-// --- 6. MODULE: DOCS & POLICIES ---
+// --- 7. MODULE: DOCS & POLICIES ---
 let globalDocsData = []; 
 
 async function toggleManageDocs() {
     const dropdown = document.getElementById('manageDocsDropdown');
-    if(!dropdown) return;
+    if (!dropdown) return;
     
-    // 1. Check if it's already open BEFORE we close everything
     const isOpen = dropdown.classList.contains('show');
-    
-    // 2. This clears out any other open menus and UNLOCKS the screen
     closeAllModals();
     
-    // 3. If it wasn't open, open it now and LOCK the screen!
     if (!isOpen) {
         dropdown.classList.add('show');
-        
         lockAndBlurScreen();
 
         const list = document.getElementById('manageDocsList');
         
-        // If data isn't loaded yet (because we are on index.html), fetch it!
         if (!globalDocsData || globalDocsData.length === 0) {
             list.innerHTML = '<div class="status-message">Syncing Data...</div>';
             try {
-                globalDocsData = await (await fetch(`${DOCS_URL}?v=${Date.now()}`)).json();
+                const res = await fetch(`${DOCS_URL}?v=${Date.now()}`);
+                globalDocsData = await res.json();
                 localStorage.setItem('speeksDocsData', JSON.stringify(globalDocsData));
                 populateManageModal();
             } catch (e) {
@@ -433,96 +438,169 @@ async function toggleManageDocs() {
 function populateManageModal() {
     const list = document.getElementById('manageDocsList');
     list.innerHTML = '';
-    globalDocsData.length === 0 ? addManageRow() : globalDocsData.forEach(doc => addManageRow(doc));
+    
+    if (globalDocsData.length === 0) {
+        addManageRow();
+    } else {
+        globalDocsData.forEach(doc => addManageRow(doc));
+    }
 }
 
 function addManageRow(doc = { category: '', icon: '📄', title: '', desc: '', link: '' }) {
-    let baseCat = doc.category || '', isPinned = baseCat.toLowerCase().includes('pinned');
-    if (isPinned) baseCat = baseCat.replace(/,?\s*["']?pinned["']?/ig, '').trim();
+    let baseCat = doc.category || '';
+    let isPinned = baseCat.toLowerCase().includes('pinned');
+    
+    if (isPinned) {
+        baseCat = baseCat.replace(/,?\s*["']?pinned["']?/ig, '').trim();
+    }
 
-    const row = document.createElement('div'); row.className = 'manage-row';
+    const row = document.createElement('div'); 
+    row.className = 'manage-row';
     row.innerHTML = `
         <input type="text" class="m-category" placeholder="Category" value="${baseCat}">
-        <label class="pin-label"><input type="checkbox" class="m-pinned" ${isPinned ? 'checked' : ''}> Pin</label>
+        <label class="pin-label">
+            <input type="checkbox" class="m-pinned" ${isPinned ? 'checked' : ''}> Pin
+        </label>
         <input type="text" class="m-icon" placeholder="Icon" value="${doc.icon || ''}">
         <input type="text" class="m-title" placeholder="Title" value="${doc.title || ''}">
         <textarea class="m-desc" placeholder="Description">${doc.desc || ''}</textarea>
         <input type="text" class="m-link" placeholder="URL Link" value="${doc.link || ''}">
-        <button class="del-btn" onclick="this.parentElement.remove()" title="Delete">✖</button>`;
+        <button class="del-btn" onclick="this.parentElement.remove()" title="Delete">✖</button>
+    `;
     document.getElementById('manageDocsList').appendChild(row);
 }
 
 async function saveDocs() {
-    const btn = document.getElementById('saveDocsBtn'), updatedDocs = [];
+    const btn = document.getElementById('saveDocsBtn');
+    const updatedDocs = [];
+    
     document.querySelectorAll('.manage-row').forEach(row => {
         const title = row.querySelector('.m-title').value.trim();
-        if(title) updatedDocs.push({
-            category: row.querySelector('.m-pinned').checked ? (row.querySelector('.m-category').value.trim() ? `${row.querySelector('.m-category').value.trim()}, Pinned` : 'Pinned') : row.querySelector('.m-category').value.trim(),
-            icon: row.querySelector('.m-icon').value.trim(), title: title,
-            desc: row.querySelector('.m-desc').value.trim(), link: row.querySelector('.m-link').value.trim()
-        });
+        if (title) {
+            let category = row.querySelector('.m-category').value.trim();
+            if (row.querySelector('.m-pinned').checked) {
+                category = category ? `${category}, Pinned` : 'Pinned';
+            }
+            
+            updatedDocs.push({
+                category: category,
+                icon: row.querySelector('.m-icon').value.trim(), 
+                title: title,
+                desc: row.querySelector('.m-desc').value.trim(), 
+                link: row.querySelector('.m-link').value.trim()
+            });
+        }
     });
 
-    btn.textContent = "Saving..."; btn.style.opacity = "0.7";
+    btn.textContent = "Saving..."; 
+    btn.style.opacity = "0.7";
+    
     try {
         const res = await fetch(DOCS_URL, { method: 'POST', body: JSON.stringify(updatedDocs) });
-        if(res.ok) {
-            globalDocsData = updatedDocs; localStorage.setItem('speeksDocsData', JSON.stringify(updatedDocs));
-            renderDocs(updatedDocs); closeAllModals();
-        } else alert("Error saving data.");
-    } catch (e) { alert("Failed to connect to server."); } 
-    finally { btn.textContent = "Save Changes"; btn.style.opacity = "1"; }
+        if (res.ok) {
+            globalDocsData = updatedDocs; 
+            localStorage.setItem('speeksDocsData', JSON.stringify(updatedDocs));
+            renderDocs(updatedDocs); 
+            closeAllModals();
+        } else {
+            alert("Error saving data.");
+        }
+    } catch (e) { 
+        alert("Failed to connect to server."); 
+    } finally { 
+        btn.textContent = "Save Changes"; 
+        btn.style.opacity = "1"; 
+    }
 }
 
 function renderDocs(docs) {
     const container = document.getElementById('content-container');
     if (!container) return;
-    if (!docs || docs.length === 0) return container.innerHTML = '<div class="empty-state">No documents found.</div>';
+    
+    if (!docs || docs.length === 0) {
+        container.innerHTML = '<div class="empty-state">No documents found.</div>';
+        return;
+    }
     
     const groupedDocs = {};
     docs.forEach(doc => {
         let cleanCat = (doc.category || "Uncategorized").replace(/,?\s*["']?pinned["']?/ig, '').trim() || "General"; 
         if (!groupedDocs[cleanCat]) groupedDocs[cleanCat] = [];
         groupedDocs[cleanCat].push(doc);
+        
         if ((doc.category || "").toLowerCase().includes('pinned')) {
             if (!groupedDocs['📌 Pinned']) groupedDocs['📌 Pinned'] = [];
             groupedDocs['📌 Pinned'].push(doc);
         }
     });
 
-    container.innerHTML = Object.keys(groupedDocs).sort((a, b) => a === '📌 Pinned' ? -1 : (b === '📌 Pinned' ? 1 : a.localeCompare(b))).map(cat => {
-        const isPin = cat === '📌 Pinned';
-        return `<div class="category-section"><div class="category-title" style="${isPin ? 'color: var(--idea-gold); border-bottom-color: var(--idea-gold);' : ''}">${cat}</div><div class="docs-grid">` + 
-            groupedDocs[cat].map(item => `<a href="${item.link}" target="_blank" class="doc-card" style="${isPin ? 'position: relative; border: 1px solid var(--idea-gold); box-shadow: 0 4px 10px rgba(245, 158, 11, 0.08);' : 'position: relative;'}" data-search="${`${item.title} ${item.desc} ${cat}`.toLowerCase()}">${isPin ? `<div style="position: absolute; top: 12px; right: 15px; font-size: 16px; filter: drop-shadow(0 2px 4px rgba(245,158,11,0.3));">📌</div>` : ''}<div class="doc-icon">${item.icon}</div><div class="doc-info"><div class="doc-title">${item.title}</div><div class="doc-desc">${item.desc}</div></div></a>`).join('') + `</div></div>`;
-    }).join('');
+    container.innerHTML = Object.keys(groupedDocs)
+        .sort((a, b) => a === '📌 Pinned' ? -1 : (b === '📌 Pinned' ? 1 : a.localeCompare(b)))
+        .map(cat => {
+            const isPin = cat === '📌 Pinned';
+            const catTitleStyle = isPin ? 'color: var(--idea-gold); border-bottom-color: var(--idea-gold);' : '';
+            
+            let html = `<div class="category-section">`;
+            html += `<div class="category-title" style="${catTitleStyle}">${cat}</div>`;
+            html += `<div class="docs-grid">`;
+            
+            html += groupedDocs[cat].map(item => {
+                const searchStr = `${item.title} ${item.desc} ${cat}`.toLowerCase();
+                const cardStyle = isPin ? 'position: relative; border: 1px solid var(--idea-gold); box-shadow: 0 4px 10px rgba(245, 158, 11, 0.08);' : 'position: relative;';
+                const pinBadge = isPin ? `<div style="position: absolute; top: 12px; right: 15px; font-size: 16px; filter: drop-shadow(0 2px 4px rgba(245,158,11,0.3));">📌</div>` : '';
+                
+                return `
+                    <a href="${item.link}" target="_blank" class="doc-card" style="${cardStyle}" data-search="${searchStr}">
+                        ${pinBadge}
+                        <div class="doc-icon">${item.icon}</div>
+                        <div class="doc-info">
+                            <div class="doc-title">${item.title}</div>
+                            <div class="doc-desc">${item.desc}</div>
+                        </div>
+                    </a>`;
+            }).join('');
+            
+            html += `</div></div>`;
+            return html;
+        }).join('');
+        
     filterDocs();
 }
 
 async function loadDocs() {
     const cached = localStorage.getItem('speeksDocsData');
-    if (cached) try { renderDocs(globalDocsData = JSON.parse(cached)); } catch (e) {}
-    else document.getElementById('content-container').innerHTML = '<div class="empty-state">Syncing Data...</div>';
+    if (cached) {
+        try { 
+            globalDocsData = JSON.parse(cached);
+            renderDocs(globalDocsData); 
+        } catch (e) {}
+    } else {
+        document.getElementById('content-container').innerHTML = '<div class="empty-state">Syncing Data...</div>';
+    }
 
     try {
-        globalDocsData = await (await fetch(`${DOCS_URL}?v=${Date.now()}`)).json();
+        const response = await fetch(`${DOCS_URL}?v=${Date.now()}`);
+        globalDocsData = await response.json();
         localStorage.setItem('speeksDocsData', JSON.stringify(globalDocsData));
         renderDocs(globalDocsData);
-    } catch (e) { if (!cached) document.getElementById('content-container').innerHTML = '<div class="empty-state">Failed to load documents.</div>'; }
+    } catch (e) { 
+        if (!cached) {
+            document.getElementById('content-container').innerHTML = '<div class="empty-state">Failed to load documents.</div>'; 
+        }
+    }
 }
 
 function filterDocs() {
-    const search = document.getElementById('docSearch')?.value.toLowerCase() || "";
+    const searchInput = document.getElementById('docSearch');
+    const search = searchInput ? searchInput.value.toLowerCase() : "";
     let hasVis = false;
 
     document.querySelectorAll('.category-section').forEach(s => {
-        // Target just the header to check if it's the pinned section
         const catTitle = s.querySelector('.category-title')?.innerText.toLowerCase() || "";
         const isPinnedSection = catTitle.includes('pinned');
 
         if (isPinnedSection && search.length > 0) {
-            // Instantly hide the ENTIRE pinned section during a search
             s.classList.add('hidden');
-            // Ensure its nested cards don't trigger a "false positive" for results
             s.querySelectorAll('.doc-card').forEach(c => c.classList.add('hidden'));
         } else {
             let sectionHasVis = false;
@@ -531,38 +609,30 @@ function filterDocs() {
                 c.classList.toggle('hidden', !match);
                 if (match) sectionHasVis = true;
             });
-            // Hide the category title if no cards inside it match
             s.classList.toggle('hidden', !sectionHasVis);
             if (sectionHasVis) hasVis = true;
         }
     });
 
-    // Show or hide the "No Results" message
-    document.getElementById('noResults')?.classList.toggle('hidden', hasVis || search === '');
+    const noResults = document.getElementById('noResults');
+    if (noResults) noResults.classList.toggle('hidden', hasVis || search === '');
 }
 
-// --- 7. MODULE: MANAGER DASHBOARD ---
-let dynamicMonths = [], rawKPIData = [], monthlyKpiCache = {}, weeklyKpiCache = {}, liveVarianceDataCache = {}, hubDataCache = null, authFetchPromise = null;
+
+// --- 8. MODULE: AUTH & DASHBOARD CORE UTILITIES ---
+let dynamicMonths = [];
+let rawKPIData = [];
+let monthlyKpiCache = {};
+let weeklyKpiCache = {};
+let liveVarianceDataCache = {};
+let hubDataCache = null;
+let authFetchPromise = null;
 
 function startAuthFetch() { 
     authFetchPromise = fetch(`${AUTH_URL}?v=${Date.now()}`)
         .then(r => {
             if (r.ok) {
                 return r.json().then(data => {
-                    // Store in cache for INSTANT loads on future visits!
-                    localStorage.setItem('speeksAuthCache', JSON.stringify(data));
-                    return data;
-                });
-            }
-            return null;
-        })
-        .catch(() => null); 
-}function startAuthFetch() { 
-    authFetchPromise = fetch(`${AUTH_URL}?v=${Date.now()}`)
-        .then(r => {
-            if (r.ok) {
-                return r.json().then(data => {
-                    // Store in cache for INSTANT loads on future visits!
                     localStorage.setItem('speeksAuthCache', JSON.stringify(data));
                     return data;
                 });
@@ -584,11 +654,9 @@ async function checkPIN() {
     err.style.display = 'none';
 
     try {
-        // 1. Try to load from Cache first for INSTANT login
         let cachedData = localStorage.getItem('speeksAuthCache');
         let payload = cachedData ? JSON.parse(cachedData) : null;
         
-        // 2. If no cache exists yet, wait for the background fetch
         if (!payload) {
             payload = await authFetchPromise;
         }
@@ -615,8 +683,8 @@ async function checkPIN() {
             document.body.classList.add('is-authenticated');
             
             closeAllModals(); 
-            
             applyRoleBasedUI();
+            
             if (typeof initDashboardData === 'function') initDashboardData();
         } else {
             err.innerText = "Incorrect PIN. Please try again."; 
@@ -633,34 +701,61 @@ async function checkPIN() {
     }
 }
 
-function formatSmartValue(val, name) {
-    if (val === null || val === undefined || String(val).trim() === '') return '-';
-    let num = parseFloat(val), nameL = name.toLowerCase();
-    if (isNaN(num)) return String(val).trim();
-    if (nameL.match(/%|rate|variance|margin|gm|cogs/)) return `${num.toFixed(2).replace(/\.00$/, '')}%`;
-    const isCur = nameL.match(/sales|cost|refund|discount|profit|value|buying|confiscation/) || nameL === 'recycled inventory';       
-    if (isCur && !nameL.match(/ranking|score|reviews|#|returning|time|gm/)) return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num).replace(/\.00$/, '');
-    return new Intl.NumberFormat('en-US').format(num);
-}
-
 function generateSparklineSVG(dataArray) {
-    const valid = (dataArray || []).map(v => parseFloat(String(v).replace(/[$,%]/g, ''))).filter(n => !isNaN(n));
+    const valid = (dataArray || [])
+        .map(v => parseFloat(String(v).replace(/[$,%]/g, '')))
+        .filter(n => !isNaN(n));
+        
     if (!valid.length) return '';
-    const min = Math.min(...valid), range = Math.max(...valid) - min || 1;
-    return `<svg class="sparkline" viewBox="0 0 70 20"><path d="M ${valid.map((v, i) => `${2 + (i / (valid.length - 1)) * 66},${2 + 16 - ((v - min) / range) * 16}`).join(' L ')}"></path></svg>`;
+    
+    const min = Math.min(...valid);
+    const range = Math.max(...valid) - min || 1;
+    
+    const pathData = valid.map((v, i) => {
+        const x = 2 + (i / (valid.length - 1)) * 66;
+        const y = 2 + 16 - ((v - min) / range) * 16;
+        return `${x},${y}`;
+    }).join(' L ');
+    
+    return `<svg class="sparkline" viewBox="0 0 70 20"><path d="M ${pathData}"></path></svg>`;
 }
 
-function toggleCategory(el) { el.parentElement.classList.toggle('collapsed'); }
+function toggleCategory(el) { 
+    el.parentElement.classList.toggle('collapsed'); 
+}
 
 function groupKPIs(data) {
-    const cats = { "Buying Metrics": [], "Inventory": [], "Gross Sales": [], "Net Sales & Margins": [], "Sales Channels": [], "Shipping Costs": [], "eBay Performance": [], "Rankings & Reviews": [], "Recycled & Confiscated": [], "Other Metrics": [] };
+    const cats = { 
+        "Buying Metrics": [], 
+        "Inventory": [], 
+        "Gross Sales": [], 
+        "Net Sales & Margins": [], 
+        "Sales Channels": [], 
+        "Shipping Costs": [], 
+        "eBay Performance": [], 
+        "Rankings & Reviews": [], 
+        "Recycled & Confiscated": [], 
+        "Other Metrics": [] 
+    };
+    
     const ignore = ['ebay rank', 'top rated', 'cases closed'];
     let all = [];
-    if (Array.isArray(data)) data.forEach(item => item.metrics ? all.push(...item.metrics) : (item.name && all.push(item)));
+    
+    if (Array.isArray(data)) {
+        data.forEach(item => {
+            if (item.metrics) {
+                all.push(...item.metrics);
+            } else if (item.name) {
+                all.push(item);
+            }
+        });
+    }
+    
     all.forEach(m => {
         if (!m?.name) return;
         let n = m.name.toLowerCase().replace(/\s+/g, ' ').trim();
         if (ignore.some(iw => n.includes(iw))) return; 
+        
         if (n.match(/buying|buy vs|close rate|# of customers|buy value|# of items|returning|avg trans/)) cats["Buying Metrics"].push(m);
         else if (n.match(/inventory cost|% of inventory over/)) cats["Inventory"].push(m);
         else if (n.match(/gross sales|discount|refund|return/)) cats["Gross Sales"].push(m);
@@ -672,127 +767,341 @@ function groupKPIs(data) {
         else if (n.match(/recycled|confiscation/)) cats["Recycled & Confiscated"].push(m);
         else cats["Other Metrics"].push(m);
     });
-    return Object.keys(cats).map(c => ({ category: c, metrics: cats[c] })).filter(g => g.metrics.length > 0);
+    
+    return Object.keys(cats)
+        .map(c => ({ category: c, metrics: cats[c] }))
+        .filter(g => g.metrics.length > 0);
 }
 
+// --- 9. MODULE: MONTHLY KPI DASHBOARD ---
 async function fetchKPIData(isRetry = false) {
-    const store = document.getElementById('kpiStoreSelect')?.value, cont = document.getElementById('kpiDashboardContainer');
-    if(!cont) return;
+    const store = document.getElementById('kpiStoreSelect')?.value;
+    const cont = document.getElementById('kpiDashboardContainer');
+    
+    if (!cont) return;
 
-    const setDD = (p, c, arr) => {
-        const currP = p.options[p.selectedIndex]?.text, currC = c.options[c.selectedIndex]?.text;
-        p.innerHTML = ''; c.innerHTML = ''; arr.forEach((m, i) => { p.add(new Option(m, i)); c.add(new Option(m, i)); });
-        p.value = arr.indexOf(currP) !== -1 ? arr.indexOf(currP) : arr.length - 1; 
-        c.value = arr.indexOf(currC) !== -1 ? arr.indexOf(currC) : Math.max(0, arr.length - 2); 
+    // Helper to setup the Primary and Compare dropdowns
+    const setDD = (primarySelect, compareSelect, monthArray) => {
+        const currP = primarySelect.options[primarySelect.selectedIndex]?.text;
+        const currC = compareSelect.options[compareSelect.selectedIndex]?.text;
+        
+        primarySelect.innerHTML = ''; 
+        compareSelect.innerHTML = ''; 
+        
+        monthArray.forEach((m, i) => { 
+            primarySelect.add(new Option(m, i)); 
+            compareSelect.add(new Option(m, i)); 
+        });
+        
+        primarySelect.value = monthArray.indexOf(currP) !== -1 ? monthArray.indexOf(currP) : monthArray.length - 1; 
+        compareSelect.value = monthArray.indexOf(currC) !== -1 ? monthArray.indexOf(currC) : Math.max(0, monthArray.length - 2); 
     };
 
+    // Use cached data if available for instant loading
     if (monthlyKpiCache[store]) {
-        dynamicMonths = monthlyKpiCache[store].months; rawKPIData = monthlyKpiCache[store].data;
+        dynamicMonths = monthlyKpiCache[store].months; 
+        rawKPIData = monthlyKpiCache[store].data;
         setDD(document.getElementById('primaryMonthSelect'), document.getElementById('compareMonthSelect'), dynamicMonths);
         return renderKPIDashboard(); 
     }
     
     try {
-        const payload = await (await fetch(`${MONTHLY_KPI_URL}?store=${store}&v=${Date.now()}`)).json();
-        monthlyKpiCache[store] = { months: payload.months, data: groupKPIs(payload.data) };
-        dynamicMonths = monthlyKpiCache[store].months; rawKPIData = monthlyKpiCache[store].data;
+        const response = await fetch(`${MONTHLY_KPI_URL}?store=${store}&v=${Date.now()}`);
+        const payload = await response.json();
+        
+        monthlyKpiCache[store] = { 
+            months: payload.months, 
+            data: groupKPIs(payload.data) 
+        };
+        
+        dynamicMonths = monthlyKpiCache[store].months; 
+        rawKPIData = monthlyKpiCache[store].data;
+        
         setDD(document.getElementById('primaryMonthSelect'), document.getElementById('compareMonthSelect'), dynamicMonths);
         renderKPIDashboard();
-    } catch (e) { console.error("Monthly KPI fetch failed:", e); }
+    } catch (e) { 
+        console.error("Monthly KPI fetch failed:", e); 
+    }
 }
 
 function renderKPIDashboard() {
-    const store = document.getElementById('kpiStoreSelect').value, pIdx = document.getElementById('primaryMonthSelect').value, cIdx = document.getElementById('compareMonthSelect').value, cont = document.getElementById('kpiDashboardContainer');
-    document.getElementById('header-primary-label').innerText = dynamicMonths[pIdx]; document.getElementById('header-compare-label').innerText = dynamicMonths[cIdx];
+    const store = document.getElementById('kpiStoreSelect').value;
+    const pIdx = document.getElementById('primaryMonthSelect').value;
+    const cIdx = document.getElementById('compareMonthSelect').value;
+    const cont = document.getElementById('kpiDashboardContainer');
+    
+    document.getElementById('header-primary-label').innerText = dynamicMonths[pIdx]; 
+    document.getElementById('header-compare-label').innerText = dynamicMonths[cIdx];
+    
     const vId = `kpi-view-${store}-${pIdx}-${cIdx}`;
+    
+    // Hide all existing views
     Array.from(cont.children).forEach(c => c.style.display = 'none');
-    if (document.getElementById(vId)) return document.getElementById(vId).style.display = 'block';
+    
+    // If we've already built this specific comparison view, just show it
+    if (document.getElementById(vId)) {
+        return document.getElementById(vId).style.display = 'block';
+    }
 
     setTimeout(() => {
-        const newView = document.createElement('div'); newView.id = vId;
-        newView.innerHTML = rawKPIData.map(cat => `<div class="kpi-category"><div class="kpi-category-header" onclick="toggleCategory(this)">${cat.category}<span class="chevron">▼</span></div><div class="kpi-category-content">` + 
-            cat.metrics.map(m => {
-                const rP = m.values[pIdx], rC = m.values[cIdx], dNum = parseNum(rP) - parseNum(rC);
-                let dStr = m.name.toLowerCase().match(/%|rate|variance|margin|gm|cogs/) ? `${Math.abs(dNum).toFixed(2).replace(/\.00$/, '')}%` : formatSmartValue(Math.abs(dNum), m.name);
-                let bClass = 'delta-neutral', sign = '';
-                if (Math.abs(dNum) > 0.001) { sign = dNum > 0 ? '+' : '-'; bClass = dNum > 0 ? (m.inverse ? 'delta-neg' : 'delta-pos') : (m.inverse ? 'delta-pos' : 'delta-neg'); } else dStr = '0';
-                return `<div class="kpi-row"><div class="kpi-name-col"><span class="kpi-name">${m.name}</span>${generateSparklineSVG(m.values)}</div><div class="kpi-value-col kpi-primary-val">${formatSmartValue(rP, m.name)}</div><div class="kpi-value-col" style="color: #888;">${formatSmartValue(rC, m.name)}</div><div class="kpi-delta-col"><span class="delta-badge ${bClass}">${sign}${dStr}</span></div></div>`;
-            }).join('') + `</div></div>`).join('');
+        const newView = document.createElement('div'); 
+        newView.id = vId;
+        
+        let html = '';
+        
+        rawKPIData.forEach(cat => {
+            html += `
+            <div class="kpi-category">
+                <div class="kpi-category-header" onclick="toggleCategory(this)">
+                    ${cat.category}
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="kpi-category-content">`;
+                
+            cat.metrics.forEach(m => {
+                const rP = m.values[pIdx];
+                const rC = m.values[cIdx];
+                const dNum = parseNum(rP) - parseNum(rC);
+                
+                let dStr = m.name.toLowerCase().match(/%|rate|variance|margin|gm|cogs/) 
+                    ? `${Math.abs(dNum).toFixed(2).replace(/\.00$/, '')}%` 
+                    : formatSmartValue(Math.abs(dNum), m.name);
+                    
+                let bClass = 'delta-neutral';
+                let sign = '';
+                
+                if (Math.abs(dNum) > 0.001) { 
+                    sign = dNum > 0 ? '+' : '-'; 
+                    bClass = dNum > 0 ? (m.inverse ? 'delta-neg' : 'delta-pos') : (m.inverse ? 'delta-pos' : 'delta-neg'); 
+                } else {
+                    dStr = '0';
+                }
+                
+                html += `
+                <div class="kpi-row">
+                    <div class="kpi-name-col">
+                        <span class="kpi-name">${m.name}</span>
+                        ${generateSparklineSVG(m.values)}
+                    </div>
+                    <div class="kpi-value-col kpi-primary-val">${formatSmartValue(rP, m.name)}</div>
+                    <div class="kpi-value-col" style="color: #888;">${formatSmartValue(rC, m.name)}</div>
+                    <div class="kpi-delta-col">
+                        <span class="delta-badge ${bClass}">${sign}${dStr}</span>
+                    </div>
+                </div>`;
+            });
+            
+            html += `</div></div>`;
+        });
+        
+        newView.innerHTML = html;
         cont.appendChild(newView);
     }, 10);
 }
 
-function formatVariancePct(num) { return Math.abs(num) < 0.001 ? '0.00%' : `${num < 0 ? '-' : '+'}${Math.abs(num).toFixed(2)}%`; }
+// --- 10. MODULE: LIVE VARIANCE REPORTS ---
+function formatVariancePct(num) { 
+    return Math.abs(num) < 0.001 ? '0.00%' : `${num < 0 ? '-' : '+'}${Math.abs(num).toFixed(2)}%`; 
+}
 
 function createVarianceStoreCard(sKey) {
     if (sKey === "NONE" || !liveVarianceDataCache[sKey]?.employees) return '';
-    const d = liveVarianceDataCache[sKey];
-    let isNew = d.fileDate && (Date.now() - d.fileDate) < 604800000;
     
-    return `<div style="border: 1px solid #eee; border-radius: 12px; background: white; overflow: hidden;"><div style="background: #f9fafb; padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: flex-start;"><div style="display: flex; flex-direction: column; gap: 8px;"><div style="display: flex; align-items: center;"><span style="font-size: 16px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase;">${sKey} TOTAL</span>${isNew ? `<div class="notif-dot active" style="display:block; position:relative; margin-left: 10px; width: 10px; height: 10px; border-width: 2px;" title="New Report Added This Week"></div>` : ''}</div></div><span class="delta-badge ${d.total < 0 ? 'delta-neg' : (d.total > 0 ? 'delta-pos' : 'delta-neutral')}" style="font-size: 16px; padding: 8px 14px;">${formatVariancePct(d.total)}</span></div><div class="vw-scroll-area" style="display: flex; flex-direction: column;">${d.employees.map(e => `<div class="kpi-row" style="padding: 0 20px; height: 48px; grid-template-columns: 1fr auto; border-top: 1px solid #f5f5f5; border-radius: 0; border-left: none; border-right: none; margin: 0; background: white;"><span class="kpi-name">${e.name}</span><span class="delta-badge ${e.val < 0 ? 'delta-neg' : (e.val > 0 ? 'delta-pos' : 'delta-neutral')}">${formatVariancePct(e.val)}</span></div>`).join('')}</div></div>`;
+    const d = liveVarianceDataCache[sKey];
+    const isNew = d.fileDate && (Date.now() - d.fileDate) < 604800000;
+    
+    const totalColorClass = d.total < 0 ? 'delta-neg' : (d.total > 0 ? 'delta-pos' : 'delta-neutral');
+    const badgeHtml = isNew ? `<div class="notif-dot active" style="display:block; position:relative; margin-left: 10px; width: 10px; height: 10px; border-width: 2px;" title="New Report Added This Week"></div>` : '';
+
+    let html = `
+    <div style="border: 1px solid #eee; border-radius: 12px; background: white; overflow: hidden;">
+        <div style="background: #f9fafb; padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; align-items: center;">
+                    <span style="font-size: 16px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase;">${sKey} TOTAL</span>
+                    ${badgeHtml}
+                </div>
+            </div>
+            <span class="delta-badge ${totalColorClass}" style="font-size: 16px; padding: 8px 14px;">${formatVariancePct(d.total)}</span>
+        </div>
+        <div class="vw-scroll-area" style="display: flex; flex-direction: column;">`;
+        
+    d.employees.forEach(e => {
+        const empColorClass = e.val < 0 ? 'delta-neg' : (e.val > 0 ? 'delta-pos' : 'delta-neutral');
+        html += `
+            <div class="kpi-row" style="padding: 0 20px; height: 48px; grid-template-columns: 1fr auto; border-top: 1px solid #f5f5f5; border-radius: 0; border-left: none; border-right: none; margin: 0; background: white;">
+                <span class="kpi-name">${e.name}</span>
+                <span class="delta-badge ${empColorClass}">${formatVariancePct(e.val)}</span>
+            </div>`;
+    });
+    
+    html += `</div></div>`;
+    return html;
 }
 
 function renderVariance() {
-    const p = document.getElementById('vw-primary')?.value, c = document.getElementById('vw-compare')?.value, cont = document.getElementById('vw-dashboard-container');
-    if(!cont || !p) return;
+    const p = document.getElementById('vw-primary')?.value;
+    const c = document.getElementById('vw-compare')?.value;
+    const cont = document.getElementById('vw-dashboard-container');
+    
+    if (!cont || !p) return;
+    
     cont.style.gridTemplateColumns = c === "NONE" ? "1fr" : "1fr 1fr"; 
     cont.innerHTML = createVarianceStoreCard(p) + createVarianceStoreCard(c);
     
-    // Inject the date into the unified header instead of the cards
     const dateSpan = document.getElementById('variance-date-display');
     if (dateSpan && liveVarianceDataCache[p]) {
         const d = liveVarianceDataCache[p];
         let pTxt = "Current";
+        
         if (d.fileName) {
-            pTxt = d.fileName.replace(new RegExp(`${p}\\s*`, 'i'), '').trim().replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/ig, m => ({"Jan":"January","Feb":"February","Mar":"March","Apr":"April","May":"May","Jun":"June","Jul":"July","Aug":"August","Sep":"September","Oct":"October","Nov":"November","Dec":"December"}[m.charAt(0).toUpperCase() + m.slice(1).toLowerCase()] || m));
+            pTxt = d.fileName
+                .replace(new RegExp(`${p}\\s*`, 'i'), '')
+                .trim()
+                .replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/ig, m => {
+                    const fullMonths = {"Jan":"January","Feb":"February","Mar":"March","Apr":"April","May":"May","Jun":"June","Jul":"July","Aug":"August","Sep":"September","Oct":"October","Nov":"November","Dec":"December"};
+                    return fullMonths[m.charAt(0).toUpperCase() + m.slice(1).toLowerCase()] || m;
+                });
         }
         dateSpan.innerText = pTxt;
     }
+
+    // --- BULLETPROOF HEIGHT SYNC ENGINE ---
+    setTimeout(() => {
+        const varianceCard = cont.closest('.card');
+        const kpiCard = document.querySelector('.kpi-master-card');
+        
+        if (varianceCard && kpiCard) {
+            const syncHeights = () => {
+                if (window.innerWidth > 1100) {
+                    // 1. Temporarily stop the grid from stretching them so we can measure the TRUE height
+                    varianceCard.style.alignSelf = 'start';
+                    kpiCard.style.alignSelf = 'start';
+                    
+                    // 2. Strip any fixed heights to let them breathe
+                    varianceCard.style.height = 'auto';
+                    kpiCard.style.height = 'auto';
+                    
+                    // 3. Measure the TRUE, content-only height of the Variance card
+                    const targetHeight = varianceCard.offsetHeight;
+                    
+                    // 4. Force the KPI card to match that exact pixel height!
+                    kpiCard.style.setProperty('height', targetHeight + 'px', 'important');
+                } else {
+                    // Mobile behavior: Let them stack naturally
+                    varianceCard.style.alignSelf = 'stretch';
+                    kpiCard.style.alignSelf = 'stretch';
+                    varianceCard.style.height = 'auto';
+                    kpiCard.style.setProperty('height', '500px', 'important'); 
+                }
+            };
+            
+            syncHeights();
+            
+            // If the user resizes their window, re-sync the heights!
+            window.addEventListener('resize', syncHeights);
+        }
+    }, 50); // 50ms delay gives the browser time to paint the HTML before we measure it
 }
 
 async function fetchVarianceData() {
-    const cont = document.getElementById('vw-dashboard-container'); if(!cont) return;
+    const cont = document.getElementById('vw-dashboard-container'); 
+    if (!cont) return;
+    
     try {
-        const d = await (await fetch(`${VARIANCE_API_URL}?v=${Date.now()}`)).json();
-        if (d.error) return cont.innerHTML = `<div style="padding: 40px; text-align: center; color: #dc2626; font-weight: 600; grid-column: 1 / -1;">Error: ${d.error}</div>`;
-        liveVarianceDataCache = d; renderVariance();
-    } catch (e) { cont.innerHTML = '<div style="padding: 40px; text-align: center; color: #dc2626; font-weight: 600; grid-column: 1 / -1;">Failed to sync Variance data.</div>'; }
+        const response = await fetch(`${VARIANCE_API_URL}?v=${Date.now()}`);
+        const d = await response.json();
+        
+        if (d.error) {
+            cont.innerHTML = `<div style="padding: 40px; text-align: center; color: #dc2626; font-weight: 600; grid-column: 1 / -1;">Error: ${d.error}</div>`;
+            return;
+        }
+        
+        liveVarianceDataCache = d; 
+        renderVariance();
+    } catch (e) { 
+        cont.innerHTML = '<div style="padding: 40px; text-align: center; color: #dc2626; font-weight: 600; grid-column: 1 / -1;">Failed to sync Variance data.</div>'; 
+    }
 }
 
+// --- 11. MODULE: WEEKLY KPI GRID ---
 function formatTime(val) {
-    if (!val) return ""; let s = String(val).trim();
-    if (!s.includes(':')) return s.includes('.') ? s.split('.')[0] + ':' + (s.split('.')[1] + '0').substring(0,2) : (!isNaN(s) ? s + ':00' : s);
+    if (!val) return ""; 
+    let s = String(val).trim();
+    if (!s.includes(':')) {
+        return s.includes('.') ? s.split('.')[0] + ':' + (s.split('.')[1] + '0').substring(0,2) : (!isNaN(s) ? s + ':00' : s);
+    }
     return s.length <= 5 ? s : s;
 }
 
 function checkRule(r, v) {
-    if (!v) return false; let n = parseNum(v);
-    if (r === 'margin') return n < 51; if (r === 'conversion') return n < 85; if (r === 'nodeals') return n > 7;
-    if (r === 'time') return (String(v).includes(':') ? parseInt(v.split(':')[0]) + (parseInt(v.split(':')[1])/60) : n) > 13;
+    if (!v) return false; 
+    let n = parseNum(v);
+    
+    if (r === 'margin') return n < 51; 
+    if (r === 'conversion') return n < 85; 
+    if (r === 'nodeals') return n > 7;
+    if (r === 'time') {
+        const timeVal = String(v).includes(':') ? parseInt(v.split(':')[0]) + (parseInt(v.split(':')[1])/60) : n;
+        return timeVal > 13;
+    }
     return false;
 }
 
 async function fetchWeeklyKPIs() {
-    const cont = document.getElementById('weeklyKpiContainer'), store = document.getElementById('weeklyKpiStoreSelect')?.value, pB = document.getElementById('weeklyKpiPeriod');
+    const cont = document.getElementById('weeklyKpiContainer');
+    const store = document.getElementById('weeklyKpiStoreSelect')?.value;
+    const pB = document.getElementById('weeklyKpiPeriod');
+    
     if(!cont || !store) return;
-    const vId = `weekly-view-${store}`; Array.from(cont.children).forEach(c => c.style.display = 'none');
+    
+    // Clean up the parent container to prevent grid-in-grid conflicts
+    cont.style.display = 'block'; 
+    cont.classList.remove('weekly-kpi-grid');
+    
+    const vId = `weekly-view-${store}`; 
+    Array.from(cont.children).forEach(c => c.style.display = 'none');
     
     if (document.getElementById(vId)) {
-        document.getElementById(vId).style.display = 'contents'; 
-        if (weeklyKpiCache[store]?.periodText) { pB.innerText = weeklyKpiCache[store].periodText; pB.style.display = "inline-block"; } else pB.style.display = "none"; return; 
+        document.getElementById(vId).style.display = 'grid'; 
+        if (weeklyKpiCache[store]?.periodText) { 
+            pB.innerText = weeklyKpiCache[store].periodText; 
+            pB.style.display = "inline-block"; 
+        } else {
+            pB.style.display = "none";
+        }
+        return; 
     }
 
-    let msg = document.getElementById('weekly-fetch-msg') || Object.assign(document.createElement('div'), { id: 'weekly-fetch-msg', style: 'padding: 40px; text-align: center; color: #888; font-weight: 600; grid-column: 1 / -1;' });
-    if(!document.getElementById('weekly-fetch-msg')) cont.appendChild(msg); msg.innerText = 'Syncing Data...'; msg.style.display = 'block';
+    let msg = document.getElementById('weekly-fetch-msg');
+    if (!msg) {
+        msg = document.createElement('div');
+        msg.id = 'weekly-fetch-msg';
+        msg.style.cssText = 'padding: 40px; text-align: center; color: #888; font-weight: 600;';
+        cont.appendChild(msg);
+    }
+    
+    msg.innerText = 'Syncing Data...'; 
+    msg.style.display = 'block';
 
     try {
-        const d = await (await fetch(`${WEEKLY_KPI_URL}?store=${store}&time=4-Week&v=${Date.now()}`)).json();
-        let sAvg = {}, emps = [], fIdx = -1, sIdx = d.findLastIndex(r => String(r[0]).trim().toLowerCase() === "store");
+        const response = await fetch(`${WEEKLY_KPI_URL}?store=${store}&time=4-Week&v=${Date.now()}`);
+        const d = await response.json();
+        
+        let sAvg = {};
+        let emps = [];
+        let fIdx = -1;
+        let sIdx = d.findLastIndex(r => String(r[0]).trim().toLowerCase() === "store" || String(r[0]).trim().toLowerCase() === "store total");
+        
         if (sIdx !== -1) {
-            let st = d[sIdx]; sAvg = { buyVal: st[2], buyMargin: st[5], customers: st[6], conversion: st[8], time: formatTime(st[12]), noDeals: st[14], listed: st[20] };
+            let st = d[sIdx]; 
+            sAvg = { buyVal: st[2], buyMargin: st[5], customers: st[6], conversion: st[8], time: formatTime(st[12]), noDeals: st[14], listed: st[20] };
+            
             for (let i = Math.max(0, sIdx - 6); i <= Math.min(d.length - 1, sIdx + 6); i++) {
                 if (i === sIdx) continue;
-                let n = String(d[i][0]).trim(), lN = n.toLowerCase();
+                let n = String(d[i][0]).trim();
+                let lN = n.toLowerCase();
+                
                 if (n && !["name", "employee", "store", "store total", "ovl", "lee", "wsp", "mpl", "bal"].includes(lN) && !lN.includes("average") && !lN.includes("week")) {
                     if (String(d[i][2]).trim() !== "" || String(d[i][20]).trim() !== "") {
                         if (fIdx === -1) fIdx = i; 
@@ -805,23 +1114,111 @@ async function fetchWeeklyKPIs() {
         let pTxt = "";
         if (fIdx !== -1) {
             let hR = d[fIdx - 3] || d[fIdx - 2];
-            if (hR && hR[2] && hR[4] && hR[6]) pTxt = `${String(hR[2]).replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/ig, m => ({"Jan":"January","Feb":"February","Mar":"March","Apr":"April","May":"May","Jun":"June","Jul":"July","Aug":"August","Sep":"September","Oct":"October","Nov":"November","Dec":"December"}[m.charAt(0).toUpperCase() + m.slice(1).toLowerCase()] || m))} ${hR[4]}-${hR[6]}`;
+            if (hR && hR[2] && hR[4] && hR[6]) {
+                const getOrdinal = (n) => {
+                    let val = parseInt(String(n).replace(/\D/g, ''));
+                    if (isNaN(val)) return n;
+                    let s = ["th", "st", "nd", "rd"], v = val % 100;
+                    return val + (s[(v - 20) % 10] || s[v] || s[0]);
+                };
+                
+                const monthNames = {"Jan":"January","Feb":"February","Mar":"March","Apr":"April","May":"May","Jun":"June","Jul":"July","Aug":"August","Sep":"September","Oct":"October","Nov":"November","Dec":"December"};
+                let monthName = String(hR[2]).replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/ig, m => monthNames[m.charAt(0).toUpperCase() + m.slice(1).toLowerCase()] || m);
+                
+                let startDay = getOrdinal(hR[4]);
+                let endDay = getOrdinal(hR[6]);
+                
+                pTxt = `${monthName} ${startDay} - ${endDay}`;
+            }
         }
-        weeklyKpiCache[store] = { periodText: pTxt }; pB.innerText = pTxt; pB.style.display = pTxt ? "inline-block" : "none";
+        
+        weeklyKpiCache[store] = { periodText: pTxt }; 
+        pB.innerText = pTxt; 
+        pB.style.display = pTxt ? "inline-block" : "none";
 
-        if (!emps.length) { msg.innerText = 'No employee data.'; msg.style.color = '#dc2626'; return; }
+        if (!emps.length) { 
+            msg.innerText = 'No employee data.'; 
+            msg.style.color = '#dc2626'; 
+            return; 
+        }
 
-        const bCol = (t, s1, sb, e1, eb, rN, pB) => `<div style="border: 1px solid #eee; border-radius: 12px; background: white; overflow: hidden;"><div style="background: #f9fafb; padding: 15px; border-bottom: 1px solid #eee; text-align: center;"><h4 style="font-size: 12px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px; white-space: nowrap;">${t}</h4><div style="display: grid; grid-template-columns: 1fr 75px 55px; align-items: center; background: white; padding: 0 12px; height: 40px; border-radius: 8px; border: 1px solid #eee; gap: 8px;"><span style="font-size: 11px; font-weight: 800; color: #888; text-align: left;">STORE TOTAL</span><span style="font-size: 13px; font-weight: 800; text-align: right; white-space: nowrap; ${checkRule(rN, s1) ? 'color: var(--red-alert);' : 'color: var(--slate-charcoal);'}">${s1 || ''}</span>${eb && sb ? `<span style="display: flex; justify-content: flex-end;"><span class="delta-badge ${checkRule(rN, sb) ? 'delta-neg' : 'delta-neutral'}">${sb}${pB && !String(sb).includes('%') ? '%' : ''}</span></span>` : '<span></span>'}</div></div><div style="display: flex; flex-direction: column;">${emps.map(e => `<div class="kpi-row" style="display: grid; grid-template-columns: 1fr 75px 55px; align-items: center; padding: 0 15px; height: 48px; border-top: 1px solid #f5f5f5; border-radius: 0; background: white; margin: 0; border-left: none; border-right: none; gap: 8px;"><span class="kpi-name" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${e.name}</span><span style="text-align: right; font-size: 12px; font-weight: ${checkRule(rN, e[e1]) ? '900' : '700'}; color: ${checkRule(rN, e[e1]) ? 'var(--red-alert)' : '#555'}; white-space: nowrap;">${e[e1] || ''}</span>${eb && e[eb] ? `<span style="display: flex; justify-content: flex-end;"><span class="delta-badge ${checkRule(rN, e[eb]) ? 'delta-neg' : 'delta-neutral'}">${e[eb]}${pB && !String(e[eb]).includes('%') ? '%' : ''}</span></span>` : '<span></span>'}</div>`).join('')}</div></div>`;
+        msg.style.display = 'none'; 
+        const nV = document.createElement('div'); 
+        nV.id = vId; 
+        
+        // BULLETPROOF GRID OVERRIDE
+        nV.className = 'weekly-kpi-grid';
+        nV.style.display = 'grid';
+        nV.style.gap = '20px';
+        nV.style.alignItems = 'start';
+        
+        // This ensures the columns auto-stack if you look at it on a phone vs a desktop!
+        const applyGridColumns = () => {
+            if (window.innerWidth > 1100) nV.style.gridTemplateColumns = 'repeat(5, 1fr)';
+            else if (window.innerWidth > 768) nV.style.gridTemplateColumns = 'repeat(2, 1fr)';
+            else nV.style.gridTemplateColumns = '1fr';
+        };
+        applyGridColumns();
+        window.addEventListener('resize', applyGridColumns);
 
-        msg.style.display = 'none'; const nV = document.createElement('div'); nV.id = vId; nV.style.display = 'contents';
-        nV.innerHTML = bCol('Buying Performance', sAvg.buyVal, sAvg.buyMargin, 'buyVal', 'buyMargin', 'margin', true) + bCol('Customer Conversion', sAvg.customers, sAvg.conversion, 'customers', 'conversion', 'conversion', true) + bCol('No Deals', '', sAvg.noDeals, '', 'noDeals', 'nodeals', false) + bCol('Avg Trans. Time', '', sAvg.time, '', 'time', 'time', false) + bCol('Processed / Listed', sAvg.listed, '', 'listed', '', null, false);
+        // HTML Column Builder Helper
+        const buildColHtml = (title, storeVal, storeBadgeVal, empKey, empBadgeKey, ruleName, isPercentBadge) => {
+            let html = `
+            <div style="border: 1px solid #eee; border-radius: 12px; background: white; overflow: hidden; display: flex; flex-direction: column;">
+                <div style="background: #f9fafb; padding: 15px; border-bottom: 1px solid #eee; text-align: center;">
+                    <h4 style="font-size: 12px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px; white-space: nowrap;">${title}</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 75px 55px; align-items: center; background: white; padding: 0 12px; height: 40px; border-radius: 8px; border: 1px solid #eee; gap: 8px;">
+                        <span style="font-size: 11px; font-weight: 800; color: #888; text-align: left;">STORE TOTAL</span>
+                        <span style="font-size: 13px; font-weight: 800; text-align: right; white-space: nowrap; ${checkRule(ruleName, storeVal) ? 'color: var(--red-alert);' : 'color: var(--slate-charcoal);'}">${storeVal || ''}</span>`;
+                        
+            if (empBadgeKey && storeBadgeVal) {
+                html += `<span style="display: flex; justify-content: flex-end;"><span class="delta-badge ${checkRule(ruleName, storeBadgeVal) ? 'delta-neg' : 'delta-neutral'}">${storeBadgeVal}${isPercentBadge && !String(storeBadgeVal).includes('%') ? '%' : ''}</span></span>`;
+            } else {
+                html += `<span></span>`;
+            }
+            
+            html += `</div></div><div style="display: flex; flex-direction: column;">`;
+            
+            emps.forEach(e => {
+                html += `
+                <div class="kpi-row" style="display: grid; grid-template-columns: 1fr 75px 55px; align-items: center; padding: 0 15px; height: 48px; border-top: 1px solid #f5f5f5; border-radius: 0; background: white; margin: 0; border-left: none; border-right: none; gap: 8px;">
+                    <span class="kpi-name" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${e.name}</span>
+                    <span style="text-align: right; font-size: 12px; font-weight: ${checkRule(ruleName, e[empKey]) ? '900' : '700'}; color: ${checkRule(ruleName, e[empKey]) ? 'var(--red-alert)' : '#555'}; white-space: nowrap;">${e[empKey] || ''}</span>`;
+                    
+                if (empBadgeKey && e[empBadgeKey]) {
+                    html += `<span style="display: flex; justify-content: flex-end;"><span class="delta-badge ${checkRule(ruleName, e[empBadgeKey]) ? 'delta-neg' : 'delta-neutral'}">${e[empBadgeKey]}${isPercentBadge && !String(e[empBadgeKey]).includes('%') ? '%' : ''}</span></span>`;
+                } else {
+                    html += `<span></span>`;
+                }
+                html += `</div>`;
+            });
+            
+            html += `</div></div>`;
+            return html;
+        };
+        
+        // Assemble the 5 Columns perfectly!
+        nV.innerHTML = 
+            buildColHtml('Buying Performance', sAvg.buyVal, sAvg.buyMargin, 'buyVal', 'buyMargin', 'margin', true) + 
+            buildColHtml('Customer Conversion', sAvg.customers, sAvg.conversion, 'customers', 'conversion', 'conversion', true) + 
+            buildColHtml('No Deals', '', sAvg.noDeals, '', 'noDeals', 'nodeals', false) + 
+            buildColHtml('Avg Trans. Time', '', sAvg.time, '', 'time', 'time', false) + 
+            buildColHtml('Processed / Listed', sAvg.listed, '', 'listed', '', null, false);
+            
         cont.appendChild(nV);
-    } catch (e) { msg.innerText = 'Failed to load Weekly KPI.'; msg.style.color = '#dc2626'; }
+        
+    } catch (e) { 
+        msg.innerText = 'Failed to load Weekly KPI.'; 
+        msg.style.color = '#dc2626'; 
+    }
 }
+
+// --- 12. MODULE: HUB DATA & LIVE DASHBOARDS ---
 
 async function fetchHubData() {
     try {
-        hubDataCache = await (await fetch(`${HUB_URL}?v=${Date.now()}`)).json();
+        const response = await fetch(`${HUB_URL}?v=${Date.now()}`);
+        hubDataCache = await response.json();
         
         if (document.getElementById('bs-buy-val')) renderBuyingSales();
         if (document.getElementById('rev-list')) renderLiveData(hubDataCache);
@@ -841,24 +1238,21 @@ async function fetchHubData() {
 }
 
 function renderBuyingSales() {
-    if(!hubDataCache) return; 
+    if (!hubDataCache) return; 
     
-    // Safely get the selected store (Defaults to OVL if hidden)
     const storeSelect = document.getElementById('bsStoreSelect');
     const store = storeSelect ? storeSelect.value.toLowerCase() : 'ovl'; 
-    if(!store) return;
+    if (!store) return;
 
     // --- BUYING SIDE MATH ---
     let bV = parseNum(hubDataCache[`${store}BuyVal`]);
     let bP = parseNum(hubDataCache[`${store}BuyProj`]);
     let mN = parseNum(hubDataCache[`${store}BuyMargin`]);
     
-    // Convert decimal to percentage if needed
     if (String(hubDataCache[`${store}BuyMargin`]).includes('%') === false && mN > 0 && mN <= 1.5) {
         mN = mN * 100;
     }
 
-    // Update ALL Buying elements on the page
     document.querySelectorAll('#bs-buy-val').forEach(el => el.innerText = `$${Math.round(bV).toLocaleString()}`);
     document.querySelectorAll('#bs-buy-proj').forEach(el => el.innerText = `$${Math.round(bP).toLocaleString()}`);
     document.querySelectorAll('#bs-buy-margin').forEach(el => {
@@ -870,14 +1264,12 @@ function renderBuyingSales() {
     let p = parseNum(hubDataCache[`${store}Pct`]); 
     p = Math.round(p > 0 && p <= 1 && !String(hubDataCache[`${store}Pct`]).includes('%') ? p * 100 : p);
     
-    // Update ALL Sales elements on the page
     document.querySelectorAll('#bs-pct').forEach(el => el.innerText = p + '%');
     document.querySelectorAll('#bs-goal').forEach(el => el.innerText = `$${Math.round(parseNum(hubDataCache[`${store}Goal`])).toLocaleString()}`);
     document.querySelectorAll('#bs-t-gp').forEach(el => el.innerText = `$${Math.round(parseNum(hubDataCache[`${store}TrackGP`])).toLocaleString()}`);
     
-    // Update ALL Rings
     document.querySelectorAll('#bs-bar').forEach(bar => {
-        bar.style.strokeDashoffset = 402 - (Math.min(p, 100)/100)*402; 
+        bar.style.strokeDashoffset = 402 - (Math.min(p, 100)/100) * 402; 
         bar.style.stroke = p < 100 ? "var(--red-alert)" : "var(--sage-professional)";
     });
 
@@ -886,7 +1278,6 @@ function renderBuyingSales() {
     const rev = parseNum(hubDataCache[`${store}Rev`]);
     const gp = parseNum(hubDataCache[`${store}GP`]);
     
-    // Look for the new App Script value, or fallback to manual math (GP / Rev)
     if (hubDataCache[`${store}SellMargin`]) {
         let smRaw = parseNum(hubDataCache[`${store}SellMargin`]);
         sellMarginNum = (!String(hubDataCache[`${store}SellMargin`]).includes('%') && smRaw > 0 && smRaw <= 1.5) ? (smRaw * 100) : smRaw;
@@ -894,39 +1285,1930 @@ function renderBuyingSales() {
         sellMarginNum = (gp / rev) * 100;
     }
     
-    // Update ALL Sell Margin badges
     document.querySelectorAll('#bs-sell-margin').forEach(smb => {
         smb.innerText = sellMarginNum.toFixed(1) + '%';
         smb.className = sellMarginNum >= 55.0 ? 'delta-badge delta-pos' : 'delta-badge delta-neg';
     });
 }
 
-async function preloadAllStores() {
-    if(!document.getElementById('kpiDashboardContainer')) return;
-    ["OVL", "LEE", "WSP", "MPL", "BAL"].forEach(async s => { if (!monthlyKpiCache[s]) try { const p = await (await fetch(`${MONTHLY_KPI_URL}?store=${s}&v=${Date.now()}`)).json(); if (!p.error) monthlyKpiCache[s] = { months: p.months, data: groupKPIs(p.data) }; } catch(e) {} });
+function renderLiveData(d) {
+    if (!d) return;
+    
+    // Update the progress rings
+    ['ovl', 'lee', 'wsp', 'MPL', 'BAL'].forEach(id => {
+        let pN = document.getElementById(`${id}-pct`); 
+        if (!pN) return;
+        
+        let p = Math.round(d[`${id}Pct`] || 0); 
+        pN.innerText = p + '%'; 
+        
+        document.getElementById(`${id}-goal`).innerText = `Goal: $${Math.round(d[`${id}Goal`] || 0).toLocaleString()}`; 
+        document.getElementById(`${id}-t-gp`).innerText = `$${Math.round(d[`${id}TrackGP`] || 0).toLocaleString()}`;
+        
+        setTimeout(() => { 
+            let b = document.getElementById(`${id}-bar`); 
+            if (b) { 
+                b.style.strokeDashoffset = 402 - (Math.min(p, 100)/100)*402; 
+                b.style.stroke = p < 100 ? "var(--red-alert)" : "var(--sage-professional)"; 
+            } 
+        }, 50);
+    });
+
+    // Update the Revenue and GP Leaderboards
+    if (document.getElementById('rev-list')) {
+        const sArr = [
+            {n:'OVL', r:d.ovlRev, g:d.ovlGP}, 
+            {n:'LEE', r:d.leeRev, g:d.leeGP}, 
+            {n:'WSP', r:d.wspRev, g:d.wspGP}
+        ];
+        
+        const buildLbRow = (s, i, val) => `
+            <div class="lb-row">
+                <div class="lb-rank ${i === 0 ? 'lb-gold' : ''}">#${i + 1}</div>
+                <div class="lb-name">${s.n}</div>
+                <div class="lb-val">$${Math.round(val).toLocaleString()}</div>
+            </div>`;
+
+        // Revenue List
+        document.getElementById('rev-list').innerHTML = [...sArr]
+            .sort((a,b) => b.r - a.r)
+            .map((s,i) => buildLbRow(s, i, s.r))
+            .join('');
+            
+        // GP List
+        document.getElementById('gp-list').innerHTML = [...sArr]
+            .sort((a,b) => b.g - a.g)
+            .map((s,i) => buildLbRow(s, i, s.g))
+            .join('');
+            
+        // Update Sync Time
+        const n = new Date(); 
+        const formattedTime = `${n.getHours() % 12 || 12}:${String(n.getMinutes()).padStart(2,'0')} ${n.getHours() >= 12 ? 'PM' : 'AM'}`;
+        document.getElementById('lastSyncedText').innerText = `Last Synced: ${formattedTime}`;
+    }
+}
+
+// --- 13. MODULE: CHARTS & LEADERBOARDS ---
+let mainChartInstance = null;
+let leaderboardChartInstance = null;
+let currentLeaderboardMetric = 'Revenue'; 
+let cachedLeaderboardData = null; 
+let currentTimeframe = '4-Week'; 
+let currentChartMode = 'averages';
+let kpiChartCache = JSON.parse(localStorage.getItem('speeksKpiChartCache')) || { '4-Week': null, 'Monthly': null };
+
+function switchPageTab(tab) {
+    ['trends', 'records'].forEach(t => { 
+        document.getElementById('pane-' + t)?.classList.toggle('active', t === tab); 
+        document.getElementById('tab-btn-' + t)?.classList.toggle('active', t === tab); 
+    });
+    if (tab === 'records') renderRecords();
+}
+
+function setChartMode(mode) {
+    currentChartMode = mode;
+    document.getElementById('btn-chart-avg')?.classList.toggle('active', mode === 'averages');
+    document.getElementById('btn-chart-emp')?.classList.toggle('active', mode === 'employees');
+    loadKpiData(); 
+}
+
+function setTimeframe(t) { 
+    currentTimeframe = t; 
+    document.getElementById('btn-4week')?.classList.toggle('active', t === '4-Week'); 
+    document.getElementById('btn-monthly')?.classList.toggle('active', t === 'Monthly'); 
+    loadKpiData(); 
+}
+
+function switchLeaderboardMetric(metric) {
+    currentLeaderboardMetric = metric;
+    
+    const revBtn = document.getElementById('lb-tab-rev');
+    const gpBtn = document.getElementById('lb-tab-gp');
+    
+    if (revBtn && gpBtn) {
+        revBtn.classList.toggle('active', metric === 'Revenue');
+        revBtn.style.color = metric === 'Revenue' ? 'var(--slate-charcoal)' : '#a0aab2';
+        
+        gpBtn.classList.toggle('active', metric === 'GP');
+        gpBtn.style.color = metric === 'GP' ? 'var(--slate-charcoal)' : '#a0aab2';
+    }
+    
+    drawLeaderboard(); 
+}
+
+function loadKpiData() { 
+    const mSelect = document.getElementById('metricSelector');
+    if (!mSelect) return;
+    
+    const m = mSelect.value;
+    const loader = document.getElementById('chartLoading');
+    
+    if (loader) {
+        loader.style.display = 'flex';
+        loader.innerHTML = '<div class="status-message">Syncing Data...</div>';
+    }
+    
+    if (kpiChartCache[currentTimeframe] && Array.isArray(kpiChartCache[currentTimeframe]) && kpiChartCache[currentTimeframe].length > 0) {
+        try {
+            renderKpiChart(kpiChartCache[currentTimeframe], m); 
+        } catch(e) {
+            fetchChartData(currentTimeframe);
+        }
+    } else {
+        fetchChartData(currentTimeframe); 
+    }
+}
+
+async function fetchChartData(tf) {
+    const loader = document.getElementById('chartLoading');
+    if (loader) {
+        loader.style.display = 'flex';
+        loader.innerHTML = '<div class="status-message">Syncing Data...</div>';
+    }
+    
+    try {
+        const d = await Promise.all([
+            fetch(`${WEEKLY_KPI_URL}?store=OVL&time=${tf}`).then(r => r.json()), 
+            fetch(`${WEEKLY_KPI_URL}?store=LEE&time=${tf}`).then(r => r.json()), 
+            fetch(`${WEEKLY_KPI_URL}?store=WSP&time=${tf}`).then(r => r.json()),
+            fetch(`${WEEKLY_KPI_URL}?store=MPL&time=${tf}`).then(r => r.json()),
+            fetch(`${WEEKLY_KPI_URL}?store=BAL&time=${tf}`).then(r => r.json())
+        ]);
+        
+        kpiChartCache[tf] = d; 
+        try { localStorage.setItem('speeksKpiChartCache', JSON.stringify(kpiChartCache)); } catch(e) {}
+        
+        if (currentTimeframe === tf) {
+            const mSelect = document.getElementById('metricSelector');
+            if (mSelect) renderKpiChart(d, mSelect.value);
+        }
+    } catch (e) {
+        console.error("fetchChartData error:", e);
+        if (loader) loader.innerHTML = '<div class="status-message" style="color:var(--red-alert);">Failed to load chart data.</div>';
+    } 
+}
+
+function syncAllData() { 
+    try {
+        const mSelect = document.getElementById('metricSelector');
+        if (typeof kpiChartCache !== 'undefined' && kpiChartCache && kpiChartCache[currentTimeframe] && mSelect) {
+            renderKpiChart(kpiChartCache[currentTimeframe], mSelect.value); 
+        }
+    } catch (e) {}
+    
+    try {
+        if (typeof cachedLeaderboardData !== 'undefined' && cachedLeaderboardData) drawLeaderboard();
+    } catch (e) {}
+    
+    try {
+        if (typeof hubDataCache !== 'undefined' && hubDataCache) renderLiveData(hubDataCache); 
+    } catch (e) {}
+    
+    fetchChartData(currentTimeframe); 
+    fetchHubData(); 
+    if (typeof loadCMS === 'function') loadCMS(); 
+    if (typeof fetchRecordsData === 'function') fetchRecordsData(); 
+}
+
+// --- 14. MODULE: RECORDS MANAGER ---
+let recordsCache = JSON.parse(localStorage.getItem('speeksRecordsCache')) || null;
+
+async function fetchRecordsData() { 
+    try { 
+        const response = await fetch(`${RECORDS_URL}?v=${Date.now()}`);
+        recordsCache = await response.json(); 
+        localStorage.setItem('speeksRecordsCache', JSON.stringify(recordsCache)); 
+        
+        if (document.getElementById('pane-records')?.classList.contains('active')) {
+            renderRecords(); 
+        }
+    } catch (e) {} 
+}
+
+function renderRecords() {
+    const cont = document.getElementById('recordsContainer'); 
+    if (!cont) return;
+    
+    if (!recordsCache?.length) {
+        cont.innerHTML = '<div class="status-message">Syncing Data...</div>';
+        return;
+    }
+    
+    const map = {}; 
+    recordsCache.forEach(r => { 
+        let l = String(r.label).trim();
+        let s = String(r.section).toUpperCase().trim(); 
+        
+        if (!map[l]) map[l] = { c: null, s: [] }; 
+        if (s === 'COMPANY' || s === 'COMPANY WIDE') map[l].c = r; 
+        else map[l].s.push(r); 
+    });
+    
+    let bC = 0; 
+    let html = '<div class="records-masonry-grid">';
+    
+    Object.keys(map).forEach(l => {
+        let d = map[l]; 
+        bC++; 
+        let oId = 'overflow-board-' + bC; 
+        d.s.sort((a, b) => parseNum(b.value) - parseNum(a.value)); 
+        let cR = d.c || d.s[0];
+        
+        html += `
+        <div class="record-metric-card">
+            <div class="rmc-header" style="background: var(--slate-charcoal);">${l}</div>`;
+            
+        if (cR) {
+            html += `
+            <div class="rmc-champion">
+                <div class="rmc-crown">👑 Company Record</div>
+                <div class="rmc-champ-val">${cR.value || '-'}</div>
+                <div class="rmc-champ-sub">${cR.subtext || ''}</div>
+            </div>`;
+        }
+        
+        if (d.s.length) {
+            html += `<div class="rmc-list">`;
+            html += d.s.slice(0, 3).map((s, i) => `
+                <div class="rmc-list-item">
+                    <div class="rmc-rank">${i===0 ? '🥇' : (i===1 ? '🥈' : '🥉')}</div>
+                    <div class="rmc-store">${s.section}</div>
+                    <div class="rmc-score">
+                        <span class="rmc-score-val">${s.value || '-'}</span>
+                        <span class="rmc-score-date">${s.subtext || ''}</span>
+                    </div>
+                </div>`).join('');
+                
+            if (d.s.length > 3) {
+                html += `
+                <div id="${oId}" class="hidden-board">
+                    ${d.s.slice(3).map((s, i) => `
+                    <div class="rmc-list-item">
+                        <div class="rmc-rank" style="font-size:11px; color:#999;">#${i+4}</div>
+                        <div class="rmc-store">${s.section}</div>
+                        <div class="rmc-score">
+                            <span class="rmc-score-val">${s.value || '-'}</span>
+                            <span class="rmc-score-date">${s.subtext || ''}</span>
+                        </div>
+                    </div>`).join('')}
+                </div>
+                <button class="rmc-expand-btn" onclick="toggleBoard('${oId}', this)">See Full Leaderboard ▾</button>`;
+            }
+            html += `</div>`;
+        }
+        html += `</div>`;
+    });
+    
+    html += '</div>';
+    cont.innerHTML = html;
+}
+
+function toggleBoard(id, btn) { 
+    const el = document.getElementById(id); 
+    el.classList.toggle('open'); 
+    btn.innerText = el.classList.contains('open') ? 'Hide Leaderboard ▴' : 'See Full Leaderboard ▾'; 
+}
+
+async function toggleManageRecords() {
+    const dropdown = document.getElementById('manageRecordsDropdown');
+    if (!dropdown) return;
+    
+    const isOpen = dropdown.classList.contains('show');
+    closeAllModals(); 
+    
+    if (!isOpen) {
+        dropdown.classList.add('show');
+        lockAndBlurScreen();
+
+        const list = document.getElementById('manageRecordsList');
+        list.innerHTML = '<div class="status-message">Syncing Database...</div>';
+        
+        try {
+            if (!recordsCache || recordsCache.length === 0) {
+                const res = await fetch(`${RECORDS_URL}?v=${Date.now()}`);
+                recordsCache = await res.json();
+                localStorage.setItem('speeksRecordsCache', JSON.stringify(recordsCache));
+            }
+            populateRecordsModal();
+        } catch (e) {
+            list.innerHTML = '<div style="color:var(--red-alert); padding:20px; text-align:center;">Failed to sync data.</div>';
+        }
+    }
+}
+
+function populateRecordsModal() {
+    const list = document.getElementById('manageRecordsList');
+    
+    if (!recordsCache || recordsCache.length === 0) {
+        list.innerHTML = '<div class="status-message">No records found.</div>';
+        return;
+    }
+
+    let html = '';
+    const stores = [...new Set(recordsCache.map(r => r.section))];
+
+    stores.forEach(store => {
+        html += `<div style="font-weight: 900; color: var(--slate-charcoal); font-size: 14px; margin-top: 15px; border-bottom: 2px solid #eee; padding-bottom: 5px; text-transform: uppercase;">${store} RECORDS</div>`;
+        
+        const storeRecords = recordsCache.filter(r => r.section === store);
+        storeRecords.forEach(r => {
+            html += `
+            <div class="record-manage-row" data-store="${r.section}" data-label="${r.label}" style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; align-items: center; background: #fff; padding: 12px; border-radius: 8px; border: 1px solid var(--gen-border); margin-top: 8px;">
+                <div style="font-size: 13px; font-weight: 700; color: var(--slate-charcoal);">${r.label}</div>
+                <input type="text" class="r-val" placeholder="Value" value="${r.value || ''}" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none; transition: 0.2s;" onfocus="this.style.borderColor='var(--sage-professional)'" onblur="this.style.borderColor='#ddd'">
+                <input type="text" class="r-date" placeholder="Date" value="${r.subtext || ''}" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none; transition: 0.2s;" onfocus="this.style.borderColor='var(--sage-professional)'" onblur="this.style.borderColor='#ddd'">
+            </div>`;
+        });
+    });
+
+    list.innerHTML = html;
+}
+
+async function saveManageRecords() {
+    const btn = document.getElementById('saveRecordsBtn');
+    btn.textContent = "Saving...";
+    btn.style.opacity = "0.7";
+
+    const updatedRecords = [];
+    document.querySelectorAll('.record-manage-row').forEach(row => {
+        updatedRecords.push({
+            store: row.getAttribute('data-store'),
+            label: row.getAttribute('data-label'),
+            value: row.querySelector('.r-val').value.trim(),
+            date: row.querySelector('.r-date').value.trim()
+        });
+    });
+
+    try {
+        const res = await fetch(RECORDS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(updatedRecords)
+        });
+
+        if (res.ok) {
+            alert("Company Records successfully updated!");
+            closeAllModals();
+            recordsCache = null; 
+            if (typeof fetchRecordsData === 'function') fetchRecordsData();
+        } else {
+            alert("Error saving records. Make sure Apps Script is deployed properly.");
+        }
+    } catch (e) {
+        alert("Failed to connect to server.");
+    } finally {
+        btn.textContent = "Save Changes";
+        btn.style.opacity = "1";
+    }
+}
+
+// --- 15. MODULE: QUICK MESSAGES ---
+let quickMsgCache = null;
+let currentQMTab = 'common';
+
+async function loadQuickMessages() {
+    const contentDiv = document.getElementById('qmContent');
+    if (quickMsgCache && contentDiv.querySelector('.qm-item')) return; 
+
+    contentDiv.innerHTML = '<div class="status-message">Syncing Data...</div>';
+
+    try {
+        const response = await fetch(QUICK_MSG_URL);
+        quickMsgCache = await response.json(); 
+        renderQMTab(currentQMTab);
+    } catch (error) {
+        console.error("Error loading Quick Messages:", error);
+        contentDiv.innerHTML = '<div class="status-message" style="color: var(--red-alert);">Failed to load messages. Ensure Apps Script is deployed as a "New Version".</div>';
+    }
+}
+
+function switchQMTab(tab) {
+    currentQMTab = tab;
+    
+    const btnCommon = document.getElementById('qm-tab-common');
+    const btnNoDeals = document.getElementById('qm-tab-nodeals');
+    const btnReviews = document.getElementById('qm-tab-reviews');
+    
+    if (btnCommon && btnNoDeals && btnReviews) {
+        btnCommon.classList.toggle('active', tab === 'common');
+        btnNoDeals.classList.toggle('active', tab === 'nodeals');
+        btnReviews.classList.toggle('active', tab === 'reviews');
+    }
+    
+    renderQMTab(tab);
+}
+
+function renderQMTab(tab) {
+    const contentDiv = document.getElementById('qmContent');
+    if (!quickMsgCache) return;
+
+    let rawData = quickMsgCache.common;
+    if (tab === 'nodeals') rawData = quickMsgCache.noDeals;
+    if (tab === 'reviews') rawData = quickMsgCache.reviews;
+    
+    let userStore = sessionStorage.getItem('speeksUserStore') || 'OVL';
+    if (userStore === 'ALL') userStore = 'CORP';
+
+    if (!rawData || rawData.length === 0) {
+        contentDiv.innerHTML = '<div style="padding: 20px; color: #888; text-align: center; font-weight: 600;">No messages found in this tab.</div>';
+        return;
+    }
+
+    const groupedData = {};
+    
+    rawData.forEach(row => {
+        const rowStore = String(row.store || "Everyone").trim().toUpperCase();
+        if (rowStore === 'EVERYONE' || rowStore === userStore.toUpperCase()) {
+            const category = row.category;
+            if (!groupedData[category]) groupedData[category] = [];
+            groupedData[category].push(row);
+        }
+    });
+
+    let html = '';
+
+    if (tab === 'common') {
+        for (const [category, items] of Object.entries(groupedData)) {
+            html += `
+            <div class="qm-category-wrapper">
+                <div class="qm-category" onclick="this.classList.toggle('open'); this.nextElementSibling.classList.toggle('open')">
+                    <span> 🗂️ ${escapeHtml(category)}</span>
+                    <span class="qm-caret" style="font-size:10px; color:#a0aab2; transition: transform 0.3s;">▼</span>
+                </div>
+                <div class="qm-category-items">
+                    ${items.map(item => `
+                        <div class="qm-item">
+                            <div class="qm-item-header">
+                                <div class="qm-item-name" onclick="this.parentElement.nextElementSibling.classList.toggle('open')">
+                                    ${escapeHtml(item.name)}
+                                </div>
+                                <button class="qm-copy-btn" title="Copy Message" data-message="${escapeHtml(item.message)}" onclick="copyQMToClipboard(this)">
+                                    📋
+                                </button>
+                            </div>
+                            <div class="qm-item-message">
+                                ${escapeHtml(item.message)}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>`;
+        }
+    } else if (tab === 'nodeals') {
+        html += '<div class="qm-category-items open" style="margin-left: 0; padding-left: 0; border: none; background: transparent;">';
+        for (const [category, items] of Object.entries(groupedData)) {
+            html += items.map(item => `
+                <div class="qm-item">
+                    <div class="qm-item-header">
+                        <div class="qm-item-name" onclick="this.parentElement.nextElementSibling.classList.toggle('open')">
+                            ${escapeHtml(item.name)}
+                        </div>
+                        <button class="qm-copy-btn" title="Copy Message" data-message="${escapeHtml(item.message)}" onclick="copyQMToClipboard(this)">
+                            📋
+                        </button>
+                    </div>
+                    <div class="qm-item-message">
+                        ${escapeHtml(item.message)}
+                    </div>
+                </div>
+            `).join('');
+        }
+        html += '</div>';
+    } else if (tab === 'reviews') {
+        html += '<div class="qm-category-items open" style="margin-left: 0; padding-left: 0; border: none; background: transparent; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start;">';
+        for (const [category, items] of Object.entries(groupedData)) {
+            html += items.map(item => `
+                <div class="qm-item" style="margin-bottom: 0;">
+                    <div class="qm-item-header">
+                        <div class="qm-item-name" onclick="this.parentElement.nextElementSibling.classList.toggle('open')">
+                            ${escapeHtml(item.name)}
+                        </div>
+                        <button class="qm-copy-btn" title="Copy Message" data-message="${escapeHtml(item.message)}" onclick="copyQMToClipboard(this)">
+                            📋
+                        </button>
+                    </div>
+                    <div class="qm-item-message">
+                        ${escapeHtml(item.message)}
+                    </div>
+                </div>
+            `).join('');
+        }
+        html += '</div>';
+    }
+    
+    if (html === '' || html.includes('style="margin-left: 0; padding-left: 0; border: none; background: transparent;"></div>') || html.includes('style="margin-left: 0; padding-left: 0; border: none; background: transparent; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start;"></div>')) {
+        html = '<div style="padding: 20px; color: #888; text-align: center; font-weight: 600;">No messages available for your location.</div>';
+    }
+    
+    contentDiv.innerHTML = html;
+}
+
+function copyQMToClipboard(button) {
+    const textToCopy = button.getAttribute('data-message');
+    navigator.clipboard.writeText(textToCopy).then(() => {
+        const originalIcon = button.innerText;
+        button.innerText = '✅'; 
+        setTimeout(() => { button.innerText = originalIcon; }, 1500);
+    }).catch(err => console.error('Failed to copy text: ', err));
+}
+
+// --- 16. MODULE: GLOBAL AUTH OVERLAY ---
+function injectGlobalAuth() {
+    if (!document.getElementById('authOverlay')) {
+        const overlayHtml = `
+        <div id="authOverlay" class="auth-page" style="display: none;">
+            <div class="auth-split-layout">
+                <div class="auth-brand-side">
+                    <img src="images/speeks_logo.png" alt="SPEEKS Logo" class="auth-logo">
+                    <div class="auth-brand-text">
+                        <h1>SPEEKSNET</h1>
+                        <p>Internal Operations Portal</p>
+                    </div>
+                </div>
+                <div class="auth-form-side">
+                    <div class="auth-form-container">
+                        <div class="auth-badge">SECURE ACCESS</div>
+                        <h2>Welcome Back</h2>
+                        <p id="authSubtitle">Please enter your 4-digit PIN to securely access the hub.</p>
+                        <div id="pinInputContainer" class="pin-container">
+                            <input type="password" id="pinInput" maxlength="4" placeholder="••••" onkeypress="if(event.key === 'Enter') checkPIN()">
+                            <button id="unlockBtn" class="btn-primary auth-btn" onclick="checkPIN()">Unlock Portal</button>
+                            <div id="pinError" class="pin-error">Incorrect PIN. Please try again.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', overlayHtml);
+    }
+}
+
+function handleSignOut() {
+    sessionStorage.removeItem('speeksUnlocked');
+    sessionStorage.removeItem('speeksUserName');
+    sessionStorage.removeItem('speeksUserRole');
+    sessionStorage.removeItem('speeksUserStore');
+    location.reload(); 
+}
+
+// --- 17. MODULE: IDEA SUBMISSION MODAL ---
+let isIdeaSubmitting = false; 
+
+function injectIdeaModal() {
+    if (!document.getElementById('ideaModal')) {
+        const modalHtml = `
+        <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;" onload="handleIframeLoad()"></iframe>
+        <div class="modal-menu idea-menu" id="ideaModal">
+            <div class="modal-header">
+                <h3>Submit an Idea</h3>
+                <button class="modal-close-btn" onclick="closeAllModals()">✖</button>
+            </div>
+            <div class="modal-content" style="padding: 25px;">
+                <form id="ideaForm" action="https://formsubmit.co/ethan.kushnir@speekstechnology.com" method="POST" enctype="multipart/form-data" target="hidden_iframe" onsubmit="prepareIdeaSubmit()">
+                    <input type="hidden" name="_captcha" value="false">
+                    <input type="hidden" name="_subject" id="ideaDynamicSubject" value="New SPEEKS Idea">
+                    <div style="margin-bottom: 15px;">
+                        <label class="idea-label">Your Name</label>
+                        <input type="text" id="ideaName" name="Name" class="idea-input" required placeholder="John Doe">
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label class="idea-label">Category</label>
+                        <select id="ideaCategory" name="Category" class="idea-input">
+                            <option value="New Feature">New Feature</option>
+                            <option value="Process Improvement">Process Improvement</option>
+                            <option value="Bug Fix / Issue">Bug Fix / Issue</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label class="idea-label">Idea Details</label>
+                        <textarea id="ideaDesc" name="Idea_Description" required rows="5" class="idea-input" placeholder="Describe your idea here..."></textarea>
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        <label class="idea-label">Attach a File (Optional)</label>
+                        <input type="file" id="ideaFile" name="Attachment" class="idea-input" accept="image/*,.pdf,.doc,.docx" style="padding: 10px;">
+                    </div>
+                    <div style="display:flex; justify-content:flex-end; gap:10px;">
+                        <button type="button" class="btn-secondary" onclick="closeAllModals()">Cancel</button>
+                        <button type="submit" class="btn-primary" id="submitIdeaBtn">Submit Idea</button>
+                    </div>
+                </form>
+                <div id="ideaSuccess" style="display:none; text-align:center; padding: 30px 10px;">
+                    <div style="font-size: 40px; margin-bottom: 10px;">🎉</div>
+                    <h3 style="color: var(--sage-professional); margin-bottom: 10px; font-weight: 800;">Idea Submitted!</h3>
+                    <p style="color: #666; font-size: 14px; margin-bottom: 20px; font-weight: 500;">Thanks for helping us improve SPEEKS.</p>
+                    <button class="btn-primary" onclick="closeAllModals(); setTimeout(() => { document.getElementById('ideaForm').style.display='block'; document.getElementById('ideaSuccess').style.display='none'; document.getElementById('ideaForm').reset(); }, 500);">Close</button>
+                </div>
+            </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+}
+
+function prepareIdeaSubmit() {
+    isIdeaSubmitting = true; 
+    const btn = document.getElementById('submitIdeaBtn');
+    btn.innerText = 'Sending...';
+    btn.style.opacity = '0.7';
+    const category = document.getElementById('ideaCategory').value;
+    document.getElementById('ideaDynamicSubject').value = 'New SPEEKS Idea: ' + category;
+}
+
+function handleIframeLoad() {
+    if (isIdeaSubmitting) {
+        document.getElementById('ideaForm').style.display = 'none';
+        document.getElementById('ideaSuccess').style.display = 'block';
+        const btn = document.getElementById('submitIdeaBtn');
+        btn.innerText = 'Submit Idea';
+        btn.style.opacity = '1';
+        isIdeaSubmitting = false; 
+    }
+}
+
+// --- 18. MODULE: SCORECARDS & ALERTS ---
+async function fetchScorecardData() {
+    const container = document.getElementById('scorecard-widget-body');
+    const titleElement = document.getElementById('scorecard-store-name');
+    if (!container) return;
+    
+    container.innerHTML = '<div class="status-message" style="padding: 20px 0;">Syncing Data...</div>';
+    let targetStore = sessionStorage.getItem('speeksUserStore') || 'OVL';
+    if (targetStore === 'ALL' || targetStore === 'CORP') targetStore = 'OVL'; 
+
+    try {
+        const response = await fetch(SCORECARD_URL);
+        const json = await response.json();
+        if (!json.success) throw new Error(json.error);
+        
+        const storeData = json.data.find(item => String(item.store).toUpperCase() === targetStore.toUpperCase());
+
+        if (!storeData) {
+            container.innerHTML = `<div style="color: #888; text-align: center; padding: 20px 0; font-weight: bold;">No data found for ${targetStore}.</div>`;
+            return;
+        }
+
+        if (titleElement) titleElement.innerHTML = `${storeData.store} Scorecard`;
+
+        const latestScore = parseFloat(storeData.score) || 0; 
+        const rawDate = storeData.date || 'Recent';
+
+        let displayDate = rawDate;
+        const parsedDate = new Date(rawDate);
+        if (!isNaN(parsedDate.getTime())) {
+            const day = parsedDate.getUTCDay(); 
+            const diffToMonday = day === 0 ? -6 : 1 - day; 
+            const mondayDate = new Date(parsedDate);
+            mondayDate.setUTCDate(parsedDate.getUTCDate() + diffToMonday);
+            displayDate = "Week of " + mondayDate.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        let scoreColor = 'var(--red-alert)';
+        if (latestScore > 8) scoreColor = 'var(--sage-professional)';  
+        else if (latestScore >= 6) scoreColor = 'var(--idea-gold)';         
+
+        const pulse = latestScore < 6 ? '<div class="notif-dot active" style="display:block; position:absolute; top:-6px; right:-6px; width:14px; height:14px; border-width: 2px;"></div>' : '';
+
+        container.innerHTML = `
+        <div class="scorecard-widget">
+            ${pulse}
+            <div class="scorecard-label">Latest Score</div>
+            <div class="scorecard-date">${displayDate}</div>
+            <div class="scorecard-val" style="color: ${scoreColor}; text-shadow: 0 4px 15px ${scoreColor}30;">
+                ${latestScore.toFixed(1)}
+            </div>
+        </div>`;
+    } catch (error) {
+        console.error('Error fetching scorecard:', error);
+        container.innerHTML = '<div style="color: var(--red-alert); font-weight: bold; padding: 20px 0; text-align: center;">Error syncing scorecard.</div>';
+    }
+}
+
+async function fetchAlertsData() {
+    const container = document.getElementById('alerts-widget-body');
+    if (!container) return;
+
+    let targetStore = sessionStorage.getItem('speeksUserStore') || 'OVL';
+    if (targetStore === 'ALL' || targetStore === 'CORP') targetStore = 'OVL'; 
+
+    try {
+        const response = await fetch(EBAY_ALERTS_URL);
+        const json = await response.json();
+        if (!json.success) throw new Error(json.error);
+
+        const storeData = json.data.find(item => String(item.store).toUpperCase() === targetStore.toUpperCase());
+        if (!storeData) return;
+
+        const buildAlertCard = (title, value, severity) => {
+            let bgColor = '#d1fae5';
+            let textColor = '#065f46'; 
+            let displayText = 'All Clear';
+            let pulseHtml = '';
+
+            if (value !== '') {
+                displayText = value;
+                if (severity === 'high') {
+                    bgColor = '#fef3c7'; 
+                    textColor = '#92400e';
+                } else if (severity === 'very-high') {
+                    bgColor = '#fee2e2';
+                    textColor = '#991b1b';
+                    pulseHtml = '<div class="notif-dot active" style="display:block; position:absolute; top:-4px; right:-4px; width:12px; height:12px; border-width: 2px; z-index: 5;"></div>';
+                }
+            }
+
+            return `
+            <div style="position: relative; background: #f9fafb; padding: 12px 15px; border-radius: 8px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); flex: 1; min-height: 65px; box-sizing: border-box;">
+                ${pulseHtml}
+                <div style="font-size: 10px; font-weight: 800; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 15px; flex-shrink: 0;">${title}</div>
+                <div style="display: flex; flex-direction: column; align-items: flex-end; flex-grow: 1; width: 60%;">
+                    <div style="font-size: 11px; font-weight: 900; color: ${textColor}; background-color: ${bgColor}; padding: 4px 10px; border-radius: 6px; width: 100%; height: 46px; display: flex; align-items: center; justify-content: center; text-align: center; line-height: 1.2; box-sizing: border-box;">
+                        ${displayText}
+                    </div>
+                </div>
+            </div>`;
+        };
+
+        container.innerHTML = `
+        <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 15px; align-items: stretch; width: 100%; height: 100%;">
+            <div style="display: flex; flex-direction: column; gap: 8px; justify-content: space-between; height: 100%;">
+                <div style="font-size: 10px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 1px; padding-left: 5px;">Current Issues</div>
+                ${buildAlertCard('High', storeData.currentHigh, 'high')}
+                ${buildAlertCard('Very High', storeData.currentVeryHigh, 'very-high')}
+            </div>
+            <div style="width: 2px; background: repeating-linear-gradient(to bottom, #e2e8f0, #e2e8f0 6px, transparent 6px, transparent 12px); margin: 20px 0 0 0;"></div>
+            <div style="display: flex; flex-direction: column; gap: 8px; justify-content: space-between; height: 100%;">
+                <div style="font-size: 10px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 1px; padding-left: 5px;">Projected Issues</div>
+                ${buildAlertCard('High', storeData.projectedHigh, 'high')}
+                ${buildAlertCard('Very High', storeData.projectedVeryHigh, 'very-high')}
+            </div>
+        </div>`;
+    } catch (error) {
+        console.error('Error fetching alerts:', error);
+    }
+}
+
+// ============================================================================
+// 19. MODULE: DISTRICT COMMAND CENTER (MASTER DASHBOARDS)
+// ============================================================================
+let districtKpiCache = null;
+
+async function fetchDistrictMonthlyKPIs() {
+    const container = document.getElementById('district-kpi-body');
+    if (!container) return;
+
+    const STORES = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
+    localStorage.removeItem('speeksDistKpiData');
+
+    try {
+        const promises = STORES.map(store => 
+            fetch(`${MONTHLY_KPI_URL}?store=${store}&v=${Date.now()}`)
+            .then(r => r.json())
+            .then(data => ({store, data}))
+            .catch(e => ({store, error: true}))
+        );
+        
+        const results = await Promise.all(promises);
+        districtKpiCache = { masterMonths: [], stores: {} };
+
+        results.forEach(res => {
+            if (res.store === 'OVL' && res.data && res.data.months) { 
+                districtKpiCache.masterMonths = res.data.months; 
+            }
+            if (res.data && !res.data.error && res.data.data) {
+                districtKpiCache.stores[res.store] = { months: res.data.months || [], data: res.data.data };
+            } else {
+                districtKpiCache.stores[res.store] = { months: [], data: [] }; 
+            }
+        });
+
+        localStorage.setItem('speeksDistKpiData', JSON.stringify(districtKpiCache));
+        buildDistrictKpiDropdowns();
+        renderDistrictKPIs();
+        
+    } catch (e) {
+        console.error("District KPI Error:", e);
+        container.innerHTML = '<div style="color: var(--red-alert); font-weight: bold; text-align: center; padding: 20px;">Failed to load District KPIs. Connection Timed Out.</div>';
+    }
+}
+
+function buildDistrictKpiDropdowns() {
+    if (!districtKpiCache || !districtKpiCache.masterMonths) return;
+    const sel = document.getElementById('dist-kpi-month');
+    if (!sel) return;
+
+    const months = districtKpiCache.masterMonths;
+    const currVal = sel.value;
+    sel.innerHTML = '';
+    
+    const monthsMap = {
+        "Jan": "January", "Feb": "February", "Mar": "March", "Apr": "April",
+        "May": "May", "Jun": "June", "Jul": "July", "Aug": "August",
+        "Sep": "September", "Oct": "October", "Nov": "November", "Dec": "December"
+    };
+
+    months.forEach((m, i) => {
+        let displayText = m;
+        let parts = String(m).trim().split(/[- ]/);
+        if (parts.length >= 2) {
+            let monthPart = parts[0];
+            monthPart = monthPart.charAt(0).toUpperCase() + monthPart.slice(1).toLowerCase();
+            let fullM = monthsMap[monthPart] || monthPart;
+            let y = parts[parts.length - 1];
+            let fullY = y.length === 2 ? "20" + y : y; 
+            displayText = `${fullM} ${fullY}`;
+        }
+        sel.add(new Option(displayText, i));
+    });
+
+    sel.value = currVal !== "" && currVal < months.length ? currVal : months.length - 1;
+}
+
+window.renderDistrictKPIs = function() {
+    const container = document.getElementById('district-kpi-body');
+    const mIdx = parseInt(document.getElementById('dist-kpi-month').value);
+    
+    if (!districtKpiCache || !districtKpiCache.stores['OVL']) return;
+
+    const targetMonthRaw = districtKpiCache.masterMonths[mIdx];
+    if (!targetMonthRaw) return;
+    const targetMonthClean = String(targetMonthRaw).replace(/[^a-z0-9]/gi, '').toLowerCase();
+
+    const STORES = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
+    const baseline = districtKpiCache.stores['OVL'].data; 
+    
+    if (!baseline) return;
+    let html = '';
+
+    baseline.forEach(cat => {
+        html += `
+        <div class="kpi-category">
+            <div class="kpi-category-header" onclick="toggleCategory(this)">
+                ${cat.category}
+                <span class="chevron">▼</span>
+            </div>
+            <div class="kpi-category-content">`;
+
+        cat.metrics.forEach(m => {
+            const metricName = m.name;
+            const isInverse = m.inverse;
+            let rowHtml = `
+            <div class="kpi-row" style="display: grid; grid-template-columns: minmax(130px, 1.5fr) repeat(5, minmax(85px, 1fr)); padding: 12px 10px; align-items: center; border-bottom: 1px solid #f8fafc;">
+                <div class="kpi-name-col">
+                    <span class="kpi-name" style="font-size: 11px; font-weight: 800; color: #555; text-transform: uppercase;">${metricName}</span>
+                </div>`;
+
+            STORES.forEach(store => {
+                const storeObj = districtKpiCache.stores[store];
+                const storeMonthIdx = storeObj.months.findIndex(m => String(m).replace(/[^a-z0-9]/gi, '').toLowerCase() === targetMonthClean);
+                const storeCat = storeObj.data?.find(c => c.category === cat.category);
+                const storeMetric = storeCat?.metrics.find(sm => sm.name === metricName);
+
+                if (storeMetric && storeMonthIdx !== -1 && storeMetric.values[storeMonthIdx] !== undefined) {
+                    const rawVal = storeMetric.values[storeMonthIdx];
+                    const numVal = parseNum(rawVal);
+                    let displayStr = rawVal;
+                    
+                    if (rawVal === "" || rawVal === null) {
+                        rowHtml += `<div style="text-align: center;"><span style="font-size: 11px; color: #ccc; font-weight: 800;">-</span></div>`;
+                        return; 
+                    } else if (!isNaN(numVal) && rawVal !== "") {
+                        if (metricName.toLowerCase().match(/%|rate|variance|margin|gm|cogs/) && !String(rawVal).includes('%')) {
+                            displayStr = `${numVal.toFixed(2).replace(/\.00$/, '')}%`;
+                        } else if (!isNaN(numVal) && typeof rawVal === 'number') {
+                            displayStr = formatSmartValue(numVal, metricName);
+                        }
+                    }
+
+                    let bg = '#f1f5f9'; 
+                    let txt = 'var(--slate-charcoal)';
+
+                    if (storeMonthIdx > 0 && storeMetric.values[storeMonthIdx - 1] !== undefined && storeMetric.values[storeMonthIdx - 1] !== "") {
+                        const prevVal = parseNum(storeMetric.values[storeMonthIdx - 1]);
+                        const dNum = numVal - prevVal;
+                        
+                        if (Math.abs(dNum) > 0.001) {
+                            const isPositiveImpact = dNum > 0 ? !isInverse : isInverse;
+                            if (isPositiveImpact) { bg = '#d1fae5'; txt = '#065f46'; } 
+                            else { bg = '#fee2e2'; txt = '#991b1b'; }
+                        }
+                    }
+
+                    rowHtml += `
+                    <div style="text-align: center;">
+                        <span style="display: inline-flex; align-items: center; justify-content: center; min-width: 65px; font-size: 11px; font-weight: 900; color: ${txt}; background: ${bg}; padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.05); box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); box-sizing: border-box; white-space: nowrap;">
+                            ${displayStr}
+                        </span>
+                    </div>`;
+                } else {
+                    rowHtml += `<div style="text-align: center;"><span style="font-size: 11px; color: #ccc; font-weight: 800;">-</span></div>`;
+                }
+            });
+
+            rowHtml += `</div>`;
+            html += rowHtml;
+        });
+
+        html += `</div></div>`;
+    });
+
+    container.innerHTML = html;
+};
+
+async function fetchMasterDistrictDashboard() {
+    const container = document.getElementById('district-master-body');
+    if (!container) return;
+
+    const STORES = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
+    const STORE_ICONS = { 'OVL': '🟣', 'LEE': '🔵', 'WSP': '🟢', 'MPL': '🟠', 'BAL': '🔴' };
+
+    const renderMasterBoard = (hubData, varData, scoreData, alertsData, weeklyResults) => {
+        let html = '';
+        STORES.forEach(store => {
+            const sLower = store.toLowerCase();
+            const icon = STORE_ICONS[store];
+
+            // 1. SCORECARD & HEADER
+            const sScore = scoreData.data?.find(s => s.store.toUpperCase() === store) || {};
+            const scoreNum = parseFloat(sScore.score) || 0;
+            let sColor = scoreNum > 8 ? '#065f46' : (scoreNum >= 6 ? '#92400e' : '#991b1b');
+            let sBg = scoreNum > 8 ? '#d1fae5' : (scoreNum >= 6 ? '#fef3c7' : '#fee2e2');
+
+            let displayDate = "Recent";
+            if (sScore.date) {
+                const parsedDate = new Date(sScore.date);
+                if (!isNaN(parsedDate.getTime())) {
+                    const day = parsedDate.getUTCDay();
+                    const diffToMonday = day === 0 ? -6 : 1 - day;
+                    const mondayDate = new Date(parsedDate);
+                    mondayDate.setUTCDate(parsedDate.getUTCDate() + diffToMonday);
+                    displayDate = mondayDate.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' });
+                }
+            }
+
+            // 2. ACTION NEEDED
+            const issues = [];
+            const sAlerts = alertsData.data?.find(a => a.store.toUpperCase() === store) || {};
+            if (sAlerts.currentVeryHigh) issues.push({text: sAlerts.currentVeryHigh, type: 'red', tip: 'Active Issue: Very High'});
+            if (sAlerts.currentHigh) issues.push({text: sAlerts.currentHigh, type: 'yellow', tip: 'Active Issue: High'});
+            if (sAlerts.projectedVeryHigh) issues.push({text: sAlerts.projectedVeryHigh, type: 'red', tip: 'Projected Issue: Very High'});
+            if (sAlerts.projectedHigh) issues.push({text: sAlerts.projectedHigh, type: 'yellow', tip: 'Projected Issue: High'});
+            if (issues.length === 0) issues.push({text: 'All Clear', type: 'green', tip: 'No active or projected alerts.'});
+
+            // 3. BUYING & SELLING SNAPSHOT
+            let rawPctStr = String(hubData[`${sLower}Pct`]);
+            let rawPct = parseFloat(rawPctStr) || 0;
+            let salesPctNum = (!rawPctStr.includes('%') && rawPct > 0 && rawPct <= 1.5) ? (rawPct * 100) : rawPct;
+            const salesPct = Number.isInteger(salesPctNum) ? salesPctNum : salesPctNum.toFixed(2);
+            
+            const gpTrack = Math.round(parseFloat(hubData[`${sLower}TrackGP`])) || 0;
+            const buyProj = Math.round(parseFloat(hubData[`${sLower}BuyProj`])) || 0;
+            
+            let sellMarginNum = 0;
+            const rev = parseFloat(hubData[`${sLower}Rev`]) || 0;
+            const gp = parseFloat(hubData[`${sLower}GP`]) || 0;
+            if (hubData[`${sLower}SellMargin`]) {
+                let smRaw = parseFloat(hubData[`${sLower}SellMargin`]);
+                sellMarginNum = (!String(hubData[`${sLower}SellMargin`]).includes('%') && smRaw > 0 && smRaw <= 1.5) ? (smRaw * 100) : smRaw;
+            } else if (rev > 0) {
+                sellMarginNum = (gp / rev) * 100;
+            }
+            const sellMargin = Number.isInteger(sellMarginNum) ? sellMarginNum : sellMarginNum.toFixed(2);
+
+            let rawMarginStr = String(hubData[`${sLower}BuyMargin`]);
+            let rawMargin = parseFloat(rawMarginStr) || 0;
+            let buyMarginNum = (!rawMarginStr.includes('%') && rawMargin > 0 && rawMargin <= 1.5) ? (rawMargin * 100) : rawMargin;
+            const buyMargin = Number.isInteger(buyMarginNum) ? buyMarginNum : buyMarginNum.toFixed(2);
+
+            const pctColor = salesPctNum >= 100 ? '#065f46' : '#991b1b';
+            const pctBg = salesPctNum >= 100 ? '#d1fae5' : '#fee2e2';
+            const sellMarginColor = sellMarginNum >= 55.5 ? '#065f46' : '#991b1b';
+            const sellMarginBg = sellMarginNum >= 55.5 ? '#d1fae5' : '#fee2e2';
+            const marginColor = (buyMarginNum > 0 && buyMarginNum < 51) ? '#991b1b' : '#065f46';
+            const marginBg = (buyMarginNum > 0 && buyMarginNum < 51) ? '#fee2e2' : '#d1fae5';
+
+            // 4. LIVE VARIANCE
+            const sVar = varData[store] || {};
+            const totalVar = parseFloat(sVar.total) || 0;
+            const vColor = totalVar < 0 ? '#991b1b' : (totalVar > 0 ? '#065f46' : '#64748b');
+            const vBg = totalVar < 0 ? '#fee2e2' : (totalVar > 0 ? '#d1fae5' : '#f1f5f9');
+            const vSign = totalVar > 0 ? '+' : '';
+
+            // 5. WEEKLY METRICS
+            const sWeekData = weeklyResults.find(w => w.store === store);
+            const wAvg = sWeekData?.sAvg || {};
+
+            const renderLineStat = (label, val, ruleType) => {
+                let isBad = false;
+                let displayVal = val || '-';
+                if (displayVal !== '-' && (ruleType === 'margin' || ruleType === 'conversion') && !String(displayVal).includes('%')) displayVal += '%';
+                
+                if (val && val !== '-') {
+                    let n = parseFloat(String(val).replace(/[^0-9.-]/g, ''));
+                    if (ruleType === 'margin') isBad = n < 51;
+                    if (ruleType === 'conversion') isBad = n < 85;
+                    if (ruleType === 'nodeals') isBad = n > 7;
+                    if (ruleType === 'time') {
+                        let t = String(val);
+                        let timeVal = t.includes(':') ? parseInt(t.split(':')[0]) + (parseInt(t.split(':')[1])/60) : n;
+                        isBad = timeVal > 13;
+                    }
+                }
+                
+                let bg = ruleType === 'nobg' ? 'transparent' : (ruleType === null ? '#f1f5f9' : (isBad ? '#fee2e2' : '#d1fae5'));
+                let txt = ruleType === 'nobg' ? 'var(--slate-charcoal)' : (ruleType === null ? 'var(--slate-charcoal)' : (isBad ? '#991b1b' : '#065f46'));
+                let pad = ruleType === 'nobg' ? '0' : '3px 8px';
+                if (displayVal === '-') { bg = '#f1f5f9'; txt = '#888'; pad = '3px 8px'; }
+                
+                return `
+                <div class="master-stat-row">
+                    <span class="master-stat-label">${label}</span>
+                    <span class="master-stat-val" style="color: ${txt}; background: ${bg}; padding: ${pad};">${displayVal}</span>
+                </div>`;
+            };
+
+            html += `
+            <div class="card master-card">
+                <div class="master-card-header" style="background: var(--slate-charcoal);">
+                    <span class="master-card-title">${icon} ${store}</span>
+                    <div class="master-card-score-box">
+                        <span class="master-card-score" style="background: ${sBg}; color: ${sColor};">${scoreNum.toFixed(1)}</span>
+                        <span class="master-card-date">Week of ${displayDate}</span>
+                    </div>
+                </div>
+
+                <div class="master-card-body">
+                    <div>
+                        <div class="master-section-title">Buying & Selling Snapshot</div>
+                        <div class="master-stat-box">
+                            <div class="master-stat-row"><span class="master-stat-label">Sales vs Goal</span><span class="master-stat-val" style="color: ${pctColor}; background: ${pctBg};">${salesPct}%</span></div>
+                            <div class="master-stat-row"><span class="master-stat-label">GP Tracking</span><span class="master-stat-val" style="color: var(--slate-charcoal);">$${gpTrack.toLocaleString()}</span></div>
+                            <div class="master-stat-row"><span class="master-stat-label">Sell Margin</span><span class="master-stat-val" style="color: ${sellMarginColor}; background: ${sellMarginBg};">${sellMarginNum > 0 ? sellMargin + '%' : '-'}</span></div>
+                            <div class="master-stat-row"><span class="master-stat-label">Buy Tracking</span><span class="master-stat-val" style="color: var(--slate-charcoal);">$${buyProj.toLocaleString()}</span></div>
+                            <div class="master-stat-row dashed"><span class="master-stat-label">Buy Margin</span><span class="master-stat-val" style="color: ${marginColor}; background: ${marginBg};">${buyMargin}%</span></div>
+                            <div class="master-stat-row"><span class="master-stat-label">Variance Total</span><span class="master-stat-val" style="color: ${vColor}; background: ${vBg};">${vSign}${totalVar.toFixed(2)}%</span></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="master-section-title">Weekly Metrics</div>
+                        <div class="master-stat-box">
+                            ${renderLineStat('Conversion', wAvg.conversion, 'conversion')}
+                            ${renderLineStat('Margin', wAvg.buyMargin, 'margin')}
+                            ${renderLineStat('Trans. Time', wAvg.time, 'time')}
+                            ${renderLineStat('No Deals', wAvg.noDeals, 'nodeals')}
+                            <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #e2e8f0;">
+                                ${renderLineStat('Listed Devices', wAvg.listed, 'nobg')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="flex-grow: 1; display: flex; flex-direction: column;">
+                        <div class="master-section-title">Action Needed - eBay Performance</div>
+                        <div style="display: flex; flex-direction: column; gap: 6px; flex-grow: 1;">
+                            ${issues.map(b => {
+                                let bg = b.type === 'red' ? '#fee2e2' : (b.type === 'yellow' ? '#fef3c7' : '#d1fae5');
+                                let txt = b.type === 'red' ? '#991b1b' : (b.type === 'yellow' ? '#92400e' : '#065f46');
+                                let pulse = b.type === 'red' ? `<div class="notif-dot active" style="display:block; position:absolute; top:-4px; right:-4px; width:12px; height:12px; border-width: 2px;"></div>` : '';
+                                return `
+                                <div class="master-action-badge" style="color: ${txt}; background: ${bg};">
+                                    ${pulse}<span>${b.text}</span>
+                                    <div class="fast-tip">${b.tip}</div>
+                                </div>`;
+                            }).join('')}
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        });
+
+        container.innerHTML = html;
+    };
+
+    const cachedHtml = localStorage.getItem('speeksDistMasterHtml');
+    if (cachedHtml) container.innerHTML = cachedHtml;
+
+    try {
+        const [hubData, varData, scoreData, alertsData] = await Promise.all([
+            fetch(`${HUB_URL}?v=${Date.now()}`).then(r => r.json()),
+            fetch(`${VARIANCE_API_URL}?v=${Date.now()}`).then(r => r.json()),
+            fetch(SCORECARD_URL).then(r => r.json()),
+            fetch(EBAY_ALERTS_URL).then(r => r.json())
+        ]);
+
+        const weeklyPromises = STORES.map(async (store) => {
+            const d = await fetch(`${WEEKLY_KPI_URL}?store=${store}&time=4-Week&v=${Date.now()}`).then(r => r.json());
+            let sAvg = {};
+            let sIdx = d.findLastIndex(r => String(r[0]).trim().toLowerCase() === "store" || String(r[0]).trim().toLowerCase() === "store total");
+            if (sIdx !== -1) {
+                let st = d[sIdx];
+                sAvg = { buyMargin: st[5], conversion: st[8], time: formatTime(st[12]), noDeals: st[14], listed: st[20] };
+            }
+            return { store, sAvg };
+        });
+
+        const weeklyResults = await Promise.all(weeklyPromises);
+        renderMasterBoard(hubData, varData, scoreData, alertsData, weeklyResults);
+        localStorage.setItem('speeksDistMasterHtml', container.innerHTML);
+
+    } catch (error) { 
+        if (!cachedHtml) {
+            container.innerHTML = '<div style="color: var(--red-alert); font-weight: bold; text-align: center; grid-column: 1 / -1;">Error compiling Master Dashboard.</div>'; 
+        }
+    }
+}
+
+
+// ============================================================================
+// 20. MODULE: LISTING GOALS ENGINE
+// ============================================================================
+let goalsRoster = []; 
+let liveGoalsData = [];
+let allDistrictGoalsData = [];
+let goalsTargetStore = 'OVL';
+let currentAppDate = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
+let currentDmGoalView = 'daily';
+
+function runScheduledTasks() {
+    const now = new Date();
+    const ctDateStr = now.toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
+    const ctTimeString = now.toLocaleString('en-US', { timeZone: 'America/Chicago', hour: 'numeric', hour12: false });
+    const hours = parseInt(ctTimeString, 10);
+    
+    const isPulseTime = (hours === 9) || (hours === 19);
+    const dot = document.getElementById('goals-pulse-dot');
+    if (dot) dot.style.display = isPulseTime ? 'block' : 'none';
+
+    if (ctDateStr !== currentAppDate) {
+        currentAppDate = ctDateStr;
+        const activeTab = document.getElementById('tab-daily')?.classList.contains('active') ? 'daily' : 'weekly';
+        renderGoalsScoreboard(activeTab);
+    }
+}
+
+async function initListingGoals() {
+    runScheduledTasks();
+    setInterval(runScheduledTasks, 60000); 
+    await fetchLiveGoalsData();
+}
+
+async function fetchLiveGoalsData() {
+    const list = document.getElementById('goals-roster-list');
+    if (!list) return;
+    list.innerHTML = '<div class="status-message">Syncing Data...</div>';
+
+    goalsTargetStore = sessionStorage.getItem('speeksUserStore') || 'OVL';
+    if (goalsTargetStore === 'ALL' || goalsTargetStore === 'CORP') goalsTargetStore = 'OVL'; 
+
+    try {
+        const d = await fetch(`${WEEKLY_KPI_URL}?store=${goalsTargetStore}&time=4-Week&v=${Date.now()}`).then(r => r.json());
+        let emps = [];
+        let sIdx = d.findLastIndex(r => String(r[0]).trim().toLowerCase() === "store" || String(r[0]).trim().toLowerCase() === "store total");
+        
+        if (sIdx !== -1) {
+            for (let i = Math.max(0, sIdx - 6); i <= Math.min(d.length - 1, sIdx + 6); i++) {
+                if (i === sIdx) continue;
+                let n = String(d[i][0]).trim(), lN = n.toLowerCase();
+                if (n && !["name", "employee", "store", "store total", "ovl", "lee", "wsp", "mpl", "bal"].includes(lN) && !lN.includes("average") && !lN.includes("week")) {
+                    if (String(d[i][2]).trim() !== "" || String(d[i][20]).trim() !== "") emps.push(n);
+                }
+            }
+        }
+        goalsRoster = emps.length ? [...new Set(emps)] : ['No Employees Found'];
+
+        try {
+            const res = await fetch(`${GOALS_API_URL}?store=${goalsTargetStore}&v=${Date.now()}`);
+            liveGoalsData = await res.json();
+        } catch (dbError) {
+            liveGoalsData = []; 
+        }
+        
+        renderGoalsScoreboard('daily');
+    } catch (e) {
+        list.innerHTML = '<div style="color: var(--red-alert); font-weight: bold; text-align: center; padding: 20px 0;">Error loading roster.</div>';
+    }
+}
+
+function renderGoalsScoreboard(viewType = 'daily') {
+    const list = document.getElementById('goals-roster-list');
+    const dateDisplay = document.getElementById('goals-date-display');
+    if (!list) return;
+    
+    let totalG = 0; 
+    let totalR = 0;
+    let html = '';
+
+    const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
+    const now = new Date();
+    const day = now.getDay();
+    const diffToMonday = day === 0 ? -6 : 1 - day;
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() + diffToMonday);
+    startOfWeek.setHours(0,0,0,0);
+
+    if (dateDisplay) {
+        if (viewType === 'daily') {
+            dateDisplay.innerText = now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+        } else {
+            dateDisplay.innerText = "Week of " + startOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+    }
+
+    goalsRoster.forEach(emp => {
+        let empGoal = 0; 
+        let empResult = 0; 
+        let empRole = '-';
+        let dailyStats = {};
+        
+        const empRecords = liveGoalsData.filter(r => r.employee === emp);
+        const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+        empRecords.forEach(record => {
+            const isToday = record.date === todayStr;
+            const recDate = new Date(record.date);
+            const isThisWeek = recDate >= startOfWeek;
+
+            if (viewType === 'daily' && isToday) {
+                empGoal = parseInt(record.goal) || 0;
+                empResult = parseInt(record.result) || 0;
+                empRole = record.role || '-';
+            } else if (viewType === 'weekly' && isThisWeek) {
+                const rG = parseInt(record.goal) || 0;
+                const rR = parseInt(record.result) || 0;
+                empGoal += rG;
+                empResult += rR;
+                
+                const dayIdx = (recDate.getDay() + 6) % 7; 
+                dailyStats[daysOfWeek[dayIdx]] = { goal: rG, result: rR };
+            }
+        });
+
+        totalG += empGoal;
+        totalR += empResult;
+
+        let resultClass = 'delta-neutral';
+        if (empGoal > 0 || empResult > 0) {
+            resultClass = empResult >= empGoal ? 'delta-pos' : 'delta-neg';
+        }
+
+        let dailyBreakdownHtml = '';
+        if (viewType === 'weekly') {
+            const currentDayIdx = (now.getDay() + 6) % 7; 
+            dailyBreakdownHtml = '<div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; padding-top: 4px; border-top: 1px dashed #f0f0f0;">';
+            
+            daysOfWeek.forEach((dName, idx) => {
+                if (dailyStats[dName]) {
+                    const dG = dailyStats[dName].goal;
+                    const dR = dailyStats[dName].result;
+                    const dClass = dR >= dG ? 'color: #065f46; background: #d1fae5;' : 'color: #991b1b; background: #fee2e2;';
+                    dailyBreakdownHtml += `<div style="font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; ${dClass}">${dName}: ${dR}/${dG}</div>`;
+                } else if (idx <= currentDayIdx) {
+                    dailyBreakdownHtml += `<div style="font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; color: #64748b; background: #f1f5f9;" title="Not Logged">${dName}: N/A</div>`;
+                } else {
+                    dailyBreakdownHtml += `<div style="font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; color: #cbd5e1; border: 1px dashed #e2e8f0; background: transparent;">${dName}</div>`;
+                }
+            });
+            dailyBreakdownHtml += '</div>';
+        }
+
+        html += `
+        <div style="display: flex; flex-direction: column; border-bottom: 1px solid #f8fafc; padding: 6px 0;">
+            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; align-items: center;">
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <span class="goals-roster-name" style="font-size: 13px; font-weight: 800; color: var(--slate-charcoal); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${emp}</span>
+                    ${viewType === 'daily' && empRole !== '-' ? `<span class="goals-roster-badge" style="font-size: 10px; background: #e2e8f0; color: var(--slate-charcoal); padding: 3px 6px; border-radius: 4px; display: inline-block; width: fit-content;">${empRole}</span>` : ''}
+                </div>
+                <div style="display: flex; justify-content: center;">
+                    <span class="goals-roster-val target" style="font-size: 14px; text-align: center; font-weight: 900; color: var(--slate-charcoal); width: 36px; display: inline-block;">${empGoal || '-'}</span>
+                </div>
+                <div style="display: flex; justify-content: center; align-items: center;">
+                    <span class="delta-badge ${resultClass}" style="font-size: 14px; width: 36px; height: 26px; padding: 0; display: inline-flex; justify-content: center; align-items: center;">${empResult || '-'}</span>
+                </div>
+            </div>
+            ${dailyBreakdownHtml}
+        </div>`;
+    });
+
+    list.innerHTML = html;
+    document.getElementById('goals-total-target').innerText = totalG;
+    
+    const actualEl = document.getElementById('goals-total-actual');
+    actualEl.innerText = totalR;
+    
+    if (totalG > 0 || totalR > 0) {
+        if (totalR >= totalG) {
+            actualEl.style.backgroundColor = '#d1fae5'; 
+            actualEl.style.color = '#065f46';           
+        } else {
+            actualEl.style.backgroundColor = '#fee2e2'; 
+            actualEl.style.color = '#991b1b';           
+        }
+    } else {
+        actualEl.style.backgroundColor = '#f1f5f9';     
+        actualEl.style.color = 'var(--slate-charcoal)'; 
+    }
+}
+
+function switchGoalTab(tab) {
+    const tD = document.getElementById('tab-daily');
+    const tW = document.getElementById('tab-weekly');
+    const actionBtn = document.getElementById('goals-action-btn');
+
+    if (tab === 'daily') {
+        tD.className = 'goal-tab active';
+        tW.className = 'goal-tab inactive';
+        actionBtn.style.display = 'block';
+        renderGoalsScoreboard('daily');
+    } else {
+        tW.className = 'goal-tab active';
+        tD.className = 'goal-tab inactive';
+        actionBtn.style.display = 'none'; 
+        renderGoalsScoreboard('weekly');
+    }
+}
+
+function flipGoalCard(showEdit) {
+    const flipper = document.getElementById('goals-flipper');
+    const tabContainer = document.querySelector('.goal-tab-container');
+    
+    if (showEdit) {
+        buildGoalsEditForm();
+        flipper.classList.add('is-flipped');
+        if (tabContainer) {
+            tabContainer.style.pointerEvents = 'none';
+            tabContainer.style.opacity = '0.5';
+        }
+    } else {
+        flipper.classList.remove('is-flipped');
+        if (tabContainer) {
+            tabContainer.style.pointerEvents = 'auto';
+            tabContainer.style.opacity = '1';
+        }
+    }
+}
+
+function buildGoalsEditForm() {
+    const container = document.getElementById('goals-edit-list');
+    const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
+    let html = '';
+
+    const availableRoles = goalsRoster.length <= 3 ? ['B1', 'B2', 'L1'] : ['B1', 'B2', 'L1', 'L2'];
+
+    goalsRoster.forEach((emp, idx) => {
+        const todayRecord = liveGoalsData.find(r => r.employee === emp && r.date === todayStr) || { role: '', goal: '', result: '' };
+        
+        let rolesHtml = '';
+        availableRoles.forEach(r => {
+            const isActive = todayRecord.role === r ? 'active' : '';
+            rolesHtml += `<button type="button" class="role-dot ${isActive}" onclick="selectRole(this, '${emp}', '${r}')">${r}</button>`;
+        });
+
+        html += `
+        <div class="goals-edit-item">
+            <div class="goals-edit-name">${emp}</div>
+            <div class="goals-edit-controls">
+                <div class="goals-edit-roles" id="roles-${idx}">
+                    ${rolesHtml}
+                </div>
+                <div style="display:flex; gap: 8px;">
+                    <input type="number" id="input-goal-${idx}" class="goal-input" placeholder="Goal" value="${todayRecord.goal}" title="Target Goal" />
+                    <input type="number" id="input-result-${idx}" class="goal-input" placeholder="Actual" value="${todayRecord.result}" title="Actual Result" style="border-color: #a7f3d0; background: #ecfdf5;" />
+                </div>
+            </div>
+        </div>`;
+    });
+
+    container.innerHTML = html;
+}
+
+function selectRole(btn, emp, role) {
+    const parent = btn.parentElement;
+    Array.from(parent.children).forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    btn.setAttribute('data-selected-role', role);
+}
+
+async function saveGoalsData() {
+    const btn = document.getElementById('saveGoalsBtn');
+    btn.innerText = "Saving to Database...";
+    btn.style.opacity = "0.7";
+
+    const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
+    let payloadEmployees = [];
+
+    goalsRoster.forEach((emp, idx) => {
+        const roleGroup = document.getElementById(`roles-${idx}`);
+        const activeBtn = roleGroup?.querySelector('.active');
+        const role = activeBtn ? (activeBtn.getAttribute('data-selected-role') || activeBtn.innerText) : '-';
+        
+        const goal = document.getElementById(`input-goal-${idx}`).value;
+        const result = document.getElementById(`input-result-${idx}`).value;
+
+        if (role !== '-' || goal !== '' || result !== '') {
+            payloadEmployees.push({ employee: emp, role: role, goal: goal, result: result });
+        }
+    });
+
+    try {
+        const response = await fetch(GOALS_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ store: goalsTargetStore, employees: payloadEmployees })
+        });
+
+        if(response.ok) {
+            liveGoalsData = liveGoalsData.filter(r => r.date !== todayStr);
+            payloadEmployees.forEach(p => {
+                liveGoalsData.push({ date: todayStr, store: goalsTargetStore, employee: p.employee, role: p.role, goal: p.goal, result: p.result });
+            });
+
+            document.getElementById('goals-pulse-dot').style.display = 'none';
+            const activeTab = document.getElementById('tab-daily').classList.contains('active') ? 'daily' : 'weekly';
+            renderGoalsScoreboard(activeTab);
+            flipGoalCard(false);
+        } else {
+            alert("Error saving goals to server.");
+        }
+    } catch (error) {
+        alert("Connection failed. Please try again.");
+    } finally {
+        btn.innerText = "Save Changes";
+        btn.style.opacity = "1";
+    }
+}
+
+// --- DM COMPACT GOALS WIDGET ---
+async function fetchDmGoalsData() {
+    const cont = document.getElementById('dm-compact-goals-container');
+    if (!cont) return;
+
+    const stores = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
+    
+    try {
+        const fetches = stores.map(s => fetch(`${GOALS_API_URL}?store=${s}&v=${Date.now()}`).then(r => r.json()));
+        const results = await Promise.all(fetches);
+        allDistrictGoalsData = results.flat();
+        renderCompactDmGoals();
+    } catch (e) {
+        cont.innerHTML = '<div class="status-message" style="color:var(--red-alert);">Network Sync Failed.</div>';
+    }
+}
+
+function switchCompactDmTab(view) {
+    currentDmGoalView = view;
+    document.getElementById('dm-compact-tab-daily').classList.toggle('active', view === 'daily');
+    document.getElementById('dm-compact-tab-weekly').classList.toggle('active', view === 'weekly');
+    renderCompactDmGoals();
+}
+
+function toggleDmStoreAccordion(store) {
+    const rosterDiv = document.getElementById(`dm-roster-${store}`);
+    const caret = document.getElementById(`dm-caret-${store}`);
+    const isOpen = rosterDiv.style.display === 'block';
+    
+    document.querySelectorAll('.dm-store-roster').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.dm-store-caret').forEach(el => el.style.transform = 'rotate(-90deg)');
+
+    if (!isOpen) {
+        rosterDiv.style.display = 'block';
+        caret.style.transform = 'rotate(0deg)'; 
+    }
+}
+
+function renderCompactDmGoals() {
+    const cont = document.getElementById('dm-compact-goals-container');
+    if (!cont) return;
+
+    const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() + (now.getDay() === 0 ? -6 : 1 - now.getDay()));
+    startOfWeek.setHours(0,0,0,0);
+
+    const stores = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
+    let html = '<div style="display: flex; flex-direction: column;">';
+
+    stores.forEach((store, idx) => {
+        const storeData = allDistrictGoalsData.filter(r => r.store === store);
+        let tGoal = 0, tResult = 0;
+        let activeEmps = new Set();
+
+        storeData.forEach(r => {
+            const recDate = new Date(r.date);
+            const isToday = r.date === todayStr;
+            const isThisWeek = recDate >= startOfWeek;
+
+            if ((currentDmGoalView === 'daily' && isToday) || (currentDmGoalView === 'weekly' && isThisWeek)) {
+                tGoal += parseInt(r.goal) || 0;
+                tResult += parseInt(r.result) || 0;
+                activeEmps.add(r.employee);
+            }
+        });
+
+        const progress = tGoal > 0 ? Math.min(100, Math.round((tResult / tGoal) * 100)) : 0;
+        const colorClass = tResult >= tGoal && tGoal > 0 ? 'var(--sage-professional)' : (tResult > 0 ? 'var(--idea-gold)' : '#cbd5e1');
+        const isMuted = tGoal === 0 && tResult === 0 ? 'opacity: 0.6;' : '';
+
+        html += `
+        <div onclick="toggleDmStoreAccordion('${store}')" class="lb-row" style="display: grid; grid-template-columns: 50px 1fr 70px 20px; align-items: center; border-bottom: 1px solid ${idx === stores.length-1 ? 'transparent' : '#f0f0f0'}; cursor: pointer; padding: 12px 15px; margin: 0; ${isMuted}">
+            <span style="font-size: 14px; font-weight: 900; color: var(--slate-charcoal);">${store}</span>
+            <div style="padding-right: 15px;">
+                <div style="width: 100%; height: 6px; background: #f1f5f9; border-radius: 3px; overflow: hidden; display: flex;">
+                    <div style="height: 100%; width: ${progress}%; background: ${colorClass}; border-radius: 3px; transition: width 0.5s ease;"></div>
+                </div>
+            </div>
+            <div style="text-align: right; font-size: 14px; font-weight: 900; color: var(--slate-charcoal);">
+                ${tResult} <span style="font-size: 11px; color: #888; font-weight: 600;">/ ${tGoal}</span>
+            </div>
+           <div id="dm-caret-${store}" class="dm-store-caret" style="text-align: right; color: #888; font-size: 10px; font-weight: 800; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); transform: rotate(-90deg);">▼</div>
+        </div>`;
+
+        html += `<div id="dm-roster-${store}" class="dm-store-roster" style="display: none; background: #fdfdfd; padding: 10px 20px; border-bottom: 1px solid #e2e8f0; box-shadow: inset 0 3px 6px rgba(0,0,0,0.02);">`;
+        
+        if (activeEmps.size === 0) {
+            html += `<div style="font-size: 12px; color: #888; text-align: center; font-weight: 600; padding: 10px 0;">No data logged.</div></div>`;
+            return;
+        }
+
+        Array.from(activeEmps).forEach(emp => {
+            const empRecords = storeData.filter(r => r.employee === emp);
+            let eG = 0, eR = 0;
+            let dailyStats = {}; 
+
+            empRecords.forEach(r => {
+                const recDate = new Date(r.date);
+                if ((currentDmGoalView === 'daily' && r.date === todayStr) || (currentDmGoalView === 'weekly' && recDate >= startOfWeek)) {
+                    const rG = parseInt(r.goal) || 0;
+                    const rR = parseInt(r.result) || 0;
+                    eG += rG;
+                    eR += rR;
+                    
+                    if (currentDmGoalView === 'weekly') {
+                        const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                        const dayIdx = (recDate.getDay() + 6) % 7; 
+                        dailyStats[daysOfWeek[dayIdx]] = { goal: rG, result: rR };
+                    }
+                }
+            });
+
+            const rClass = eG > 0 || eR > 0 ? (eR >= eG ? 'delta-pos' : 'delta-neg') : 'delta-neutral';
+
+            let dailyBreakdownHtml = '';
+            if (currentDmGoalView === 'weekly') {
+                const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                const currentDayIdx = (now.getDay() + 6) % 7;
+                const pillStyle = "flex: 1; min-width: 0; text-align: center; font-size: 9px; font-weight: 800; padding: 4px 2px; border-radius: 4px; white-space: nowrap;";
+                
+                dailyBreakdownHtml = '<div style="display: flex; gap: 6px; margin-top: 4px; padding-top: 4px; width: 100%;">';
+                
+                daysOfWeek.forEach((dName, dIdx) => {
+                    if (dailyStats[dName]) {
+                        const dG = dailyStats[dName].goal;
+                        const dR = dailyStats[dName].result;
+                        const dClass = dR >= dG ? 'color: #065f46; background: #d1fae5;' : 'color: #991b1b; background: #fee2e2;';
+                        dailyBreakdownHtml += `<div style="${pillStyle} ${dClass}">${dName}: ${dR}/${dG}</div>`;
+                    } else if (dIdx <= currentDayIdx) {
+                        dailyBreakdownHtml += `<div style="${pillStyle} color: #64748b; background: #f1f5f9;" title="Not Logged">${dName}</div>`;
+                    } else {
+                        dailyBreakdownHtml += `<div style="${pillStyle} color: #cbd5e1; border: 1px dashed #e2e8f0; background: transparent;">${dName}</div>`;
+                    }
+                });
+                dailyBreakdownHtml += '</div>';
+            }
+
+            html += `
+            <div style="display: flex; flex-direction: column; padding: 8px 0; border-bottom: 1px dashed #f0f0f0;">
+                <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 15px; align-items: center;">
+                    <span style="font-size: 13px; font-weight: 700; color: var(--slate-charcoal);">${emp}</span>
+                    <div style="display: flex; justify-content: center;">
+                        <span style="font-size: 14px; font-weight: 800; color: #64748b; width: 36px; text-align: center; display: inline-block;">${eG || '-'}</span>
+                    </div>
+                    <div style="display: flex; justify-content: center; align-items: center;">
+                        <span class="delta-badge ${rClass}" style="font-size: 14px; width: 36px; height: 26px; padding: 0; display: inline-flex; justify-content: center; align-items: center;">${eR || '-'}</span>
+                    </div>
+                </div>
+                ${dailyBreakdownHtml}
+            </div>`;
+        });
+        
+        html += `</div>`; 
+    });
+
+    html += '</div>'; 
+    cont.innerHTML = html;
+}
+
+// ============================================================================
+// 21. MODULE: EMPLOYEE DASHBOARD WIDGETS
+// ============================================================================
+
+async function fetchAndRenderEmployeeGoals() {
+    const container = document.getElementById('employee-goals-widget-body');
+    const dateLabel = document.getElementById('emp-goals-date');
+    const pulseDot = document.getElementById('emp-goals-pulse-dot');
+    if (!container) return;
+
+    const userName = sessionStorage.getItem('speeksUserName') || '';
+    let store = sessionStorage.getItem('speeksUserStore') || 'OVL';
+    if (store === 'ALL' || store === 'CORP') store = 'OVL';
+
+    const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() + (now.getDay() === 0 ? -6 : 1 - now.getDay()));
+    startOfWeek.setHours(0,0,0,0);
+
+    const ctTimeString = now.toLocaleString('en-US', { timeZone: 'America/Chicago', hour: 'numeric', hour12: false });
+    const hours = parseInt(ctTimeString, 10);
+    
+    if (pulseDot) {
+        pulseDot.style.display = (hours === 9 || hours === 19) ? 'block' : 'none';
+    }
+
+    if (dateLabel) {
+        dateLabel.innerText = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    }
+
+    try {
+        const res = await fetch(`${GOALS_API_URL}?store=${store}&v=${Date.now()}`);
+        const data = await res.json();
+        
+        const myRecords = data.filter(r => {
+            const dbName = String(r.employee).trim().toLowerCase();
+            const sessionName = String(userName).trim().toLowerCase();
+            
+            if (dbName === sessionName) return true; 
+            
+            const dbFirstName = dbName.split(' ')[0];
+            const sessionFirstName = sessionName.split(' ')[0];
+            
+            if (dbFirstName.length > 2 && sessionFirstName.length > 2) {
+                if (dbFirstName.startsWith(sessionFirstName) || sessionFirstName.startsWith(dbFirstName)) return true;
+            }
+            return false;
+        });
+        
+        let todayGoal = 0;
+        let todayRole = '';
+        let dailyStats = {};
+
+        myRecords.forEach(r => {
+            const recDate = new Date(r.date);
+            const g = parseInt(r.goal) || 0;
+            const resVal = parseInt(r.result) || 0;
+
+            if (r.date === todayStr) {
+                todayGoal += g;
+                if (r.role && r.role !== '-') todayRole = r.role;
+            }
+            
+            if (recDate >= startOfWeek) {
+                const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                const dayIdx = (recDate.getDay() + 6) % 7; 
+                dailyStats[daysOfWeek[dayIdx]] = { goal: g, result: resVal };
+            }
+        });
+
+        const roleTranslations = { 'B1': 'Buyer 1', 'B2': 'Buyer 2', 'L1': 'Lister 1', 'L2': 'Lister 2' };
+        const displayRole = roleTranslations[todayRole] || todayRole;
+
+        const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        const currentDayIdx = (now.getDay() + 6) % 7;
+        
+        let dailyBreakdownHtml = '<div class="emp-pill-container">';
+        
+        daysOfWeek.forEach((dName, dIdx) => {
+            if (dailyStats[dName]) {
+                const dG = dailyStats[dName].goal;
+                const dR = dailyStats[dName].result;
+                const dClass = dR >= dG ? 'pill-pass' : 'pill-fail';
+                dailyBreakdownHtml += `<div class="emp-daily-pill ${dClass}">${dName}: ${dR}/${dG}</div>`;
+            } else if (dIdx <= currentDayIdx) {
+                dailyBreakdownHtml += `<div class="emp-daily-pill pill-null" title="Not Logged">${dName}</div>`;
+            } else {
+                dailyBreakdownHtml += `<div class="emp-daily-pill pill-future">${dName}</div>`;
+            }
+        });
+        dailyBreakdownHtml += '</div>';
+
+        container.innerHTML = `
+            <div class="emp-goals-top-row">
+                <div class="emp-goal-col">
+                    <span class="emp-goal-label">TODAY'S TARGET</span>
+                    <span class="emp-goal-value">${todayGoal > 0 ? todayGoal : '-'}</span>
+                </div>
+                <div class="emp-goal-col emp-goal-col-right">
+                    <span class="emp-goal-label">MY ROLE</span>
+                    <span class="emp-goal-value">${displayRole || '-'}</span>
+                </div>
+            </div>
+
+            <div class="emp-week-section">
+                <span class="emp-goal-label">THIS WEEK'S BREAKDOWN</span>
+                ${dailyBreakdownHtml}
+            </div>
+        `;
+    } catch (e) {
+        container.innerHTML = '<div class="status-message" style="color:var(--red-alert);">Failed to sync goals.</div>';
+    }
+}
+
+async function fetchAndRenderEmployeeKPIs() {
+    const container = document.getElementById('employee-kpi-widget-body');
+    const periodLabel = document.getElementById('emp-kpi-period');
+    if (!container) return;
+
+    const userName = sessionStorage.getItem('speeksUserName') || '';
+    let store = sessionStorage.getItem('speeksUserStore') || 'OVL';
+    if (store === 'ALL' || store === 'CORP') store = 'OVL';
+
+    try {
+        const response = await fetch(`${WEEKLY_KPI_URL}?store=${store}&time=4-Week&v=${Date.now()}`);
+        const d = await response.json();
+        
+        let sAvg = {};
+        let myData = {};
+        let sIdx = d.findLastIndex(r => String(r[0]).trim().toLowerCase() === "store" || String(r[0]).trim().toLowerCase() === "store total");
+        
+        if (sIdx !== -1) {
+            let st = d[sIdx];
+            sAvg = { buyVal: st[2], buyMargin: st[5], customers: st[6], conversion: st[8], time: formatTime(st[12]), noDeals: st[14], listed: st[20] };
+            
+            const sessionName = String(userName).trim().toLowerCase();
+            const sessionFirstName = sessionName.split(' ')[0];
+
+            for (let i = Math.max(0, sIdx - 6); i <= Math.min(d.length - 1, sIdx + 6); i++) {
+                if (i === sIdx) continue;
+                let n = String(d[i][0]).trim();
+                let dbName = n.toLowerCase();
+                
+                if (n && !["name", "employee", "store", "store total", "ovl", "lee", "wsp", "mpl", "bal"].includes(dbName) && !dbName.includes("average") && !dbName.includes("week")) {
+                    
+                    let isMatch = false;
+                    if (dbName === sessionName) {
+                        isMatch = true;
+                    } else {
+                        const dbFirstName = dbName.split(' ')[0];
+                        if (dbFirstName.length > 2 && sessionFirstName.length > 2) {
+                            if (dbFirstName.startsWith(sessionFirstName) || sessionFirstName.startsWith(dbFirstName)) {
+                                isMatch = true;
+                            }
+                        }
+                    }
+
+                    if (isMatch) {
+                        myData = { buyVal: d[i][2], buyMargin: d[i][5], customers: d[i][6], conversion: d[i][8], time: formatTime(d[i][12]), noDeals: d[i][14], listed: d[i][20] };
+                        break; 
+                    }
+                }
+            }
+        }
+
+        let pTxt = "";
+        if (sIdx !== -1) {
+            let firstEmpIdx = -1;
+            for (let i = Math.max(0, sIdx - 6); i <= Math.min(d.length - 1, sIdx + 6); i++) {
+                let n = String(d[i][0]).trim(), lN = n.toLowerCase();
+                if (n && !["name", "employee", "store", "store total", "ovl", "lee", "wsp", "mpl", "bal"].includes(lN) && !lN.includes("average") && !lN.includes("week")) {
+                    if (String(d[i][2]).trim() !== "" || String(d[i][20]).trim() !== "") {
+                        firstEmpIdx = i;
+                        break; 
+                    }
+                }
+            }
+
+            if (firstEmpIdx !== -1) {
+                let hR = d[firstEmpIdx - 3] || d[firstEmpIdx - 2];
+                if (hR && hR[2] && hR[4] && hR[6]) {
+                    const getOrdinal = (n) => {
+                        let val = parseInt(String(n).replace(/\D/g, ''));
+                        if (isNaN(val)) return n;
+                        let s = ["th", "st", "nd", "rd"], v = val % 100;
+                        return val + (s[(v - 20) % 10] || s[v] || s[0]);
+                    };
+                    
+                    const monthNames = {"Jan":"January","Feb":"February","Mar":"March","Apr":"April","May":"May","Jun":"June","Jul":"July","Aug":"August","Sep":"September","Oct":"October","Nov":"November","Dec":"December"};
+                    let monthName = String(hR[2]).replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/ig, m => monthNames[m.charAt(0).toUpperCase() + m.slice(1).toLowerCase()] || m);
+                    
+                    let startDay = getOrdinal(hR[4]);
+                    let endDay = getOrdinal(hR[6]);
+                    
+                    pTxt = `${monthName} ${startDay} - ${endDay}`;
+                }
+            }
+        }
+        if (periodLabel) periodLabel.innerText = pTxt;
+
+        if (Object.keys(myData).length === 0) {
+            container.innerHTML = '<div class="status-message">No KPI data found for your user this week.</div>';
+            return;
+        }
+
+        const buildStatGridItem = (title, myVal, storeVal, ruleStr, isPercent = false, prefixLabel = "Store:", showBubble = true) => {
+            const myIsBad = ruleStr ? checkRule(ruleStr, myVal) : false;
+            
+            let displayMyVal = myVal || '-';
+            if (displayMyVal !== '-' && isPercent && !String(displayMyVal).includes('%')) displayMyVal += '%';
+            
+            let displayStoreVal = storeVal || '-';
+            if (displayStoreVal !== '-' && isPercent && !String(displayStoreVal).includes('%')) displayStoreVal += '%';
+
+            let centerHtml = '';
+            if (showBubble) {
+                const badgeClass = displayMyVal === '-' ? 'badge-null' : (myIsBad ? 'badge-fail' : 'badge-pass');
+                centerHtml = `<div class="emp-kpi-badge ${badgeClass}" style="margin: 4px 0; padding: 4px 6px; font-size: 11px;">${displayMyVal}</div>`;
+            } else {
+                centerHtml = `<div style="font-size: 13px; font-weight: 900; color: var(--slate-charcoal); margin: 4px 0; padding: 4px 0;">${displayMyVal}</div>`;
+            }
+
+            return `
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 4px; border: 1px dashed #e2e8f0; border-radius: 6px; background: #fdfdfd;">
+                <span style="font-size: 9px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase; line-height: 1;">${title}</span>
+                ${centerHtml}
+                <span style="font-size: 8px; font-weight: 700; color: #a0aab2; text-transform: uppercase;">${prefixLabel} <strong>${displayStoreVal}</strong></span>
+            </div>`;
+        };
+
+        container.innerHTML = `
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; height: 100%;">
+                ${buildStatGridItem('Buying Value', myData.buyVal, sAvg.buyVal, null, false, 'Store:', false)}
+                ${buildStatGridItem('Margin', myData.buyMargin, sAvg.buyMargin, 'margin', true, 'Store:', true)}
+                ${buildStatGridItem('Conversion', myData.conversion, sAvg.conversion, 'conversion', true, 'Store:', true)}
+                ${buildStatGridItem('No Deals', myData.noDeals, sAvg.noDeals, 'nodeals', false, 'Store:', true)}
+                ${buildStatGridItem('Trans. Time', myData.time, sAvg.time, 'time', false, 'Store:', true)}
+                ${buildStatGridItem('Listed Dev.', myData.listed, sAvg.listed, null, false, 'Store:', false)}
+            </div>
+        `;
+    } catch (e) {
+        container.innerHTML = '<div class="status-message" style="color:var(--red-alert);">Failed to sync KPIs.</div>';
+    }
+}
+
+// ============================================================================
+// 22. MODULE: ROLE-BASED UI & INITIALIZATION
+// ============================================================================
+
+function applyRoleBasedUI() {
+    const userRole = sessionStorage.getItem('speeksUserRole') || 'employee';
+    const userStore = sessionStorage.getItem('speeksUserStore') || 'ALL';
+    const userName = sessionStorage.getItem('speeksUserName') || 'User';
+
+    const greetingEl = document.getElementById('userGreeting');
+    if (greetingEl) greetingEl.innerText = `Welcome ${userName}!`;
+
+    const userRoleClass = `role-${userRole.toLowerCase().replace(/\s+/g, '-')}`; 
+    const userStoreClass = `store-${userStore.toLowerCase()}`;
+
+    document.querySelectorAll('.dynamic-module-flex, .dynamic-module-block, .dynamic-module').forEach(module => {
+        const classes = Array.from(module.classList);
+        const requiredRoles = classes.filter(c => c.startsWith('role-'));
+        const requiredStores = classes.filter(c => c.startsWith('store-'));
+
+        const passesRole = requiredRoles.length === 0 || requiredRoles.includes(userRoleClass);
+        const passesStore = requiredStores.length === 0 || requiredStores.includes(userStoreClass);
+
+        if (passesRole && passesStore) {
+            let displayType = module.classList.contains('dynamic-module-flex') ? 'flex' : 'block';
+            module.style.setProperty('display', displayType, 'important');
+        } else {
+            module.style.setProperty('display', 'none', 'important');
+        }
+    });
+
+    if (userRole === 'employee') {
+        document.querySelectorAll('.manager-only').forEach(el => el.style.setProperty('display', 'none', 'important'));
+    }
+
+    if (userStore !== 'ALL') {
+        ['kpiStoreSelect', 'weeklyKpiStoreSelect', 'bsStoreSelect', 'vw-primary'].forEach(id => {
+            const dropdown = document.getElementById(id);
+            if (dropdown && Array.from(dropdown.options).some(opt => opt.value === userStore)) {
+                dropdown.value = userStore;
+            }
+        });
+    }
 }
 
 function initDashboardData() { 
     const runInit = () => {
         if (typeof initChecklists === 'function') initChecklists(); 
+        
         setTimeout(fetchHubData, 100); 
         setTimeout(fetchVarianceData, 300); 
         setTimeout(fetchWeeklyKPIs, 500); 
         setTimeout(fetchKPIData, 700); 
-        setTimeout(preloadAllStores, 4000); 
-        setTimeout(initListingGoals, 200);
+        setTimeout(fetchRecordsData, 800);
         setTimeout(fetchDmGoalsData, 1000);
         setTimeout(fetchAndRenderEmployeeGoals, 1100);
         setTimeout(fetchAndRenderEmployeeKPIs, 1200);
-        setTimeout(fetchRecordsData, 800);
         
-        // FIX: Removed the 1.5s and 1.6s delays! The charts will now handle their own instant loading.
+        if (typeof preloadAllStores === 'function') setTimeout(preloadAllStores, 4000); 
+        if (typeof initListingGoals === 'function') setTimeout(initListingGoals, 200);
     };
 
-    // SPA Auto-Loader. If the router forgot to load Chart.js, we inject it dynamically!
     if (typeof Chart === 'undefined') {
         const s1 = document.createElement('script'); 
         s1.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+        
         const s2 = document.createElement('script'); 
         s2.src = 'https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0';
         
@@ -940,25 +3222,191 @@ function initDashboardData() {
     }
 }
 
-// --- 8. MODULE: METRICS (CHARTS & RECORDS) ---
-let mainChartInstance = null, currentTimeframe = '4-Week', recordsCache = JSON.parse(localStorage.getItem('speeksRecordsCache')) || null, kpiChartCache = JSON.parse(localStorage.getItem('speeksKpiChartCache')) || { '4-Week': null, 'Monthly': null };
+// --- INIT LISTENERS ---
+document.addEventListener("DOMContentLoaded", () => {
+    setTimeout(() => document.body.classList.remove('preload'), 50);
+    
+    if (localStorage.getItem('speeksSidebar') === 'collapsed') { 
+        document.querySelector('.sidebar')?.classList.add('collapsed'); 
+        document.querySelector('.main-content')?.classList.add('expanded'); 
+        document.querySelector('.sidebar-toggle')?.classList.add('collapsed'); 
+    }
+    
+    loadCMS();
+    injectGlobalAuth();
+    injectIdeaModal(); 
+    startAuthFetch();
+    
+    if (document.getElementById('kbBody')) loadHotkeys();
+    if (document.getElementById('content-container') && document.getElementById('docSearch')) { 
+        loadDocs(); 
+        document.getElementById('docSearch').addEventListener('keyup', filterDocs); 
+    }
 
-function switchPageTab(tab) {
-    ['trends', 'records'].forEach(t => { document.getElementById('pane-' + t)?.classList.toggle('active', t === tab); document.getElementById('tab-btn-' + t)?.classList.toggle('active', t === tab); });
-    if (tab === 'records') renderRecords();
-}
+    if (sessionStorage.getItem('speeksUnlocked') === 'true') { 
+        document.body.classList.add('is-authenticated');
+        const authOverlay = document.getElementById('authOverlay');
+        if (authOverlay) authOverlay.style.display = 'none'; 
+        document.body.style.overflow = '';
+        
+        closeAllModals(); 
+        applyRoleBasedUI(); 
+        initDashboardData(); 
+    } else {
+        if (!window.location.href.includes('index.html') && document.getElementById('authOverlay')) {
+            window.location.href = "index.html"; 
+            return;
+        }
+        const authOverlay = document.getElementById('authOverlay');
+        if (authOverlay) {
+            authOverlay.style.display = 'flex'; 
+            document.body.style.overflow = 'hidden'; 
+            document.getElementById('pinInput')?.focus(); 
+        }
+    }
+    
+    ['kpiStoreSelect', 'weeklyKpiStoreSelect', 'vw-primary', 'vw-compare'].forEach(id => {
+        document.getElementById(id)?.addEventListener('change', () => {
+            if (id === 'kpiStoreSelect') fetchKPIData(false);
+            else if (id === 'weeklyKpiStoreSelect') fetchWeeklyKPIs();
+            else renderVariance();
+        });
+    });
+    
+    if (document.getElementById('mainKpiChart') && typeof syncAllData === 'function') syncAllData();
 
-let currentChartMode = 'averages';
+    if (typeof fetchScorecardData === 'function') fetchScorecardData();
+    if (typeof fetchAlertsData === 'function') fetchAlertsData();
+    if (typeof fetchMasterDistrictDashboard === 'function') fetchMasterDistrictDashboard();
+    if (typeof fetchDistrictMonthlyKPIs === 'function') fetchDistrictMonthlyKPIs();
+});
 
-function setChartMode(mode) {
-    currentChartMode = mode;
-    document.getElementById('btn-chart-avg')?.classList.toggle('active', mode === 'averages');
-    document.getElementById('btn-chart-emp')?.classList.toggle('active', mode === 'employees');
-    loadKpiData(); // Re-draws the chart instantly
-}
+// ============================================================================
+// 23. CUSTOM TOOLTIP LOGIC
+// ============================================================================
+const customTooltip = document.createElement('div');
+customTooltip.className = 'speeks-tooltip';
+document.body.appendChild(customTooltip);
 
-function setTimeframe(t) { currentTimeframe = t; document.getElementById('btn-4week')?.classList.toggle('active', t === '4-Week'); document.getElementById('btn-monthly')?.classList.toggle('active', t === 'Monthly'); loadKpiData(); }
+document.addEventListener('mouseover', function(e) {
+    const card = e.target.closest('.doc-card');
+    
+    if (card) {
+        const titleEl = card.querySelector('.doc-title');
+        const descEl = card.querySelector('.doc-desc');
+        
+        if (titleEl && descEl) {
+            const isTitleCut = titleEl.scrollWidth > titleEl.clientWidth;
+            const isDescCut = descEl.scrollHeight > descEl.clientHeight;
+            
+            if (isTitleCut || isDescCut) {
+                customTooltip.innerHTML = `
+                    <strong style="display:block; margin-bottom: 6px; color: var(--sage-professional); font-size: 14px; white-space: nowrap;">
+                        ${titleEl.innerText.trim()}
+                    </strong>
+                    <span style="font-size: 12px; color: var(--slate-charcoal); line-height: 1.4;">
+                        ${descEl.innerText.trim()}
+                    </span>`;
+                customTooltip.classList.add('show');
+                return;
+            }
+        }
+    }
+    customTooltip.classList.remove('show');
+});
 
+document.addEventListener('mousemove', function(e) {
+    if (customTooltip.classList.contains('show')) {
+        let x = e.pageX + 15;
+        let y = e.pageY + 15;
+        
+        if (x + customTooltip.offsetWidth > window.innerWidth - 20) {
+            x = e.pageX - customTooltip.offsetWidth - 10;
+        }
+        
+        customTooltip.style.left = x + 'px';
+        customTooltip.style.top = y + 'px';
+    }
+});
+
+document.addEventListener('mouseout', function(e) {
+    if (e.target.closest('.doc-card')) {
+        customTooltip.classList.remove('show');
+    }
+});
+
+window.addEventListener('scroll', function() {
+    customTooltip.classList.remove('show');
+}, { passive: true });
+
+// ============================================================================
+// 24. ZERO-FLICKER SPA ROUTER
+// ============================================================================
+document.addEventListener('click', async (e) => {
+    const link = e.target.closest('.nav-link'); 
+    
+    if (link && link.href && link.href.startsWith(window.location.origin) && !link.href.includes('#')) {
+        e.preventDefault(); 
+        
+        const targetUrl = link.href;
+        if (targetUrl === window.location.href) return; 
+        
+        try {
+            const response = await fetch(targetUrl);
+            const html = await response.text();
+            
+            const parser = new DOMParser();
+            const newDoc = parser.parseFromString(html, 'text/html');
+            
+            const currentMain = document.querySelector('.main-content');
+            const newMain = newDoc.querySelector('.main-content');
+            
+            if (currentMain && newMain) {
+                currentMain.innerHTML = newMain.innerHTML;
+            }
+
+            document.querySelectorAll('.nav-link').forEach(nav => nav.classList.remove('active'));
+            const newActiveLink = Array.from(document.querySelectorAll('.nav-link')).find(n => n.href === targetUrl);
+            if (newActiveLink) newActiveLink.classList.add('active');
+
+            window.history.pushState({ path: targetUrl }, '', targetUrl);
+            document.title = newDoc.title;
+
+            applyRoleBasedUI();
+            closeAllModals();
+
+            if (targetUrl.includes('docs.html')) {
+                if (typeof loadDocs === 'function') loadDocs();
+                const docSearch = document.getElementById('docSearch');
+                if (docSearch) docSearch.addEventListener('keyup', filterDocs);
+            } else {
+                setTimeout(() => {
+                    if (typeof initDashboardData === 'function') initDashboardData();
+                    if (document.getElementById('mainKpiChart') && typeof syncAllData === 'function') syncAllData();
+                    if (typeof fetchScorecardData === 'function') fetchScorecardData();
+                    if (typeof fetchAlertsData === 'function') fetchAlertsData();
+                    if (typeof fetchMasterDistrictDashboard === 'function') fetchMasterDistrictDashboard();
+                    if (typeof fetchDistrictMonthlyKPIs === 'function') fetchDistrictMonthlyKPIs();
+                    if (document.getElementById('pane-records') && typeof fetchRecordsData === 'function') fetchRecordsData();
+                }, 100);
+            }
+
+        } catch (err) {
+            console.error("SPA Routing failed, falling back to hard load", err);
+            window.location.href = targetUrl; 
+        }
+    }
+});
+
+window.addEventListener('popstate', () => {
+    window.location.reload(); 
+});
+
+// ============================================================================
+// 25. THE MISSING FUNCTIONS (CHARTS & MANAGER MODALS)
+// ============================================================================
+
+// --- CHART: RENDER KPI ---
 function renderKpiChart(allData, metric) {
     if(!document.getElementById('mainKpiChart')) return;
 
@@ -1171,7 +3619,7 @@ function renderKpiChart(allData, metric) {
         options: { 
             responsive: true, 
             maintainAspectRatio: false, 
-            layout: { padding: { top: 55, right: 20, left: 10, bottom: 0 } }, // Increased top to 55px!
+            layout: { padding: { top: 55, right: 20, left: 10, bottom: 0 } },
             animation: { duration: 400 }, 
             plugins: { 
                 legend: { 
@@ -1203,13 +3651,7 @@ function renderKpiChart(allData, metric) {
                 }
             }, 
             scales: { 
-                y: { 
-                    min: yMin, 
-                    max: yMax, 
-                    ticks: { 
-                        callback: v => metric === 'time' ? formatTimeStr(v) : (v + unit) 
-                    } 
-                }, 
+                y: { min: yMin, max: yMax, ticks: { callback: v => metric === 'time' ? formatTimeStr(v) : (v + unit) } }, 
                 x: { grid: { display: false } } 
             } 
         } 
@@ -1219,1976 +3661,7 @@ function renderKpiChart(allData, metric) {
     if (activeLoader) activeLoader.style.display = 'none';
 }
 
-function renderLiveData(d) {
-    if (!d) return;
-    ['ovl', 'lee', 'wsp'].forEach(id => {
-        let pN = document.getElementById(`${id}-pct`); if(!pN) return;
-        let p = Math.round(d[`${id}Pct`] || 0); pN.innerText = p + '%'; document.getElementById(`${id}-goal`).innerText = `Goal: $${Math.round(d[`${id}Goal`] || 0).toLocaleString()}`; document.getElementById(`${id}-t-gp`).innerText = `$${Math.round(d[`${id}TrackGP`] || 0).toLocaleString()}`;
-        setTimeout(() => { let b = document.getElementById(`${id}-bar`); if (b) { b.style.strokeDashoffset = 402 - (Math.min(p, 100)/100)*402; b.style.stroke = p < 100 ? "var(--red-alert)" : "var(--sage-professional)"; } }, 50);
-    });
-    if (document.getElementById('rev-list')) {
-        const sArr = [{n:'OVL', r:d.ovlRev, g:d.ovlGP}, {n:'LEE', r:d.leeRev, g:d.leeGP}, {n:'WSP', r:d.wspRev, g:d.wspGP}];
-        document.getElementById('rev-list').innerHTML = [...sArr].sort((a,b)=>b.r-a.r).map((s,i)=>`<div class="lb-row"><div class="lb-rank ${i===0?'lb-gold':''}">#${i+1}</div><div class="lb-name">${s.n}</div><div class="lb-val">$${Math.round(s.r).toLocaleString()}</div></div>`).join('');
-        document.getElementById('gp-list').innerHTML = [...sArr].sort((a,b)=>b.g-a.g).map((s,i)=>`<div class="lb-row"><div class="lb-rank ${i===0?'lb-gold':''}">#${i+1}</div><div class="lb-name">${s.n}</div><div class="lb-val">$${Math.round(s.g).toLocaleString()}</div></div>`).join('');
-        const n = new Date(); document.getElementById('lastSyncedText').innerText = `Last Synced: ${n.getHours()%12||12}:${String(n.getMinutes()).padStart(2,'0')} ${n.getHours()>=12?'PM':'AM'}`;
-    }
-}
-
-async function fetchRecordsData() { try { recordsCache = await (await fetch(`${RECORDS_URL}?v=${Date.now()}`)).json(); localStorage.setItem('speeksRecordsCache', JSON.stringify(recordsCache)); if (document.getElementById('pane-records')?.classList.contains('active')) renderRecords(); } catch (e) {} }
-
-function renderRecords() {
-    const cont = document.getElementById('recordsContainer'); if(!cont) return;
-    if (!recordsCache?.length) return cont.innerHTML = '<div class="status-message">Syncing Data...</div>';
-    const map = {}; recordsCache.forEach(r => { let l = String(r.label).trim(), s = String(r.section).toUpperCase().trim(); if (!map[l]) map[l] = { c: null, s: [] }; if (s === 'COMPANY' || s === 'COMPANY WIDE') map[l].c = r; else map[l].s.push(r); });
-    let bC = 0; cont.innerHTML = '<div class="records-masonry-grid">' + Object.keys(map).map(l => {
-        let d = map[l]; bC++; let oId = 'overflow-board-' + bC; d.s.sort((a, b) => parseNum(b.value) - parseNum(a.value)); let cR = d.c || d.s[0];
-        return `<div class="record-metric-card"><div class="rmc-header" style="background: var(--slate-charcoal);">${l}</div>${cR ? `<div class="rmc-champion"><div class="rmc-crown">👑 Company Record</div><div class="rmc-champ-val">${cR.value || '-'}</div><div class="rmc-champ-sub">${cR.subtext || ''}</div></div>` : ''}${d.s.length ? `<div class="rmc-list">${d.s.slice(0, 3).map((s, i) => `<div class="rmc-list-item"><div class="rmc-rank">${i===0?'🥇':(i===1?'🥈':'🥉')}</div><div class="rmc-store">${s.section}</div><div class="rmc-score"><span class="rmc-score-val">${s.value || '-'}</span><span class="rmc-score-date">${s.subtext || ''}</span></div></div>`).join('')}${d.s.length > 3 ? `<div id="${oId}" class="hidden-board">${d.s.slice(3).map((s, i) => `<div class="rmc-list-item"><div class="rmc-rank" style="font-size:11px; color:#999;">#${i+4}</div><div class="rmc-store">${s.section}</div><div class="rmc-score"><span class="rmc-score-val">${s.value || '-'}</span><span class="rmc-score-date">${s.subtext || ''}</span></div></div>`).join('')}</div><button class="rmc-expand-btn" onclick="toggleBoard('${oId}', this)">See Full Leaderboard ▾</button>` : ''}</div>` : ''}</div>`;
-    }).join('') + '</div>';
-}
-
-function toggleBoard(id, btn) { const el = document.getElementById(id); el.classList.toggle('open'); btn.innerText = el.classList.contains('open') ? 'Hide Leaderboard ▴' : 'See Full Leaderboard ▾'; }
-function loadKpiData() { 
-    const mSelect = document.getElementById('metricSelector');
-    if (!mSelect) return;
-    const m = mSelect.value;
-    
-    // Force the loader to show immediately upon switching metrics/tabs
-    const loader = document.getElementById('chartLoading');
-    if (loader) {
-        loader.style.display = 'flex';
-        loader.innerHTML = '<div class="status-message">Syncing Data...</div>';
-    }
-    
-    if (kpiChartCache[currentTimeframe] && Array.isArray(kpiChartCache[currentTimeframe]) && kpiChartCache[currentTimeframe].length > 0) {
-        try {
-            renderKpiChart(kpiChartCache[currentTimeframe], m); 
-        } catch(e) {
-            fetchChartData(currentTimeframe);
-        }
-    } else {
-        fetchChartData(currentTimeframe); 
-    }
-}
-
-async function fetchChartData(tf) {
-    const loader = document.getElementById('chartLoading');
-    if (loader) {
-        loader.style.display = 'flex';
-        loader.innerHTML = '<div class="status-message">Syncing Data...</div>';
-    }
-    
-    try {
-        const d = await Promise.all([
-            fetch(`${WEEKLY_KPI_URL}?store=OVL&time=${tf}`).then(r => r.json()), 
-            fetch(`${WEEKLY_KPI_URL}?store=LEE&time=${tf}`).then(r => r.json()), 
-            fetch(`${WEEKLY_KPI_URL}?store=WSP&time=${tf}`).then(r => r.json()),
-            fetch(`${WEEKLY_KPI_URL}?store=MPL&time=${tf}`).then(r => r.json()),
-            fetch(`${WEEKLY_KPI_URL}?store=BAL&time=${tf}`).then(r => r.json())
-        ]);
-        
-        kpiChartCache[tf] = d; 
-        try { localStorage.setItem('speeksKpiChartCache', JSON.stringify(kpiChartCache)); } catch(e) {}
-        
-        if (currentTimeframe === tf) {
-            const mSelect = document.getElementById('metricSelector');
-            if (mSelect) renderKpiChart(d, mSelect.value);
-        }
-    } catch (e) {
-        console.error("fetchChartData error:", e);
-        if (loader) {
-            loader.innerHTML = '<div class="status-message" style="color:var(--red-alert);">Failed to load chart data.</div>';
-        }
-    } 
-}
-
-function syncAllData() { 
-    // Safely isolate every widget update so a delay in one never crashes the others
-    try {
-        const mSelect = document.getElementById('metricSelector');
-        if (typeof kpiChartCache !== 'undefined' && kpiChartCache && kpiChartCache[currentTimeframe] && mSelect) {
-            renderKpiChart(kpiChartCache[currentTimeframe], mSelect.value); 
-        }
-    } catch (e) {}
-    
-    try {
-        if (typeof cachedLeaderboardData !== 'undefined' && cachedLeaderboardData) {
-            drawLeaderboard();
-        }
-    } catch (e) {}
-    
-    try {
-        if (typeof hubDataCache !== 'undefined' && hubDataCache) {
-            renderLiveData(hubDataCache); 
-        }
-    } catch (e) {}
-    
-    // Trigger background syncs safely
-    fetchChartData(currentTimeframe); 
-    fetchHubData(); 
-    if (typeof loadCMS === 'function') loadCMS(); 
-    if (typeof fetchRecordsData === 'function') fetchRecordsData(); 
-}
-
-
-// --- QUICK MESSAGES MODULE ---
-let quickMsgCache = null;
-let currentQMTab = 'common';
-
-async function loadQuickMessages() {
-    const contentDiv = document.getElementById('qmContent');
-    
-    if (quickMsgCache && contentDiv.querySelector('.qm-item')) return; 
-
-    contentDiv.innerHTML = '<div class="status-message">Syncing Data...</div>';
-
-    try {
-        const response = await fetch(QUICK_MSG_URL);
-        quickMsgCache = await response.json(); 
-        
-        renderQMTab(currentQMTab);
-    } catch (error) {
-        console.error("Error loading Quick Messages:", error);
-        contentDiv.innerHTML = '<div class="status-message" style="color: var(--red-alert);">Failed to load messages. Ensure Apps Script is deployed as a "New Version".</div>';
-    }
-}
-
-function switchQMTab(tab) {
-    currentQMTab = tab;
-    
-    const btnCommon = document.getElementById('qm-tab-common');
-    const btnNoDeals = document.getElementById('qm-tab-nodeals');
-    if (btnCommon && btnNoDeals) {
-        btnCommon.classList.toggle('active', tab === 'common');
-        btnNoDeals.classList.toggle('active', tab === 'nodeals');
-    }
-    
-    renderQMTab(tab);
-}
-
-function renderQMTab(tab) {
-    const contentDiv = document.getElementById('qmContent');
-    if (!quickMsgCache) return;
-
-    const rawData = tab === 'common' ? quickMsgCache.common : quickMsgCache.noDeals;
-    
-    let userStore = sessionStorage.getItem('speeksUserStore') || 'OVL';
-    if (userStore === 'ALL') userStore = 'CORP';
-
-    if (!rawData || rawData.length === 0) {
-        contentDiv.innerHTML = '<div style="padding: 20px; color: #888; text-align: center; font-weight: 600;">No messages found in this tab.</div>';
-        return;
-    }
-
-    const groupedData = {};
-    
-    rawData.forEach(row => {
-        const rowStore = String(row.store || "Everyone").trim().toUpperCase();
-        if (rowStore === 'EVERYONE' || rowStore === userStore.toUpperCase()) {
-            const category = row.category;
-            if (!groupedData[category]) groupedData[category] = [];
-            groupedData[category].push(row);
-        }
-    });
-
-    let html = '';
-
-    if (tab === 'common') {
-        for (const [category, items] of Object.entries(groupedData)) {
-            html += `
-            <div class="qm-category-wrapper">
-                <div class="qm-category" onclick="this.classList.toggle('open'); this.nextElementSibling.classList.toggle('open')">
-                    <span>> ${escapeHtml(category)}</span>
-                    <span class="qm-caret" style="font-size:10px; color:#a0aab2; transition: transform 0.3s;">▼</span>
-                </div>
-                <div class="qm-category-items">
-                    ${items.map(item => `
-                        <div class="qm-item">
-                            <div class="qm-item-header">
-                                <div class="qm-item-name" onclick="this.parentElement.nextElementSibling.classList.toggle('open')">
-                                    ${escapeHtml(item.name)}
-                                </div>
-                                <button class="qm-copy-btn" title="Copy Message" data-message="${escapeHtml(item.message)}" onclick="copyQMToClipboard(this)">
-                                    📋
-                                </button>
-                            </div>
-                            <div class="qm-item-message">
-                                ${escapeHtml(item.message)}
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>`;
-        }
-    } 
-    else {
-        html += '<div class="qm-category-items open" style="margin-left: 0; padding-left: 0; border: none; background: transparent;">';
-        for (const [category, items] of Object.entries(groupedData)) {
-            html += items.map(item => `
-                <div class="qm-item">
-                    <div class="qm-item-header">
-                        <div class="qm-item-name" onclick="this.parentElement.nextElementSibling.classList.toggle('open')">
-                            ${escapeHtml(item.name)}
-                        </div>
-                        <button class="qm-copy-btn" title="Copy Message" data-message="${escapeHtml(item.message)}" onclick="copyQMToClipboard(this)">
-                            📋
-                        </button>
-                    </div>
-                    <div class="qm-item-message">
-                        ${escapeHtml(item.message)}
-                    </div>
-                </div>
-            `).join('');
-        }
-        html += '</div>';
-    }
-    
-    if (html === '' || html === '<div class="qm-category-items open" style="margin-left: 0; padding-left: 0; border: none; background: transparent;"></div>') {
-        html = '<div style="padding: 20px; color: #888; text-align: center; font-weight: 600;">No messages available for your location.</div>';
-    }
-    
-    contentDiv.innerHTML = html;
-}
-
-function switchQMTab(tab) {
-    currentQMTab = tab;
-    
-    const btnCommon = document.getElementById('qm-tab-common');
-    const btnNoDeals = document.getElementById('qm-tab-nodeals');
-    const btnReviews = document.getElementById('qm-tab-reviews'); // New Button
-    
-    if (btnCommon && btnNoDeals && btnReviews) {
-        btnCommon.classList.toggle('active', tab === 'common');
-        btnNoDeals.classList.toggle('active', tab === 'nodeals');
-        btnReviews.classList.toggle('active', tab === 'reviews');
-    }
-    
-    renderQMTab(tab);
-}
-
-function renderQMTab(tab) {
-    const contentDiv = document.getElementById('qmContent');
-    if (!quickMsgCache) return;
-
-    // Route the data to the correct tab
-    let rawData = quickMsgCache.common;
-    if (tab === 'nodeals') rawData = quickMsgCache.noDeals;
-    if (tab === 'reviews') rawData = quickMsgCache.reviews;
-    
-    let userStore = sessionStorage.getItem('speeksUserStore') || 'OVL';
-    if (userStore === 'ALL') userStore = 'CORP';
-
-    if (!rawData || rawData.length === 0) {
-        contentDiv.innerHTML = '<div style="padding: 20px; color: #888; text-align: center; font-weight: 600;">No messages found in this tab.</div>';
-        return;
-    }
-
-    const groupedData = {};
-    
-    rawData.forEach(row => {
-        const rowStore = String(row.store || "Everyone").trim().toUpperCase();
-        if (rowStore === 'EVERYONE' || rowStore === userStore.toUpperCase()) {
-            const category = row.category;
-            if (!groupedData[category]) groupedData[category] = [];
-            groupedData[category].push(row);
-        }
-    });
-
-    let html = '';
-
-    // 1. COMMON TAB (Folders)
-    if (tab === 'common') {
-        for (const [category, items] of Object.entries(groupedData)) {
-            html += `
-            <div class="qm-category-wrapper">
-                <div class="qm-category" onclick="this.classList.toggle('open'); this.nextElementSibling.classList.toggle('open')">
-                    <span> 🗂️ ${escapeHtml(category)}</span>
-                    <span class="qm-caret" style="font-size:10px; color:#a0aab2; transition: transform 0.3s;">▼</span>
-                </div>
-                <div class="qm-category-items">
-                    ${items.map(item => `
-                        <div class="qm-item">
-                            <div class="qm-item-header">
-                                <div class="qm-item-name" onclick="this.parentElement.nextElementSibling.classList.toggle('open')">
-                                    ${escapeHtml(item.name)}
-                                </div>
-                                <button class="qm-copy-btn" title="Copy Message" data-message="${escapeHtml(item.message)}" onclick="copyQMToClipboard(this)">
-                                    📋
-                                </button>
-                            </div>
-                            <div class="qm-item-message">
-                                ${escapeHtml(item.message)}
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>`;
-        }
-    } 
-    // 2. NO DEALS TAB (Single Column Flat List)
-    else if (tab === 'nodeals') {
-        html += '<div class="qm-category-items open" style="margin-left: 0; padding-left: 0; border: none; background: transparent;">';
-        for (const [category, items] of Object.entries(groupedData)) {
-            html += items.map(item => `
-                <div class="qm-item">
-                    <div class="qm-item-header">
-                        <div class="qm-item-name" onclick="this.parentElement.nextElementSibling.classList.toggle('open')">
-                            ${escapeHtml(item.name)}
-                        </div>
-                        <button class="qm-copy-btn" title="Copy Message" data-message="${escapeHtml(item.message)}" onclick="copyQMToClipboard(this)">
-                            📋
-                        </button>
-                    </div>
-                    <div class="qm-item-message">
-                        ${escapeHtml(item.message)}
-                    </div>
-                </div>
-            `).join('');
-        }
-        html += '</div>';
-    }
-    // 3. REVIEWS TAB (2-Column Grid Layout!)
-    else if (tab === 'reviews') {
-        html += '<div class="qm-category-items open" style="margin-left: 0; padding-left: 0; border: none; background: transparent; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start;">';
-        for (const [category, items] of Object.entries(groupedData)) {
-            html += items.map(item => `
-                <div class="qm-item" style="margin-bottom: 0;">
-                    <div class="qm-item-header">
-                        <div class="qm-item-name" onclick="this.parentElement.nextElementSibling.classList.toggle('open')">
-                            ${escapeHtml(item.name)}
-                        </div>
-                        <button class="qm-copy-btn" title="Copy Message" data-message="${escapeHtml(item.message)}" onclick="copyQMToClipboard(this)">
-                            📋
-                        </button>
-                    </div>
-                    <div class="qm-item-message">
-                        ${escapeHtml(item.message)}
-                    </div>
-                </div>
-            `).join('');
-        }
-        html += '</div>';
-    }
-    
-    if (html === '' || html.includes('style="margin-left: 0; padding-left: 0; border: none; background: transparent;"></div>') || html.includes('style="margin-left: 0; padding-left: 0; border: none; background: transparent; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start;"></div>')) {
-        html = '<div style="padding: 20px; color: #888; text-align: center; font-weight: 600;">No messages available for your location.</div>';
-    }
-    
-    contentDiv.innerHTML = html;
-}
-
-function copyQMToClipboard(button) {
-    const textToCopy = button.getAttribute('data-message');
-    navigator.clipboard.writeText(textToCopy).then(() => {
-        const originalIcon = button.innerText;
-        button.innerText = '✅'; 
-        setTimeout(() => { button.innerText = originalIcon; }, 1500);
-    }).catch(err => console.error('Failed to copy text: ', err));
-}
-
-function escapeHtml(unsafe) {
-    if (!unsafe) return '';
-    return unsafe.toString()
-         .replace(/&/g, "&amp;")
-         .replace(/</g, "&lt;")
-         .replace(/>/g, "&gt;")
-         .replace(/"/g, "&quot;")
-         .replace(/'/g, "&#039;");
-}
-
-function injectGlobalAuth() {
-    // KEEP THIS: This part puts the login screen on every page
-    if (!document.getElementById('authOverlay')) {
-        const overlayHtml = `
-        <div id="authOverlay" class="auth-page" style="display: none;">
-            <div class="auth-split-layout">
-                <div class="auth-brand-side">
-                    <img src="images/speeks_logo.png" alt="SPEEKS Logo" class="auth-logo">
-                    <div class="auth-brand-text">
-                        <h1>SPEEKSNET</h1>
-                        <p>Internal Operations Portal</p>
-                    </div>
-                </div>
-                <div class="auth-form-side">
-                    <div class="auth-form-container">
-                        <div class="auth-badge">SECURE ACCESS</div>
-                        <h2>Welcome Back</h2>
-                        <p id="authSubtitle">Please enter your 4-digit PIN to securely access the hub.</p>
-                        <div id="pinInputContainer" class="pin-container">
-                            <input type="password" id="pinInput" maxlength="4" placeholder="••••" onkeypress="if(event.key === 'Enter') checkPIN()">
-                            <button id="unlockBtn" class="btn-primary auth-btn" onclick="checkPIN()">Unlock Portal</button>
-                            <div id="pinError" class="pin-error">Incorrect PIN. Please try again.</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>`;
-        document.body.insertAdjacentHTML('beforeend', overlayHtml);
-    }
-}
-
-function handleSignOut() {
-    sessionStorage.removeItem('speeksUnlocked');
-    sessionStorage.removeItem('speeksUserName');
-    sessionStorage.removeItem('speeksUserRole');
-    sessionStorage.removeItem('speeksUserStore');
-    location.reload(); 
-}
-
-let isIdeaSubmitting = false; 
-
-function injectIdeaModal() {
-    if (!document.getElementById('ideaModal')) {
-        const modalHtml = `
-        <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;" onload="handleIframeLoad()"></iframe>
-        <div class="modal-menu idea-menu" id="ideaModal">
-            <div class="modal-header">
-                <h3>Submit an Idea</h3>
-                <button class="modal-close-btn" onclick="closeAllModals()">✖</button>
-            </div>
-            <div class="modal-content" style="padding: 25px;">
-                <form id="ideaForm" action="https://formsubmit.co/ethan.kushnir@speekstechnology.com" method="POST" enctype="multipart/form-data" target="hidden_iframe" onsubmit="prepareIdeaSubmit()">
-                    <input type="hidden" name="_captcha" value="false">
-                    <input type="hidden" name="_subject" id="ideaDynamicSubject" value="New SPEEKS Idea">
-                    <div style="margin-bottom: 15px;">
-                        <label class="idea-label">Your Name</label>
-                        <input type="text" id="ideaName" name="Name" class="idea-input" required placeholder="John Doe">
-                    </div>
-                    <div style="margin-bottom: 15px;">
-                        <label class="idea-label">Category</label>
-                        <select id="ideaCategory" name="Category" class="idea-input">
-                            <option value="New Feature">New Feature</option>
-                            <option value="Process Improvement">Process Improvement</option>
-                            <option value="Bug Fix / Issue">Bug Fix / Issue</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-                    <div style="margin-bottom: 15px;">
-                        <label class="idea-label">Idea Details</label>
-                        <textarea id="ideaDesc" name="Idea_Description" required rows="5" class="idea-input" placeholder="Describe your idea here..."></textarea>
-                    </div>
-                    <div style="margin-bottom: 20px;">
-                        <label class="idea-label">Attach a File (Optional)</label>
-                        <input type="file" id="ideaFile" name="Attachment" class="idea-input" accept="image/*,.pdf,.doc,.docx" style="padding: 10px;">
-                    </div>
-                    <div style="display:flex; justify-content:flex-end; gap:10px;">
-                        <button type="button" class="btn-secondary" onclick="closeAllModals()">Cancel</button>
-                        <button type="submit" class="btn-primary" id="submitIdeaBtn">Submit Idea</button>
-                    </div>
-                </form>
-                <div id="ideaSuccess" style="display:none; text-align:center; padding: 30px 10px;">
-                    <div style="font-size: 40px; margin-bottom: 10px;">🎉</div>
-                    <h3 style="color: var(--sage-professional); margin-bottom: 10px; font-weight: 800;">Idea Submitted!</h3>
-                    <p style="color: #666; font-size: 14px; margin-bottom: 20px; font-weight: 500;">Thanks for helping us improve SPEEKS.</p>
-                    <button class="btn-primary" onclick="closeAllModals(); setTimeout(() => { document.getElementById('ideaForm').style.display='block'; document.getElementById('ideaSuccess').style.display='none'; document.getElementById('ideaForm').reset(); }, 500);">Close</button>
-                </div>
-            </div>
-        </div>`;
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
-    }
-}
-
-function prepareIdeaSubmit() {
-    isIdeaSubmitting = true; 
-    const btn = document.getElementById('submitIdeaBtn');
-    btn.innerText = 'Sending...';
-    btn.style.opacity = '0.7';
-    const category = document.getElementById('ideaCategory').value;
-    document.getElementById('ideaDynamicSubject').value = 'New SPEEKS Idea: ' + category;
-}
-
-function handleIframeLoad() {
-    if (isIdeaSubmitting) {
-        document.getElementById('ideaForm').style.display = 'none';
-        document.getElementById('ideaSuccess').style.display = 'block';
-        const btn = document.getElementById('submitIdeaBtn');
-        btn.innerText = 'Submit Idea';
-        btn.style.opacity = '1';
-        isIdeaSubmitting = false; 
-    }
-}
-
-// --- WIDGET RENDERERS ---
-
-async function fetchScorecardData() {
-    const container = document.getElementById('scorecard-widget-body');
-    const titleElement = document.getElementById('scorecard-store-name');
-    if (!container) return;
-    container.innerHTML = '<div class="status-message" style="padding: 20px 0;">Syncing Data...</div>';
-    const SCORECARD_URL = 'https://script.google.com/macros/s/AKfycbwvelWpXnlXCJZQGagZX5llMCN1k6CjronBpIcenNVDTjUdPISjF0mYhHYy2ry0Vdg0_Q/exec';
-
-    let targetStore = sessionStorage.getItem('speeksUserStore') || 'OVL';
-    if (targetStore === 'ALL' || targetStore === 'CORP') targetStore = 'OVL'; 
-
-    try {
-        const response = await fetch(SCORECARD_URL);
-        const json = await response.json();
-        if (!json.success) throw new Error(json.error);
-        const storeData = json.data.find(item => String(item.store).toUpperCase() === targetStore.toUpperCase());
-
-        if (!storeData) {
-            container.innerHTML = `<div style="color: #888; text-align: center; padding: 20px 0; font-weight: bold;">No data found for ${targetStore}.</div>`;
-            return;
-        }
-
-        if (titleElement) titleElement.innerHTML = `${storeData.store} Scorecard`;
-
-        const latestScore = parseFloat(storeData.score) || 0; 
-        const rawDate = storeData.date || 'Recent';
-
-        let displayDate = rawDate;
-        const parsedDate = new Date(rawDate);
-        if (!isNaN(parsedDate.getTime())) {
-            const day = parsedDate.getUTCDay(); 
-            const diffToMonday = day === 0 ? -6 : 1 - day; 
-            const mondayDate = new Date(parsedDate);
-            mondayDate.setUTCDate(parsedDate.getUTCDate() + diffToMonday);
-            displayDate = "Week of " + mondayDate.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric' });
-        }
-
-        const getScoreColor = (score) => {
-            if (score > 8) return 'var(--sage-professional)';  
-            if (score >= 6) return 'var(--idea-gold)';         
-            return 'var(--red-alert)';                         
-        };
-        const scoreColor = getScoreColor(latestScore);
-
-        const pulse = latestScore < 6 ? '<div class="notif-dot active" style="display:block; position:absolute; top:-6px; right:-6px; width:14px; height:14px; border-width: 2px;"></div>' : '';
-
-        container.innerHTML = `
-        <div class="scorecard-widget">
-            ${pulse}
-            <div class="scorecard-label">Latest Score</div>
-            <div class="scorecard-date">${displayDate}</div>
-            <div class="scorecard-val" style="color: ${scoreColor}; text-shadow: 0 4px 15px ${scoreColor}30;">
-                ${latestScore.toFixed(1)}
-            </div>
-        </div>`;
-    } catch (error) {
-        console.error('Error fetching scorecard:', error);
-        container.innerHTML = '<div style="color: var(--red-alert); font-weight: bold; padding: 20px 0; text-align: center;">Error syncing scorecard.</div>';
-    }
-}
-
-async function fetchAlertsData() {
-    const container = document.getElementById('alerts-widget-body');
-    if (!container) return;
-
-    const ALERTS_URL = 'https://script.google.com/macros/s/AKfycbxap-4Jgdn5-ntkv_X-vFZLTWlTB29_bDLdwcFxhWd2su3ZQJ0ZS7UpUgZAK08lOIV6/exec';
-
-    let targetStore = sessionStorage.getItem('speeksUserStore') || 'OVL';
-    if (targetStore === 'ALL' || targetStore === 'CORP') targetStore = 'OVL'; 
-
-    try {
-        const response = await fetch(ALERTS_URL);
-        const json = await response.json();
-        if (!json.success) throw new Error(json.error);
-
-        const storeData = json.data.find(item => String(item.store).toUpperCase() === targetStore.toUpperCase());
-        if (!storeData) return;
-
-        const buildAlertCard = (title, value, severity) => {
-            let bgColor = '#d1fae5';
-            let textColor = '#065f46'; 
-            let displayText = 'All Clear';
-            let pulseHtml = '';
-
-            if (value !== '') {
-                displayText = value;
-                if (severity === 'high') {
-                    bgColor = '#fef3c7'; 
-                    textColor = '#92400e';
-                } else if (severity === 'very-high') {
-                    bgColor = '#fee2e2';
-                    textColor = '#991b1b';
-                    pulseHtml = '<div class="notif-dot active" style="display:block; position:absolute; top:-4px; right:-4px; width:12px; height:12px; border-width: 2px; z-index: 5;"></div>';
-                }
-            }
-
-            return `
-            <div style="position: relative; background: #f9fafb; padding: 12px 15px; border-radius: 8px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); flex: 1; min-height: 65px; box-sizing: border-box;">
-                ${pulseHtml}
-                <div style="font-size: 10px; font-weight: 800; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 15px; flex-shrink: 0;">${title}</div>
-                <div style="display: flex; flex-direction: column; align-items: flex-end; flex-grow: 1; width: 60%;">
-                    <div style="font-size: 11px; font-weight: 900; color: ${textColor}; background-color: ${bgColor}; padding: 4px 10px; border-radius: 6px; width: 100%; height: 46px; display: flex; align-items: center; justify-content: center; text-align: center; line-height: 1.2; box-sizing: border-box;">
-                        ${displayText}
-                    </div>
-                </div>
-            </div>`;
-        };
-
-        container.innerHTML = `
-        <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 15px; align-items: stretch; width: 100%; height: 100%;">
-            <div style="display: flex; flex-direction: column; gap: 8px; justify-content: space-between; height: 100%;">
-                <div style="font-size: 10px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 1px; padding-left: 5px;">Current Issues</div>
-                ${buildAlertCard('High', storeData.currentHigh, 'high')}
-                ${buildAlertCard('Very High', storeData.currentVeryHigh, 'very-high')}
-            </div>
-            <div style="width: 2px; background: repeating-linear-gradient(to bottom, #e2e8f0, #e2e8f0 6px, transparent 6px, transparent 12px); margin: 20px 0 0 0;"></div>
-            <div style="display: flex; flex-direction: column; gap: 8px; justify-content: space-between; height: 100%;">
-                <div style="font-size: 10px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 1px; padding-left: 5px;">Projected Issues</div>
-                ${buildAlertCard('High', storeData.projectedHigh, 'high')}
-                ${buildAlertCard('Very High', storeData.projectedVeryHigh, 'very-high')}
-            </div>
-        </div>`;
-    } catch (error) {
-        console.error('Error fetching alerts:', error);
-    }
-}
-
-// ============================================================================
-// WIDGET: DAILY LISTING GOALS (SANDBOX TESTING MODE)
-// ============================================================================
-
-let goalsRoster = []; 
-let liveGoalsData = [];
-let goalsTargetStore = 'OVL';
-let currentAppDate = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
-
-function runScheduledTasks() {
-    const now = new Date();
-    
-    // Get exact Central Time details
-    const ctDateStr = now.toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
-    const ctTimeString = now.toLocaleString('en-US', { timeZone: 'America/Chicago', hour: 'numeric', hour12: false });
-    const hours = parseInt(ctTimeString, 10);
-    
-    // 1. Pulse Dot Logic (Active from 9:00 AM - 9:59 AM  &  7:00 PM - 7:59 PM Central)
-    const isPulseTime = (hours === 9) || (hours === 19);
-    const dot = document.getElementById('goals-pulse-dot');
-    if (dot) dot.style.display = isPulseTime ? 'block' : 'none';
-
-    // 2. Midnight Auto-Reset Logic (Visually wipes the board if left open overnight)
-    if (ctDateStr !== currentAppDate) {
-        currentAppDate = ctDateStr;
-        const activeTab = document.getElementById('tab-daily')?.classList.contains('active') ? 'daily' : 'weekly';
-        renderGoalsScoreboard(activeTab);
-    }
-}
-
-async function initListingGoals() {
-    // Run scheduled checks immediately, then run in the background every 60 seconds
-    runScheduledTasks();
-    setInterval(runScheduledTasks, 60000); 
-
-    await fetchLiveGoalsData();
-}
-
-async function fetchLiveGoalsData() {
-    const list = document.getElementById('goals-roster-list');
-    if (!list) return;
-    list.innerHTML = '<div class="status-message">Syncing Data...</div>';
-
-    goalsTargetStore = sessionStorage.getItem('speeksUserStore') || 'OVL';
-    if (goalsTargetStore === 'ALL' || goalsTargetStore === 'CORP') goalsTargetStore = 'OVL'; 
-
-    try {
-        // 1. Pull Employees from the Weekly KPI Sheet
-        const d = await fetch(`${WEEKLY_KPI_URL}?store=${goalsTargetStore}&time=4-Week&v=${Date.now()}`).then(r => r.json());
-        let emps = [];
-        let sIdx = d.findLastIndex(r => String(r[0]).trim().toLowerCase() === "store" || String(r[0]).trim().toLowerCase() === "store total");
-        
-        if (sIdx !== -1) {
-            for (let i = Math.max(0, sIdx - 6); i <= Math.min(d.length - 1, sIdx + 6); i++) {
-                if (i === sIdx) continue;
-                let n = String(d[i][0]).trim(), lN = n.toLowerCase();
-                if (n && !["name", "employee", "store", "store total", "ovl", "lee", "wsp", "mpl", "bal"].includes(lN) && !lN.includes("average") && !lN.includes("week")) {
-                    if (String(d[i][2]).trim() !== "" || String(d[i][20]).trim() !== "") emps.push(n);
-                }
-            }
-        }
-        goalsRoster = emps.length ? [...new Set(emps)] : ['No Employees Found'];
-
-        // 2. FETCH DIRECTLY FROM GOOGLE SHEETS (NO CACHE)
-        try {
-            const res = await fetch(`${GOALS_API_URL}?store=${goalsTargetStore}&v=${Date.now()}`);
-            liveGoalsData = await res.json();
-        } catch (dbError) {
-            console.error("Database read failed:", dbError);
-            liveGoalsData = []; // Fallback to empty if DB fails
-        }
-        
-        renderGoalsScoreboard('daily');
-    } catch (e) {
-        console.error('Error fetching goals roster:', e);
-        list.innerHTML = '<div style="color: var(--red-alert); font-weight: bold; text-align: center; padding: 20px 0;">Error loading roster.</div>';
-    }
-}
-
-function renderGoalsScoreboard(viewType = 'daily') {
-    const list = document.getElementById('goals-roster-list');
-    const dateDisplay = document.getElementById('goals-date-display');
-    if (!list) return;
-    let totalG = 0; let totalR = 0;
-    let html = '';
-
-    const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
-    const now = new Date();
-    
-    // Shift week start to Monday (0=Sun, 1=Mon, 2=Tue...)
-    const day = now.getDay();
-    const diffToMonday = day === 0 ? -6 : 1 - day;
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() + diffToMonday);
-    startOfWeek.setHours(0,0,0,0);
-
-    // Update Date UI
-    if (dateDisplay) {
-        if (viewType === 'daily') {
-            dateDisplay.innerText = now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
-        } else {
-            dateDisplay.innerText = "Week of " + startOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        }
-    }
-
-    goalsRoster.forEach(emp => {
-        let empGoal = 0; let empResult = 0; let empRole = '-';
-        let dailyStats = {};
-        
-        const empRecords = liveGoalsData.filter(r => r.employee === emp);
-        const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-        empRecords.forEach(record => {
-            const isToday = record.date === todayStr;
-            const recDate = new Date(record.date);
-            const isThisWeek = recDate >= startOfWeek;
-
-            if (viewType === 'daily' && isToday) {
-                empGoal = parseInt(record.goal) || 0;
-                empResult = parseInt(record.result) || 0;
-                empRole = record.role || '-';
-            } else if (viewType === 'weekly' && isThisWeek) {
-                const rG = parseInt(record.goal) || 0;
-                const rR = parseInt(record.result) || 0;
-                empGoal += rG;
-                empResult += rR;
-                
-                // Track daily breakdown for the sub-row
-                const dayIdx = (recDate.getDay() + 6) % 7; 
-                const dayName = daysOfWeek[dayIdx];
-                dailyStats[dayName] = { goal: rG, result: rR };
-            }
-        });
-
-        totalG += empGoal;
-        totalR += empResult;
-
-        // Dynamic Bubble Color Logic for Individuals
-        let resultClass = 'delta-neutral';
-        if (empGoal > 0 || empResult > 0) {
-            resultClass = empResult >= empGoal ? 'delta-pos' : 'delta-neg';
-        }
-
-        // Build Daily Breakdown HTML with N/A Placeholders
-        let dailyBreakdownHtml = '';
-        if (viewType === 'weekly') {
-            const currentDayIdx = (now.getDay() + 6) % 7; // Map Sun=0 to Mon=0
-            dailyBreakdownHtml = '<div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; padding-top: 4px; border-top: 1px dashed #f0f0f0;">';
-            
-            daysOfWeek.forEach((dName, idx) => {
-                if (dailyStats[dName]) {
-                    // They logged goals! Show the score.
-                    const dG = dailyStats[dName].goal;
-                    const dR = dailyStats[dName].result;
-                    const dClass = dR >= dG ? 'color: #065f46; background: #d1fae5;' : 'color: #991b1b; background: #fee2e2;';
-                    dailyBreakdownHtml += `<div style="font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; ${dClass}">${dName}: ${dR}/${dG}</div>`;
-                } else if (idx <= currentDayIdx) {
-                    // Day has passed or is today, but no data logged. Show N/A.
-                    dailyBreakdownHtml += `<div style="font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; color: #64748b; background: #f1f5f9;" title="Not Logged">${dName}: N/A</div>`;
-                } else {
-                    // Future day in the week. Show faint placeholder.
-                    dailyBreakdownHtml += `<div style="font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; color: #cbd5e1; border: 1px dashed #e2e8f0; background: transparent;">${dName}</div>`;
-                }
-            });
-            dailyBreakdownHtml += '</div>';
-        }
-
-        // Build the HTML with strict fixed-width bubbles (36x26) for perfect alignment
-        html += `
-        <div style="display: flex; flex-direction: column; border-bottom: 1px solid #f8fafc; padding: 6px 0;">
-            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; align-items: center;">
-                <div style="display: flex; flex-direction: column; gap: 4px;">
-                    <span class="goals-roster-name" style="font-size: 13px; font-weight: 800; color: var(--slate-charcoal); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${emp}</span>
-                    ${viewType === 'daily' && empRole !== '-' ? `<span class="goals-roster-badge" style="font-size: 10px; background: #e2e8f0; color: var(--slate-charcoal); padding: 3px 6px; border-radius: 4px; display: inline-block; width: fit-content;">${empRole}</span>` : ''}
-                </div>
-                <div style="display: flex; justify-content: center;">
-                    <span class="goals-roster-val target" style="font-size: 14px; text-align: center; font-weight: 900; color: var(--slate-charcoal); width: 36px; display: inline-block;">${empGoal || '-'}</span>
-                </div>
-                <div style="display: flex; justify-content: center; align-items: center;">
-                    <span class="delta-badge ${resultClass}" style="font-size: 14px; width: 36px; height: 26px; padding: 0; display: inline-flex; justify-content: center; align-items: center;">${empResult || '-'}</span>
-                </div>
-            </div>
-            ${dailyBreakdownHtml}
-        </div>`;
-    });
-
-    list.innerHTML = html;
-    document.getElementById('goals-total-target').innerText = totalG;
-    
-    const actualEl = document.getElementById('goals-total-actual');
-    actualEl.innerText = totalR;
-    
-    // Dynamic Color Logic for Overall Total
-    if (totalG > 0 || totalR > 0) {
-        if (totalR >= totalG) {
-            actualEl.style.backgroundColor = '#d1fae5'; 
-            actualEl.style.color = '#065f46';           
-        } else {
-            actualEl.style.backgroundColor = '#fee2e2'; 
-            actualEl.style.color = '#991b1b';           
-        }
-    } else {
-        actualEl.style.backgroundColor = '#f1f5f9';     
-        actualEl.style.color = 'var(--slate-charcoal)'; 
-    }
-}
-
-function switchGoalTab(tab) {
-    const tD = document.getElementById('tab-daily');
-    const tW = document.getElementById('tab-weekly');
-    const actionBtn = document.getElementById('goals-action-btn');
-
-    if (tab === 'daily') {
-        tD.className = 'goal-tab active';
-        tW.className = 'goal-tab inactive';
-        actionBtn.style.display = 'block';
-        renderGoalsScoreboard('daily');
-    } else {
-        tW.className = 'goal-tab active';
-        tD.className = 'goal-tab inactive';
-        actionBtn.style.display = 'none'; 
-        renderGoalsScoreboard('weekly');
-    }
-}
-
-function flipGoalCard(showEdit) {
-    const flipper = document.getElementById('goals-flipper');
-    const tabContainer = document.querySelector('.goal-tab-container');
-    
-    if (showEdit) {
-        buildGoalsEditForm();
-        flipper.classList.add('is-flipped');
-        // Disable Tabs
-        if (tabContainer) {
-            tabContainer.style.pointerEvents = 'none';
-            tabContainer.style.opacity = '0.5';
-        }
-    } else {
-        flipper.classList.remove('is-flipped');
-        // Re-enable Tabs
-        if (tabContainer) {
-            tabContainer.style.pointerEvents = 'auto';
-            tabContainer.style.opacity = '1';
-        }
-    }
-}
-
-function buildGoalsEditForm() {
-    const container = document.getElementById('goals-edit-list');
-    const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
-    let html = '';
-
-    // Dynamic Roles based on roster size
-    const availableRoles = goalsRoster.length <= 3 ? ['B1', 'B2', 'L1'] : ['B1', 'B2', 'L1', 'L2'];
-
-    goalsRoster.forEach((emp, idx) => {
-        const todayRecord = liveGoalsData.find(r => r.employee === emp && r.date === todayStr) || { role: '', goal: '', result: '' };
-        
-        let rolesHtml = '';
-        availableRoles.forEach(r => {
-            const isActive = todayRecord.role === r ? 'active' : '';
-            rolesHtml += `<button type="button" class="role-dot ${isActive}" onclick="selectRole(this, '${emp}', '${r}')">${r}</button>`;
-        });
-
-        html += `
-        <div class="goals-edit-item">
-            <div class="goals-edit-name">${emp}</div>
-            <div class="goals-edit-controls">
-                <div class="goals-edit-roles" id="roles-${idx}">
-                    ${rolesHtml}
-                </div>
-                <div style="display:flex; gap: 8px;">
-                    <input type="number" id="input-goal-${idx}" class="goal-input" placeholder="Goal" value="${todayRecord.goal}" title="Target Goal" />
-                    <input type="number" id="input-result-${idx}" class="goal-input" placeholder="Actual" value="${todayRecord.result}" title="Actual Result" style="border-color: #a7f3d0; background: #ecfdf5;" />
-                </div>
-            </div>
-        </div>`;
-    });
-
-    container.innerHTML = html;
-}
-
-function selectRole(btn, emp, role) {
-    const parent = btn.parentElement;
-    Array.from(parent.children).forEach(c => c.classList.remove('active'));
-    btn.classList.add('active');
-    btn.setAttribute('data-selected-role', role);
-}
-
-async function saveGoalsData() {
-    const btn = document.getElementById('saveGoalsBtn');
-    btn.innerText = "Saving to Database...";
-    btn.style.opacity = "0.7";
-
-    const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
-    let payloadEmployees = [];
-
-    goalsRoster.forEach((emp, idx) => {
-        const roleGroup = document.getElementById(`roles-${idx}`);
-        const activeBtn = roleGroup?.querySelector('.active');
-        const role = activeBtn ? (activeBtn.getAttribute('data-selected-role') || activeBtn.innerText) : '-';
-        
-        const goal = document.getElementById(`input-goal-${idx}`).value;
-        const result = document.getElementById(`input-result-${idx}`).value;
-
-        if (role !== '-' || goal !== '' || result !== '') {
-            payloadEmployees.push({ employee: emp, role: role, goal: goal, result: result });
-        }
-    });
-
-    try {
-        const response = await fetch(GOALS_API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ store: goalsTargetStore, employees: payloadEmployees })
-        });
-
-        if(response.ok) {
-            // Instantly update UI Memory so we don't have to wait for a refresh
-            liveGoalsData = liveGoalsData.filter(r => r.date !== todayStr);
-            payloadEmployees.forEach(p => {
-                liveGoalsData.push({ date: todayStr, store: goalsTargetStore, employee: p.employee, role: p.role, goal: p.goal, result: p.result });
-            });
-
-            document.getElementById('goals-pulse-dot').style.display = 'none';
-            const activeTab = document.getElementById('tab-daily').classList.contains('active') ? 'daily' : 'weekly';
-            renderGoalsScoreboard(activeTab);
-            flipGoalCard(false);
-        } else {
-            alert("Error saving goals to server.");
-        }
-    } catch (error) {
-        console.error(error);
-        alert("Connection failed. Please try again.");
-    } finally {
-        btn.innerText = "Save Changes";
-        btn.style.opacity = "1";
-    }
-}
-
-function applyRoleBasedUI() {
-    const userRole = sessionStorage.getItem('speeksUserRole') || 'employee';
-    const userStore = sessionStorage.getItem('speeksUserStore') || 'ALL';
-    const userName = sessionStorage.getItem('speeksUserName') || 'User';
-
-    const greetingEl = document.getElementById('userGreeting');
-    if (greetingEl) greetingEl.innerText = `Welcome ${userName}!`;
-
-    const userRoleClass = `role-${userRole.toLowerCase().replace(/\s+/g, '-')}`; 
-    const userStoreClass = `store-${userStore.toLowerCase()}`;
-
-    // Select ALL dynamic modules (flex, block, and standard)
-    document.querySelectorAll('.dynamic-module-flex, .dynamic-module-block, .dynamic-module').forEach(module => {
-        const classes = Array.from(module.classList);
-        const requiredRoles = classes.filter(c => c.startsWith('role-'));
-        const requiredStores = classes.filter(c => c.startsWith('store-'));
-
-        const passesRole = requiredRoles.length === 0 || requiredRoles.includes(userRoleClass);
-        const passesStore = requiredStores.length === 0 || requiredStores.includes(userStoreClass);
-
-        if (passesRole && passesStore) {
-            // Determine display type based on class
-            let displayType = 'block';
-            if (module.classList.contains('dynamic-module-flex')) displayType = 'flex';
-            module.style.setProperty('display', displayType, 'important');
-        } else {
-            // Forcefully hide if they fail the check
-            module.style.setProperty('display', 'none', 'important');
-        }
-    });
-
-    if (userRole === 'employee') {
-        document.querySelectorAll('.manager-only').forEach(el => el.style.setProperty('display', 'none', 'important'));
-    }
-
-    if (userStore !== 'ALL') {
-        ['kpiStoreSelect', 'weeklyKpiStoreSelect', 'bsStoreSelect', 'vw-primary'].forEach(id => {
-            const dropdown = document.getElementById(id);
-            if (dropdown && Array.from(dropdown.options).some(opt => opt.value === userStore)) {
-                dropdown.value = userStore;
-            }
-        });
-    }
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-    setTimeout(() => document.body.classList.remove('preload'), 50);
-    if (localStorage.getItem('speeksSidebar') === 'collapsed') { document.querySelector('.sidebar')?.classList.add('collapsed'); document.querySelector('.main-content')?.classList.add('expanded'); document.querySelector('.sidebar-toggle')?.classList.add('collapsed'); }
-    
-    loadCMS();
-    if (document.getElementById('kbBody')) loadHotkeys();
-    if (document.getElementById('content-container') && document.getElementById('docSearch')) { loadDocs(); document.getElementById('docSearch').addEventListener('keyup', filterDocs); }
-    
-    injectGlobalAuth();
-    injectIdeaModal(); 
-    startAuthFetch();
-
-    if (sessionStorage.getItem('speeksUnlocked') === 'true') { 
-        document.body.classList.add('is-authenticated');
-        document.getElementById('authOverlay').style.display = 'none'; 
-        document.body.style.overflow = '';
-        
-        closeAllModals(); // <-- ADD THIS: Clears any stuck blurs on page refresh
-        
-        applyRoleBasedUI(); 
-        initDashboardData(); 
-    } else {
-        if(!window.location.href.includes('index.html') && document.getElementById('authOverlay')) {
-            window.location.href = "index.html"; return;
-        }
-        document.getElementById('authOverlay').style.display = 'flex'; 
-        document.body.style.overflow = 'hidden'; 
-        document.getElementById('pinInput')?.focus(); 
-    }
-    
-    ['kpiStoreSelect', 'weeklyKpiStoreSelect', 'vw-primary', 'vw-compare'].forEach(id => document.getElementById(id)?.addEventListener('change', () => id === 'kpiStoreSelect' ? fetchKPIData(false) : (id === 'weeklyKpiStoreSelect' ? fetchWeeklyKPIs() : renderVariance())));
-    
-    if (document.getElementById('mainKpiChart')) syncAllData();
-
-    fetchScorecardData();
-    fetchAlertsData();
-    fetchMasterDistrictDashboard();
-    fetchDistrictMonthlyKPIs();
-});
-
-async function fetchDistrictMonthlyKPIs() {
-    const container = document.getElementById('district-kpi-body');
-    if (!container) return;
-
-    const STORES = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
-    
-    // FLUSH BAD CACHE
-    localStorage.removeItem('speeksDistKpiData');
-
-    try {
-        const promises = STORES.map(store => 
-            fetch(`${MONTHLY_KPI_URL}?store=${store}&v=${Date.now()}`)
-            .then(r => r.json())
-            .then(data => ({store, data}))
-            .catch(e => ({store, error: true}))
-        );
-        
-        const results = await Promise.all(promises);
-        districtKpiCache = { masterMonths: [], stores: {} };
-
-        results.forEach(res => {
-            if (res.store === 'OVL' && res.data && res.data.months) { districtKpiCache.masterMonths = res.data.months; }
-            if (res.data && !res.data.error && res.data.data) {
-                districtKpiCache.stores[res.store] = { months: res.data.months || [], data: res.data.data };
-            } else {
-                districtKpiCache.stores[res.store] = { months: [], data: [] }; 
-            }
-        });
-
-        localStorage.setItem('speeksDistKpiData', JSON.stringify(districtKpiCache));
-        buildDistrictKpiDropdowns();
-        renderDistrictKPIs();
-        
-    } catch (e) {
-        console.error("District KPI Error:", e);
-        container.innerHTML = '<div style="color: var(--red-alert); font-weight: bold; text-align: center; padding: 20px;">Failed to load District KPIs. Connection Timed Out.</div>';
-    }
-}
-
-async function fetchMasterDistrictDashboard() {
-    const container = document.getElementById('district-master-body');
-    if (!container) return;
-
-    const STORES = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
-    const STORE_ICONS = { 'OVL': '🟣', 'LEE': '🔵', 'WSP': '🟢', 'MPL': '🟠', 'BAL': '🔴' };
-    const SCORECARD_URL = 'https://script.google.com/macros/s/AKfycbwvelWpXnlXCJZQGagZX5llMCN1k6CjronBpIcenNVDTjUdPISjF0mYhHYy2ry0Vdg0_Q/exec';
-    const ALERTS_URL = 'https://script.google.com/macros/s/AKfycbxap-4Jgdn5-ntkv_X-vFZLTWlTB29_bDLdwcFxhWd2su3ZQJ0ZS7UpUgZAK08lOIV6/exec';
-
-    const renderMasterBoard = (hubData, varData, scoreData, alertsData, weeklyResults) => {
-        let html = '';
-        STORES.forEach(store => {
-            const sLower = store.toLowerCase();
-            const icon = STORE_ICONS[store];
-
-            // 1. SCORECARD & HEADER
-            const sScore = scoreData.data?.find(s => s.store.toUpperCase() === store) || {};
-            const scoreNum = parseFloat(sScore.score) || 0;
-            let sColor = scoreNum > 8 ? '#065f46' : (scoreNum >= 6 ? '#92400e' : '#991b1b');
-            let sBg = scoreNum > 8 ? '#d1fae5' : (scoreNum >= 6 ? '#fef3c7' : '#fee2e2');
-
-            let displayDate = "Recent";
-            if (sScore.date) {
-                const parsedDate = new Date(sScore.date);
-                if (!isNaN(parsedDate.getTime())) {
-                    const day = parsedDate.getUTCDay();
-                    const diffToMonday = day === 0 ? -6 : 1 - day;
-                    const mondayDate = new Date(parsedDate);
-                    mondayDate.setUTCDate(parsedDate.getUTCDate() + diffToMonday);
-                    displayDate = mondayDate.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' });
-                }
-            }
-
-            // 2. ACTION NEEDED
-            const issues = [];
-            const sAlerts = alertsData.data?.find(a => a.store.toUpperCase() === store) || {};
-            if (sAlerts.currentVeryHigh) issues.push({text: sAlerts.currentVeryHigh, type: 'red', tip: 'Active Issue: Very High'});
-            if (sAlerts.currentHigh) issues.push({text: sAlerts.currentHigh, type: 'yellow', tip: 'Active Issue: High'});
-            if (sAlerts.projectedVeryHigh) issues.push({text: sAlerts.projectedVeryHigh, type: 'red', tip: 'Projected Issue: Very High'});
-            if (sAlerts.projectedHigh) issues.push({text: sAlerts.projectedHigh, type: 'yellow', tip: 'Projected Issue: High'});
-            if (issues.length === 0) issues.push({text: 'All Clear', type: 'green', tip: 'No active or projected alerts.'});
-
-            // 3. BUYING & SELLING SNAPSHOT
-            let rawPctStr = String(hubData[`${sLower}Pct`]);
-            let rawPct = parseFloat(rawPctStr) || 0;
-            let salesPctNum = (!rawPctStr.includes('%') && rawPct > 0 && rawPct <= 1.5) ? (rawPct * 100) : rawPct;
-            const salesPct = Number.isInteger(salesPctNum) ? salesPctNum : salesPctNum.toFixed(2);
-            
-            const gpTrack = Math.round(parseFloat(hubData[`${sLower}TrackGP`])) || 0;
-            const buyProj = Math.round(parseFloat(hubData[`${sLower}BuyProj`])) || 0;
-            
-            let sellMarginNum = 0;
-            const rev = parseFloat(hubData[`${sLower}Rev`]) || 0;
-            const gp = parseFloat(hubData[`${sLower}GP`]) || 0;
-            if (hubData[`${sLower}SellMargin`]) {
-                let smRaw = parseFloat(hubData[`${sLower}SellMargin`]);
-                sellMarginNum = (!String(hubData[`${sLower}SellMargin`]).includes('%') && smRaw > 0 && smRaw <= 1.5) ? (smRaw * 100) : smRaw;
-            } else if (rev > 0) {
-                sellMarginNum = (gp / rev) * 100;
-            }
-            const sellMargin = Number.isInteger(sellMarginNum) ? sellMarginNum : sellMarginNum.toFixed(2);
-
-            let rawMarginStr = String(hubData[`${sLower}BuyMargin`]);
-            let rawMargin = parseFloat(rawMarginStr) || 0;
-            let buyMarginNum = (!rawMarginStr.includes('%') && rawMargin > 0 && rawMargin <= 1.5) ? (rawMargin * 100) : rawMargin;
-            const buyMargin = Number.isInteger(buyMarginNum) ? buyMarginNum : buyMarginNum.toFixed(2);
-
-            const pctColor = salesPctNum >= 100 ? '#065f46' : '#991b1b';
-            const pctBg = salesPctNum >= 100 ? '#d1fae5' : '#fee2e2';
-            const sellMarginColor = sellMarginNum >= 55.5 ? '#065f46' : '#991b1b';
-            const sellMarginBg = sellMarginNum >= 55.5 ? '#d1fae5' : '#fee2e2';
-            const marginColor = (buyMarginNum > 0 && buyMarginNum < 51) ? '#991b1b' : '#065f46';
-            const marginBg = (buyMarginNum > 0 && buyMarginNum < 51) ? '#fee2e2' : '#d1fae5';
-
-            // 4. LIVE VARIANCE
-            const sVar = varData[store] || {};
-            const totalVar = parseFloat(sVar.total) || 0;
-            const vColor = totalVar < 0 ? '#991b1b' : (totalVar > 0 ? '#065f46' : '#64748b');
-            const vBg = totalVar < 0 ? '#fee2e2' : (totalVar > 0 ? '#d1fae5' : '#f1f5f9');
-            const vSign = totalVar > 0 ? '+' : '';
-
-            // 5. WEEKLY METRICS
-            const sWeekData = weeklyResults.find(w => w.store === store);
-            const wAvg = sWeekData?.sAvg || {};
-
-            const renderLineStat = (label, val, ruleType) => {
-                let isBad = false;
-                let displayVal = val || '-';
-                if (displayVal !== '-' && (ruleType === 'margin' || ruleType === 'conversion') && !String(displayVal).includes('%')) displayVal += '%';
-                
-                if (val && val !== '-') {
-                    let n = parseFloat(String(val).replace(/[^0-9.-]/g, ''));
-                    if (ruleType === 'margin') isBad = n < 51;
-                    if (ruleType === 'conversion') isBad = n < 85;
-                    if (ruleType === 'nodeals') isBad = n > 7;
-                    if (ruleType === 'time') {
-                        let t = String(val);
-                        let timeVal = t.includes(':') ? parseInt(t.split(':')[0]) + (parseInt(t.split(':')[1])/60) : n;
-                        isBad = timeVal > 13;
-                    }
-                }
-                
-                let bg = ruleType === 'nobg' ? 'transparent' : (ruleType === null ? '#f1f5f9' : (isBad ? '#fee2e2' : '#d1fae5'));
-                let txt = ruleType === 'nobg' ? 'var(--slate-charcoal)' : (ruleType === null ? 'var(--slate-charcoal)' : (isBad ? '#991b1b' : '#065f46'));
-                let pad = ruleType === 'nobg' ? '0' : '3px 8px';
-                if (displayVal === '-') { bg = '#f1f5f9'; txt = '#888'; pad = '3px 8px'; }
-                
-                return `
-                <div class="master-stat-row">
-                    <span class="master-stat-label">${label}</span>
-                    <span class="master-stat-val" style="color: ${txt}; background: ${bg}; padding: ${pad};">${displayVal}</span>
-                </div>`;
-            };
-
-            // BUILD HTML USING NEW CSS CLASSES
-            html += `
-            <div class="card master-card">
-                <div class="master-card-header" style="background: var(--slate-charcoal);">
-                    <span class="master-card-title">${icon} ${store}</span>
-                    <div class="master-card-score-box">
-                        <span class="master-card-score" style="background: ${sBg}; color: ${sColor};">${scoreNum.toFixed(1)}</span>
-                        <span class="master-card-date">Week of ${displayDate}</span>
-                    </div>
-                </div>
-
-                <div class="master-card-body">
-                    <div>
-                        <div class="master-section-title">Buying & Selling Snapshot</div>
-                        <div class="master-stat-box">
-                            <div class="master-stat-row"><span class="master-stat-label">Sales vs Goal</span><span class="master-stat-val" style="color: ${pctColor}; background: ${pctBg};">${salesPct}%</span></div>
-                            <div class="master-stat-row"><span class="master-stat-label">GP Tracking</span><span class="master-stat-val" style="color: var(--slate-charcoal);">$${gpTrack.toLocaleString()}</span></div>
-                            <div class="master-stat-row"><span class="master-stat-label">Sell Margin</span><span class="master-stat-val" style="color: ${sellMarginColor}; background: ${sellMarginBg};">${sellMarginNum > 0 ? sellMargin + '%' : '-'}</span></div>
-                            <div class="master-stat-row"><span class="master-stat-label">Buy Tracking</span><span class="master-stat-val" style="color: var(--slate-charcoal);">$${buyProj.toLocaleString()}</span></div>
-                            <div class="master-stat-row dashed"><span class="master-stat-label">Buy Margin</span><span class="master-stat-val" style="color: ${marginColor}; background: ${marginBg};">${buyMargin}%</span></div>
-                            <div class="master-stat-row"><span class="master-stat-label">Variance Total</span><span class="master-stat-val" style="color: ${vColor}; background: ${vBg};">${vSign}${totalVar.toFixed(2)}%</span></div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <div class="master-section-title">Weekly Metrics</div>
-                        <div class="master-stat-box">
-                            ${renderLineStat('Conversion', wAvg.conversion, 'conversion')}
-                            ${renderLineStat('Margin', wAvg.buyMargin, 'margin')}
-                            ${renderLineStat('Trans. Time', wAvg.time, 'time')}
-                            ${renderLineStat('No Deals', wAvg.noDeals, 'nodeals')}
-                            <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #e2e8f0;">
-                                ${renderLineStat('Listed Devices', wAvg.listed, 'nobg')}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style="flex-grow: 1; display: flex; flex-direction: column;">
-                        <div class="master-section-title">Action Needed - eBay Performance</div>
-                        <div style="display: flex; flex-direction: column; gap: 6px; flex-grow: 1;">
-                            ${issues.map(b => {
-                                let bg = b.type === 'red' ? '#fee2e2' : (b.type === 'yellow' ? '#fef3c7' : '#d1fae5');
-                                let txt = b.type === 'red' ? '#991b1b' : (b.type === 'yellow' ? '#92400e' : '#065f46');
-                                let pulse = b.type === 'red' ? `<div class="notif-dot active" style="display:block; position:absolute; top:-4px; right:-4px; width:12px; height:12px; border-width: 2px;"></div>` : '';
-                                return `<div class="master-action-badge" style="color: ${txt}; background: ${bg};">${pulse}<span>${b.text}</span><div class="fast-tip">${b.tip}</div></div>`;
-                            }).join('')}
-                        </div>
-                    </div>
-                </div>
-            </div>`;
-        });
-
-        container.innerHTML = html;
-    };
-
-    const cachedHtml = localStorage.getItem('speeksDistMasterHtml');
-    if (cachedHtml) container.innerHTML = cachedHtml;
-
-    try {
-        const [hubData, varData, scoreData, alertsData] = await Promise.all([
-            fetch(`${HUB_URL}?v=${Date.now()}`).then(r => r.json()),
-            fetch(`${VARIANCE_API_URL}?v=${Date.now()}`).then(r => r.json()),
-            fetch(SCORECARD_URL).then(r => r.json()),
-            fetch(ALERTS_URL).then(r => r.json())
-        ]);
-
-        const weeklyPromises = STORES.map(async (store) => {
-            const d = await fetch(`${WEEKLY_KPI_URL}?store=${store}&time=4-Week&v=${Date.now()}`).then(r => r.json());
-            let sAvg = {};
-            const formatTime = (val) => {
-                if (!val) return ""; let s = String(val).trim();
-                if (!s.includes(':')) return s.includes('.') ? s.split('.')[0] + ':' + (s.split('.')[1] + '0').substring(0,2) : (!isNaN(s) ? s + ':00' : s);
-                return s.length <= 5 ? s : s;
-            };
-            let sIdx = d.findLastIndex(r => String(r[0]).trim().toLowerCase() === "store" || String(r[0]).trim().toLowerCase() === "store total");
-            if (sIdx !== -1) {
-                let st = d[sIdx];
-                sAvg = { buyMargin: st[5], conversion: st[8], time: formatTime(st[12]), noDeals: st[14], listed: st[20] };
-            }
-            return { store, sAvg };
-        });
-
-        const weeklyResults = await Promise.all(weeklyPromises);
-        renderMasterBoard(hubData, varData, scoreData, alertsData, weeklyResults);
-        localStorage.setItem('speeksDistMasterHtml', container.innerHTML);
-
-    } catch (error) { 
-        if (!cachedHtml) container.innerHTML = '<div style="color: var(--red-alert); font-weight: bold; text-align: center; grid-column: 1 / -1;">Error compiling Master Dashboard.</div>'; 
-    }
-}
-
-let districtKpiCache = null;
-
-function buildDistrictKpiDropdowns() {
-    if (!districtKpiCache || !districtKpiCache.masterMonths) return;
-    const sel = document.getElementById('dist-kpi-month');
-    if (!sel) return;
-
-    const months = districtKpiCache.masterMonths;
-    const currVal = sel.value;
-    sel.innerHTML = '';
-    
-    const monthsMap = {
-        "Jan": "January", "Feb": "February", "Mar": "March", "Apr": "April",
-        "May": "May", "Jun": "June", "Jul": "July", "Aug": "August",
-        "Sep": "September", "Oct": "October", "Nov": "November", "Dec": "December"
-    };
-
-    months.forEach((m, i) => {
-        let displayText = m;
-        let parts = String(m).trim().split(/[- ]/);
-        if (parts.length >= 2) {
-            let monthPart = parts[0];
-            monthPart = monthPart.charAt(0).toUpperCase() + monthPart.slice(1).toLowerCase();
-            let fullM = monthsMap[monthPart] || monthPart;
-            let y = parts[parts.length - 1];
-            let fullY = y.length === 2 ? "20" + y : y; 
-            displayText = `${fullM} ${fullY}`;
-        }
-        sel.add(new Option(displayText, i));
-    });
-
-    sel.value = currVal !== "" && currVal < months.length ? currVal : months.length - 1;
-}
-
-// ==========================================
-// 1. DISTRICT MONTHLY KPIS (LEFT SIDE)
-// ==========================================
-window.renderDistrictKPIs = function() {
-    const container = document.getElementById('district-kpi-body');
-    const mIdx = parseInt(document.getElementById('dist-kpi-month').value);
-    if (!districtKpiCache || !districtKpiCache.stores['OVL']) return;
-
-    const targetMonthRaw = districtKpiCache.masterMonths[mIdx];
-    if (!targetMonthRaw) return;
-    const targetMonthClean = String(targetMonthRaw).replace(/[^a-z0-9]/gi, '').toLowerCase();
-
-    const STORES = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
-    const baseline = districtKpiCache.stores['OVL'].data; 
-    let html = '';
-    if (!baseline) return;
-
-    baseline.forEach(cat => {
-        html += `<div class="kpi-category">
-                    <div class="kpi-category-header" onclick="toggleCategory(this)">
-                        ${cat.category}
-                        <span class="chevron">▼</span>
-                    </div>
-                    <div class="kpi-category-content">`;
-
-        cat.metrics.forEach(m => {
-            const metricName = m.name;
-            const isInverse = m.inverse;
-            let rowHtml = `<div class="kpi-row" style="display: grid; grid-template-columns: minmax(130px, 1.5fr) repeat(5, minmax(85px, 1fr)); padding: 12px 10px; align-items: center; border-bottom: 1px solid #f8fafc;">
-                            <div class="kpi-name-col"><span class="kpi-name" style="font-size: 11px; font-weight: 800; color: #555; text-transform: uppercase;">${metricName}</span></div>`;
-
-            STORES.forEach(store => {
-                const storeObj = districtKpiCache.stores[store];
-                const storeMonthIdx = storeObj.months.findIndex(m => String(m).replace(/[^a-z0-9]/gi, '').toLowerCase() === targetMonthClean);
-                const storeCat = storeObj.data?.find(c => c.category === cat.category);
-                const storeMetric = storeCat?.metrics.find(sm => sm.name === metricName);
-
-                if (storeMetric && storeMonthIdx !== -1 && storeMetric.values[storeMonthIdx] !== undefined) {
-                    const rawVal = storeMetric.values[storeMonthIdx];
-                    const numVal = parseNum(rawVal);
-                    let displayStr = rawVal;
-                    
-                    if (rawVal === "" || rawVal === null) {
-                        rowHtml += `<div style="text-align: center;"><span style="font-size: 11px; color: #ccc; font-weight: 800;">-</span></div>`;
-                        return; 
-                    } else if (!isNaN(numVal) && rawVal !== "") {
-                        if (metricName.toLowerCase().match(/%|rate|variance|margin|gm|cogs/) && !String(rawVal).includes('%')) {
-                            displayStr = `${numVal.toFixed(2).replace(/\.00$/, '')}%`;
-                        } else if (!isNaN(numVal) && typeof rawVal === 'number') {
-                            displayStr = formatSmartValue(numVal, metricName);
-                        }
-                    }
-
-                    let bg = '#f1f5f9'; let txt = 'var(--slate-charcoal)';
-
-                    if (storeMonthIdx > 0 && storeMetric.values[storeMonthIdx - 1] !== undefined && storeMetric.values[storeMonthIdx - 1] !== "") {
-                        const prevVal = parseNum(storeMetric.values[storeMonthIdx - 1]);
-                        const dNum = numVal - prevVal;
-                        
-                        if (Math.abs(dNum) > 0.001) {
-                            const isPositiveImpact = dNum > 0 ? !isInverse : isInverse;
-                            if (isPositiveImpact) { bg = '#d1fae5'; txt = '#065f46'; } 
-                            else { bg = '#fee2e2'; txt = '#991b1b'; }
-                        }
-                    }
-
-                    rowHtml += `<div style="text-align: center;">
-                                    <span style="
-                                        display: inline-flex; 
-                                        align-items: center; 
-                                        justify-content: center; 
-                                        min-width: 65px; 
-                                        font-size: 11px; 
-                                        font-weight: 900; 
-                                        color: ${txt}; 
-                                        background: ${bg}; 
-                                        padding: 4px 10px; 
-                                        border-radius: 6px; 
-                                        border: 1px solid rgba(0,0,0,0.05); 
-                                        box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
-                                        box-sizing: border-box;
-                                        white-space: nowrap;
-                                    ">${displayStr}</span>
-                                </div>`;
-                } else {
-                    rowHtml += `<div style="text-align: center;"><span style="font-size: 11px; color: #ccc; font-weight: 800;">-</span></div>`;
-                }
-            });
-
-            rowHtml += `</div>`;
-            html += rowHtml;
-        });
-
-        html += `</div></div>`;
-    });
-
-    container.innerHTML = html;
-};
-
-// ==========================================
-// 2. DISTRICT GOALS WIDGET (RIGHT SIDE)
-// ==========================================
-function renderCompactDmGoals() {
-    const cont = document.getElementById('dm-compact-goals-container');
-    if (!cont) return;
-
-    const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
-    const now = new Date();
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() + (now.getDay() === 0 ? -6 : 1 - now.getDay()));
-    startOfWeek.setHours(0,0,0,0);
-
-    const stores = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
-    
-    // Removed the inline border here to prevent double borders
-    let html = '<div style="display: flex; flex-direction: column;">';
-
-    stores.forEach((store, idx) => {
-        const storeData = allDistrictGoalsData.filter(r => r.store === store);
-        let tGoal = 0, tResult = 0;
-        let activeEmps = new Set();
-
-        storeData.forEach(r => {
-            const recDate = new Date(r.date);
-            const isToday = r.date === todayStr;
-            const isThisWeek = recDate >= startOfWeek;
-
-            if ((currentDmGoalView === 'daily' && isToday) || (currentDmGoalView === 'weekly' && isThisWeek)) {
-                tGoal += parseInt(r.goal) || 0;
-                tResult += parseInt(r.result) || 0;
-                activeEmps.add(r.employee);
-            }
-        });
-
-        const progress = tGoal > 0 ? Math.min(100, Math.round((tResult / tGoal) * 100)) : 0;
-        const colorClass = tResult >= tGoal && tGoal > 0 ? 'var(--sage-professional)' : (tResult > 0 ? 'var(--idea-gold)' : '#cbd5e1');
-        const isMuted = tGoal === 0 && tResult === 0 ? 'opacity: 0.6;' : '';
-
-        html += `
-        <div onclick="toggleDmStoreAccordion('${store}')" class="lb-row" style="display: grid; grid-template-columns: 50px 1fr 70px 20px; align-items: center; border-bottom: 1px solid ${idx === stores.length-1 ? 'transparent' : '#f0f0f0'}; cursor: pointer; padding: 12px 15px; margin: 0; ${isMuted}">
-            <span style="font-size: 14px; font-weight: 900; color: var(--slate-charcoal);">${store}</span>
-            <div style="padding-right: 15px;">
-                <div style="width: 100%; height: 6px; background: #f1f5f9; border-radius: 3px; overflow: hidden; display: flex;">
-                    <div style="height: 100%; width: ${progress}%; background: ${colorClass}; border-radius: 3px; transition: width 0.5s ease;"></div>
-                </div>
-            </div>
-            <div style="text-align: right; font-size: 14px; font-weight: 900; color: var(--slate-charcoal);">
-                ${tResult} <span style="font-size: 11px; color: #888; font-weight: 600;">/ ${tGoal}</span>
-            </div>
-           <div id="dm-caret-${store}" class="dm-store-caret" style="text-align: right; color: #888; font-size: 10px; font-weight: 800; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); transform: rotate(-90deg);">▼</div>
-        </div>`;
-
-        html += `<div id="dm-roster-${store}" class="dm-store-roster" style="display: none; background: #fdfdfd; padding: 10px 20px; border-bottom: 1px solid #e2e8f0; box-shadow: inset 0 3px 6px rgba(0,0,0,0.02);">`;
-        
-        if (activeEmps.size === 0) {
-            html += `<div style="font-size: 12px; color: #888; text-align: center; font-weight: 600; padding: 10px 0;">No data logged.</div></div>`;
-            return;
-        }
-
-        Array.from(activeEmps).forEach(emp => {
-            const empRecords = storeData.filter(r => r.employee === emp);
-            let eG = 0, eR = 0;
-            let dailyStats = {}; 
-
-            empRecords.forEach(r => {
-                const recDate = new Date(r.date);
-                if ((currentDmGoalView === 'daily' && r.date === todayStr) || (currentDmGoalView === 'weekly' && recDate >= startOfWeek)) {
-                    const rG = parseInt(r.goal) || 0;
-                    const rR = parseInt(r.result) || 0;
-                    eG += rG;
-                    eR += rR;
-                    
-                    if (currentDmGoalView === 'weekly') {
-                        const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                        const dayIdx = (recDate.getDay() + 6) % 7; 
-                        dailyStats[daysOfWeek[dayIdx]] = { goal: rG, result: rR };
-                    }
-                }
-            });
-
-            const rClass = eG > 0 || eR > 0 ? (eR >= eG ? 'delta-pos' : 'delta-neg') : 'delta-neutral';
-
-            let dailyBreakdownHtml = '';
-            if (currentDmGoalView === 'weekly') {
-                const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                const currentDayIdx = (now.getDay() + 6) % 7;
-                
-                // Style applied to ensure even stretching of the bubbles
-                const pillStyle = "flex: 1; min-width: 0; text-align: center; font-size: 9px; font-weight: 800; padding: 4px 2px; border-radius: 4px; white-space: nowrap;";
-                
-                dailyBreakdownHtml = '<div style="display: flex; gap: 6px; margin-top: 4px; padding-top: 4px; width: 100%;">';
-                
-                daysOfWeek.forEach((dName, dIdx) => {
-                    if (dailyStats[dName]) {
-                        const dG = dailyStats[dName].goal;
-                        const dR = dailyStats[dName].result;
-                        const dClass = dR >= dG ? 'color: #065f46; background: #d1fae5;' : 'color: #991b1b; background: #fee2e2;';
-                        dailyBreakdownHtml += `<div style="${pillStyle} ${dClass}">${dName}: ${dR}/${dG}</div>`;
-                    } else if (dIdx <= currentDayIdx) {
-                        dailyBreakdownHtml += `<div style="${pillStyle} color: #64748b; background: #f1f5f9;" title="Not Logged">${dName}</div>`;
-                    } else {
-                        dailyBreakdownHtml += `<div style="${pillStyle} color: #cbd5e1; border: 1px dashed #e2e8f0; background: transparent;">${dName}</div>`;
-                    }
-                });
-                dailyBreakdownHtml += '</div>';
-            }
-
-            html += `
-            <div style="display: flex; flex-direction: column; padding: 8px 0; border-bottom: 1px dashed #f0f0f0;">
-                <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 15px; align-items: center;">
-                    <span style="font-size: 13px; font-weight: 700; color: var(--slate-charcoal);">${emp}</span>
-                    <div style="display: flex; justify-content: center;">
-                        <span style="font-size: 14px; font-weight: 800; color: #64748b; width: 36px; text-align: center; display: inline-block;">${eG || '-'}</span>
-                    </div>
-                    <div style="display: flex; justify-content: center; align-items: center;">
-                        <span class="delta-badge ${rClass}" style="font-size: 14px; width: 36px; height: 26px; padding: 0; display: inline-flex; justify-content: center; align-items: center;">${eR || '-'}</span>
-                    </div>
-                </div>
-                ${dailyBreakdownHtml}
-            </div>`;
-        });
-        
-        html += `</div>`; 
-    });
-
-    html += '</div>'; 
-    cont.innerHTML = html;
-}
-
-// ============================================================================
-// WIDGET: COMPACT DISTRICT COMMAND - LISTING GOALS
-// ============================================================================
-
-let allDistrictGoalsData = [];
-let currentDmGoalView = 'daily';
-
-async function fetchDmGoalsData() {
-    const cont = document.getElementById('dm-compact-goals-container');
-    if (!cont) return;
-
-    const stores = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
-    
-    try {
-        const fetches = stores.map(s => fetch(`${GOALS_API_URL}?store=${s}&v=${Date.now()}`).then(r => r.json()));
-        const results = await Promise.all(fetches);
-        allDistrictGoalsData = results.flat();
-        renderCompactDmGoals();
-    } catch (e) {
-        console.error("Failed to sync district goals:", e);
-        cont.innerHTML = '<div class="status-message" style="color:var(--red-alert);">Network Sync Failed.</div>';
-    }
-}
-
-function switchCompactDmTab(view) {
-    currentDmGoalView = view;
-    document.getElementById('dm-compact-tab-daily').classList.toggle('active', view === 'daily');
-    document.getElementById('dm-compact-tab-weekly').classList.toggle('active', view === 'weekly');
-    renderCompactDmGoals();
-}
-
-function toggleDmStoreAccordion(store) {
-    const rosterDiv = document.getElementById(`dm-roster-${store}`);
-    const caret = document.getElementById(`dm-caret-${store}`);
-    const isOpen = rosterDiv.style.display === 'block';
-    
-    // Close all other accordions first and reset their arrows to point right (-90deg)
-    document.querySelectorAll('.dm-store-roster').forEach(el => el.style.display = 'none');
-    document.querySelectorAll('.dm-store-caret').forEach(el => el.style.transform = 'rotate(-90deg)');
-
-    // Toggle the clicked one
-    if (!isOpen) {
-        rosterDiv.style.display = 'block';
-        caret.style.transform = 'rotate(0deg)'; // Point down when open
-    }
-}
-
-function updateMetricRing(storeId, percent, goalAmt, trackGP) {
-    // Ensure 'storeId' matches the HTML prefixes exactly (e.g., 'lee', 'ovl')
-    const pctElement = document.getElementById(`${storeId}-pct`);
-    const barElement = document.getElementById(`${storeId}-bar`);
-    const goalElement = document.getElementById(`${storeId}-goal`);
-    const gpElement = document.getElementById(`${storeId}-t-gp`);
-
-    if (!barElement) return;
-
-    // Update the card text
-    pctElement.innerText = Math.round(percent * 100) + '%';
-    goalElement.innerText = `Goal: $${goalAmt.toLocaleString()}`;
-    gpElement.innerText = `GP Tracking: $${trackGP.toLocaleString()}`;
-
-    // Fill the circle 
-    // A circle with r=64 has a circumference of ~402 (2 * PI * 64)
-    const circumference = 402;
-    
-    // Calculate the offset. If percent is 1 (100%), offset is 0 (full circle)
-    const offset = circumference - (percent * circumference);
-    
-    // Apply to the SVG circle
-    barElement.style.strokeDashoffset = Math.max(0, offset);
-}
-
-// Example usage when your data fetches:
-// updateMetricRing('lee', 0.85, 15000, 12750);
-
-// ============================================================================
-// ENGINE: ZERO-FLICKER SINGLE PAGE APP (SPA) ROUTER
-// ============================================================================
-document.addEventListener('click', async (e) => {
-    const link = e.target.closest('.nav-link'); 
-    
-    // 1. Intercept internal navigation clicks on your top menu
-    if (link && link.href && link.href.startsWith(window.location.origin) && !link.href.includes('#')) {
-        e.preventDefault(); // STOP the browser from doing a hard page reload!
-        
-        const targetUrl = link.href;
-        if (targetUrl === window.location.href) return; // Ignore if clicking the active tab
-        
-        try {
-            // 2. Fetch the new page invisibly in the background
-            const response = await fetch(targetUrl);
-            const html = await response.text();
-            
-            // 3. Parse the new HTML
-            const parser = new DOMParser();
-            const newDoc = parser.parseFromString(html, 'text/html');
-            
-            // 4. Swap ONLY the main content area seamlessly
-            const currentMain = document.querySelector('.main-content');
-            const newMain = newDoc.querySelector('.main-content');
-            
-            if (currentMain && newMain) {
-                currentMain.innerHTML = newMain.innerHTML;
-            }
-
-            // 5. Update the active tab styling in the header
-            document.querySelectorAll('.nav-link').forEach(nav => nav.classList.remove('active'));
-            const newActiveLink = Array.from(document.querySelectorAll('.nav-link')).find(n => n.href === targetUrl);
-            if (newActiveLink) newActiveLink.classList.add('active');
-
-            // 6. Update Browser History / URL bar so the back button still works
-            window.history.pushState({ path: targetUrl }, '', targetUrl);
-            document.title = newDoc.title;
-
-            // 7. Reboot Page-Specific JavaScript dynamically
-            applyRoleBasedUI();
-            closeAllModals();
-
-            if (targetUrl.includes('docs.html')) {
-                if (typeof loadDocs === 'function') loadDocs();
-                const docSearch = document.getElementById('docSearch');
-                if (docSearch) docSearch.addEventListener('keyup', filterDocs);
-            } else {
-                // FIX: 100ms delay ensures Canvas tags are fully rendered before Chart.js draws
-                setTimeout(() => {
-                    if (typeof initDashboardData === 'function') initDashboardData();
-                    if (document.getElementById('mainKpiChart') && typeof syncAllData === 'function') syncAllData();
-                    if (typeof fetchScorecardData === 'function') fetchScorecardData();
-                    if (typeof fetchAlertsData === 'function') fetchAlertsData();
-                    if (typeof fetchMasterDistrictDashboard === 'function') fetchMasterDistrictDashboard();
-                    if (typeof fetchDistrictMonthlyKPIs === 'function') fetchDistrictMonthlyKPIs();
-                    
-                    // ADD THIS LINE HERE:
-                    if (document.getElementById('pane-records') && typeof fetchRecordsData === 'function') fetchRecordsData();
-                }, 100);
-            }
-
-        } catch (err) {
-            console.error("SPA Routing failed, falling back to hard load", err);
-            window.location.href = targetUrl; // Safety fallback
-        }
-    }
-});
-
-// Handle browser Back/Forward buttons smoothly
-window.addEventListener('popstate', () => {
-    window.location.reload(); 
-});
-
-// ==========================================
-// 3. EMPLOYEE SPECIFIC LISTING GOALS WIDGET
-// ==========================================
-async function fetchAndRenderEmployeeGoals() {
-    const container = document.getElementById('employee-goals-widget-body');
-    const dateLabel = document.getElementById('emp-goals-date');
-    const pulseDot = document.getElementById('emp-goals-pulse-dot');
-    if (!container) return;
-
-    const userName = sessionStorage.getItem('speeksUserName') || '';
-    let store = sessionStorage.getItem('speeksUserStore') || 'OVL';
-    if (store === 'ALL' || store === 'CORP') store = 'OVL';
-
-    const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
-    const now = new Date();
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() + (now.getDay() === 0 ? -6 : 1 - now.getDay()));
-    startOfWeek.setHours(0,0,0,0);
-
-    const ctTimeString = now.toLocaleString('en-US', { timeZone: 'America/Chicago', hour: 'numeric', hour12: false });
-    const hours = parseInt(ctTimeString, 10);
-    if (pulseDot) {
-        pulseDot.style.display = (hours === 9) ? 'block' : 'none';
-    }
-
-    if (dateLabel) {
-        dateLabel.innerText = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-    }
-
-    try {
-        const res = await fetch(`${GOALS_API_URL}?store=${store}&v=${Date.now()}`);
-        const data = await res.json();
-        
-        const myRecords = data.filter(r => {
-            const dbName = String(r.employee).trim().toLowerCase();
-            const sessionName = String(userName).trim().toLowerCase();
-            if (dbName === sessionName) return true; 
-            const dbFirstName = dbName.split(' ')[0];
-            const sessionFirstName = sessionName.split(' ')[0];
-            if (dbFirstName.length > 2 && sessionFirstName.length > 2) {
-                if (dbFirstName.startsWith(sessionFirstName) || sessionFirstName.startsWith(dbFirstName)) return true;
-            }
-            return false;
-        });
-        
-        let todayGoal = 0;
-        let todayRole = '';
-        let dailyStats = {};
-
-        myRecords.forEach(r => {
-            const recDate = new Date(r.date);
-            const g = parseInt(r.goal) || 0;
-            const resVal = parseInt(r.result) || 0;
-
-            if (r.date === todayStr) {
-                todayGoal += g;
-                if (r.role && r.role !== '-') todayRole = r.role;
-            }
-            
-            if (recDate >= startOfWeek) {
-                const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                const dayIdx = (recDate.getDay() + 6) % 7; 
-                dailyStats[daysOfWeek[dayIdx]] = { goal: g, result: resVal };
-            }
-        });
-
-        const roleTranslations = { 'B1': 'Buyer 1', 'B2': 'Buyer 2', 'L1': 'Lister 1', 'L2': 'Lister 2' };
-        const displayRole = roleTranslations[todayRole] || todayRole;
-
-        const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-        const currentDayIdx = (now.getDay() + 6) % 7;
-        
-        // Build Pills using clean CSS classes
-        let dailyBreakdownHtml = '<div class="emp-pill-container">';
-        
-        daysOfWeek.forEach((dName, dIdx) => {
-            if (dailyStats[dName]) {
-                const dG = dailyStats[dName].goal;
-                const dR = dailyStats[dName].result;
-                const dClass = dR >= dG ? 'pill-pass' : 'pill-fail';
-                dailyBreakdownHtml += `<div class="emp-daily-pill ${dClass}">${dName}: ${dR}/${dG}</div>`;
-            } else if (dIdx <= currentDayIdx) {
-                dailyBreakdownHtml += `<div class="emp-daily-pill pill-null" title="Not Logged">${dName}</div>`;
-            } else {
-                dailyBreakdownHtml += `<div class="emp-daily-pill pill-future">${dName}</div>`;
-            }
-        });
-        dailyBreakdownHtml += '</div>';
-
-        container.innerHTML = `
-            <div class="emp-goals-top-row">
-                <div class="emp-goal-col">
-                    <span class="emp-goal-label">TODAY'S TARGET</span>
-                    <span class="emp-goal-value">${todayGoal > 0 ? todayGoal : '-'}</span>
-                </div>
-                <div class="emp-goal-col emp-goal-col-right">
-                    <span class="emp-goal-label">MY ROLE</span>
-                    <span class="emp-goal-value">${displayRole || '-'}</span>
-                </div>
-            </div>
-
-            <div class="emp-week-section">
-                <span class="emp-goal-label">THIS WEEK'S BREAKDOWN</span>
-                ${dailyBreakdownHtml}
-            </div>
-        `;
-    } catch (e) {
-        container.innerHTML = '<div class="status-message" style="color:var(--red-alert);">Failed to sync goals.</div>';
-    }
-}
-
-// ==========================================
-// 4. EMPLOYEE SPECIFIC WEEKLY KPI WIDGET (GRID LAYOUT)
-// ==========================================
-async function fetchAndRenderEmployeeKPIs() {
-    const container = document.getElementById('employee-kpi-widget-body');
-    const periodLabel = document.getElementById('emp-kpi-period');
-    if (!container) return;
-
-    const userName = sessionStorage.getItem('speeksUserName') || '';
-    let store = sessionStorage.getItem('speeksUserStore') || 'OVL';
-    if (store === 'ALL' || store === 'CORP') store = 'OVL';
-
-    try {
-        const d = await fetch(`${WEEKLY_KPI_URL}?store=${store}&time=4-Week&v=${Date.now()}`).then(r => r.json());
-        
-        let sAvg = {};
-        let myData = {};
-        let fIdx = -1;
-        let sIdx = d.findLastIndex(r => String(r[0]).trim().toLowerCase() === "store" || String(r[0]).trim().toLowerCase() === "store total");
-        
-        if (sIdx !== -1) {
-            let st = d[sIdx];
-            sAvg = { buyVal: st[2], buyMargin: st[5], customers: st[6], conversion: st[8], time: formatTime(st[12]), noDeals: st[14], listed: st[20] };
-            
-            const sessionName = String(userName).trim().toLowerCase();
-            const sessionFirstName = sessionName.split(' ')[0];
-
-            for (let i = Math.max(0, sIdx - 6); i <= Math.min(d.length - 1, sIdx + 6); i++) {
-                if (i === sIdx) continue;
-                let n = String(d[i][0]).trim();
-                let dbName = n.toLowerCase();
-                
-                if (n && !["name", "employee", "store", "store total", "ovl", "lee", "wsp", "mpl", "bal"].includes(dbName) && !dbName.includes("average") && !dbName.includes("week")) {
-                    
-                    let isMatch = false;
-                    if (dbName === sessionName) {
-                        isMatch = true;
-                    } else {
-                        const dbFirstName = dbName.split(' ')[0];
-                        if (dbFirstName.length > 2 && sessionFirstName.length > 2) {
-                            if (dbFirstName.startsWith(sessionFirstName) || sessionFirstName.startsWith(dbFirstName)) {
-                                isMatch = true;
-                            }
-                        }
-                    }
-
-                    if (isMatch) {
-                        fIdx = i;
-                        myData = { buyVal: d[i][2], buyMargin: d[i][5], customers: d[i][6], conversion: d[i][8], time: formatTime(d[i][12]), noDeals: d[i][14], listed: d[i][20] };
-                        break; 
-                    }
-                }
-            }
-        }
-
-        let pTxt = "";
-        if (sIdx !== -1) {
-            // FIX: We must find the VERY FIRST employee to anchor to the header row correctly
-            let firstEmpIdx = -1;
-            for (let i = Math.max(0, sIdx - 6); i <= Math.min(d.length - 1, sIdx + 6); i++) {
-                let n = String(d[i][0]).trim(), lN = n.toLowerCase();
-                if (n && !["name", "employee", "store", "store total", "ovl", "lee", "wsp", "mpl", "bal"].includes(lN) && !lN.includes("average") && !lN.includes("week")) {
-                    if (String(d[i][2]).trim() !== "" || String(d[i][20]).trim() !== "") {
-                        firstEmpIdx = i;
-                        break; // Stop at the first employee found
-                    }
-                }
-            }
-
-            if (firstEmpIdx !== -1) {
-                let hR = d[firstEmpIdx - 3] || d[firstEmpIdx - 2];
-                if (hR && hR[2] && hR[4] && hR[6]) {
-                    
-                    // Add "th", "st", "nd", "rd"
-                    const getOrdinal = (n) => {
-                        let val = parseInt(String(n).replace(/\D/g, ''));
-                        if (isNaN(val)) return n;
-                        let s = ["th", "st", "nd", "rd"], v = val % 100;
-                        return val + (s[(v - 20) % 10] || s[v] || s[0]);
-                    };
-                    
-                    let monthName = String(hR[2]).replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/ig, m => ({"Jan":"January","Feb":"February","Mar":"March","Apr":"April","May":"May","Jun":"June","Jul":"July","Aug":"August","Sep":"September","Oct":"October","Nov":"November","Dec":"December"}[m.charAt(0).toUpperCase() + m.slice(1).toLowerCase()] || m));
-                    let startDay = getOrdinal(hR[4]);
-                    let endDay = getOrdinal(hR[6]);
-                    
-                    pTxt = `${monthName} ${startDay} - ${endDay}`;
-                }
-            }
-        }
-        if (periodLabel) periodLabel.innerText = pTxt;
-
-        if (Object.keys(myData).length === 0) {
-            container.innerHTML = '<div class="status-message">No KPI data found for your user this week.</div>';
-            return;
-        }
-
-        // Updated function to build grid cells instead of full rows
-        const buildStatGridItem = (title, myVal, storeVal, ruleStr, isPercent = false, prefixLabel = "Store:", showBubble = true) => {
-            const myIsBad = ruleStr ? checkRule(ruleStr, myVal) : false;
-            
-            let displayMyVal = myVal || '-';
-            if (displayMyVal !== '-' && isPercent && !String(displayMyVal).includes('%')) displayMyVal += '%';
-            
-            let displayStoreVal = storeVal || '-';
-            if (displayStoreVal !== '-' && isPercent && !String(displayStoreVal).includes('%')) displayStoreVal += '%';
-
-            let centerHtml = '';
-            if (showBubble) {
-                const badgeClass = displayMyVal === '-' ? 'badge-null' : (myIsBad ? 'badge-fail' : 'badge-pass');
-                centerHtml = `<div class="emp-kpi-badge ${badgeClass}" style="margin: 4px 0; padding: 4px 6px; font-size: 11px;">${displayMyVal}</div>`;
-            } else {
-                centerHtml = `<div style="font-size: 13px; font-weight: 900; color: var(--slate-charcoal); margin: 4px 0; padding: 4px 0;">${displayMyVal}</div>`;
-            }
-
-            return `
-            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 4px; border: 1px dashed #e2e8f0; border-radius: 6px; background: #fdfdfd;">
-                <span style="font-size: 9px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase; line-height: 1;">${title}</span>
-                ${centerHtml}
-                <span style="font-size: 8px; font-weight: 700; color: #a0aab2; text-transform: uppercase;">${prefixLabel} <strong>${displayStoreVal}</strong></span>
-            </div>`;
-        };
-
-        // Render the Grid (Auto-Fitting for Mobile and Zoom)
-        container.innerHTML = `
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 6px; height: 100%;">
-                ${buildStatGridItem('Buying Value', myData.buyVal, sAvg.buyVal, null, false, 'Store:', false)}
-                ${buildStatGridItem('Margin', myData.buyMargin, sAvg.buyMargin, 'margin', true, 'Store:', true)}
-                ${buildStatGridItem('Conversion', myData.conversion, sAvg.conversion, 'conversion', true, 'Store:', true)}
-                ${buildStatGridItem('No Deals', myData.noDeals, sAvg.noDeals, 'nodeals', false, 'Store:', true)}
-                ${buildStatGridItem('Trans. Time', myData.time, sAvg.time, 'time', false, 'Store:', true)}
-                ${buildStatGridItem('Listed Dev.', myData.listed, sAvg.listed, null, false, 'Store:', false)}
-            </div>
-        `;
-    } catch (e) {
-        container.innerHTML = '<div class="status-message" style="color:var(--red-alert);">Failed to sync KPIs.</div>';
-    }
-}
-
-// ============================================================================
-// WIDGET: MONTHLY PERFORMANCE LEADERBOARD
-// ============================================================================
-let leaderboardChartInstance = null;
-let currentLeaderboardMetric = 'Revenue'; 
-let cachedLeaderboardData = null; 
-
-function switchLeaderboardMetric(metric) {
-    currentLeaderboardMetric = metric;
-    
-    const revBtn = document.getElementById('lb-tab-rev');
-    const gpBtn = document.getElementById('lb-tab-gp');
-    
-    if (revBtn && gpBtn) {
-        revBtn.classList.toggle('active', metric === 'Revenue');
-        revBtn.style.color = metric === 'Revenue' ? 'var(--slate-charcoal)' : '#a0aab2';
-        
-        gpBtn.classList.toggle('active', metric === 'GP');
-        gpBtn.style.color = metric === 'GP' ? 'var(--slate-charcoal)' : '#a0aab2';
-    }
-    
-    drawLeaderboard(); 
-}
-
+// --- CHART: DRAW LEADERBOARD ---
 function drawLeaderboard() {
     const wrapper = document.getElementById('lb-wrapper');
     const monthLabel = document.getElementById('lb-month-display');
@@ -3202,7 +3675,6 @@ function drawLeaderboard() {
 
     const now = new Date();
     if (monthLabel) {
-        // Javascript now ONLY outputs the date. The CSS handles the layout and hyphen!
         monthLabel.innerText = now.toLocaleString('default', { month: 'long', year: 'numeric' }).toUpperCase();
     }
 
@@ -3232,7 +3704,6 @@ function drawLeaderboard() {
         }
     });
 
-    // --- CALCULATE RANKS FOR THE DATALABELS ---
     let finalScores = [];
     datasets.forEach((ds, i) => {
         let lastIdx = ds.data.findLastIndex(v => v !== null);
@@ -3247,34 +3718,26 @@ function drawLeaderboard() {
         if (pos < 3) ranks[item.index] = { rank: pos + 1, lastIdx: item.lastIdx };
     });
 
-    // --- NEW: THE CHECKERED FINISH LINE PLUGIN ---
     const checkeredPlugin = {
         id: 'checkeredFinishLine',
-        // This hook guarantees the flag is drawn UNDER the data lines!
         beforeDatasetsDraw: (chart) => {
             const { ctx, chartArea } = chart;
             if (!chartArea) return;
             const { top, bottom, right } = chartArea;
             
             const totalHeight = bottom - top;
-            
-            // Targets ~12px per square to make them smaller and add more cubes!
             const rowCount = Math.round(totalHeight / 12); 
             const squareSize = totalHeight / rowCount; 
             
-            const cols = 2; // 2 columns wide
+            const cols = 2; 
             const lineWidth = squareSize * cols;
             const startX = right - lineWidth;
 
             ctx.save();
-            
             for (let row = 0; row < rowCount; row++) {
                 const currentY = top + (row * squareSize);
                 for (let col = 0; col < cols; col++) {
-                    // Alternates between your Light Gray and dark Slate Charcoal
                     ctx.fillStyle = ((col + row) % 2 === 0) ? '#e2e8f0' : '#1a1c1e';
-                    
-                    // The +0.5 prevents tiny invisible hairline gaps between squares
                     ctx.fillRect(startX + (col * squareSize), currentY, squareSize + 0.5, squareSize + 0.5);
                 }
             }
@@ -3286,7 +3749,6 @@ function drawLeaderboard() {
         const ctx = canvas.getContext('2d');
         if (leaderboardChartInstance) leaderboardChartInstance.destroy(); 
 
-        // Load both the datalabels and our new Checkered Finish Line
         let activePlugins = typeof ChartDataLabels !== 'undefined' ? [ChartDataLabels, checkeredPlugin] : [checkeredPlugin];
 
         leaderboardChartInstance = new Chart(ctx, {
@@ -3294,18 +3756,14 @@ function drawLeaderboard() {
             plugins: activePlugins,
             data: { labels: dateLabels, datasets: datasets },
             options: {
-                animation: false, // STOPS THE LOADING GLITCH
+                animation: false, 
                 responsive: true,
                 maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: false },
-                layout: {
-                    padding: { top: 40, right: 50, left: 10, bottom: 0 } // Added 40px top padding!
-                },
+                layout: { padding: { top: 40, right: 50, left: 10, bottom: 0 } },
                 plugins: {
                     tooltip: {
-                        itemSort: function(a, b) {
-                            return b.parsed.y - a.parsed.y;
-                        },
+                        itemSort: function(a, b) { return b.parsed.y - a.parsed.y; },
                         callbacks: {
                             label: function(context) {
                                 let label = context.dataset.label.trim() || ''; 
@@ -3331,9 +3789,7 @@ function drawLeaderboard() {
                             const r = ranks[context.datasetIndex].rank;
                             return r === 1 ? '🥇 1st' : (r === 2 ? '🥈 2nd' : '🥉 3rd');
                         },
-                        backgroundColor: function(context) {
-                            return context.dataset.backgroundColor; 
-                        },
+                        backgroundColor: function(context) { return context.dataset.backgroundColor; },
                         color: 'white',
                         borderRadius: 6,
                         font: { size: 10, weight: 'bold', family: "'Inter', sans-serif" },
@@ -3345,9 +3801,7 @@ function drawLeaderboard() {
                 },
                 scales: {
                     y: {
-                        // THIS IS THE AXIS LOCK: Forces it to be 75px wide every single time!
                         afterFit: function(scale) { scale.width = 75; },
-                        
                         beginAtZero: true,
                         max: datasets.length === 0 ? 1000 : undefined, 
                         ticks: { callback: function(value) { return '$' + (value / 1000) + 'k'; } },
@@ -3365,24 +3819,103 @@ function drawLeaderboard() {
     }
 }
 
-// --- MANAGE EBAY ALERTS / PERFORMANCE METRICS MODULE ---
-let globalAlertsData = [];
-const EBAY_ALERTS_URL = 'https://script.google.com/macros/s/AKfycbxap-4Jgdn5-ntkv_X-vFZLTWlTB29_bDLdwcFxhWd2su3ZQJ0ZS7UpUgZAK08lOIV6/exec';
+// --- MODAL: MANAGE ANNOUNCEMENTS ---
+function toggleManageAnnouncements() {
+    closeAllModals();
+    const dropdown = document.getElementById('manageAnnouncementsDropdown');
+    if(dropdown) dropdown.classList.add('show');
+    
+    lockAndBlurScreen();
+    
+    document.getElementById('annTitleInput').value = '';
+    document.getElementById('annPriorityInput').checked = false;
+    document.getElementById('annBodyInput').innerHTML = '';
+    checkActiveFormats(); 
+}
 
+function formatText(command) {
+    const editor = document.getElementById('annBodyInput');
+    editor.focus(); 
+    document.execCommand(command, false, null);
+    checkActiveFormats();
+}
+
+function checkActiveFormats() {
+    document.getElementById('btn-fmt-bold')?.classList.toggle('active-format', document.queryCommandState('bold'));
+    document.getElementById('btn-fmt-italic')?.classList.toggle('active-format', document.queryCommandState('italic'));
+    document.getElementById('btn-fmt-underline')?.classList.toggle('active-format', document.queryCommandState('underline'));
+    document.getElementById('btn-fmt-list')?.classList.toggle('active-format', document.queryCommandState('insertUnorderedList'));
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const editor = document.getElementById('annBodyInput');
+    if (editor) {
+        editor.addEventListener('keyup', checkActiveFormats);
+        editor.addEventListener('mouseup', checkActiveFormats);
+        editor.addEventListener('click', checkActiveFormats);
+    }
+});
+
+async function publishAnnouncement() {
+    const title = document.getElementById('annTitleInput').value.trim();
+    const body = document.getElementById('annBodyInput').innerHTML.trim();
+    const isPriority = document.getElementById('annPriorityInput').checked;
+    const btn = document.getElementById('publishAnnBtn');
+
+    if (!title || !body) {
+        alert("Wait! You must fill out both a Title and a Message before publishing.");
+        return;
+    }
+
+    btn.innerHTML = "Publishing... ⏳";
+    btn.style.opacity = "0.7";
+    btn.style.pointerEvents = "none";
+
+    let compiledMessage = "";
+    if (isPriority) {
+        compiledMessage += `<span style="color: #ef4444; font-weight: 900; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">🚨 HIGH PRIORITY</span><br>`;
+    }
+    compiledMessage += `<strong style="font-size: 16px; color: var(--slate-charcoal); display: block; margin-bottom: 8px;">${title}</strong>`;
+    compiledMessage += body;
+
+    const payload = {
+        text: compiledMessage,
+        date: new Date().toLocaleDateString('en-US'), 
+        author: sessionStorage.getItem('speeksUserName') || 'Executive Team'
+    };
+
+    try {
+        await fetch(ANNOUNCEMENTS_WRITE_URL, {
+            method: 'POST',
+            mode: 'no-cors', 
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(payload)
+        });
+        
+        alert("Success! Your announcement has been published to all stores.");
+        closeAllModals(); 
+        if(typeof syncAllData === 'function') syncAllData(); 
+        
+    } catch (error) {
+        console.error("Error publishing announcement:", error);
+        alert("Failed to connect to the server.");
+    } finally {
+        btn.innerHTML = "<span>Publish to All Stores</span> 🚀";
+        btn.style.opacity = "1";
+        btn.style.pointerEvents = "auto";
+    }
+}
+
+// --- MODAL: MANAGE ALERTS ---
 async function toggleManageAlerts() {
     const dropdown = document.getElementById('manageAlertsDropdown');
     if (!dropdown) return;
     
-    // 1. Check if it's already open BEFORE we close everything
     const isOpen = dropdown.classList.contains('show');
-    
-    // 2. This clears out any other open menus and UNLOCKS the screen
     closeAllModals(); 
     
-    // 3. If it wasn't open, open it now and LOCK the screen!
     if (!isOpen) {
         dropdown.classList.add('show');
-        
         lockAndBlurScreen();
 
         const list = document.getElementById('manageAlertsList');
@@ -3473,171 +4006,7 @@ async function saveAlertsData() {
     }
 }
 
-// ==========================================
-// ANNOUNCEMENT PUBLISHER LOGIC
-// ==========================================
-
-// UPDATE THIS URL to your newly deployed App Script URL!
-const ANNOUNCEMENTS_WRITE_URL = 'https://script.google.com/macros/s/AKfycbxZviJiiQKcQYyp3SK4tcNBHrHXkID7cmwwuONStVPE9DHCSAMappqAs9dBns7ufECI/exec'; 
-
-function toggleManageAnnouncements() {
-    closeAllModals();
-    document.getElementById('manageAnnouncementsDropdown').classList.add('show');
-    
-    lockAndBlurScreen();
-    
-    // Clear out the form so it's a blank slate
-    document.getElementById('annTitleInput').value = '';
-    document.getElementById('annPriorityInput').checked = false;
-    document.getElementById('annBodyInput').innerHTML = '';
-    checkActiveFormats(); 
-}
-
-// Applies formatting AND instantly updates button highlights
-function formatText(command) {
-    const editor = document.getElementById('annBodyInput');
-    editor.focus(); // Force focus back to the text before executing!
-    document.execCommand(command, false, null);
-    checkActiveFormats();
-}
-
-// Checks cursor position to highlight formatting buttons
-function checkActiveFormats() {
-    document.getElementById('btn-fmt-bold')?.classList.toggle('active-format', document.queryCommandState('bold'));
-    document.getElementById('btn-fmt-italic')?.classList.toggle('active-format', document.queryCommandState('italic'));
-    document.getElementById('btn-fmt-underline')?.classList.toggle('active-format', document.queryCommandState('underline'));
-    document.getElementById('btn-fmt-list')?.classList.toggle('active-format', document.queryCommandState('insertUnorderedList'));
-}
-
-// Attach listeners so buttons update as you type or click around
-document.addEventListener('DOMContentLoaded', () => {
-    const editor = document.getElementById('annBodyInput');
-    if (editor) {
-        editor.addEventListener('keyup', checkActiveFormats);
-        editor.addEventListener('mouseup', checkActiveFormats);
-        editor.addEventListener('click', checkActiveFormats);
-    }
-});
-
-async function publishAnnouncement() {
-    const title = document.getElementById('annTitleInput').value.trim();
-    const body = document.getElementById('annBodyInput').innerHTML.trim();
-    const isPriority = document.getElementById('annPriorityInput').checked;
-    const btn = document.getElementById('publishAnnBtn');
-
-    if (!title || !body) {
-        alert("Wait! You must fill out both a Title and a Message before publishing.");
-        return;
-    }
-
-    btn.innerHTML = "Publishing... ⏳";
-    btn.style.opacity = "0.7";
-    btn.style.pointerEvents = "none";
-
-    let compiledMessage = "";
-    if (isPriority) {
-        compiledMessage += `<span style="color: #ef4444; font-weight: 900; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">🚨 HIGH PRIORITY</span><br>`;
-    }
-    compiledMessage += `<strong style="font-size: 16px; color: var(--slate-charcoal); display: block; margin-bottom: 8px;">${title}</strong>`;
-    compiledMessage += body;
-
-    const payload = {
-        text: compiledMessage,
-        date: new Date().toLocaleDateString('en-US'), 
-        author: sessionStorage.getItem('speeksUserName') || 'Executive Team'
-    };
-
-    try {
-        // THE FIX: no-cors forces the data through. We don't try to parse the response!
-        await fetch(ANNOUNCEMENTS_WRITE_URL, {
-            method: 'POST',
-            mode: 'no-cors', // Bypasses the strict Google CORS block
-            headers: {
-                'Content-Type': 'text/plain;charset=utf-8'
-            },
-            body: JSON.stringify(payload)
-        });
-        
-        // Because no-cors makes the response unreadable, we assume success if no network crash occurred!
-        alert("Success! Your announcement has been published to all stores.");
-        closeAllModals(); 
-        syncAllData(); 
-        
-    } catch (error) {
-        console.error("Error publishing announcement:", error);
-        alert("Failed to connect to the server. Check your Apps Script deployment settings.");
-    } finally {
-        btn.innerHTML = "<span>Publish to All Stores</span> 🚀";
-        btn.style.opacity = "1";
-        btn.style.pointerEvents = "auto";
-    }
-}
-
-/* =========================================================
-   CUSTOM INSTANT TOOLTIPS
-   ========================================================= */
-const customTooltip = document.createElement('div');
-customTooltip.className = 'speeks-tooltip';
-document.body.appendChild(customTooltip);
-
-// 2. Watch where the mouse enters (Card-Level Detection)
-document.addEventListener('mouseover', function(e) {
-    const card = e.target.closest('.doc-card');
-    
-    if (card) {
-        const titleEl = card.querySelector('.doc-title');
-        const descEl = card.querySelector('.doc-desc');
-        
-        if (titleEl && descEl) {
-            // Check if text is truncated
-            const isTitleCut = titleEl.scrollWidth > titleEl.clientWidth;
-            const isDescCut = descEl.scrollHeight > descEl.clientHeight;
-            
-            if (isTitleCut || isDescCut) {
-                // Inject beautifully formatted text with a SINGLE LINE title
-                customTooltip.innerHTML = `<strong style="display:block; margin-bottom: 6px; color: var(--sage-professional); font-size: 14px; white-space: nowrap;">${titleEl.innerText.trim()}</strong><span style="font-size: 12px; color: var(--slate-charcoal); line-height: 1.4;">${descEl.innerText.trim()}</span>`;
-                customTooltip.classList.add('show');
-                return;
-            }
-        }
-    }
-    customTooltip.classList.remove('show');
-});
-
-// 3. Make the tooltip track the mouse cursor perfectly
-document.addEventListener('mousemove', function(e) {
-    if (customTooltip.classList.contains('show')) {
-        let x = e.pageX + 15;
-        let y = e.pageY + 15;
-        
-        // Prevent tooltip from overflowing the right side of the screen
-        if (x + customTooltip.offsetWidth > window.innerWidth - 20) {
-            x = e.pageX - customTooltip.offsetWidth - 10;
-        }
-        
-        customTooltip.style.left = x + 'px';
-        customTooltip.style.top = y + 'px';
-    }
-});
-
-// 4. Hide when leaving the card
-document.addEventListener('mouseout', function(e) {
-    if (e.target.closest('.doc-card')) {
-        customTooltip.classList.remove('show');
-    }
-});
-
-// 5. Hide the tooltip instantly if the user scrolls the page
-window.addEventListener('scroll', function() {
-    customTooltip.classList.remove('show');
-}, { passive: true });
-
-
-// ==========================================
-// HOTKEYS MANAGER LOGIC
-// ==========================================
-let globalHotkeysData = [];
-
+// --- MODAL: MANAGE HOTKEYS ---
 async function toggleManageHotkeys() {
     const dropdown = document.getElementById('manageHotkeysDropdown');
     if (!dropdown) return;
@@ -3654,8 +4023,7 @@ async function toggleManageHotkeys() {
         
         try {
             const res = await fetch(`${HOTKEYS_URL}?v=${Date.now()}`);
-            const data = await res.json();
-            globalHotkeysData = data;
+            globalHotkeysData = await res.json();
             populateHotkeysModal();
         } catch (e) {
             list.innerHTML = '<div style="color:var(--red-alert); padding:20px; text-align:center;">Failed to sync data.</div>';
@@ -3678,7 +4046,6 @@ function addManageHotkeyRow(item = { brand: '', device: '', hotkey: '', func: ''
     const row = document.createElement('div');
     row.className = 'hotkey-manage-row';
 
-    // Notice: The inline styles are gone. The CSS classes handle the widths now.
     row.innerHTML = `
         <input type="text" class="h-brand" placeholder="Brand (e.g., Apple)" value="${item.brand}">
         <input type="text" class="h-device" placeholder="Device (e.g., MacBook)" value="${item.device}">
@@ -3704,13 +4071,9 @@ async function saveManageHotkeys() {
         }
     });
 
-    // ✨ NEW: Auto-sort the array alphabetically before sending to the database!
     updatedHotkeys.sort((a, b) => {
-        // 1. Primary Sort by Brand
         const brandCompare = a.brand.localeCompare(b.brand, undefined, { sensitivity: 'base' });
         if (brandCompare !== 0) return brandCompare;
-        
-        // 2. Secondary Sort by Device (keeps identical brands grouped nicely)
         return a.device.localeCompare(b.device, undefined, { sensitivity: 'base' });
     });
 
@@ -3727,115 +4090,9 @@ async function saveManageHotkeys() {
         if (res.ok) {
             alert("System Hotkeys successfully updated!");
             closeAllModals();
-            loadHotkeys(); // Force an invisible refresh so the main board is instantly updated
+            if (typeof loadHotkeys === 'function') loadHotkeys(); 
         } else {
             alert("Error saving hotkeys.");
-        }
-    } catch (e) {
-        console.error(e);
-        alert("Failed to connect to server.");
-    } finally {
-        btn.textContent = "Save Changes";
-        btn.style.opacity = "1";
-    }
-}
-
-// ==========================================
-// MANAGE COMPANY RECORDS MODAL
-// ==========================================
-async function toggleManageRecords() {
-    const dropdown = document.getElementById('manageRecordsDropdown');
-    if (!dropdown) return;
-    
-    const isOpen = dropdown.classList.contains('show');
-    closeAllModals(); 
-    
-    if (!isOpen) {
-        dropdown.classList.add('show');
-        lockAndBlurScreen();
-
-        const list = document.getElementById('manageRecordsList');
-        list.innerHTML = '<div class="status-message">Syncing Database...</div>';
-        
-        try {
-            // Check cache first to load instantly
-            if (!recordsCache || recordsCache.length === 0) {
-                const res = await fetch(`${RECORDS_URL}?v=${Date.now()}`);
-                recordsCache = await res.json();
-                localStorage.setItem('speeksRecordsCache', JSON.stringify(recordsCache));
-            }
-            populateRecordsModal();
-        } catch (e) {
-            list.innerHTML = '<div style="color:var(--red-alert); padding:20px; text-align:center;">Failed to sync data.</div>';
-        }
-    }
-}
-
-function populateRecordsModal() {
-    const list = document.getElementById('manageRecordsList');
-    
-    if (!recordsCache || recordsCache.length === 0) {
-        list.innerHTML = '<div class="status-message">No records found.</div>';
-        return;
-    }
-
-    let html = '';
-    
-    // Group the records by Store/Section to make the UI clean
-    const stores = [...new Set(recordsCache.map(r => r.section))];
-
-    stores.forEach(store => {
-        // Section Header
-        html += `<div style="font-weight: 900; color: var(--slate-charcoal); font-size: 14px; margin-top: 15px; border-bottom: 2px solid #eee; padding-bottom: 5px; text-transform: uppercase;">${store} RECORDS</div>`;
-        
-        const storeRecords = recordsCache.filter(r => r.section === store);
-        
-        storeRecords.forEach(r => {
-            html += `
-            <div class="record-manage-row" data-store="${r.section}" data-label="${r.label}" style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; align-items: center; background: #fff; padding: 12px; border-radius: 8px; border: 1px solid var(--gen-border); margin-top: 8px;">
-                <div style="font-size: 13px; font-weight: 700; color: var(--slate-charcoal);">${r.label}</div>
-                <input type="text" class="r-val" placeholder="Value (e.g. $10,000)" value="${r.value || ''}" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none; transition: 0.2s;" onfocus="this.style.borderColor='var(--sage-professional)'" onblur="this.style.borderColor='#ddd'">
-                <input type="text" class="r-date" placeholder="Date (e.g. Jan 2026)" value="${r.subtext || ''}" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none; transition: 0.2s;" onfocus="this.style.borderColor='var(--sage-professional)'" onblur="this.style.borderColor='#ddd'">
-            </div>`;
-        });
-    });
-
-    list.innerHTML = html;
-}
-
-async function saveManageRecords() {
-    const btn = document.getElementById('saveRecordsBtn');
-    btn.textContent = "Saving...";
-    btn.style.opacity = "0.7";
-
-    const updatedRecords = [];
-    
-    // Loop through every input row and grab the updated text
-    document.querySelectorAll('.record-manage-row').forEach(row => {
-        updatedRecords.push({
-            store: row.getAttribute('data-store'),
-            label: row.getAttribute('data-label'),
-            value: row.querySelector('.r-val').value.trim(),
-            date: row.querySelector('.r-date').value.trim()
-        });
-    });
-
-    try {
-        const res = await fetch(RECORDS_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify(updatedRecords)
-        });
-
-        if (res.ok) {
-            alert("Company Records successfully updated!");
-            closeAllModals();
-            
-            // Force a hard refetch of the data so the background board updates!
-            recordsCache = null; 
-            if (typeof fetchRecordsData === 'function') fetchRecordsData();
-        } else {
-            alert("Error saving records. Make sure Apps Script is deployed properly.");
         }
     } catch (e) {
         console.error(e);
