@@ -110,19 +110,34 @@ async function toggleManageUsers() {
     
     if (!isOpen) {
         dropdown.classList.add('show');
-        // Use the master lock function instead of manual overflow settings
         lockAndBlurScreen(); 
 
         const list = document.getElementById('manageUsersList');
-        list.innerHTML = '<div class="status-message">Syncing Data...</div>';
+        list.innerHTML = '<div class="status-message">Loading...</div>';
         
         try {
-            const res = await fetch(`${AUTH_URL}?v=${Date.now()}`);
-            const data = await res.json();
+            // Try cache first so it loads instantly!
+            let cachedData = localStorage.getItem('speeksAuthCache');
+            let data = cachedData ? JSON.parse(cachedData) : null;
+            
+            // If no cache, fetch it live
+            if (!data) {
+                list.innerHTML = '<div class="status-message">Syncing Database...</div>';
+                const res = await fetch(`${AUTH_URL}?v=${Date.now()}`);
+                data = await res.json();
+                localStorage.setItem('speeksAuthCache', JSON.stringify(data));
+            }
+            
             globalUsersData = data.users || [];
             populateUsersModal();
+            
+            // Background sync to ensure it's fully up to date if changes were made elsewhere
+            fetch(`${AUTH_URL}?v=${Date.now()}`).then(r => r.json()).then(newData => {
+                localStorage.setItem('speeksAuthCache', JSON.stringify(newData));
+            }).catch(e => {});
+
         } catch (e) {
-            list.innerHTML = '<div style="color:var(--red-alert); padding:20px;">Failed to sync data.</div>';
+            list.innerHTML = '<div style="color:var(--red-alert); padding:20px; text-align:center;">Failed to sync data.</div>';
         }
     }
 }
@@ -528,7 +543,29 @@ let dynamicMonths = [], rawKPIData = [], monthlyKpiCache = {}, weeklyKpiCache = 
 
 function startAuthFetch() { 
     authFetchPromise = fetch(`${AUTH_URL}?v=${Date.now()}`)
-        .then(r => r.ok ? r.json() : null)
+        .then(r => {
+            if (r.ok) {
+                return r.json().then(data => {
+                    // Store in cache for INSTANT loads on future visits!
+                    localStorage.setItem('speeksAuthCache', JSON.stringify(data));
+                    return data;
+                });
+            }
+            return null;
+        })
+        .catch(() => null); 
+}function startAuthFetch() { 
+    authFetchPromise = fetch(`${AUTH_URL}?v=${Date.now()}`)
+        .then(r => {
+            if (r.ok) {
+                return r.json().then(data => {
+                    // Store in cache for INSTANT loads on future visits!
+                    localStorage.setItem('speeksAuthCache', JSON.stringify(data));
+                    return data;
+                });
+            }
+            return null;
+        })
         .catch(() => null); 
 }
 
@@ -544,7 +581,15 @@ async function checkPIN() {
     err.style.display = 'none';
 
     try {
-        const payload = await authFetchPromise;
+        // 1. Try to load from Cache first for INSTANT login
+        let cachedData = localStorage.getItem('speeksAuthCache');
+        let payload = cachedData ? JSON.parse(cachedData) : null;
+        
+        // 2. If no cache exists yet, wait for the background fetch
+        if (!payload) {
+            payload = await authFetchPromise;
+        }
+
         if (!payload || !payload.users) throw new Error("Could not load users.");
         
         const matched = payload.users.find(u => u.pin === String(pin));
@@ -558,7 +603,6 @@ async function checkPIN() {
             const authOverlay = document.getElementById('authOverlay');
             if (authOverlay) authOverlay.style.display = 'none'; 
             
-            // THE FAILSAFE WIPE
             document.documentElement.classList.remove('no-scroll');
             document.body.classList.remove('no-scroll');
             document.documentElement.style.overflow = '';
@@ -781,13 +825,64 @@ async function fetchHubData() {
 }
 
 function renderBuyingSales() {
-    if(!hubDataCache) return; const store = document.getElementById('bsStoreSelect')?.value.toLowerCase(); if(!store) return;
-    let bV = parseNum(hubDataCache[`${store}BuyVal`]), bP = parseNum(hubDataCache[`${store}BuyProj`]), mN = parseNum(hubDataCache[`${store}BuyMargin`]) * (String(hubDataCache[`${store}BuyMargin`]).includes('%') ? 1 : 100);
-    document.getElementById('bs-buy-val').innerText = `$${Math.round(bV).toLocaleString()}`; document.getElementById('bs-buy-proj').innerText = `$${Math.round(bP).toLocaleString()}`;
-    let mb = document.getElementById('bs-buy-margin'); mb.innerText = mN.toFixed(1) + '%'; mb.className = mN > 0 && mN < 51 ? 'delta-badge delta-neg' : 'delta-badge delta-neutral';
-    let p = parseNum(hubDataCache[`${store}Pct`]); p = Math.round(p > 0 && p <= 1 && !String(hubDataCache[`${store}Pct`]).includes('%') ? p * 100 : p);
-    document.getElementById('bs-pct').innerText = p + '%'; document.getElementById('bs-goal').innerText = `Goal: $${Math.round(parseNum(hubDataCache[`${store}Goal`])).toLocaleString()}`; document.getElementById('bs-t-gp').innerText = `$${Math.round(parseNum(hubDataCache[`${store}TrackGP`])).toLocaleString()}`;
-    let bar = document.getElementById('bs-bar'); if(bar) { bar.style.strokeDashoffset = 402 - (Math.min(p, 100)/100)*402; bar.style.stroke = p < 100 ? "var(--red-alert)" : "var(--sage-professional)"; }
+    if(!hubDataCache) return; 
+    
+    // Safely get the selected store (Defaults to OVL if hidden)
+    const storeSelect = document.getElementById('bsStoreSelect');
+    const store = storeSelect ? storeSelect.value.toLowerCase() : 'ovl'; 
+    if(!store) return;
+
+    // --- BUYING SIDE MATH ---
+    let bV = parseNum(hubDataCache[`${store}BuyVal`]);
+    let bP = parseNum(hubDataCache[`${store}BuyProj`]);
+    let mN = parseNum(hubDataCache[`${store}BuyMargin`]);
+    
+    // Convert decimal to percentage if needed
+    if (String(hubDataCache[`${store}BuyMargin`]).includes('%') === false && mN > 0 && mN <= 1.5) {
+        mN = mN * 100;
+    }
+
+    // Update ALL Buying elements on the page
+    document.querySelectorAll('#bs-buy-val').forEach(el => el.innerText = `$${Math.round(bV).toLocaleString()}`);
+    document.querySelectorAll('#bs-buy-proj').forEach(el => el.innerText = `$${Math.round(bP).toLocaleString()}`);
+    document.querySelectorAll('#bs-buy-margin').forEach(el => {
+        el.innerText = mN.toFixed(1) + '%';
+        el.className = mN > 0 && mN < 51 ? 'delta-badge delta-neg' : 'delta-badge delta-pos';
+    });
+
+    // --- SALES SIDE MATH ---
+    let p = parseNum(hubDataCache[`${store}Pct`]); 
+    p = Math.round(p > 0 && p <= 1 && !String(hubDataCache[`${store}Pct`]).includes('%') ? p * 100 : p);
+    
+    // Update ALL Sales elements on the page
+    document.querySelectorAll('#bs-pct').forEach(el => el.innerText = p + '%');
+    document.querySelectorAll('#bs-goal').forEach(el => el.innerText = `$${Math.round(parseNum(hubDataCache[`${store}Goal`])).toLocaleString()}`);
+    document.querySelectorAll('#bs-t-gp').forEach(el => el.innerText = `$${Math.round(parseNum(hubDataCache[`${store}TrackGP`])).toLocaleString()}`);
+    
+    // Update ALL Rings
+    document.querySelectorAll('#bs-bar').forEach(bar => {
+        bar.style.strokeDashoffset = 402 - (Math.min(p, 100)/100)*402; 
+        bar.style.stroke = p < 100 ? "var(--red-alert)" : "var(--sage-professional)";
+    });
+
+    // --- SELLING MARGIN MATH ---
+    let sellMarginNum = 0;
+    const rev = parseNum(hubDataCache[`${store}Rev`]);
+    const gp = parseNum(hubDataCache[`${store}GP`]);
+    
+    // Look for the new App Script value, or fallback to manual math (GP / Rev)
+    if (hubDataCache[`${store}SellMargin`]) {
+        let smRaw = parseNum(hubDataCache[`${store}SellMargin`]);
+        sellMarginNum = (!String(hubDataCache[`${store}SellMargin`]).includes('%') && smRaw > 0 && smRaw <= 1.5) ? (smRaw * 100) : smRaw;
+    } else if (rev > 0) {
+        sellMarginNum = (gp / rev) * 100;
+    }
+    
+    // Update ALL Sell Margin badges
+    document.querySelectorAll('#bs-sell-margin').forEach(smb => {
+        smb.innerText = sellMarginNum.toFixed(1) + '%';
+        smb.className = sellMarginNum >= 55.0 ? 'delta-badge delta-pos' : 'delta-badge delta-neg';
+    });
 }
 
 async function preloadAllStores() {
