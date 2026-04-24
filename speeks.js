@@ -1753,7 +1753,6 @@ async function fetchScorecardData() {
 
 async function fetchAlertsData() {
     const container = document.getElementById('alerts-widget-body');
-    const titleElement = document.getElementById('alerts-store-name');
     if (!container) return;
 
     const ALERTS_URL = 'https://script.google.com/macros/s/AKfycbxap-4Jgdn5-ntkv_X-vFZLTWlTB29_bDLdwcFxhWd2su3ZQJ0ZS7UpUgZAK08lOIV6/exec';
@@ -1768,8 +1767,6 @@ async function fetchAlertsData() {
 
         const storeData = json.data.find(item => String(item.store).toUpperCase() === targetStore.toUpperCase());
         if (!storeData) return;
-
-        if (titleElement) titleElement.innerHTML = `🚨 Action Needed - eBay Performance`;
 
         const buildAlertCard = (title, value, severity) => {
             let bgColor = '#d1fae5';

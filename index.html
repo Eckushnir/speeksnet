@@ -402,15 +402,13 @@
           <div id="scorecard-widget-body" class="scorecard-widget-body"><div class="status-message">Syncing Data...</div></div>
       </div>
 
-      <div class="card district-master-panel employee-widget-card" style="flex: 3 1 600px; max-width: none;">
+      <div class="card district-master-panel employee-widget-card">
           <div class="district-kpi-header">
-              <span id="alerts-store-name" class="district-kpi-title">🚨 Action Needed - eBay Performance</span>
+              <span id="alerts-store-name" class="district-kpi-title">eBay High Return Rates</span>
           </div>
          <div id="alerts-widget-body" class="employee-widget-body"><div class="status-message">Syncing Data...</div></div>
       </div>
-      <div style="flex: 2 1 350px; margin: 0;"></div>
 
-      
   </div>
 
   <div class="top-alerts-row dynamic-module role-employee employee-dashboard-row">
@@ -661,7 +659,9 @@
                 <div class="status-message">Syncing Data...</div>
             </div>
         </div>
-    </div> <div class="card master-card" style="padding: 0; display: flex; flex-direction: column; height: 400px; overflow: hidden; margin: 0; text-align: left;">
+    </div> 
+    
+    <div class="card master-card" style="padding: 0; display: flex; flex-direction: column; height: 400px; overflow: hidden; margin: 0; text-align: left;">
         <div class="master-card-header" style="background: var(--slate-charcoal);">
             <div style="display: flex; align-items: center; gap: 8px;">
                 <span class="master-card-title" style="text-transform: uppercase; font-size: 14px; letter-spacing: 0.5px;">Comparison Trends</span>
@@ -675,20 +675,20 @@
             
             <div class="chart-controls" style="display: flex; gap: 10px; align-items: center;">
     
-    <div class="dynamic-module-flex role-district-manager role-ceo">
-        <select id="dmChartStoreSelector" class="metric-dropdown" onchange="loadKpiData()" style="padding: 4px 10px; font-size: 11px; height: 28px; border-radius: 6px; display: none;">
-            <option value="OVL">OVL</option>
-            <option value="LEE">LEE</option>
-            <option value="WSP">WSP</option>
-            <option value="MPL">MPL</option>
-            <option value="BAL">BAL</option>
-        </select>
-    </div>
+        <div class="dynamic-module-flex role-district-manager role-ceo">
+            <select id="dmChartStoreSelector" class="metric-dropdown" onchange="loadKpiData()" style="padding: 4px 10px; font-size: 11px; height: 28px; border-radius: 6px; display: none;">
+                <option value="OVL">OVL</option>
+                <option value="LEE">LEE</option>
+                <option value="WSP">WSP</option>
+                <option value="MPL">MPL</option>
+                <option value="BAL">BAL</option>
+            </select>
+        </div>
 
-    <div class="timeframe-toggle dark-toggle" style="background: rgba(255,255,255,0.1);">
-        <button class="toggle-btn active" id="btn-chart-avg" onclick="setChartMode('averages')">Averages</button>
-        <button class="toggle-btn" id="btn-chart-emp" onclick="setChartMode('employees')">My Team</button>
-    </div>
+        <div class="timeframe-toggle dark-toggle" style="background: rgba(255,255,255,0.1);">
+            <button class="toggle-btn active" id="btn-chart-avg" onclick="setChartMode('averages')">Averages</button>
+            <button class="toggle-btn" id="btn-chart-emp" onclick="setChartMode('employees')">My Team</button>
+        </div>
                 
                 <div class="timeframe-toggle dark-toggle" style="background: rgba(255,255,255,0.1);">
                     <button class="toggle-btn active" id="btn-4week" onclick="setTimeframe('4-Week')">4-Week</button>
@@ -710,6 +710,93 @@
             </div>
             <canvas id="mainKpiChart"></canvas>
         </div>
+    </div>
+
+    <div class="card district-master-panel employee-widget-card dynamic-module-flex role-manager" style="grid-column: 1 / -1; margin-bottom: 30px;">
+          <div class="district-kpi-header" style="margin-bottom: 5px; border-bottom: none; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 10px;">
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <span class="district-kpi-title" >🗓️ Weekly KPI Breakdown</span>
+                <span id="weeklyKpiPeriod" style="display: none; background: #e2e8f0; color: #334155; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; width: fit-content;"></span>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <select id="weeklyKpiStoreSelect" class="kpi-select" style="display: none;" onchange="fetchWeeklyKPIs()">
+                  <option value="OVL">OVL</option>
+                  <option value="LEE">LEE</option>
+                  <option value="WSP">WSP</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="weekly-kpi-grid" id="weeklyKpiContainer" style="margin-bottom: 10px;">
+                <div class="status-message">Syncing Live Weekly Data...</div>
+          </div>
+      </div>
+
+    <div class="card kpi-master-card district-master-panel employee-widget-card dynamic-module-flex role-manager">
+        <div class="master-card-header">
+            <span class="district-kpi-title">🧮 Monthly KPI Comparison</span>
+            <div class="kpi-header-controls">
+            <div class="kpi-select-group">
+                <select id="kpiStoreSelect" class="kpi-select" style="display: none;">
+                    <option value="OVL">OVL</option>
+                    <option value="LEE">LEE</option>
+                    <option value="WSP">WSP</option>
+                    <option value="MPL">MPL</option>
+                    <option value="BAL">BAL</option>
+                </select>
+            </div>
+            <div class="kpi-select-group" style="margin-left: auto;">
+                <select id="primaryMonthSelect" class="kpi-select" onchange="renderKPIDashboard()"></select>
+            </div>
+            <div class="kpi-select-group" style="color: #ccc; padding-left: 10px; padding-right: 10px;">vs</div>
+            <div class="kpi-select-group">
+                <select id="compareMonthSelect" class="kpi-select" onchange="renderKPIDashboard()"></select>
+            </div>
+        </div>
+        </div>
+        
+        
+
+        <div class="kpi-inner-wrapper">
+            <div class="kpi-table-header">
+                <div>Metric & 12-Mo Trend</div>
+                <div id="header-primary-label">Primary</div>
+                <div id="header-compare-label">Compare</div>
+                <div>Delta (+/-)</div>
+            </div>
+
+            <div id="kpiDashboardContainer" class="kpi-scroll-area">
+                <div class="status-message">Syncing KPI Data...</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card district-master-panel employee-widget-card dynamic-module-flex role-manager" style="margin-bottom: 0; display: flex; flex-direction: column;">
+          <div class="district-kpi-header" style="border-bottom: none;">
+            <span class="district-kpi-title">⚖️ Live Variance Reports</span>
+            <div class="vw-controls" style="display: none;">
+              <select id="vw-primary" class="kpi-select" onchange="renderVariance()">
+                <option value="OVL">OVL</option>
+                <option value="LEE">LEE</option>
+                <option value="WSP">WSP</option>
+              </select>
+              <span style="color: #ccc; font-weight: 700; font-size: 13px;">vs</span>
+              <select id="vw-compare" class="kpi-select" onchange="renderVariance()">
+                <option value="NONE">None</option>
+                <option value="OVL">OVL</option>
+                <option value="LEE">LEE</option>
+                <option value="WSP">WSP</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="vw-dashboard" id="vw-dashboard-container" style="flex-grow: 1;">
+                <div class="status-message">Syncing Variance Data...</div>
+          </div>
+
+          <div style="margin-top: 20px; margin-bottom: 20px; border-top: 1px solid #eee; padding-top: 20px; text-align: center;">
+            <a href="https://drive.google.com/drive/folders/12Fjxp44sY6T-o6OlrG6n_YtrHow4bE2f?usp=sharing" target="_blank" class="quick-link-pill" style="width: 90%; justify-content: center; padding: 12px; font-size: 14px;">📁 Variance Replies</a>
+          </div>
     </div>
           
 </main>
