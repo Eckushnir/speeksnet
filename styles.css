@@ -789,8 +789,8 @@ body.preload { visibility: hidden !important; opacity: 0 !important; }
 
 .district-master-grid { display: grid; width: 100%; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 15px; align-items: stretch; }
 .district-master-panel { margin: 20px 0 0 0; padding: 0; width: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border-radius: 16px; background: #fff; overflow: hidden; }
-.district-kpi-header { background: var(--slate-charcoal); padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; border-top-left-radius: 16px; border-top-right-radius: 16px; }
-.district-kpi-title { font-size: 16px; font-weight: 900; color: white; text-transform: uppercase; letter-spacing: 0.5px; }
+.district-kpi-header { background: var(--slate-charcoal); padding: 12px 20px; min-height: 64px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; border-top-left-radius: 16px; border-top-right-radius: 16px; }
+.district-kpi-title { font-size: 14px; font-weight: 900; color: white; text-transform: uppercase; letter-spacing: 0.5px; }
 .dist-kpi-select { appearance: none; background-color: #ffffff; background-image: url('data:image/svg+xml;utf8,<svg fill="%23111827" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 9l6 6 6-6"/></svg>'); background-repeat: no-repeat; background-position: right 10px center; background-size: 14px; color: var(--slate-charcoal); border: 1px solid #d1d5db; border-radius: 8px; padding: 6px 28px 6px 12px; font-size: 12px; font-weight: 800; outline: none; cursor: pointer; min-width: 120px; text-align: center; text-align-last: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
 .dist-kpi-select option { text-align: left; }
 
@@ -1198,7 +1198,7 @@ body.preload { visibility: hidden !important; opacity: 0 !important; }
 .emp-week-section { display: flex; flex-direction: column; gap: 8px; border-top: 2px solid #f4f7f9; padding-top: 20px; }
 
 /* Daily Breakdown Pills */
-.emp-pill-container { display: flex; gap: 8px; margin-top: 5px; width: 100%; }
+.emp-pill-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px; width: 100%; }
 .emp-daily-pill { flex: 1; min-width: 0; text-align: center; font-size: 10px; font-weight: 800; padding: 6px 2px; border-radius: 6px; white-space: nowrap; }
 .pill-pass { color: #065f46; background: #d1fae5; }
 .pill-fail { color: #991b1b; background: #fee2e2; }
@@ -1349,4 +1349,165 @@ body.preload { visibility: hidden !important; opacity: 0 !important; }
     width: 100% !important;
     min-height: 350px !important; /* Protects the actual graph from collapsing */
     flex-grow: 1;
+}
+
+/* =========================================================
+   BUYING & SALES WIDGET (CLEAN REFACTOR)
+   ========================================================= */
+.bs-widget-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    padding: 20px;
+    background: white;
+    border: 1px solid #eee;
+    border-top: none;
+}
+
+.bs-widget-container.manager-view {
+    background: #f9fafb;
+    border-radius: 0 0 12px 12px;
+}
+
+.bs-col-left {
+    padding-right: 20px;
+    border-right: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+}
+
+.bs-col-right {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+}
+
+.bs-col-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--slate-charcoal);
+    margin-bottom: 15px;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.bs-val-container {
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.bs-val-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #888;
+    text-transform: uppercase;
+}
+
+.bs-val-number {
+    font-size: 26px;
+    font-weight: 900;
+    color: var(--slate-charcoal);
+    line-height: 1.2;
+}
+
+.bs-stats-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.bs-stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.bs-stat-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #666;
+}
+
+.bs-stat-val {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--slate-charcoal);
+}
+
+.bs-ring-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: -10px auto;
+    transform: scale(0.85);
+}
+
+.bs-hidden-select {
+    display: none !important;
+}
+
+/* Specific overrides for Manager View container */
+.manager-bs-card {
+    padding: 25px;
+    margin-bottom: 0;
+}
+.manager-bs-header {
+    border-radius: 12px 12px 0 0;
+}
+.manager-bs-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+/* =========================================================
+   EMPLOYEE WIDGET RESPONSIVE DESIGN
+   ========================================================= */
+
+/* Tablets and Standard Mobile (Stack elements into columns) */
+@media (max-width: 768px) {
+    /* Stack Buying and Sales from side-by-side to vertical */
+    .bs-widget-container { 
+        grid-template-columns: 1fr !important; 
+    }
+    .bs-col-left { 
+        border-right: none !important; 
+        border-bottom: 1px solid #e2e8f0; 
+        padding-right: 0 !important; 
+        padding-bottom: 20px; 
+    }
+    
+    /* Adapt Weekly KPIs from 3 columns down to 2 */
+    #employee-kpi-widget-body > div { 
+        grid-template-columns: repeat(2, 1fr) !important; 
+        height: auto !important; 
+    }
+    
+    /* Allow the cards to grow in height so content isn't cut off */
+    .employee-kpi-body, .employee-widget-body { 
+        height: auto !important; 
+        min-height: 215px; 
+    }
+}
+
+/* Small Mobile Phones (iPhone SE, etc.) */
+@media (max-width: 480px) {
+    /* Adapt Weekly KPIs from 2 columns down to 1 */
+    #employee-kpi-widget-body > div { 
+        grid-template-columns: 1fr !important; 
+    }
+    
+    /* Stack 'Today's Target' and 'My Role' so they stay readable */
+    .emp-goals-top-row { 
+        flex-direction: column; 
+        align-items: center; 
+        gap: 15px; 
+        text-align: center; 
+    }
+    .emp-goal-col-right { 
+        text-align: center; 
+    }
 }
