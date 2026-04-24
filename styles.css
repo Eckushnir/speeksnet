@@ -1565,3 +1565,19 @@ body.preload { visibility: hidden !important; opacity: 0 !important; }
 .h-device { flex: 1.5; }
 .h-hotkey { flex: 1.5; }
 .h-func   { flex: 2; }
+
+/* =========================================================
+   RICH TEXT EDITOR & TOGGLE STYLES (Moved from HTML)
+   ========================================================= */
+.rt-btn { padding: 6px 12px; background: white; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 700; color: var(--slate-charcoal); transition: 0.2s; }
+.rt-btn:hover { background: #e2e8f0; }
+.rt-btn.active-format { background: #cbd5e1; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); border-color: #94a3b8; }
+#annBodyInput[contenteditable="true"]:empty:before { content: attr(placeholder); color: #a0aab2; pointer-events: none; display: block; }
+
+.dark-toggle .toggle-btn { color: #a0aab2; }
+.dark-toggle .toggle-btn:hover:not(.active) { color: white; }
+.dark-toggle .toggle-btn.active { color: var(--slate-charcoal) !important; background: white !important; }
+
+.chart-controls .dark-toggle .toggle-btn { color: #a0aab2; }
+.chart-controls .dark-toggle .toggle-btn:hover:not(.active) { color: white; }
+.chart-controls .dark-toggle .toggle-btn.active { color: var(--slate-charcoal) !important; background: white !important; }

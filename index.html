@@ -28,6 +28,7 @@
   <nav class="nav-bar">
     <a href="index.html" class="nav-link active"><i>⚡</i> <span>QuickPortal</span></a>
     <a href="docs.html" class="nav-link"><i>📚</i> <span>Processes & Policies</span></a>
+    <a href="stats.html" class="nav-link"><i>🏆</i> <span>Stats & Awards</span></a>
   </nav>
 
   <div class="nav-right">
@@ -48,10 +49,9 @@
 
         <div class="dev-dropdown-menu" style="min-width: 200px;">
             <a class="dev-dropdown-link dynamic-module-block role-district-manager role-ceo" style="cursor: pointer; white-space: nowrap; width: 100%;" onclick="toggleManageAnnouncements()">Announcements</a>
-            
             <a class="dev-dropdown-link" style="cursor: pointer; white-space: nowrap;" onclick="toggleManageUsers()">User Permissions</a>
-            
             <a class="dev-dropdown-link dynamic-module-block role-district-manager" style="cursor: pointer; white-space: nowrap; width: 100%;" onclick="toggleManageAlerts()">Performance Metrics</a>
+            <a class="dev-dropdown-link dynamic-module-block role-district-manager role-ceo" style="cursor: pointer; white-space: nowrap; width: 100%;" onclick="toggleManageRecords()">Edit Company Records</a>
             <a class="dev-dropdown-link dynamic-module-block role-district-manager" style="cursor: pointer; white-space: nowrap; width: 100%;" onclick="toggleManageDocs()">Manage Policies</a>
             <a class="dev-dropdown-link dynamic-module-block role-district-manager role-ceo" style="cursor: pointer; white-space: nowrap; width: 100%;" onclick="toggleManageHotkeys()">Edit System Hotkeys</a>
         </div>
@@ -87,6 +87,18 @@
     <div class="manage-footer">
         <button class="btn-secondary" onclick="addManageUserRow()">+ Add New User</button>
         <button id="saveUsersBtn" class="btn-primary" onclick="saveManageUsers()">Save Changes</button>
+    </div>
+</div>
+
+<div class="modal-menu manage-menu" id="manageRecordsDropdown">
+    <div class="modal-header">
+        <h3>Edit Company Records</h3>
+        <button class="modal-close-btn" onclick="closeAllModals()">✖</button>
+    </div>
+    <div class="manage-content" id="manageRecordsList">
+        </div>
+    <div class="manage-footer" style="justify-content: flex-end;">
+        <button id="saveRecordsBtn" class="btn-primary" onclick="saveManageRecords()">Save Changes</button>
     </div>
 </div>
 

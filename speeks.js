@@ -905,6 +905,7 @@ function initDashboardData() {
         setTimeout(fetchDmGoalsData, 1000);
         setTimeout(fetchAndRenderEmployeeGoals, 1100);
         setTimeout(fetchAndRenderEmployeeKPIs, 1200);
+        setTimeout(fetchRecordsData, 800);
         
         // FIX: Removed the 1.5s and 1.6s delays! The charts will now handle their own instant loading.
     };
@@ -2884,6 +2885,9 @@ document.addEventListener('click', async (e) => {
                     if (typeof fetchAlertsData === 'function') fetchAlertsData();
                     if (typeof fetchMasterDistrictDashboard === 'function') fetchMasterDistrictDashboard();
                     if (typeof fetchDistrictMonthlyKPIs === 'function') fetchDistrictMonthlyKPIs();
+                    
+                    // ADD THIS LINE HERE:
+                    if (document.getElementById('pane-records') && typeof fetchRecordsData === 'function') fetchRecordsData();
                 }, 100);
             }
 
@@ -3712,6 +3716,112 @@ async function saveManageHotkeys() {
             loadHotkeys(); // Force an invisible refresh so the main board is instantly updated
         } else {
             alert("Error saving hotkeys.");
+        }
+    } catch (e) {
+        console.error(e);
+        alert("Failed to connect to server.");
+    } finally {
+        btn.textContent = "Save Changes";
+        btn.style.opacity = "1";
+    }
+}
+
+// ==========================================
+// MANAGE COMPANY RECORDS MODAL
+// ==========================================
+async function toggleManageRecords() {
+    const dropdown = document.getElementById('manageRecordsDropdown');
+    if (!dropdown) return;
+    
+    const isOpen = dropdown.classList.contains('show');
+    closeAllModals(); 
+    
+    if (!isOpen) {
+        dropdown.classList.add('show');
+        lockAndBlurScreen();
+
+        const list = document.getElementById('manageRecordsList');
+        list.innerHTML = '<div class="status-message">Syncing Database...</div>';
+        
+        try {
+            // Check cache first to load instantly
+            if (!recordsCache || recordsCache.length === 0) {
+                const res = await fetch(`${RECORDS_URL}?v=${Date.now()}`);
+                recordsCache = await res.json();
+                localStorage.setItem('speeksRecordsCache', JSON.stringify(recordsCache));
+            }
+            populateRecordsModal();
+        } catch (e) {
+            list.innerHTML = '<div style="color:var(--red-alert); padding:20px; text-align:center;">Failed to sync data.</div>';
+        }
+    }
+}
+
+function populateRecordsModal() {
+    const list = document.getElementById('manageRecordsList');
+    
+    if (!recordsCache || recordsCache.length === 0) {
+        list.innerHTML = '<div class="status-message">No records found.</div>';
+        return;
+    }
+
+    let html = '';
+    
+    // Group the records by Store/Section to make the UI clean
+    const stores = [...new Set(recordsCache.map(r => r.section))];
+
+    stores.forEach(store => {
+        // Section Header
+        html += `<div style="font-weight: 900; color: var(--slate-charcoal); font-size: 14px; margin-top: 15px; border-bottom: 2px solid #eee; padding-bottom: 5px; text-transform: uppercase;">${store} RECORDS</div>`;
+        
+        const storeRecords = recordsCache.filter(r => r.section === store);
+        
+        storeRecords.forEach(r => {
+            html += `
+            <div class="record-manage-row" data-store="${r.section}" data-label="${r.label}" style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; align-items: center; background: #fff; padding: 12px; border-radius: 8px; border: 1px solid var(--gen-border); margin-top: 8px;">
+                <div style="font-size: 13px; font-weight: 700; color: var(--slate-charcoal);">${r.label}</div>
+                <input type="text" class="r-val" placeholder="Value (e.g. $10,000)" value="${r.value || ''}" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none; transition: 0.2s;" onfocus="this.style.borderColor='var(--sage-professional)'" onblur="this.style.borderColor='#ddd'">
+                <input type="text" class="r-date" placeholder="Date (e.g. Jan 2026)" value="${r.subtext || ''}" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none; transition: 0.2s;" onfocus="this.style.borderColor='var(--sage-professional)'" onblur="this.style.borderColor='#ddd'">
+            </div>`;
+        });
+    });
+
+    list.innerHTML = html;
+}
+
+async function saveManageRecords() {
+    const btn = document.getElementById('saveRecordsBtn');
+    btn.textContent = "Saving...";
+    btn.style.opacity = "0.7";
+
+    const updatedRecords = [];
+    
+    // Loop through every input row and grab the updated text
+    document.querySelectorAll('.record-manage-row').forEach(row => {
+        updatedRecords.push({
+            store: row.getAttribute('data-store'),
+            label: row.getAttribute('data-label'),
+            value: row.querySelector('.r-val').value.trim(),
+            date: row.querySelector('.r-date').value.trim()
+        });
+    });
+
+    try {
+        const res = await fetch(RECORDS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(updatedRecords)
+        });
+
+        if (res.ok) {
+            alert("Company Records successfully updated!");
+            closeAllModals();
+            
+            // Force a hard refetch of the data so the background board updates!
+            recordsCache = null; 
+            if (typeof fetchRecordsData === 'function') fetchRecordsData();
+        } else {
+            alert("Error saving records. Make sure Apps Script is deployed properly.");
         }
     } catch (e) {
         console.error(e);
