@@ -2790,3 +2790,58 @@ canvas#leaderboardCanvas, canvas#mainKpiChart {
 @media (max-width: 480px) {
     .ceo-ring-col { flex: 1 1 100% !important; }
 }
+
+/* =========================================================
+   STORE COMMENT POPUP STYLES
+   ========================================================= */
+.comment-popup-menu {
+    width: 450px;
+    max-width: 90vw;
+    border-radius: 20px;
+    background: white;
+    overflow: hidden;
+    text-align: center;
+}
+
+.comment-popup-header {
+    background: linear-gradient(135deg, var(--sage-professional) 0%, #4a7530 100%);
+    padding: 30px 20px 20px 20px;
+    color: white;
+    position: relative;
+}
+
+.comment-icon {
+    font-size: 40px;
+    margin-bottom: 10px;
+    animation: wave 2s infinite;
+    display: inline-block;
+}
+
+.comment-popup-header h3 {
+    font-size: 18px;
+    font-weight: 800;
+    margin: 0;
+    letter-spacing: 0.5px;
+}
+
+.comment-popup-body {
+    padding: 30px 25px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--slate-charcoal);
+    line-height: 1.6;
+}
+
+.comment-popup-footer {
+    padding: 0 25px 25px 25px;
+}
+
+@keyframes wave {
+    0% { transform: rotate(0deg); }
+    10% { transform: rotate(14deg); }
+    20% { transform: rotate(-8deg); }
+    30% { transform: rotate(14deg); }
+    40% { transform: rotate(-4deg); }
+    50% { transform: rotate(10deg); }
+    60%, 100% { transform: rotate(0deg); }
+}
