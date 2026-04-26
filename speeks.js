@@ -4569,15 +4569,41 @@ function submitNewScorecard() {
 
 // --- STORE COMMENTS LOGIC ---
 
+// Opens the modal normally from the Speeks Tools menu (Fully Unlocked)
 function toggleSendCommentModal() {
+    openCEOStoreComment(null); 
+}
+
+// Opens the modal from the CEO Rings and locks it to the specific store
+window.openCEOStoreComment = function(targetStore) {
     closeAllModals();
     const dropdown = document.getElementById('sendCommentModal');
-    if(dropdown) {
+    
+    if (dropdown) {
         dropdown.classList.add('show');
         lockAndBlurScreen();
+        
+        // Clear previous message
         document.getElementById('commentMessageInput').value = '';
+        
+        const storeSelect = document.getElementById('commentStoreSelect');
+        if (storeSelect) {
+            if (targetStore) {
+                // Lock it to the specific store clicked
+                storeSelect.value = targetStore;
+                storeSelect.disabled = true;
+                storeSelect.style.opacity = '0.6';
+                storeSelect.style.cursor = 'not-allowed';
+            } else {
+                // Unlock it for general use via the Speeks Tools menu
+                storeSelect.value = 'ALL';
+                storeSelect.disabled = false;
+                storeSelect.style.opacity = '1';
+                storeSelect.style.cursor = 'pointer';
+            }
+        }
     }
-}
+};
 
 async function submitStoreComment() {
     const store = document.getElementById('commentStoreSelect').value;

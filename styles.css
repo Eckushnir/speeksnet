@@ -2779,6 +2779,44 @@ canvas#leaderboardCanvas, canvas#mainKpiChart {
 .badge-pos { background: #d1fae5 !important; color: #059669 !important; }
 .badge-neg { background: #fee2e2 !important; color: #dc2626 !important; }
 
+/* CEO Quick Comment Button */
+.ceo-comment-btn {
+    position: absolute !important;
+    top: 8px !important;
+    left: 10px !important;
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+    width: auto !important; /* Changed to auto to fit text */
+    height: 28px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 13px !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    z-index: 10 !important;
+    padding: 0 10px !important; /* Added padding */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02) !important;
+    gap: 6px !important; /* Spacing between emoji and text */
+    color: #64748b !important;
+}
+
+.ceo-comment-btn:hover {
+    background: white !important;
+    border-color: var(--sage-professional) !important;
+    color: var(--sage-professional) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 10px rgba(90, 141, 59, 0.2) !important;
+}
+
+.ceo-comment-btn span {
+    font-size: 10px !important;
+    font-weight: 800 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
 /* Responsive Wrap for smaller screens only */
 @media (max-width: 1200px) {
     .ceo-rings-grid { flex-wrap: wrap !important; }
