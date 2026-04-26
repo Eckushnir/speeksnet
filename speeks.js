@@ -186,7 +186,6 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeAllModals(); 
 });
 
-// --- 4. MODULE: CMS (ANNOUNCEMENTS) ---
 async function loadCMS() {
     try {
         const response = await fetch(`${CMS_URL}?v=${Date.now()}`);
@@ -199,86 +198,59 @@ async function loadCMS() {
             let archiveHtml = "";
             let recentCount = 0;
             let archiveCount = 0;
-            const currentUser = sessionStorage.getItem('speeksUserName') || 'Unknown';
+
+            // 1. Grab the currently logged-in user
+            const currentUser = sessionStorage.getItem('speeksUserName');
 
             if (data.announcements && data.announcements.length > 0) {
                 const sortedAnns = [...data.announcements].reverse();
                 const now = new Date();
 
-                sortedAnns.forEach((item, index) => {
+                sortedAnns.forEach(item => {
                     let displayDate = "";
                     let isArchived = false;
-                    let unreadHtmlAttr = "";
 
                     if (item.date) {
                         const annDate = new Date(item.date);
                         if (!isNaN(annDate.getTime())) {
-                            displayDate = annDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-                            const diffHours = (now - annDate) / (1000 * 60 * 60);
+                            displayDate = annDate.toLocaleDateString('en-US', { 
+                                month: 'long', 
+                                day: 'numeric', 
+                                year: 'numeric' 
+                            });
 
-                            if (diffHours > 48) {
-                                isArchived = true;
-                            } else {
-                                // Server-side read receipt check!
-                                const isUnread = !item.readBy || !item.readBy.includes(currentUser);
-                                if (isUnread) {
+                            const diffMs = now - annDate;
+                            const diffHours = diffMs / (1000 * 60 * 60);
+
+                            // 2. Safely check if the current user is in the read receipts column
+                            let hasRead = false;
+                            if (currentUser) {
+                                // This dynamically catches the column whether you named it readBy, readReceipts, or read
+                                let readData = item.readReceipts || item.readBy || item.read || item.viewedBy || "";
+                                let readArray = Array.isArray(readData) ? readData : String(readData).split(',');
+                                
+                                hasRead = readArray.some(name => name.trim().toLowerCase() === currentUser.trim().toLowerCase());
+                            }
+
+                            // 3. STRICT CHECK: Only trigger the red dot if they are fully logged in AND haven't read it!
+                            if (diffHours >= 0 && diffHours <= 48) {
+                                if (currentUser && !hasRead) {
                                     showBadge = true;
-                                    // Tag it so the frontend knows to mark this specific row as read when clicked
-                                    unreadHtmlAttr = `data-unread-id="${item.rowId}"`; 
                                 }
                             }
+                            
+                            if (diffHours > 48) isArchived = true;
                         }
                     }
-
-                    const annId = item.rowId || index;
-                    const rData = item.reactions || {};
-                    const availableEmojis = ['👍', '🎉', '👀', '🔥', '🫡', '💵'];
-                    
-                    let reactionsHtml = `<div class="ann-reactions" id="reactions_${annId}">`;
-                    
-                    availableEmojis.forEach((emoji, eIdx) => {
-                        let count = 0;
-                        let hasReacted = false;
-                        let usersList = [];
-                        
-                        if (rData[emoji] && Array.isArray(rData[emoji])) {
-                            usersList = rData[emoji];
-                            count = usersList.length;
-                            hasReacted = usersList.includes(currentUser);
-                        }
-
-                        let displayStyle = count > 0 ? 'flex' : 'none';
-                        let activeClass = hasReacted ? 'reacted' : '';
-                        let disabledAttr = isArchived ? 'disabled style="cursor: default;"' : `onclick="toggleReaction('${annId}', '${emoji}')"`;
-                        let tooltipText = usersList.length > 0 ? `title="Reacted by: ${usersList.join(', ')}"` : '';
-                        
-                        reactionsHtml += `<button class="reaction-btn ${activeClass}" id="btn_${annId}_${eIdx}" data-emoji="${emoji}" style="display: ${displayStyle};" ${disabledAttr} ${tooltipText}>${emoji} <span class="count">${count}</span></button>`;
-                    });
-
-                    if (!isArchived) {
-                        reactionsHtml += `
-                            <div class="reaction-picker-wrapper" style="position: relative;">
-                                <button class="add-reaction-btn" onclick="toggleReactionPicker('${annId}')">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
-                                    <span style="font-size: 14px; margin-left: -4px;">+</span>
-                                </button>
-                                <div class="reaction-picker-popover" id="picker_${annId}">
-                                    ${availableEmojis.map(emoji => `<button type="button" onclick="toggleReaction('${annId}', '${emoji}'); toggleReactionPicker('${annId}')">${emoji}</button>`).join('')}
-                                </div>
-                            </div>
-                        `;
-                    }
-                    reactionsHtml += `</div>`;
 
                     const html = `
-                        <div class="notif-item" ${unreadHtmlAttr}>
+                        <div class="notif-item">
                             <div class="ann-header">
                                 <span class="ann-author">${item.author || 'Announcement'}</span>
                                 ${displayDate ? `<small class="ann-date">${displayDate}</small>` : ''}
                             </div>
                             <hr />
                             <div class="ann-text">${item.text || ''}</div>
-                            ${reactionsHtml}
                         </div>`;
 
                     if (isArchived) {
@@ -290,8 +262,10 @@ async function loadCMS() {
                     }
                 });
 
-                recentHtml = recentCount === 0 ? '<div style="padding: 20px; color:#999; text-align:center;">No recent announcements</div>' : recentHtml;
-                archiveHtml = archiveCount === 0 ? '<div style="padding: 20px; color:#999; text-align:center;">No archived announcements</div>' : archiveHtml;
+                recentHtml = recentCount === 0 ? 
+                    '<div style="padding: 20px; color:#999; text-align:center;">No recent announcements</div>' : recentHtml;
+                archiveHtml = archiveCount === 0 ? 
+                    '<div style="padding: 20px; color:#999; text-align:center;">No archived announcements</div>' : archiveHtml;
             } else {
                 recentHtml = archiveHtml = '<div style="padding: 20px; color:#999; text-align:center;">No announcements</div>';
             }
@@ -300,18 +274,36 @@ async function loadCMS() {
             const archiveContainer = document.getElementById('archive-container');
             if (archiveContainer) archiveContainer.innerHTML = archiveHtml;
 
-            // Trigger the red dot and save state to instant-cache
+            // 4. Update the UI and firmly lock the LocalStorage Cache memory
             const badge = document.getElementById('notifBadge');
             if (badge) {
                 if (showBadge) {
-                    localStorage.setItem('speeksUnreadAnnouncements_' + currentUser, 'true');
-                    badge.style.display = 'block'; 
-                    badge.classList.add('active'); 
+                    badge.style.display = 'block';
+                    badge.classList.add('active');
+                    if (currentUser) localStorage.setItem('speeksUnreadAnnouncements_' + currentUser, 'true');
                 } else {
-                    localStorage.removeItem('speeksUnreadAnnouncements_' + currentUser);
                     badge.style.display = 'none';
                     badge.classList.remove('active');
+                    // This explicitly wipes out the old cache so it never overrides the spreadsheet again!
+                    if (currentUser) localStorage.setItem('speeksUnreadAnnouncements_' + currentUser, 'false');
                 }
+            }
+        }
+
+        // Handle Active/Upcoming projects if applicable
+        const activeContainer = document.getElementById('active-container');
+        if (activeContainer) {
+            const act = data.active || [];
+            const upc = data.upcoming || [];
+            activeContainer.innerHTML = act.length ? 
+                act.map(t => `<div class="cms-item cms-active">${t}</div>`).join('') : 
+                '<div class="cms-item">No active projects</div>';
+            
+            const upcomingContainer = document.getElementById('upcoming-container');
+            if (upcomingContainer) {
+                upcomingContainer.innerHTML = upc.length ? 
+                    upc.map(t => `<div class="cms-item cms-upcoming">${t}</div>`).join('') : 
+                    '<div class="cms-item">No upcoming projects</div>';
             }
         }
     } catch (e) { 
@@ -2099,18 +2091,22 @@ function handleIframeLoad() {
     }
 }
 
-// --- 18. MODULE: SCORECARDS & ALERTS ---
 async function fetchScorecardData() {
     const container = document.getElementById('scorecard-widget-body');
-    const titleElement = document.getElementById('scorecard-store-name');
     if (!container) return;
+
+    // 1. Check if they are actually logged in! 
+    // If there is no store in memory yet (they are behind the lock screen), ABORT!
+    let targetStore = sessionStorage.getItem('speeksUserStore');
+    if (!targetStore) return; 
     
-    container.innerHTML = '<div class="status-message" style="padding: 20px 0;">Syncing Data...</div>';
-    let targetStore = sessionStorage.getItem('speeksUserStore') || 'OVL';
+    // If CORP/ALL, default to OVL just so the widget has something to show
     if (targetStore === 'ALL' || targetStore === 'CORP') targetStore = 'OVL'; 
 
+    container.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; min-height: 150px; width: 100%; color: #94a3b8; font-weight: 600; font-size: 14px;">Syncing Data...</div>';
+
     try {
-        const response = await fetch(SCORECARD_URL);
+        const response = await fetch(`${SCORECARD_URL}?v=${Date.now()}`);
         const json = await response.json();
         if (!json.success) throw new Error(json.error);
         
@@ -2121,7 +2117,7 @@ async function fetchScorecardData() {
             return;
         }
 
-        if (titleElement) titleElement.innerHTML = `${storeData.store} Scorecard`;
+        // REMOVED the code that overrides the "Store Scorecard" title here!
 
         const latestScore = parseFloat(storeData.score) || 0; 
         const rawDate = storeData.date || 'Recent';
@@ -2136,20 +2132,62 @@ async function fetchScorecardData() {
             displayDate = "Week of " + mondayDate.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric' });
         }
 
+        const isTenPointScale = latestScore > 5;
         let scoreColor = 'var(--red-alert)';
-        if (latestScore > 8) scoreColor = 'var(--sage-professional)';  
-        else if (latestScore >= 6) scoreColor = 'var(--idea-gold)';         
+        if (isTenPointScale) {
+            if (latestScore > 8) scoreColor = 'var(--sage-professional)';  
+            else if (latestScore >= 6) scoreColor = 'var(--idea-gold)';
+        } else {
+            if (latestScore >= 4) scoreColor = 'var(--sage-professional)';
+            else if (latestScore >= 3) scoreColor = 'var(--idea-gold)';
+        }
 
-        const pulse = latestScore < 6 ? '<div class="notif-dot active" style="display:block; position:absolute; top:-6px; right:-6px; width:14px; height:14px; border-width: 2px;"></div>' : '';
+        const pulse = (isTenPointScale ? latestScore < 6 : latestScore < 3) 
+            ? `<div class="notif-dot active" style="display:block; position:absolute; top:-2px; right:-14px; width:12px; height:12px;"></div>` 
+            : '';
+
+        let breakdownHtml = '';
+        if (storeData.breakdown && storeData.breakdown.length > 0) {
+            breakdownHtml = `<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-height: 280px; overflow-y: auto; padding-right: 4px; margin-top: 15px; border-top: 1px solid #f0f0f0; padding-top: 15px;" class="kpi-scroll-area">`;
+            
+            storeData.breakdown.forEach(cat => {
+                let originalVal = parseFloat(cat.score);
+                let displayVal = cat.score;
+                let bg = '#f1f5f9', color = '#64748b';
+                
+                if (!isNaN(originalVal)) {
+                    let sVal = originalVal * 2;
+                    displayVal = sVal; 
+                    
+                    if (sVal >= 8) { bg = '#d1fae5'; color = '#059669'; } 
+                    else if (sVal >= 6) { bg = '#fef3c7'; color = '#d97706'; } 
+                    else { bg = '#fee2e2'; color = '#dc2626'; } 
+                }
+                
+                breakdownHtml += `
+                <div style="display: flex; justify-content: space-between; align-items: center; background: #fff; border: 1px solid #e2e8f0; padding: 8px; border-radius: 8px; gap: 6px;">
+                    <span style="font-size: 9px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase; line-height: 1.3;">${cat.name}</span>
+                    <span style="font-size: 11px; font-weight: 900; background: ${bg}; color: ${color}; padding: 2px 6px; border-radius: 6px; flex-shrink: 0;">${displayVal}</span>
+                </div>`;
+            });
+            breakdownHtml += `</div>`;
+        }
 
         container.innerHTML = `
-        <div class="scorecard-widget">
-            ${pulse}
-            <div class="scorecard-label">Latest Score</div>
-            <div class="scorecard-date">${displayDate}</div>
-            <div class="scorecard-val" style="color: ${scoreColor}; text-shadow: 0 4px 15px ${scoreColor}30;">
-                ${latestScore.toFixed(1)}
+        <div class="scorecard-widget" style="padding: 20px; align-items: stretch; text-align: left; justify-content: flex-start;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div class="scorecard-label" style="text-align: left; margin-bottom: 2px;">Store Average</div>
+                    <div class="scorecard-date" style="margin-bottom: 0; font-size: 11px;">${displayDate}</div>
+                </div>
+                <div style="position: relative; display: inline-block;">
+                    <div class="scorecard-val" style="color: ${scoreColor}; font-size: 36px; text-shadow: 0 4px 15px ${scoreColor}30; line-height: 1;">
+                        ${latestScore.toFixed(1)}
+                    </div>
+                    ${pulse}
+                </div>
             </div>
+            ${breakdownHtml}
         </div>`;
     } catch (error) {
         console.error('Error fetching scorecard:', error);
@@ -3390,6 +3428,7 @@ function initDashboardData() {
         setTimeout(fetchDmGoalsData, 1000);
         setTimeout(fetchAndRenderEmployeeGoals, 1100);
         setTimeout(fetchAndRenderEmployeeKPIs, 1200);
+        setTimeout(fetchScorecardData, 1300);
         
         if (typeof preloadAllStores === 'function') setTimeout(preloadAllStores, 4000); 
         if (typeof initListingGoals === 'function') setTimeout(initListingGoals, 200);
@@ -4291,4 +4330,107 @@ async function saveManageHotkeys() {
         btn.textContent = "Save Changes";
         btn.style.opacity = "1";
     }
+}
+
+// --- DM SCORECARD SUBMISSION LOGIC ---
+const SCORECARD_CATEGORIES = [
+    "Front of House Cleanliness", 
+    "Back of House Cleanliness", 
+    "Recycle Organization", 
+    "Retail Displays", 
+    "Overall Organization", 
+    "Online Store Pictures", 
+    "Staff Goals Readiness", 
+    "5 Facebook Listings", 
+    "2 Social Media Posts"
+];
+
+function openScorecardModal() {
+    // 1. Let your native portal handle the animations and overlays!
+    toggleModal('scorecardSubmitModal');
+    
+    // 2. Auto-fill today's date
+    const dateInput = document.getElementById('dm-score-date');
+    if (dateInput) dateInput.valueAsDate = new Date();
+    
+    // 3. Generate the inputs
+    const container = document.getElementById('dm-category-inputs');
+    if (container) {
+        container.innerHTML = SCORECARD_CATEGORIES.map((cat, i) => `
+            <div style="display: flex; flex-direction: column;">
+                <label class="form-label-caps">${cat}</label>
+                <select id="score-input-${i}" class="form-input-lg" style="margin-top: 0; padding: 10px; font-size: 14px;">
+                    <option value="">--</option>
+                    <option value="5">5</option>
+                    <option value="4">4</option>
+                    <option value="3">3</option>
+                    <option value="2">2</option>
+                    <option value="1">1</option>
+                    <option value="0">0</option>
+                </select>
+            </div>
+        `).join('');
+    }
+}
+
+// We don't even need a custom close function anymore!
+// Your native "closeAllModals()" command takes care of it.
+
+function closeScorecardModal() {
+    closeAllModals(); // Your native function handles hiding everything
+}
+
+function submitNewScorecard() {
+    const store = document.getElementById('dm-store-select').value;
+    const date = document.getElementById('dm-score-date').value;
+    const btn = document.getElementById('submitScorecardBtn');
+    
+    // Gather all the scores from the dropdowns
+    let scores = [];
+    let isComplete = true;
+    for (let i = 0; i < SCORECARD_CATEGORIES.length; i++) {
+        let val = document.getElementById(`score-input-${i}`).value;
+        if (val === "") isComplete = false;
+        scores.push(val);
+    }
+
+    if (!isComplete) {
+        alert("Please fill out all categories before submitting.");
+        return;
+    }
+
+    btn.innerText = "Saving...";
+    btn.style.opacity = "0.7";
+    btn.disabled = true;
+
+    const payload = {
+        action: 'submit_scorecard',
+        store: store,
+        date: date,
+        scores: scores
+    };
+
+    // Fire the data to Apps Script!
+    fetch(SCORECARD_URL, {
+        method: 'POST', 
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+    }).then(() => {
+        btn.innerText = "Saved Successfully!";
+        btn.style.background = "var(--sage-professional)";
+        
+        // Refresh the widget if they are looking at it, then close modal
+        setTimeout(() => {
+            if (typeof fetchScorecardData === 'function') fetchScorecardData();
+            closeScorecardModal();
+            btn.innerText = "Save Scorecard";
+            btn.style.background = "";
+            btn.disabled = false;
+        }, 1500);
+    }).catch(err => {
+        alert("Error saving scorecard.");
+        btn.innerText = "Save Scorecard";
+        btn.disabled = false;
+    });
 }

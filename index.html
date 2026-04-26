@@ -49,6 +49,7 @@
             <a class="dev-dropdown-link" onclick="toggleManageUsers()">User Permissions</a>
             <a class="dev-dropdown-link dynamic-module-block role-district-manager" onclick="toggleManageAlerts()">Performance Metrics</a>
             <a class="dev-dropdown-link dynamic-module-block role-district-manager" onclick="toggleManageRecords()">Company Records</a>
+            <a class="dev-dropdown-link dynamic-module-block role-district-manager" onclick="openScorecardModal()">Submit Scorecard</a>
             <a class="dev-dropdown-link dynamic-module-block role-district-manager" onclick="toggleManageDocs()">Manage Policies</a>
             <a class="dev-dropdown-link dynamic-module-block role-district-manager" onclick="toggleManageHotkeys()">System Hotkeys</a>
         </div>
@@ -65,7 +66,7 @@
     </div>
     <div class="greeting-stack">
       <h2 id="userGreeting">Welcome!</h2>
-      <button onclick="sessionStorage.removeItem('speeksUnlocked'); location.reload();" class="sign-out-mini">Sign Out</button>
+      <button onclick="handleSignOut()" class="sign-out-mini">Sign Out</button>
     </div>
   </div>
 </header>
@@ -383,12 +384,14 @@
   </div>
 
   <div id="top-alerts-row" class="top-alerts-row dynamic-module-flex role-manager">
-      <div class="card district-master-panel employee-widget-card">
-          <div class="district-kpi-header">
-              <span id="scorecard-store-name" class="district-kpi-title">Store Scorecard</span>
-          </div>
-          <div id="scorecard-widget-body" class="scorecard-widget-body"><div class="status-message">Syncing Data...</div></div>
-      </div>
+    <div class="card district-master-panel employee-widget-card">
+        <div class="district-kpi-header">
+            <span id="scorecard-store-name" class="district-kpi-title">Store Scorecard</span>
+        </div>
+        <div id="scorecard-widget-body" class="scorecard-widget-body">
+            <div style="display: flex; justify-content: center; align-items: center; min-height: 150px; width: 100%; color: #94a3b8; font-weight: 600; font-size: 14px;">Syncing Data...</div>
+        </div>
+    </div>
 
       <div class="card district-master-panel employee-widget-card">
           <div class="district-kpi-header">
@@ -888,7 +891,36 @@
               <a href="https://drive.google.com/drive/folders/12Fjxp44sY6T-o6OlrG6n_YtrHow4bE2f?usp=sharing" target="_blank" class="quick-link-pill vw-footer-btn">📁 Variance Replies</a>
           </div>
       </div>
-  </div>        
+  </div>  
+  
+<div id="scorecardModalOverlay" onclick="closeScorecardModal()"></div>
+<div class="modal-menu manage-menu" id="scorecardSubmitModal">
+    <div class="modal-header">
+        <h3>Submit Store Scorecard</h3>
+        <button class="modal-close-btn" onclick="closeAllModals()">✖</button>
+    </div>
+    
+    <div class="manage-content">
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <select id="dm-store-select" class="form-input-lg" style="flex: 1; margin-top: 0;">
+                <option value="OVL">OVL</option>
+                <option value="LEE">LEE</option>
+                <option value="WSP">WSP</option>
+                <option value="MPL">MPL</option>
+                <option value="BAL">BAL</option>
+            </select>
+            <input type="date" id="dm-score-date" class="form-input-lg" style="flex: 1; margin-top: 0;">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;" id="dm-category-inputs">
+            </div>
+    </div>
+    
+    <div class="manage-footer flex-end">
+        <button onclick="submitNewScorecard()" class="btn-primary" id="submitScorecardBtn">Save Scorecard</button>
+    </div>
+</div>
+
 </main>
 </body>
 </html>
