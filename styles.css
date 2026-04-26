@@ -2790,3 +2790,5 @@ canvas#leaderboardCanvas, canvas#mainKpiChart {
 @media (max-width: 480px) {
     .ceo-ring-col { flex: 1 1 100% !important; }
 }
+
+/* This is test */
