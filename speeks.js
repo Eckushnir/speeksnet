@@ -105,7 +105,39 @@ function toggleModal(modalId, badgeId = null) {
     if (!isOpen) {
         dropdown.classList.add('show');
         lockAndBlurScreen();
-        if (badgeId) document.getElementById(badgeId)?.classList.remove('active');
+        
+        // If they click the Bell icon...
+        if (badgeId === 'notifBadge') {
+            const badge = document.getElementById(badgeId);
+            const userName = sessionStorage.getItem('speeksUserName') || 'Unknown'; // Get user name
+            
+            if (badge && badge.classList.contains('active')) {
+                badge.classList.remove('active');
+                badge.style.display = 'none';
+                
+                // Instantly clear the local cache so it doesn't show up on refresh
+                localStorage.removeItem('speeksUnreadAnnouncements_' + userName);
+                
+                // 1. Find all announcements currently marked as unread in the HTML
+                const unreadEls = document.querySelectorAll('.notif-item[data-unread-id]');
+                // ... rest of the function remains exactly the same ...
+                const unreadIds = Array.from(unreadEls).map(el => parseInt(el.getAttribute('data-unread-id')));
+                
+                // 2. Fire a single payload to the database to mark them all as read for this user!
+                if (unreadIds.length > 0) {
+                    const userName = sessionStorage.getItem('speeksUserName') || 'Unknown';
+                    
+                    fetch(CMS_URL, {
+                        method: 'POST', mode: 'no-cors',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify({ type: 'mark_read', user: userName, rowIds: unreadIds })
+                    }).catch(e => console.log('Read sync skipped'));
+                    
+                    // 3. Remove the tags so we don't accidentally send it again if they close/open the menu
+                    unreadEls.forEach(el => el.removeAttribute('data-unread-id'));
+                }
+            }
+        }
     }
 }
 
@@ -115,8 +147,19 @@ function toggleIdeaModal() { toggleModal('ideaModal'); }
 
 function switchAnnTab(tab) {
     const isRecent = tab === 'recent';
-    document.getElementById('ann-container').style.display = isRecent ? 'block' : 'none';
-    document.getElementById('archive-container').style.display = isRecent ? 'none' : 'block';
+    
+    const annC = document.getElementById('ann-container');
+    if (annC) {
+        annC.style.display = isRecent ? 'block' : 'none';
+        annC.classList.remove('hidden'); // Fixes the !important CSS override
+    }
+    
+    const archC = document.getElementById('archive-container');
+    if (archC) {
+        archC.style.display = isRecent ? 'none' : 'block';
+        archC.classList.remove('hidden'); // Fixes the !important CSS override
+    }
+    
     document.getElementById('tab-recent').classList.toggle('active', isRecent);
     document.getElementById('tab-archive').classList.toggle('active', !isRecent);
 }
@@ -143,7 +186,6 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeAllModals(); 
 });
 
-// --- 4. MODULE: CMS (ANNOUNCEMENTS) ---
 async function loadCMS() {
     try {
         const response = await fetch(`${CMS_URL}?v=${Date.now()}`);
@@ -157,8 +199,10 @@ async function loadCMS() {
             let recentCount = 0;
             let archiveCount = 0;
 
+            // 1. Grab the currently logged-in user
+            const currentUser = sessionStorage.getItem('speeksUserName');
+
             if (data.announcements && data.announcements.length > 0) {
-                // Sort so newest is first
                 const sortedAnns = [...data.announcements].reverse();
                 const now = new Date();
 
@@ -175,11 +219,26 @@ async function loadCMS() {
                                 year: 'numeric' 
                             });
 
-                            // Calculate difference in hours
                             const diffMs = now - annDate;
                             const diffHours = diffMs / (1000 * 60 * 60);
 
-                            if (diffHours >= 0 && diffHours <= 48) showBadge = true;
+                            // 2. Safely check if the current user is in the read receipts column
+                            let hasRead = false;
+                            if (currentUser) {
+                                // This dynamically catches the column whether you named it readBy, readReceipts, or read
+                                let readData = item.readReceipts || item.readBy || item.read || item.viewedBy || "";
+                                let readArray = Array.isArray(readData) ? readData : String(readData).split(',');
+                                
+                                hasRead = readArray.some(name => name.trim().toLowerCase() === currentUser.trim().toLowerCase());
+                            }
+
+                            // 3. STRICT CHECK: Only trigger the red dot if they are fully logged in AND haven't read it!
+                            if (diffHours >= 0 && diffHours <= 48) {
+                                if (currentUser && !hasRead) {
+                                    showBadge = true;
+                                }
+                            }
+                            
                             if (diffHours > 48) isArchived = true;
                         }
                     }
@@ -215,15 +274,18 @@ async function loadCMS() {
             const archiveContainer = document.getElementById('archive-container');
             if (archiveContainer) archiveContainer.innerHTML = archiveHtml;
 
-            // Trigger the red dot if needed
+            // 4. Update the UI and firmly lock the LocalStorage Cache memory
             const badge = document.getElementById('notifBadge');
             if (badge) {
                 if (showBadge) {
-                    badge.style.display = 'block'; 
-                    badge.classList.add('active'); 
+                    badge.style.display = 'block';
+                    badge.classList.add('active');
+                    if (currentUser) localStorage.setItem('speeksUnreadAnnouncements_' + currentUser, 'true');
                 } else {
                     badge.style.display = 'none';
                     badge.classList.remove('active');
+                    // This explicitly wipes out the old cache so it never overrides the spreadsheet again!
+                    if (currentUser) localStorage.setItem('speeksUnreadAnnouncements_' + currentUser, 'false');
                 }
             }
         }
@@ -248,6 +310,71 @@ async function loadCMS() {
         console.error("CMS Sync Failed", e); 
     }
 }
+
+// --- ANNOUNCEMENT REACTION LOGIC ---
+window.toggleReaction = function(id, emoji) {
+    const container = document.getElementById('reactions_' + id);
+    if (!container) return;
+    
+    const availableEmojis = ['👍', '🎉', '👀', '🔥', '🫡', '💵'];
+    const eIdx = availableEmojis.indexOf(emoji);
+    const btn = document.getElementById(`btn_${id}_${eIdx}`);
+    if (!btn || btn.hasAttribute('disabled')) return;
+
+    const isReacted = btn.classList.contains('reacted');
+    const countSpan = btn.querySelector('.count');
+    let count = parseInt(countSpan.innerText) || 0;
+    const userName = sessionStorage.getItem('speeksUserName') || 'Unknown';
+    
+    // We will build a single payload to prevent race conditions
+    let payload = { type: 'reaction', rowId: id, user: userName };
+
+    if (isReacted) {
+        btn.classList.remove('reacted');
+        const newCount = Math.max(0, count - 1);
+        countSpan.innerText = newCount;
+        if (newCount === 0) btn.style.display = 'none';
+        
+        payload.removeEmoji = emoji; // Tell backend to remove
+    } else {
+        const currentReacted = container.querySelector('.reaction-btn.reacted');
+        
+        if (currentReacted) {
+            currentReacted.classList.remove('reacted');
+            const oldSpan = currentReacted.querySelector('.count');
+            const oldCount = Math.max(0, (parseInt(oldSpan.innerText) || 0) - 1);
+            oldSpan.innerText = oldCount;
+            if (oldCount === 0) currentReacted.style.display = 'none';
+            
+            payload.removeEmoji = currentReacted.getAttribute('data-emoji'); // Tell backend to swap this out
+        }
+
+        btn.style.display = 'flex'; 
+        btn.classList.add('reacted');
+        countSpan.innerText = count + 1;
+        
+        payload.addEmoji = emoji; // Tell backend to add this in
+    }
+
+    // Fire ONE single request to the database
+    fetch(CMS_URL, {
+        method: 'POST', mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+    }).catch(e => console.log('Reaction sync skipped'));
+};
+
+window.toggleReactionPicker = function(id) {
+    const picker = document.getElementById('picker_' + id);
+    if (picker) picker.classList.toggle('show');
+};
+
+// Close all open pickers if clicked outside
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.reaction-picker-wrapper')) {
+        document.querySelectorAll('.reaction-picker-popover.show').forEach(p => p.classList.remove('show'));
+    }
+});
 
 // --- 5. MODULE: USER MANAGEMENT ---
 let globalUsersData = [];
@@ -1221,7 +1348,9 @@ async function fetchHubData() {
         hubDataCache = await response.json();
         
         if (document.getElementById('bs-buy-val')) renderBuyingSales();
-        if (document.getElementById('rev-list')) renderLiveData(hubDataCache);
+        
+        // Render Live Data globally (Fixes CEO Rings)
+        renderLiveData(hubDataCache);
         
         // Let the Hub power the Leaderboard automatically!
         if (document.getElementById('lb-wrapper')) {
@@ -1294,23 +1423,70 @@ function renderBuyingSales() {
 function renderLiveData(d) {
     if (!d) return;
     
-    // Update the progress rings
-    ['ovl', 'lee', 'wsp', 'MPL', 'BAL'].forEach(id => {
-        let pN = document.getElementById(`${id}-pct`); 
-        if (!pN) return;
+    // Update the progress rings for BOTH standard and CEO views safely
+    [
+        { base: 'ovl', api: 'ovl' },
+        { base: 'lee', api: 'lee' },
+        { base: 'wsp', api: 'wsp' },
+        { base: 'mpl', api: 'MPL' },
+        { base: 'bal', api: 'BAL' }
+    ].forEach(store => {
+        // --- Core Math ---
+        let p = Math.round(d[`${store.api}Pct`] || 0);
+        let goalTxt = `$${Math.round(d[`${store.api}Goal`] || 0).toLocaleString()}`;
+        let tGpTxt = `$${Math.round(d[`${store.api}TrackGP`] || 0).toLocaleString()}`;
+
+        // --- Buying Math ---
+        let bV = parseNum(d[`${store.api}BuyVal`]);
+        let bP = parseNum(d[`${store.api}BuyProj`]);
+        let mN = parseNum(d[`${store.api}BuyMargin`]);
+        if (String(d[`${store.api}BuyMargin`]).includes('%') === false && mN > 0 && mN <= 1.5) mN = mN * 100;
+
+        // --- Selling Margin Math ---
+        let sellMarginNum = 0;
+        const rev = parseNum(d[`${store.api}Rev`]);
+        const gp = parseNum(d[`${store.api}GP`]);
+        if (d[`${store.api}SellMargin`]) {
+            let smRaw = parseNum(d[`${store.api}SellMargin`]);
+            sellMarginNum = (!String(d[`${store.api}SellMargin`]).includes('%') && smRaw > 0 && smRaw <= 1.5) ? (smRaw * 100) : smRaw;
+        } else if (rev > 0) {
+            sellMarginNum = (gp / rev) * 100;
+        }
+
+        // 1. Update Main Dropdown Rings (Sales Only)
+        if(document.getElementById(`${store.api}-pct`)) document.getElementById(`${store.api}-pct`).innerText = p + '%';
+        if(document.getElementById(`${store.api}-goal`)) document.getElementById(`${store.api}-goal`).innerText = `Goal: ${goalTxt}`;
+        if(document.getElementById(`${store.api}-t-gp`)) document.getElementById(`${store.api}-t-gp`).innerText = tGpTxt;
         
-        let p = Math.round(d[`${id}Pct`] || 0); 
-        pN.innerText = p + '%'; 
+        // 2. Update CEO Rings (Sales)
+        if(document.getElementById(`ceo-${store.base}-pct`)) document.getElementById(`ceo-${store.base}-pct`).innerText = p + '%';
+        if(document.getElementById(`ceo-${store.base}-goal`)) document.getElementById(`ceo-${store.base}-goal`).innerText = goalTxt;
+        if(document.getElementById(`ceo-${store.base}-t-gp`)) document.getElementById(`ceo-${store.base}-t-gp`).innerText = tGpTxt;
+        if(document.getElementById(`ceo-${store.base}-sell-margin`)) {
+            let el = document.getElementById(`ceo-${store.base}-sell-margin`);
+            el.innerText = sellMarginNum.toFixed(1) + '%';
+            el.className = sellMarginNum >= 55.0 ? 'ceo-badge badge-pos' : 'ceo-badge badge-neg';
+        }
+
+        // 3. Update CEO Rings (Buying)
+        if(document.getElementById(`ceo-${store.base}-buy-val`)) document.getElementById(`ceo-${store.base}-buy-val`).innerText = `$${Math.round(bV).toLocaleString()}`;
+        if(document.getElementById(`ceo-${store.base}-buy-proj`)) document.getElementById(`ceo-${store.base}-buy-proj`).innerText = `$${Math.round(bP).toLocaleString()}`;
+        if(document.getElementById(`ceo-${store.base}-buy-margin`)) {
+            let el = document.getElementById(`ceo-${store.base}-buy-margin`);
+            el.innerText = mN.toFixed(1) + '%';
+            el.className = (mN > 0 && mN < 51) ? 'ceo-badge badge-neg' : 'ceo-badge badge-pos';
+        }
+
+        // 4. Update the SVG Bars
+        let offset = 402 - (Math.min(p, 100)/100)*402;
+        let color = p < 100 ? "var(--red-alert)" : "var(--sage-professional)";
         
-        document.getElementById(`${id}-goal`).innerText = `Goal: $${Math.round(d[`${id}Goal`] || 0).toLocaleString()}`; 
-        document.getElementById(`${id}-t-gp`).innerText = `$${Math.round(d[`${id}TrackGP`] || 0).toLocaleString()}`;
-        
-        setTimeout(() => { 
-            let b = document.getElementById(`${id}-bar`); 
-            if (b) { 
-                b.style.strokeDashoffset = 402 - (Math.min(p, 100)/100)*402; 
-                b.style.stroke = p < 100 ? "var(--red-alert)" : "var(--sage-professional)"; 
-            } 
+        setTimeout(() => {
+            let mainBar = document.getElementById(`${store.api}-bar`);
+            if(mainBar) { mainBar.style.strokeDashoffset = offset; mainBar.style.stroke = color; }
+            
+            let ceoBar = document.getElementById(`ceo-${store.base}-bar`);
+            if(ceoBar) { ceoBar.style.strokeDashoffset = offset; ceoBar.style.stroke = color; }
         }, 50);
     });
 
@@ -1329,19 +1505,9 @@ function renderLiveData(d) {
                 <div class="lb-val">$${Math.round(val).toLocaleString()}</div>
             </div>`;
 
-        // Revenue List
-        document.getElementById('rev-list').innerHTML = [...sArr]
-            .sort((a,b) => b.r - a.r)
-            .map((s,i) => buildLbRow(s, i, s.r))
-            .join('');
-            
-        // GP List
-        document.getElementById('gp-list').innerHTML = [...sArr]
-            .sort((a,b) => b.g - a.g)
-            .map((s,i) => buildLbRow(s, i, s.g))
-            .join('');
-            
-        // Update Sync Time
+        document.getElementById('rev-list').innerHTML = [...sArr].sort((a,b) => b.r - a.r).map((s,i) => buildLbRow(s, i, s.r)).join('');
+        document.getElementById('gp-list').innerHTML = [...sArr].sort((a,b) => b.g - a.g).map((s,i) => buildLbRow(s, i, s.g)).join('');
+        
         const n = new Date(); 
         const formattedTime = `${n.getHours() % 12 || 12}:${String(n.getMinutes()).padStart(2,'0')} ${n.getHours() >= 12 ? 'PM' : 'AM'}`;
         document.getElementById('lastSyncedText').innerText = `Last Synced: ${formattedTime}`;
@@ -1925,18 +2091,22 @@ function handleIframeLoad() {
     }
 }
 
-// --- 18. MODULE: SCORECARDS & ALERTS ---
 async function fetchScorecardData() {
     const container = document.getElementById('scorecard-widget-body');
-    const titleElement = document.getElementById('scorecard-store-name');
     if (!container) return;
+
+    // 1. Check if they are actually logged in! 
+    // If there is no store in memory yet (they are behind the lock screen), ABORT!
+    let targetStore = sessionStorage.getItem('speeksUserStore');
+    if (!targetStore) return; 
     
-    container.innerHTML = '<div class="status-message" style="padding: 20px 0;">Syncing Data...</div>';
-    let targetStore = sessionStorage.getItem('speeksUserStore') || 'OVL';
+    // If CORP/ALL, default to OVL just so the widget has something to show
     if (targetStore === 'ALL' || targetStore === 'CORP') targetStore = 'OVL'; 
 
+    container.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; min-height: 150px; width: 100%; color: #94a3b8; font-weight: 600; font-size: 14px;">Syncing Data...</div>';
+
     try {
-        const response = await fetch(SCORECARD_URL);
+        const response = await fetch(`${SCORECARD_URL}?v=${Date.now()}`);
         const json = await response.json();
         if (!json.success) throw new Error(json.error);
         
@@ -1947,7 +2117,7 @@ async function fetchScorecardData() {
             return;
         }
 
-        if (titleElement) titleElement.innerHTML = `${storeData.store} Scorecard`;
+        // REMOVED the code that overrides the "Store Scorecard" title here!
 
         const latestScore = parseFloat(storeData.score) || 0; 
         const rawDate = storeData.date || 'Recent';
@@ -1962,20 +2132,62 @@ async function fetchScorecardData() {
             displayDate = "Week of " + mondayDate.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric' });
         }
 
+        const isTenPointScale = latestScore > 5;
         let scoreColor = 'var(--red-alert)';
-        if (latestScore > 8) scoreColor = 'var(--sage-professional)';  
-        else if (latestScore >= 6) scoreColor = 'var(--idea-gold)';         
+        if (isTenPointScale) {
+            if (latestScore > 8) scoreColor = 'var(--sage-professional)';  
+            else if (latestScore >= 6) scoreColor = 'var(--idea-gold)';
+        } else {
+            if (latestScore >= 4) scoreColor = 'var(--sage-professional)';
+            else if (latestScore >= 3) scoreColor = 'var(--idea-gold)';
+        }
 
-        const pulse = latestScore < 6 ? '<div class="notif-dot active" style="display:block; position:absolute; top:-6px; right:-6px; width:14px; height:14px; border-width: 2px;"></div>' : '';
+        const pulse = (isTenPointScale ? latestScore < 6 : latestScore < 3) 
+            ? `<div class="notif-dot active" style="display:block; position:absolute; top:-2px; right:-14px; width:12px; height:12px;"></div>` 
+            : '';
+
+        let breakdownHtml = '';
+        if (storeData.breakdown && storeData.breakdown.length > 0) {
+            breakdownHtml = `<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-height: 280px; overflow-y: auto; padding-right: 4px; margin-top: 15px; border-top: 1px solid #f0f0f0; padding-top: 15px;" class="kpi-scroll-area">`;
+            
+            storeData.breakdown.forEach(cat => {
+                let originalVal = parseFloat(cat.score);
+                let displayVal = cat.score;
+                let bg = '#f1f5f9', color = '#64748b';
+                
+                if (!isNaN(originalVal)) {
+                    let sVal = originalVal * 2;
+                    displayVal = sVal; 
+                    
+                    if (sVal >= 8) { bg = '#d1fae5'; color = '#059669'; } 
+                    else if (sVal >= 6) { bg = '#fef3c7'; color = '#d97706'; } 
+                    else { bg = '#fee2e2'; color = '#dc2626'; } 
+                }
+                
+                breakdownHtml += `
+                <div style="display: flex; justify-content: space-between; align-items: center; background: #fff; border: 1px solid #e2e8f0; padding: 8px; border-radius: 8px; gap: 6px;">
+                    <span style="font-size: 9px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase; line-height: 1.3;">${cat.name}</span>
+                    <span style="font-size: 11px; font-weight: 900; background: ${bg}; color: ${color}; padding: 2px 6px; border-radius: 6px; flex-shrink: 0;">${displayVal}</span>
+                </div>`;
+            });
+            breakdownHtml += `</div>`;
+        }
 
         container.innerHTML = `
-        <div class="scorecard-widget">
-            ${pulse}
-            <div class="scorecard-label">Latest Score</div>
-            <div class="scorecard-date">${displayDate}</div>
-            <div class="scorecard-val" style="color: ${scoreColor}; text-shadow: 0 4px 15px ${scoreColor}30;">
-                ${latestScore.toFixed(1)}
+        <div class="scorecard-widget" style="padding: 20px; align-items: stretch; text-align: left; justify-content: flex-start;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div class="scorecard-label" style="text-align: left; margin-bottom: 2px;">Store Average</div>
+                    <div class="scorecard-date" style="margin-bottom: 0; font-size: 11px;">${displayDate}</div>
+                </div>
+                <div style="position: relative; display: inline-block;">
+                    <div class="scorecard-val" style="color: ${scoreColor}; font-size: 36px; text-shadow: 0 4px 15px ${scoreColor}30; line-height: 1;">
+                        ${latestScore.toFixed(1)}
+                    </div>
+                    ${pulse}
+                </div>
             </div>
+            ${breakdownHtml}
         </div>`;
     } catch (error) {
         console.error('Error fetching scorecard:', error);
@@ -3188,7 +3400,23 @@ function applyRoleBasedUI() {
     }
 }
 
+function checkInstantNotifCache() {
+    const currentUser = sessionStorage.getItem('speeksUserName');
+    if (!currentUser) return; // Don't fire if they aren't logged in yet
+    
+    if (localStorage.getItem('speeksUnreadAnnouncements_' + currentUser) === 'true') {
+        const badge = document.getElementById('notifBadge');
+        if (badge) {
+            badge.style.display = 'block';
+            badge.classList.add('active');
+        }
+    }
+}
+
 function initDashboardData() { 
+    // 1. Instantly check memory for the red dot before any servers are contacted
+    checkInstantNotifCache();
+
     const runInit = () => {
         if (typeof initChecklists === 'function') initChecklists(); 
         
@@ -3200,6 +3428,7 @@ function initDashboardData() {
         setTimeout(fetchDmGoalsData, 1000);
         setTimeout(fetchAndRenderEmployeeGoals, 1100);
         setTimeout(fetchAndRenderEmployeeKPIs, 1200);
+        setTimeout(fetchScorecardData, 1300);
         
         if (typeof preloadAllStores === 'function') setTimeout(preloadAllStores, 4000); 
         if (typeof initListingGoals === 'function') setTimeout(initListingGoals, 200);
@@ -3225,7 +3454,7 @@ function initDashboardData() {
 // --- INIT LISTENERS ---
 document.addEventListener("DOMContentLoaded", () => {
     setTimeout(() => document.body.classList.remove('preload'), 50);
-    
+
     if (localStorage.getItem('speeksSidebar') === 'collapsed') { 
         document.querySelector('.sidebar')?.classList.add('collapsed'); 
         document.querySelector('.main-content')?.classList.add('expanded'); 
@@ -3885,7 +4114,7 @@ async function publishAnnouncement() {
     };
 
     try {
-        await fetch(ANNOUNCEMENTS_WRITE_URL, {
+        await fetch(CMS_URL, {
             method: 'POST',
             mode: 'no-cors', 
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -4101,4 +4330,107 @@ async function saveManageHotkeys() {
         btn.textContent = "Save Changes";
         btn.style.opacity = "1";
     }
+}
+
+// --- DM SCORECARD SUBMISSION LOGIC ---
+const SCORECARD_CATEGORIES = [
+    "Front of House Cleanliness", 
+    "Back of House Cleanliness", 
+    "Recycle Organization", 
+    "Retail Displays", 
+    "Overall Organization", 
+    "Online Store Pictures", 
+    "Staff Goals Readiness", 
+    "5 Facebook Listings", 
+    "2 Social Media Posts"
+];
+
+function openScorecardModal() {
+    // 1. Let your native portal handle the animations and overlays!
+    toggleModal('scorecardSubmitModal');
+    
+    // 2. Auto-fill today's date
+    const dateInput = document.getElementById('dm-score-date');
+    if (dateInput) dateInput.valueAsDate = new Date();
+    
+    // 3. Generate the inputs
+    const container = document.getElementById('dm-category-inputs');
+    if (container) {
+        container.innerHTML = SCORECARD_CATEGORIES.map((cat, i) => `
+            <div style="display: flex; flex-direction: column;">
+                <label class="form-label-caps">${cat}</label>
+                <select id="score-input-${i}" class="form-input-lg" style="margin-top: 0; padding: 10px; font-size: 14px;">
+                    <option value="">--</option>
+                    <option value="5">5</option>
+                    <option value="4">4</option>
+                    <option value="3">3</option>
+                    <option value="2">2</option>
+                    <option value="1">1</option>
+                    <option value="0">0</option>
+                </select>
+            </div>
+        `).join('');
+    }
+}
+
+// We don't even need a custom close function anymore!
+// Your native "closeAllModals()" command takes care of it.
+
+function closeScorecardModal() {
+    closeAllModals(); // Your native function handles hiding everything
+}
+
+function submitNewScorecard() {
+    const store = document.getElementById('dm-store-select').value;
+    const date = document.getElementById('dm-score-date').value;
+    const btn = document.getElementById('submitScorecardBtn');
+    
+    // Gather all the scores from the dropdowns
+    let scores = [];
+    let isComplete = true;
+    for (let i = 0; i < SCORECARD_CATEGORIES.length; i++) {
+        let val = document.getElementById(`score-input-${i}`).value;
+        if (val === "") isComplete = false;
+        scores.push(val);
+    }
+
+    if (!isComplete) {
+        alert("Please fill out all categories before submitting.");
+        return;
+    }
+
+    btn.innerText = "Saving...";
+    btn.style.opacity = "0.7";
+    btn.disabled = true;
+
+    const payload = {
+        action: 'submit_scorecard',
+        store: store,
+        date: date,
+        scores: scores
+    };
+
+    // Fire the data to Apps Script!
+    fetch(SCORECARD_URL, {
+        method: 'POST', 
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+    }).then(() => {
+        btn.innerText = "Saved Successfully!";
+        btn.style.background = "var(--sage-professional)";
+        
+        // Refresh the widget if they are looking at it, then close modal
+        setTimeout(() => {
+            if (typeof fetchScorecardData === 'function') fetchScorecardData();
+            closeScorecardModal();
+            btn.innerText = "Save Scorecard";
+            btn.style.background = "";
+            btn.disabled = false;
+        }, 1500);
+    }).catch(err => {
+        alert("Error saving scorecard.");
+        btn.innerText = "Save Scorecard";
+        btn.disabled = false;
+    });
 }

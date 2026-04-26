@@ -46,6 +46,7 @@
           <a class="dev-dropdown-link" onclick="toggleManageUsers()">User Permissions</a>
           <a class="dev-dropdown-link dynamic-module-block role-district-manager" onclick="toggleManageAlerts()">Performance Metrics</a>
           <a class="dev-dropdown-link dynamic-module-block role-district-manager" onclick="toggleManageRecords()">Company Records</a>
+          <a class="dev-dropdown-link dynamic-module-block role-district-manager" onclick="openScorecardModal()">Submit Scorecard</a>
           <a class="dev-dropdown-link dynamic-module-block role-district-manager" onclick="toggleManageDocs()">Manage Policies</a>
           <a class="dev-dropdown-link dynamic-module-block role-district-manager" onclick="toggleManageHotkeys()">Edit System Hotkeys</a>
         </div>
@@ -62,7 +63,7 @@
       </div>
       <div class="greeting-stack">
         <h2 id="userGreeting">Welcome!</h2>
-        <button onclick="sessionStorage.removeItem('speeksUnlocked'); location.reload();" class="sign-out-mini">Sign Out</button>
+        <button onclick="handleSignOut()" class="sign-out-mini">Sign Out</button>
       </div>
     </div>
   </div>
@@ -249,6 +250,33 @@
       <div class="empty-state">Syncing Data...</div>
   </div>
   <div id="noResults" class="empty-state hidden">No documents found matching your search.</div>
+
+<div id="scorecardModalOverlay" onclick="closeScorecardModal()"></div>
+<div id="scorecardSubmitModal">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h3 style="margin: 0; font-size: 18px; color: var(--slate-charcoal);">Submit Store Scorecard</h3>
+        <button onclick="closeScorecardModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #94a3b8;">&times;</button>
+    </div>
+    
+    <div style="display: flex; flex-direction: column; gap: 15px;">
+        <div style="display: flex; gap: 10px;">
+            <select id="dm-store-select" style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: bold;">
+                <option value="OVL">OVL</option>
+                <option value="LEE">LEE</option>
+                <option value="WSP">WSP</option>
+                <option value="MPL">MPL</option>
+                <option value="BAL">BAL</option>
+            </select>
+            <input type="date" id="dm-score-date" style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1;">
+        </div>
+
+        <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;" id="dm-category-inputs">
+            </div>
+
+        <button onclick="submitNewScorecard()" class="btn-primary" style="width: 100%; padding: 12px; margin-top: 10px; border-radius: 8px; font-weight: bold; background: var(--sage-professional); color: white; border: none; cursor: pointer;" id="submitScorecardBtn">Save Scorecard</button>
+    </div>
+</div>
+
 </main>
 
 </body>
