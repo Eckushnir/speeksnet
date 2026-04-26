@@ -106,12 +106,12 @@ function toggleModal(modalId, badgeId = null) {
         dropdown.classList.add('show');
         lockAndBlurScreen();
         
-        // If they click the Bell icon...
+        // YOUR RESTORED LOGIC: If they click the Bell icon...
         if (badgeId === 'notifBadge') {
             const badge = document.getElementById(badgeId);
-            const userName = sessionStorage.getItem('speeksUserName') || 'Unknown'; // Get user name
+            const userName = sessionStorage.getItem('speeksUserName'); 
             
-            if (badge && badge.classList.contains('active')) {
+            if (badge && badge.classList.contains('active') && userName) {
                 badge.classList.remove('active');
                 badge.style.display = 'none';
                 
@@ -120,13 +120,10 @@ function toggleModal(modalId, badgeId = null) {
                 
                 // 1. Find all announcements currently marked as unread in the HTML
                 const unreadEls = document.querySelectorAll('.notif-item[data-unread-id]');
-                // ... rest of the function remains exactly the same ...
                 const unreadIds = Array.from(unreadEls).map(el => parseInt(el.getAttribute('data-unread-id')));
                 
                 // 2. Fire a single payload to the database to mark them all as read for this user!
                 if (unreadIds.length > 0) {
-                    const userName = sessionStorage.getItem('speeksUserName') || 'Unknown';
-                    
                     fetch(CMS_URL, {
                         method: 'POST', mode: 'no-cors',
                         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -138,6 +135,159 @@ function toggleModal(modalId, badgeId = null) {
                 }
             }
         }
+    }
+}
+
+async function loadCMS() {
+    try {
+        const response = await fetch(`${CMS_URL}?v=${Date.now()}`);
+        const data = await response.json();
+        
+        const annContainer = document.getElementById('ann-container');
+        if (annContainer) {
+            let showBadge = false;
+            let recentHtml = "";
+            let archiveHtml = "";
+            let recentCount = 0;
+            let archiveCount = 0;
+            // FLASH FIX: Do not default to 'Unknown' anymore!
+            const currentUser = sessionStorage.getItem('speeksUserName');
+
+            if (data.announcements && data.announcements.length > 0) {
+                const sortedAnns = [...data.announcements].reverse();
+                const now = new Date();
+
+                sortedAnns.forEach((item, index) => {
+                    let displayDate = "";
+                    let isArchived = false;
+                    let unreadHtmlAttr = "";
+
+                    if (item.date) {
+                        const annDate = new Date(item.date);
+                        if (!isNaN(annDate.getTime())) {
+                            displayDate = annDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                            const diffHours = (now - annDate) / (1000 * 60 * 60);
+
+                            if (diffHours > 48) {
+                                isArchived = true;
+                            } else {
+                                // FLASH FIX: Only trigger the red dot if someone is actually logged in!
+                                if (currentUser) {
+                                    const isUnread = !item.readBy || !item.readBy.includes(currentUser);
+                                    if (isUnread) {
+                                        showBadge = true;
+                                        unreadHtmlAttr = `data-unread-id="${item.rowId}"`; 
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    const annId = item.rowId || index;
+                    const rData = item.reactions || {};
+                    const availableEmojis = ['👍', '🎉', '👀', '🔥', '🫡', '💵'];
+                    
+                    let reactionsHtml = `<div class="ann-reactions" id="reactions_${annId}">`;
+                    
+                    availableEmojis.forEach((emoji, eIdx) => {
+                        let count = 0;
+                        let hasReacted = false;
+                        let usersList = [];
+                        
+                        if (rData[emoji] && Array.isArray(rData[emoji])) {
+                            usersList = rData[emoji];
+                            count = usersList.length;
+                            // Safe check in case currentUser is null behind the lock screen
+                            hasReacted = currentUser && usersList.includes(currentUser);
+                        }
+
+                        let displayStyle = count > 0 ? 'flex' : 'none';
+                        let activeClass = hasReacted ? 'reacted' : '';
+                        let disabledAttr = isArchived ? 'disabled style="cursor: default;"' : `onclick="toggleReaction('${annId}', '${emoji}')"`;
+                        let tooltipText = usersList.length > 0 ? `title="Reacted by: ${usersList.join(', ')}"` : '';
+                        
+                        reactionsHtml += `<button class="reaction-btn ${activeClass}" id="btn_${annId}_${eIdx}" data-emoji="${emoji}" style="display: ${displayStyle};" ${disabledAttr} ${tooltipText}>${emoji} <span class="count">${count}</span></button>`;
+                    });
+
+                    // YOUR EXACT GRAY POPOUT MENU LOGIC
+                    if (!isArchived) {
+                        reactionsHtml += `
+                            <div class="reaction-picker-wrapper" style="position: relative;">
+                                <button class="add-reaction-btn" onclick="toggleReactionPicker('${annId}')">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
+                                    <span style="font-size: 14px; margin-left: -4px;">+</span>
+                                </button>
+                                <div class="reaction-picker-popover" id="picker_${annId}">
+                                    ${availableEmojis.map(emoji => `<button type="button" onclick="toggleReaction('${annId}', '${emoji}'); toggleReactionPicker('${annId}')">${emoji}</button>`).join('')}
+                                </div>
+                            </div>
+                        `;
+                    }
+                    reactionsHtml += `</div>`;
+
+                    const html = `
+                        <div class="notif-item" ${unreadHtmlAttr}>
+                            <div class="ann-header">
+                                <span class="ann-author">${item.author || 'Announcement'}</span>
+                                ${displayDate ? `<small class="ann-date">${displayDate}</small>` : ''}
+                            </div>
+                            <hr />
+                            <div class="ann-text">${item.text || ''}</div>
+                            ${reactionsHtml}
+                        </div>`;
+
+                    if (isArchived) {
+                        archiveHtml += html;
+                        archiveCount++;
+                    } else {
+                        recentHtml += html;
+                        recentCount++;
+                    }
+                });
+
+                recentHtml = recentCount === 0 ? '<div style="padding: 20px; color:#999; text-align:center;">No recent announcements</div>' : recentHtml;
+                archiveHtml = archiveCount === 0 ? '<div style="padding: 20px; color:#999; text-align:center;">No archived announcements</div>' : archiveHtml;
+            } else {
+                recentHtml = archiveHtml = '<div style="padding: 20px; color:#999; text-align:center;">No announcements</div>';
+            }
+
+            annContainer.innerHTML = recentHtml;
+            const archiveContainer = document.getElementById('archive-container');
+            if (archiveContainer) archiveContainer.innerHTML = archiveHtml;
+
+            // Trigger the red dot and save state to instant-cache safely
+            const badge = document.getElementById('notifBadge');
+            if (badge) {
+                if (showBadge) {
+                    if (currentUser) localStorage.setItem('speeksUnreadAnnouncements_' + currentUser, 'true');
+                    badge.style.display = 'block'; 
+                    badge.classList.add('active'); 
+                } else {
+                    if (currentUser) localStorage.removeItem('speeksUnreadAnnouncements_' + currentUser);
+                    badge.style.display = 'none';
+                    badge.classList.remove('active');
+                }
+            }
+        }
+
+        // Active/Upcoming Projects Logic
+        const activeContainer = document.getElementById('active-container');
+        if (activeContainer) {
+            const act = data.active || [];
+            const upc = data.upcoming || [];
+            activeContainer.innerHTML = act.length ? 
+                act.map(t => `<div class="cms-item cms-active">${t}</div>`).join('') : 
+                '<div class="cms-item">No active projects</div>';
+            
+            const upcomingContainer = document.getElementById('upcoming-container');
+            if (upcomingContainer) {
+                upcomingContainer.innerHTML = upc.length ? 
+                    upc.map(t => `<div class="cms-item cms-upcoming">${t}</div>`).join('') : 
+                    '<div class="cms-item">No upcoming projects</div>';
+            }
+        }
+    } catch (e) { 
+        console.error("CMS Sync Failed", e); 
     }
 }
 
@@ -186,130 +336,6 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeAllModals(); 
 });
 
-async function loadCMS() {
-    try {
-        const response = await fetch(`${CMS_URL}?v=${Date.now()}`);
-        const data = await response.json();
-        
-        const annContainer = document.getElementById('ann-container');
-        if (annContainer) {
-            let showBadge = false;
-            let recentHtml = "";
-            let archiveHtml = "";
-            let recentCount = 0;
-            let archiveCount = 0;
-
-            // 1. Grab the currently logged-in user
-            const currentUser = sessionStorage.getItem('speeksUserName');
-
-            if (data.announcements && data.announcements.length > 0) {
-                const sortedAnns = [...data.announcements].reverse();
-                const now = new Date();
-
-                sortedAnns.forEach(item => {
-                    let displayDate = "";
-                    let isArchived = false;
-
-                    if (item.date) {
-                        const annDate = new Date(item.date);
-                        if (!isNaN(annDate.getTime())) {
-                            displayDate = annDate.toLocaleDateString('en-US', { 
-                                month: 'long', 
-                                day: 'numeric', 
-                                year: 'numeric' 
-                            });
-
-                            const diffMs = now - annDate;
-                            const diffHours = diffMs / (1000 * 60 * 60);
-
-                            // 2. Safely check if the current user is in the read receipts column
-                            let hasRead = false;
-                            if (currentUser) {
-                                // This dynamically catches the column whether you named it readBy, readReceipts, or read
-                                let readData = item.readReceipts || item.readBy || item.read || item.viewedBy || "";
-                                let readArray = Array.isArray(readData) ? readData : String(readData).split(',');
-                                
-                                hasRead = readArray.some(name => name.trim().toLowerCase() === currentUser.trim().toLowerCase());
-                            }
-
-                            // 3. STRICT CHECK: Only trigger the red dot if they are fully logged in AND haven't read it!
-                            if (diffHours >= 0 && diffHours <= 48) {
-                                if (currentUser && !hasRead) {
-                                    showBadge = true;
-                                }
-                            }
-                            
-                            if (diffHours > 48) isArchived = true;
-                        }
-                    }
-
-                    const html = `
-                        <div class="notif-item">
-                            <div class="ann-header">
-                                <span class="ann-author">${item.author || 'Announcement'}</span>
-                                ${displayDate ? `<small class="ann-date">${displayDate}</small>` : ''}
-                            </div>
-                            <hr />
-                            <div class="ann-text">${item.text || ''}</div>
-                        </div>`;
-
-                    if (isArchived) {
-                        archiveHtml += html;
-                        archiveCount++;
-                    } else {
-                        recentHtml += html;
-                        recentCount++;
-                    }
-                });
-
-                recentHtml = recentCount === 0 ? 
-                    '<div style="padding: 20px; color:#999; text-align:center;">No recent announcements</div>' : recentHtml;
-                archiveHtml = archiveCount === 0 ? 
-                    '<div style="padding: 20px; color:#999; text-align:center;">No archived announcements</div>' : archiveHtml;
-            } else {
-                recentHtml = archiveHtml = '<div style="padding: 20px; color:#999; text-align:center;">No announcements</div>';
-            }
-
-            annContainer.innerHTML = recentHtml;
-            const archiveContainer = document.getElementById('archive-container');
-            if (archiveContainer) archiveContainer.innerHTML = archiveHtml;
-
-            // 4. Update the UI and firmly lock the LocalStorage Cache memory
-            const badge = document.getElementById('notifBadge');
-            if (badge) {
-                if (showBadge) {
-                    badge.style.display = 'block';
-                    badge.classList.add('active');
-                    if (currentUser) localStorage.setItem('speeksUnreadAnnouncements_' + currentUser, 'true');
-                } else {
-                    badge.style.display = 'none';
-                    badge.classList.remove('active');
-                    // This explicitly wipes out the old cache so it never overrides the spreadsheet again!
-                    if (currentUser) localStorage.setItem('speeksUnreadAnnouncements_' + currentUser, 'false');
-                }
-            }
-        }
-
-        // Handle Active/Upcoming projects if applicable
-        const activeContainer = document.getElementById('active-container');
-        if (activeContainer) {
-            const act = data.active || [];
-            const upc = data.upcoming || [];
-            activeContainer.innerHTML = act.length ? 
-                act.map(t => `<div class="cms-item cms-active">${t}</div>`).join('') : 
-                '<div class="cms-item">No active projects</div>';
-            
-            const upcomingContainer = document.getElementById('upcoming-container');
-            if (upcomingContainer) {
-                upcomingContainer.innerHTML = upc.length ? 
-                    upc.map(t => `<div class="cms-item cms-upcoming">${t}</div>`).join('') : 
-                    '<div class="cms-item">No upcoming projects</div>';
-            }
-        }
-    } catch (e) { 
-        console.error("CMS Sync Failed", e); 
-    }
-}
 
 // --- ANNOUNCEMENT REACTION LOGIC ---
 window.toggleReaction = function(id, emoji) {
