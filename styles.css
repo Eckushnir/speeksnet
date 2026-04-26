@@ -731,7 +731,7 @@ html {
 
 .modal-close-btn:hover { background: #eee; color: var(--red-alert); }
 
-.notif-menu { width: 700px; max-width: 90vw; }
+.notif-menu { width: 1000px; max-width: 95vw; } /* Expanded to match calendar */
 .calendar-menu { width: 1000px; max-width: 95vw; }
 .calendar-content { height: 70vh; background: #fff; padding: 20px; }
 .calendar-content iframe { width: 100%; height: 100%; border: 0; border-radius: 12px; }
@@ -740,7 +740,7 @@ html {
 .tab-btn { background: transparent; border: none; padding: 6px 16px; font-size: 12px; font-weight: 700; color: #64748b; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
 .tab-btn.active { background: white; color: var(--slate-charcoal); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
 
-.notif-content { padding: 20px; max-height: 65vh; overflow-y: auto; }
+.notif-content { padding: 20px; max-height: 70vh; overflow-y: auto; } /* Expanded height to match calendar */
 .notif-item { margin-bottom: 20px; }
 .notif-item:last-child { margin-bottom: 0; }
 
@@ -1595,12 +1595,53 @@ select.bs-hidden-select:focus {
 .chevron-icon { width: 16px; height: 16px; stroke: #ffffff; transition: transform 0.3s ease; }
 .dev-title { font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 
-.dev-dropdown-menu { position: absolute; top: 100%; right: 0; margin-top: 10px; background-color: #ffffff; min-width: 180px; border-radius: 12px; border: 1px solid #e5e7eb; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); overflow: hidden; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s; z-index: 100; }
+.dev-dropdown-menu { 
+    position: absolute; 
+    top: 100%; 
+    right: 0; 
+    margin-top: 10px; 
+    background-color: #ffffff; 
+    width: 380px; /* Widened to fit two columns */
+    padding: 8px; /* Inner padding for the grid */
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Creates the 2 columns */
+    gap: 4px; /* Space between the buttons */
+    border-radius: 12px; 
+    border: 1px solid #e5e7eb; 
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); 
+    opacity: 0; 
+    visibility: hidden; 
+    transform: translateY(-10px); 
+    transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s; 
+    z-index: 100; 
+}
 .dev-dropdown-container.open .chevron-icon { transform: rotate(180deg); }
 .dev-dropdown-container.open .dev-dropdown-menu { opacity: 1; visibility: visible; transform: translateY(0); }
-.dev-dropdown-link { display: block; padding: 12px 16px; color: #4b5563; text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: background-color 0.2s ease, color 0.2s ease; }
+.dev-dropdown-link { 
+    display: block; 
+    padding: 10px 14px; 
+    color: #4b5563; 
+    text-decoration: none; 
+    font-size: 0.85rem; 
+    font-weight: 600; 
+    transition: all 0.2s ease; 
+    border-radius: 8px; /* Round the individual link buttons */
+    border-bottom: none !important; /* Remove the old divider lines */
+}
 .dev-dropdown-link:not(:last-child) { border-bottom: 1px solid #f3f4f6; }
-.dev-dropdown-link:hover { background-color: #f9fafb; color: #111827; }
+.dev-dropdown-link:hover { 
+    background-color: #f1f5f9; 
+    color: var(--slate-charcoal); 
+}
+
+@media (max-width: 480px) {
+    .dev-dropdown-menu {
+        width: 250px;
+        grid-template-columns: 1fr;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+}
 
 .hotbars-stack { display: flex; flex-direction: column; gap: 5px; margin-bottom: 25px; width: 100%; }
 .hotbar-wrapper { width: 100%; box-sizing: border-box; }
@@ -2490,3 +2531,240 @@ canvas#leaderboardCanvas, canvas#mainKpiChart {
 .doc-search-wrapper { position: relative; width: 100%; margin-bottom: 0; }
 .doc-search-icon { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); font-size: 16px; color: #aaa; z-index: 5; }
 .doc-search-input { padding-left: 45px !important; width: 100%; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
+
+/* =========================================================
+   EDITOR & ANNOUNCEMENT LIST FIXES
+   ========================================================= */
+.editor-body ul, .editor-body ol, 
+.ann-text ul, .ann-text ol {
+    padding-left: 25px;
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
+
+.editor-body li, .ann-text li {
+    margin-bottom: 4px;
+    list-style-position: outside;
+}
+
+/* =========================================================
+   ANNOUNCEMENT REACTIONS
+   ========================================================= */
+.ann-reactions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.reaction-btn {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 4px 10px;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    color: #64748b;
+    font-weight: 700;
+    user-select: none;
+}
+
+.reaction-btn:not([disabled]):hover {
+    background: #e2e8f0;
+    transform: translateY(-2px);
+}
+
+.reaction-btn.reacted {
+    background: #d1fae5;
+    border-color: #34d399;
+    color: #059669;
+}
+
+/* New Discord-style "+" button */
+.add-reaction-btn {
+    background: #f1f5f9;
+    border: 1px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 4px 10px;
+    height: 30px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    color: #64748b;
+}
+
+.add-reaction-btn:hover {
+    background: #e2e8f0;
+    border-color: #94a3b8;
+    color: var(--slate-charcoal);
+    transform: translateY(-2px);
+}
+
+/* The Popup Menu for Emojis */
+.reaction-picker-popover {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 0;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 8px;
+    display: flex;
+    gap: 4px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: all 0.2s ease;
+    z-index: 100;
+}
+
+.reaction-picker-popover.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.reaction-picker-popover button {
+    background: transparent;
+    border: none;
+    font-size: 18px;
+    padding: 6px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: transform 0.1s, background 0.1s;
+}
+
+.reaction-picker-popover button:hover {
+    background: #f1f5f9;
+    transform: scale(1.1);
+}
+
+/* =========================================================
+   CEO 5-STORE RINGS WIDGET (FLEXBOX FORCED)
+   ========================================================= */
+.ceo-rings-grid {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    gap: 15px !important;
+    width: 100% !important;
+    align-items: stretch !important;
+}
+
+.ceo-ring-col {
+    position: relative !important; /* <--- ADD THIS LINE */
+    flex: 1 1 0 !important; 
+    min-width: 0 !important; 
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 12px !important;
+    padding: 15px 12px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    box-shadow: none !important;
+    transition: none !important;
+    transform: none !important;
+}
+
+.ceo-goal-badge {
+    position: absolute !important;
+    top: 10px !important;
+    right: 10px !important;
+    font-size: 9px !important;
+    font-weight: 800 !important;
+    color: #94a3b8 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+}
+
+.ceo-goal-badge span {
+    color: var(--slate-charcoal) !important;
+    font-size: 11px !important;
+    font-weight: 900 !important;
+}
+
+.ceo-ring-title {
+    font-size: 16px !important;
+    font-weight: 900 !important;
+    color: var(--slate-charcoal) !important;
+    margin-bottom: 10px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+}
+
+.ceo-mini-section-title {
+    font-size: 10px !important;
+    font-weight: 900 !important;
+    color: #94a3b8 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+    margin-bottom: 5px !important;
+    width: 100% !important;
+    text-align: center !important;
+}
+
+.ceo-ring-scale {
+    transform: scale(0.60) !important;
+    margin: -35px auto -25px auto !important; 
+}
+
+.ceo-ring-stats {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    margin-top: 5px !important;
+}
+
+.ceo-stat-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    color: #64748b !important;
+    background: white !important;
+    padding: 4px 8px !important;
+    border-radius: 6px !important;
+    border: 1px solid #e2e8f0 !important;
+    width: 100% !important;
+}
+
+.ceo-stat-row span:last-child {
+    font-weight: 900 !important;
+    color: var(--slate-charcoal) !important;
+}
+
+.ceo-badge {
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+    font-size: 10px !important;
+    font-weight: 900 !important;
+}
+.badge-pos { background: #d1fae5 !important; color: #059669 !important; }
+.badge-neg { background: #fee2e2 !important; color: #dc2626 !important; }
+
+/* Responsive Wrap for smaller screens only */
+@media (max-width: 1200px) {
+    .ceo-rings-grid { flex-wrap: wrap !important; }
+    .ceo-ring-col { flex: 1 1 calc(33.333% - 15px) !important; }
+}
+@media (max-width: 768px) {
+    .ceo-ring-col { flex: 1 1 calc(50% - 15px) !important; }
+}
+@media (max-width: 480px) {
+    .ceo-ring-col { flex: 1 1 100% !important; }
+}

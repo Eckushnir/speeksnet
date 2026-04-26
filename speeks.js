@@ -105,7 +105,39 @@ function toggleModal(modalId, badgeId = null) {
     if (!isOpen) {
         dropdown.classList.add('show');
         lockAndBlurScreen();
-        if (badgeId) document.getElementById(badgeId)?.classList.remove('active');
+        
+        // If they click the Bell icon...
+        if (badgeId === 'notifBadge') {
+            const badge = document.getElementById(badgeId);
+            const userName = sessionStorage.getItem('speeksUserName') || 'Unknown'; // Get user name
+            
+            if (badge && badge.classList.contains('active')) {
+                badge.classList.remove('active');
+                badge.style.display = 'none';
+                
+                // Instantly clear the local cache so it doesn't show up on refresh
+                localStorage.removeItem('speeksUnreadAnnouncements_' + userName);
+                
+                // 1. Find all announcements currently marked as unread in the HTML
+                const unreadEls = document.querySelectorAll('.notif-item[data-unread-id]');
+                // ... rest of the function remains exactly the same ...
+                const unreadIds = Array.from(unreadEls).map(el => parseInt(el.getAttribute('data-unread-id')));
+                
+                // 2. Fire a single payload to the database to mark them all as read for this user!
+                if (unreadIds.length > 0) {
+                    const userName = sessionStorage.getItem('speeksUserName') || 'Unknown';
+                    
+                    fetch(CMS_URL, {
+                        method: 'POST', mode: 'no-cors',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify({ type: 'mark_read', user: userName, rowIds: unreadIds })
+                    }).catch(e => console.log('Read sync skipped'));
+                    
+                    // 3. Remove the tags so we don't accidentally send it again if they close/open the menu
+                    unreadEls.forEach(el => el.removeAttribute('data-unread-id'));
+                }
+            }
+        }
     }
 }
 
@@ -115,8 +147,19 @@ function toggleIdeaModal() { toggleModal('ideaModal'); }
 
 function switchAnnTab(tab) {
     const isRecent = tab === 'recent';
-    document.getElementById('ann-container').style.display = isRecent ? 'block' : 'none';
-    document.getElementById('archive-container').style.display = isRecent ? 'none' : 'block';
+    
+    const annC = document.getElementById('ann-container');
+    if (annC) {
+        annC.style.display = isRecent ? 'block' : 'none';
+        annC.classList.remove('hidden'); // Fixes the !important CSS override
+    }
+    
+    const archC = document.getElementById('archive-container');
+    if (archC) {
+        archC.style.display = isRecent ? 'none' : 'block';
+        archC.classList.remove('hidden'); // Fixes the !important CSS override
+    }
+    
     document.getElementById('tab-recent').classList.toggle('active', isRecent);
     document.getElementById('tab-archive').classList.toggle('active', !isRecent);
 }
@@ -156,42 +199,86 @@ async function loadCMS() {
             let archiveHtml = "";
             let recentCount = 0;
             let archiveCount = 0;
+            const currentUser = sessionStorage.getItem('speeksUserName') || 'Unknown';
 
             if (data.announcements && data.announcements.length > 0) {
-                // Sort so newest is first
                 const sortedAnns = [...data.announcements].reverse();
                 const now = new Date();
 
-                sortedAnns.forEach(item => {
+                sortedAnns.forEach((item, index) => {
                     let displayDate = "";
                     let isArchived = false;
+                    let unreadHtmlAttr = "";
 
                     if (item.date) {
                         const annDate = new Date(item.date);
                         if (!isNaN(annDate.getTime())) {
-                            displayDate = annDate.toLocaleDateString('en-US', { 
-                                month: 'long', 
-                                day: 'numeric', 
-                                year: 'numeric' 
-                            });
+                            displayDate = annDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                            const diffHours = (now - annDate) / (1000 * 60 * 60);
 
-                            // Calculate difference in hours
-                            const diffMs = now - annDate;
-                            const diffHours = diffMs / (1000 * 60 * 60);
-
-                            if (diffHours >= 0 && diffHours <= 48) showBadge = true;
-                            if (diffHours > 48) isArchived = true;
+                            if (diffHours > 48) {
+                                isArchived = true;
+                            } else {
+                                // Server-side read receipt check!
+                                const isUnread = !item.readBy || !item.readBy.includes(currentUser);
+                                if (isUnread) {
+                                    showBadge = true;
+                                    // Tag it so the frontend knows to mark this specific row as read when clicked
+                                    unreadHtmlAttr = `data-unread-id="${item.rowId}"`; 
+                                }
+                            }
                         }
                     }
 
+                    const annId = item.rowId || index;
+                    const rData = item.reactions || {};
+                    const availableEmojis = ['👍', '🎉', '👀', '🔥', '🫡', '💵'];
+                    
+                    let reactionsHtml = `<div class="ann-reactions" id="reactions_${annId}">`;
+                    
+                    availableEmojis.forEach((emoji, eIdx) => {
+                        let count = 0;
+                        let hasReacted = false;
+                        let usersList = [];
+                        
+                        if (rData[emoji] && Array.isArray(rData[emoji])) {
+                            usersList = rData[emoji];
+                            count = usersList.length;
+                            hasReacted = usersList.includes(currentUser);
+                        }
+
+                        let displayStyle = count > 0 ? 'flex' : 'none';
+                        let activeClass = hasReacted ? 'reacted' : '';
+                        let disabledAttr = isArchived ? 'disabled style="cursor: default;"' : `onclick="toggleReaction('${annId}', '${emoji}')"`;
+                        let tooltipText = usersList.length > 0 ? `title="Reacted by: ${usersList.join(', ')}"` : '';
+                        
+                        reactionsHtml += `<button class="reaction-btn ${activeClass}" id="btn_${annId}_${eIdx}" data-emoji="${emoji}" style="display: ${displayStyle};" ${disabledAttr} ${tooltipText}>${emoji} <span class="count">${count}</span></button>`;
+                    });
+
+                    if (!isArchived) {
+                        reactionsHtml += `
+                            <div class="reaction-picker-wrapper" style="position: relative;">
+                                <button class="add-reaction-btn" onclick="toggleReactionPicker('${annId}')">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
+                                    <span style="font-size: 14px; margin-left: -4px;">+</span>
+                                </button>
+                                <div class="reaction-picker-popover" id="picker_${annId}">
+                                    ${availableEmojis.map(emoji => `<button type="button" onclick="toggleReaction('${annId}', '${emoji}'); toggleReactionPicker('${annId}')">${emoji}</button>`).join('')}
+                                </div>
+                            </div>
+                        `;
+                    }
+                    reactionsHtml += `</div>`;
+
                     const html = `
-                        <div class="notif-item">
+                        <div class="notif-item" ${unreadHtmlAttr}>
                             <div class="ann-header">
                                 <span class="ann-author">${item.author || 'Announcement'}</span>
                                 ${displayDate ? `<small class="ann-date">${displayDate}</small>` : ''}
                             </div>
                             <hr />
                             <div class="ann-text">${item.text || ''}</div>
+                            ${reactionsHtml}
                         </div>`;
 
                     if (isArchived) {
@@ -203,10 +290,8 @@ async function loadCMS() {
                     }
                 });
 
-                recentHtml = recentCount === 0 ? 
-                    '<div style="padding: 20px; color:#999; text-align:center;">No recent announcements</div>' : recentHtml;
-                archiveHtml = archiveCount === 0 ? 
-                    '<div style="padding: 20px; color:#999; text-align:center;">No archived announcements</div>' : archiveHtml;
+                recentHtml = recentCount === 0 ? '<div style="padding: 20px; color:#999; text-align:center;">No recent announcements</div>' : recentHtml;
+                archiveHtml = archiveCount === 0 ? '<div style="padding: 20px; color:#999; text-align:center;">No archived announcements</div>' : archiveHtml;
             } else {
                 recentHtml = archiveHtml = '<div style="padding: 20px; color:#999; text-align:center;">No announcements</div>';
             }
@@ -215,39 +300,89 @@ async function loadCMS() {
             const archiveContainer = document.getElementById('archive-container');
             if (archiveContainer) archiveContainer.innerHTML = archiveHtml;
 
-            // Trigger the red dot if needed
+            // Trigger the red dot and save state to instant-cache
             const badge = document.getElementById('notifBadge');
             if (badge) {
                 if (showBadge) {
+                    localStorage.setItem('speeksUnreadAnnouncements_' + currentUser, 'true');
                     badge.style.display = 'block'; 
                     badge.classList.add('active'); 
                 } else {
+                    localStorage.removeItem('speeksUnreadAnnouncements_' + currentUser);
                     badge.style.display = 'none';
                     badge.classList.remove('active');
                 }
-            }
-        }
-
-        // Handle Active/Upcoming projects if applicable
-        const activeContainer = document.getElementById('active-container');
-        if (activeContainer) {
-            const act = data.active || [];
-            const upc = data.upcoming || [];
-            activeContainer.innerHTML = act.length ? 
-                act.map(t => `<div class="cms-item cms-active">${t}</div>`).join('') : 
-                '<div class="cms-item">No active projects</div>';
-            
-            const upcomingContainer = document.getElementById('upcoming-container');
-            if (upcomingContainer) {
-                upcomingContainer.innerHTML = upc.length ? 
-                    upc.map(t => `<div class="cms-item cms-upcoming">${t}</div>`).join('') : 
-                    '<div class="cms-item">No upcoming projects</div>';
             }
         }
     } catch (e) { 
         console.error("CMS Sync Failed", e); 
     }
 }
+
+// --- ANNOUNCEMENT REACTION LOGIC ---
+window.toggleReaction = function(id, emoji) {
+    const container = document.getElementById('reactions_' + id);
+    if (!container) return;
+    
+    const availableEmojis = ['👍', '🎉', '👀', '🔥', '🫡', '💵'];
+    const eIdx = availableEmojis.indexOf(emoji);
+    const btn = document.getElementById(`btn_${id}_${eIdx}`);
+    if (!btn || btn.hasAttribute('disabled')) return;
+
+    const isReacted = btn.classList.contains('reacted');
+    const countSpan = btn.querySelector('.count');
+    let count = parseInt(countSpan.innerText) || 0;
+    const userName = sessionStorage.getItem('speeksUserName') || 'Unknown';
+    
+    // We will build a single payload to prevent race conditions
+    let payload = { type: 'reaction', rowId: id, user: userName };
+
+    if (isReacted) {
+        btn.classList.remove('reacted');
+        const newCount = Math.max(0, count - 1);
+        countSpan.innerText = newCount;
+        if (newCount === 0) btn.style.display = 'none';
+        
+        payload.removeEmoji = emoji; // Tell backend to remove
+    } else {
+        const currentReacted = container.querySelector('.reaction-btn.reacted');
+        
+        if (currentReacted) {
+            currentReacted.classList.remove('reacted');
+            const oldSpan = currentReacted.querySelector('.count');
+            const oldCount = Math.max(0, (parseInt(oldSpan.innerText) || 0) - 1);
+            oldSpan.innerText = oldCount;
+            if (oldCount === 0) currentReacted.style.display = 'none';
+            
+            payload.removeEmoji = currentReacted.getAttribute('data-emoji'); // Tell backend to swap this out
+        }
+
+        btn.style.display = 'flex'; 
+        btn.classList.add('reacted');
+        countSpan.innerText = count + 1;
+        
+        payload.addEmoji = emoji; // Tell backend to add this in
+    }
+
+    // Fire ONE single request to the database
+    fetch(CMS_URL, {
+        method: 'POST', mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+    }).catch(e => console.log('Reaction sync skipped'));
+};
+
+window.toggleReactionPicker = function(id) {
+    const picker = document.getElementById('picker_' + id);
+    if (picker) picker.classList.toggle('show');
+};
+
+// Close all open pickers if clicked outside
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.reaction-picker-wrapper')) {
+        document.querySelectorAll('.reaction-picker-popover.show').forEach(p => p.classList.remove('show'));
+    }
+});
 
 // --- 5. MODULE: USER MANAGEMENT ---
 let globalUsersData = [];
@@ -1221,7 +1356,9 @@ async function fetchHubData() {
         hubDataCache = await response.json();
         
         if (document.getElementById('bs-buy-val')) renderBuyingSales();
-        if (document.getElementById('rev-list')) renderLiveData(hubDataCache);
+        
+        // Render Live Data globally (Fixes CEO Rings)
+        renderLiveData(hubDataCache);
         
         // Let the Hub power the Leaderboard automatically!
         if (document.getElementById('lb-wrapper')) {
@@ -1294,23 +1431,70 @@ function renderBuyingSales() {
 function renderLiveData(d) {
     if (!d) return;
     
-    // Update the progress rings
-    ['ovl', 'lee', 'wsp', 'MPL', 'BAL'].forEach(id => {
-        let pN = document.getElementById(`${id}-pct`); 
-        if (!pN) return;
+    // Update the progress rings for BOTH standard and CEO views safely
+    [
+        { base: 'ovl', api: 'ovl' },
+        { base: 'lee', api: 'lee' },
+        { base: 'wsp', api: 'wsp' },
+        { base: 'mpl', api: 'MPL' },
+        { base: 'bal', api: 'BAL' }
+    ].forEach(store => {
+        // --- Core Math ---
+        let p = Math.round(d[`${store.api}Pct`] || 0);
+        let goalTxt = `$${Math.round(d[`${store.api}Goal`] || 0).toLocaleString()}`;
+        let tGpTxt = `$${Math.round(d[`${store.api}TrackGP`] || 0).toLocaleString()}`;
+
+        // --- Buying Math ---
+        let bV = parseNum(d[`${store.api}BuyVal`]);
+        let bP = parseNum(d[`${store.api}BuyProj`]);
+        let mN = parseNum(d[`${store.api}BuyMargin`]);
+        if (String(d[`${store.api}BuyMargin`]).includes('%') === false && mN > 0 && mN <= 1.5) mN = mN * 100;
+
+        // --- Selling Margin Math ---
+        let sellMarginNum = 0;
+        const rev = parseNum(d[`${store.api}Rev`]);
+        const gp = parseNum(d[`${store.api}GP`]);
+        if (d[`${store.api}SellMargin`]) {
+            let smRaw = parseNum(d[`${store.api}SellMargin`]);
+            sellMarginNum = (!String(d[`${store.api}SellMargin`]).includes('%') && smRaw > 0 && smRaw <= 1.5) ? (smRaw * 100) : smRaw;
+        } else if (rev > 0) {
+            sellMarginNum = (gp / rev) * 100;
+        }
+
+        // 1. Update Main Dropdown Rings (Sales Only)
+        if(document.getElementById(`${store.api}-pct`)) document.getElementById(`${store.api}-pct`).innerText = p + '%';
+        if(document.getElementById(`${store.api}-goal`)) document.getElementById(`${store.api}-goal`).innerText = `Goal: ${goalTxt}`;
+        if(document.getElementById(`${store.api}-t-gp`)) document.getElementById(`${store.api}-t-gp`).innerText = tGpTxt;
         
-        let p = Math.round(d[`${id}Pct`] || 0); 
-        pN.innerText = p + '%'; 
+        // 2. Update CEO Rings (Sales)
+        if(document.getElementById(`ceo-${store.base}-pct`)) document.getElementById(`ceo-${store.base}-pct`).innerText = p + '%';
+        if(document.getElementById(`ceo-${store.base}-goal`)) document.getElementById(`ceo-${store.base}-goal`).innerText = goalTxt;
+        if(document.getElementById(`ceo-${store.base}-t-gp`)) document.getElementById(`ceo-${store.base}-t-gp`).innerText = tGpTxt;
+        if(document.getElementById(`ceo-${store.base}-sell-margin`)) {
+            let el = document.getElementById(`ceo-${store.base}-sell-margin`);
+            el.innerText = sellMarginNum.toFixed(1) + '%';
+            el.className = sellMarginNum >= 55.0 ? 'ceo-badge badge-pos' : 'ceo-badge badge-neg';
+        }
+
+        // 3. Update CEO Rings (Buying)
+        if(document.getElementById(`ceo-${store.base}-buy-val`)) document.getElementById(`ceo-${store.base}-buy-val`).innerText = `$${Math.round(bV).toLocaleString()}`;
+        if(document.getElementById(`ceo-${store.base}-buy-proj`)) document.getElementById(`ceo-${store.base}-buy-proj`).innerText = `$${Math.round(bP).toLocaleString()}`;
+        if(document.getElementById(`ceo-${store.base}-buy-margin`)) {
+            let el = document.getElementById(`ceo-${store.base}-buy-margin`);
+            el.innerText = mN.toFixed(1) + '%';
+            el.className = (mN > 0 && mN < 51) ? 'ceo-badge badge-neg' : 'ceo-badge badge-pos';
+        }
+
+        // 4. Update the SVG Bars
+        let offset = 402 - (Math.min(p, 100)/100)*402;
+        let color = p < 100 ? "var(--red-alert)" : "var(--sage-professional)";
         
-        document.getElementById(`${id}-goal`).innerText = `Goal: $${Math.round(d[`${id}Goal`] || 0).toLocaleString()}`; 
-        document.getElementById(`${id}-t-gp`).innerText = `$${Math.round(d[`${id}TrackGP`] || 0).toLocaleString()}`;
-        
-        setTimeout(() => { 
-            let b = document.getElementById(`${id}-bar`); 
-            if (b) { 
-                b.style.strokeDashoffset = 402 - (Math.min(p, 100)/100)*402; 
-                b.style.stroke = p < 100 ? "var(--red-alert)" : "var(--sage-professional)"; 
-            } 
+        setTimeout(() => {
+            let mainBar = document.getElementById(`${store.api}-bar`);
+            if(mainBar) { mainBar.style.strokeDashoffset = offset; mainBar.style.stroke = color; }
+            
+            let ceoBar = document.getElementById(`ceo-${store.base}-bar`);
+            if(ceoBar) { ceoBar.style.strokeDashoffset = offset; ceoBar.style.stroke = color; }
         }, 50);
     });
 
@@ -1329,19 +1513,9 @@ function renderLiveData(d) {
                 <div class="lb-val">$${Math.round(val).toLocaleString()}</div>
             </div>`;
 
-        // Revenue List
-        document.getElementById('rev-list').innerHTML = [...sArr]
-            .sort((a,b) => b.r - a.r)
-            .map((s,i) => buildLbRow(s, i, s.r))
-            .join('');
-            
-        // GP List
-        document.getElementById('gp-list').innerHTML = [...sArr]
-            .sort((a,b) => b.g - a.g)
-            .map((s,i) => buildLbRow(s, i, s.g))
-            .join('');
-            
-        // Update Sync Time
+        document.getElementById('rev-list').innerHTML = [...sArr].sort((a,b) => b.r - a.r).map((s,i) => buildLbRow(s, i, s.r)).join('');
+        document.getElementById('gp-list').innerHTML = [...sArr].sort((a,b) => b.g - a.g).map((s,i) => buildLbRow(s, i, s.g)).join('');
+        
         const n = new Date(); 
         const formattedTime = `${n.getHours() % 12 || 12}:${String(n.getMinutes()).padStart(2,'0')} ${n.getHours() >= 12 ? 'PM' : 'AM'}`;
         document.getElementById('lastSyncedText').innerText = `Last Synced: ${formattedTime}`;
@@ -3188,7 +3362,23 @@ function applyRoleBasedUI() {
     }
 }
 
+function checkInstantNotifCache() {
+    const currentUser = sessionStorage.getItem('speeksUserName');
+    if (!currentUser) return; // Don't fire if they aren't logged in yet
+    
+    if (localStorage.getItem('speeksUnreadAnnouncements_' + currentUser) === 'true') {
+        const badge = document.getElementById('notifBadge');
+        if (badge) {
+            badge.style.display = 'block';
+            badge.classList.add('active');
+        }
+    }
+}
+
 function initDashboardData() { 
+    // 1. Instantly check memory for the red dot before any servers are contacted
+    checkInstantNotifCache();
+
     const runInit = () => {
         if (typeof initChecklists === 'function') initChecklists(); 
         
@@ -3225,7 +3415,7 @@ function initDashboardData() {
 // --- INIT LISTENERS ---
 document.addEventListener("DOMContentLoaded", () => {
     setTimeout(() => document.body.classList.remove('preload'), 50);
-    
+
     if (localStorage.getItem('speeksSidebar') === 'collapsed') { 
         document.querySelector('.sidebar')?.classList.add('collapsed'); 
         document.querySelector('.main-content')?.classList.add('expanded'); 
@@ -3885,7 +4075,7 @@ async function publishAnnouncement() {
     };
 
     try {
-        await fetch(ANNOUNCEMENTS_WRITE_URL, {
+        await fetch(CMS_URL, {
             method: 'POST',
             mode: 'no-cors', 
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
