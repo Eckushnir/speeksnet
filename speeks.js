@@ -297,27 +297,6 @@ async function loadCMS() {
     }
 }
 
-        // Active/Upcoming Projects Logic
-        const activeContainer = document.getElementById('active-container');
-        if (activeContainer) {
-            const act = data.active || [];
-            const upc = data.upcoming || [];
-            activeContainer.innerHTML = act.length ? 
-                act.map(t => `<div class="cms-item cms-active">${t}</div>`).join('') : 
-                '<div class="cms-item">No active projects</div>';
-            
-            const upcomingContainer = document.getElementById('upcoming-container');
-            if (upcomingContainer) {
-                upcomingContainer.innerHTML = upc.length ? 
-                    upc.map(t => `<div class="cms-item cms-upcoming">${t}</div>`).join('') : 
-                    '<div class="cms-item">No upcoming projects</div>';
-            }
-        }
-    } catch (e) { 
-        console.error("CMS Sync Failed", e); 
-    }
-}
-
 function toggleNotifs() { toggleModal('notifDropdown', 'notifBadge'); }
 function toggleCalendar() { toggleModal('calendarDropdown'); }
 function toggleIdeaModal() { toggleModal('ideaModal'); }
