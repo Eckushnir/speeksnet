@@ -3446,6 +3446,9 @@ function initDashboardData() {
     const runInit = () => {
         if (typeof initChecklists === 'function') initChecklists(); 
         
+        // ADDED: Re-sync announcements immediately after login so it knows who you are!
+        setTimeout(loadCMS, 50); 
+        
         setTimeout(fetchHubData, 100); 
         setTimeout(fetchVarianceData, 300); 
         setTimeout(fetchWeeklyKPIs, 500); 
@@ -3454,7 +3457,6 @@ function initDashboardData() {
         setTimeout(fetchDmGoalsData, 1000);
         setTimeout(fetchAndRenderEmployeeGoals, 1100);
         setTimeout(fetchAndRenderEmployeeKPIs, 1200);
-        setTimeout(fetchScorecardData, 1300);
         
         if (typeof preloadAllStores === 'function') setTimeout(preloadAllStores, 4000); 
         if (typeof initListingGoals === 'function') setTimeout(initListingGoals, 200);
