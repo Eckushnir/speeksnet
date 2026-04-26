@@ -123,18 +123,18 @@ function toggleModal(modalId, badgeId = null) {
                 const unreadIds = Array.from(unreadEls).map(el => parseInt(el.getAttribute('data-unread-id')));
                 
                 // 2. Fire a single payload to the database to mark them all as read for this user!
-               if (unreadIds.length > 0) {
-                   // Delay the read receipt by 2.5 seconds to ensure it doesn't collide with instant emoji reactions
-                   setTimeout(() => {
-                       fetch(CMS_URL, {
-                           method: 'POST', mode: 'no-cors',
-                           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                           body: JSON.stringify({ type: 'mark_read', user: userName, rowIds: unreadIds })
-                       }).catch(e => console.log('Read sync skipped'));
-                   }, 2500);
-                   
-                   // 3. Remove the tags so we don't accidentally send it again if they close/open the menu
-                   unreadEls.forEach(el => el.removeAttribute('data-unread-id'));
+                if (unreadIds.length > 0) {
+                    // DELAYED BY 2.5 SECONDS to prevent database race conditions with reactions
+                    setTimeout(() => {
+                        fetch(CMS_URL, {
+                            method: 'POST', mode: 'no-cors',
+                            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                            body: JSON.stringify({ type: 'mark_read', user: userName, rowIds: unreadIds })
+                        }).catch(e => console.log('Read sync skipped'));
+                    }, 2500);
+                    
+                    // 3. Remove the tags so we don't accidentally send it again if they close/open the menu
+                    unreadEls.forEach(el => el.removeAttribute('data-unread-id'));
                 }
             }
         }
