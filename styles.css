@@ -2660,22 +2660,44 @@ canvas#leaderboardCanvas, canvas#mainKpiChart {
 }
 
 .ceo-ring-col {
-    position: relative !important; /* <--- ADD THIS LINE */
+    position: relative !important; 
     flex: 1 1 0 !important; 
     min-width: 0 !important; 
-    background: #f8fafc !important;
-    border: 1px solid #e2e8f0 !important;
-    border-radius: 12px !important;
-    padding: 15px 12px !important;
+    background: transparent !important; /* Let the main white card show through */
+    border: none !important; /* Remove the outer border */
+    border-right: 1px solid #e2e8f0 !important; /* Add the vertical divider */
+    border-radius: 0 !important; /* Flat edges to sit flush inside the card */
+    padding: 10px 20px !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
     justify-content: flex-start !important;
-    box-shadow: none !important;
+    box-shadow: none !important; /* Remove shadows */
     transition: none !important;
     transform: none !important;
 }
 
+/* Remove the divider line from the very last store column */
+.ceo-ring-col:last-child {
+    border-right: none !important;
+}
+
+/* Ensure the hover effect does nothing */
+.ceo-ring-col:hover {
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Fix mobile view so the dividers switch to horizontal lines if the screen shrinks */
+@media (max-width: 1200px) {
+    .ceo-ring-col {
+        border-right: none !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+    }
+    .ceo-ring-col:last-child {
+        border-bottom: none !important;
+    }
+}
 .ceo-goal-badge {
     position: absolute !important;
     top: 10px !important;
