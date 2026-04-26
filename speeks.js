@@ -106,7 +106,6 @@ function toggleModal(modalId, badgeId = null) {
         dropdown.classList.add('show');
         lockAndBlurScreen();
         
-        // YOUR RESTORED LOGIC: If they click the Bell icon...
         if (badgeId === 'notifBadge') {
             const badge = document.getElementById(badgeId);
             const userName = sessionStorage.getItem('speeksUserName'); 
@@ -115,16 +114,12 @@ function toggleModal(modalId, badgeId = null) {
                 badge.classList.remove('active');
                 badge.style.display = 'none';
                 
-                // Instantly clear the local cache so it doesn't show up on refresh
                 localStorage.removeItem('speeksUnreadAnnouncements_' + userName);
                 
-                // 1. Find all announcements currently marked as unread in the HTML
                 const unreadEls = document.querySelectorAll('.notif-item[data-unread-id]');
                 const unreadIds = Array.from(unreadEls).map(el => parseInt(el.getAttribute('data-unread-id')));
                 
-                // 2. Fire a single payload to the database to mark them all as read for this user!
                 if (unreadIds.length > 0) {
-                    // DELAYED BY 2.5 SECONDS to prevent database race conditions with reactions
                     setTimeout(() => {
                         fetch(CMS_URL, {
                             method: 'POST', mode: 'no-cors',
@@ -133,7 +128,6 @@ function toggleModal(modalId, badgeId = null) {
                         }).catch(e => console.log('Read sync skipped'));
                     }, 2500);
                     
-                    // 3. Remove the tags so we don't accidentally send it again if they close/open the menu
                     unreadEls.forEach(el => el.removeAttribute('data-unread-id'));
                 }
             }
@@ -154,7 +148,6 @@ async function loadCMS() {
             let recentCount = 0;
             let archiveCount = 0;
             
-            // Get user and immediately strip invisible spaces and convert to lowercase for perfect matching!
             const currentUser = sessionStorage.getItem('speeksUserName');
             const cleanUser = currentUser ? String(currentUser).trim().toLowerCase() : null;
 
@@ -176,7 +169,6 @@ async function loadCMS() {
                             if (diffHours > 48) {
                                 isArchived = true;
                             } else {
-                                // BULLETPROOF READ RECEIPT MATCHING
                                 if (cleanUser) {
                                     const isUnread = !item.readBy || !item.readBy.some(u => String(u).trim().toLowerCase() === cleanUser);
                                     if (isUnread) {
@@ -203,7 +195,6 @@ async function loadCMS() {
                             usersList = rData[emoji];
                             count = usersList.length;
                             
-                            // BULLETPROOF REACTION MATCHING
                             if (cleanUser) {
                                 hasReacted = usersList.some(u => String(u).trim().toLowerCase() === cleanUser);
                             }
@@ -214,7 +205,6 @@ async function loadCMS() {
                         let disabledAttr = isArchived ? 'disabled style="cursor: default;"' : `onclick="toggleReaction('${annId}', '${emoji}')"`;
                         let tooltipText = usersList.length > 0 ? `title="Reacted by: ${usersList.join(', ')}"` : '';
                         
-                        // Added pointer-events:none to spans so the buttons click perfectly!
                         reactionsHtml += `<button class="reaction-btn ${activeClass}" id="btn_${annId}_${eIdx}" data-emoji="${emoji}" style="display: ${displayStyle};" ${disabledAttr} ${tooltipText}><span style="pointer-events: none;">${emoji}</span> <span class="count" style="pointer-events: none;">${count}</span></button>`;
                     });
 
