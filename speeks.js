@@ -150,8 +150,10 @@ async function loadCMS() {
             let archiveHtml = "";
             let recentCount = 0;
             let archiveCount = 0;
-            // FLASH FIX: Do not default to 'Unknown' anymore!
+            
+            // Get user and immediately strip invisible spaces and convert to lowercase for perfect matching!
             const currentUser = sessionStorage.getItem('speeksUserName');
+            const cleanUser = currentUser ? String(currentUser).trim().toLowerCase() : null;
 
             if (data.announcements && data.announcements.length > 0) {
                 const sortedAnns = [...data.announcements].reverse();
@@ -171,9 +173,9 @@ async function loadCMS() {
                             if (diffHours > 48) {
                                 isArchived = true;
                             } else {
-                                // FLASH FIX: Only trigger the red dot if someone is actually logged in!
-                                if (currentUser) {
-                                    const isUnread = !item.readBy || !item.readBy.includes(currentUser);
+                                // BULLETPROOF READ RECEIPT MATCHING
+                                if (cleanUser) {
+                                    const isUnread = !item.readBy || !item.readBy.some(u => String(u).trim().toLowerCase() === cleanUser);
                                     if (isUnread) {
                                         showBadge = true;
                                         unreadHtmlAttr = `data-unread-id="${item.rowId}"`; 
@@ -197,8 +199,11 @@ async function loadCMS() {
                         if (rData[emoji] && Array.isArray(rData[emoji])) {
                             usersList = rData[emoji];
                             count = usersList.length;
-                            // Safe check in case currentUser is null behind the lock screen
-                            hasReacted = currentUser && usersList.includes(currentUser);
+                            
+                            // BULLETPROOF REACTION MATCHING
+                            if (cleanUser) {
+                                hasReacted = usersList.some(u => String(u).trim().toLowerCase() === cleanUser);
+                            }
                         }
 
                         let displayStyle = count > 0 ? 'flex' : 'none';
@@ -206,10 +211,10 @@ async function loadCMS() {
                         let disabledAttr = isArchived ? 'disabled style="cursor: default;"' : `onclick="toggleReaction('${annId}', '${emoji}')"`;
                         let tooltipText = usersList.length > 0 ? `title="Reacted by: ${usersList.join(', ')}"` : '';
                         
-                        reactionsHtml += `<button class="reaction-btn ${activeClass}" id="btn_${annId}_${eIdx}" data-emoji="${emoji}" style="display: ${displayStyle};" ${disabledAttr} ${tooltipText}>${emoji} <span class="count">${count}</span></button>`;
+                        // Added pointer-events:none to spans so the buttons click perfectly!
+                        reactionsHtml += `<button class="reaction-btn ${activeClass}" id="btn_${annId}_${eIdx}" data-emoji="${emoji}" style="display: ${displayStyle};" ${disabledAttr} ${tooltipText}><span style="pointer-events: none;">${emoji}</span> <span class="count" style="pointer-events: none;">${count}</span></button>`;
                     });
 
-                    // YOUR EXACT GRAY POPOUT MENU LOGIC
                     if (!isArchived) {
                         reactionsHtml += `
                             <div class="reaction-picker-wrapper" style="position: relative;">
@@ -255,7 +260,6 @@ async function loadCMS() {
             const archiveContainer = document.getElementById('archive-container');
             if (archiveContainer) archiveContainer.innerHTML = archiveHtml;
 
-            // Trigger the red dot and save state to instant-cache safely
             const badge = document.getElementById('notifBadge');
             if (badge) {
                 if (showBadge) {
@@ -269,6 +273,26 @@ async function loadCMS() {
                 }
             }
         }
+
+        const activeContainer = document.getElementById('active-container');
+        if (activeContainer) {
+            const act = data.active || [];
+            const upc = data.upcoming || [];
+            activeContainer.innerHTML = act.length ? 
+                act.map(t => `<div class="cms-item cms-active">${t}</div>`).join('') : 
+                '<div class="cms-item">No active projects</div>';
+            
+            const upcomingContainer = document.getElementById('upcoming-container');
+            if (upcomingContainer) {
+                upcomingContainer.innerHTML = upc.length ? 
+                    upc.map(t => `<div class="cms-item cms-upcoming">${t}</div>`).join('') : 
+                    '<div class="cms-item">No upcoming projects</div>';
+            }
+        }
+    } catch (e) { 
+        console.error("CMS Sync Failed", e); 
+    }
+}
 
         // Active/Upcoming Projects Logic
         const activeContainer = document.getElementById('active-container');
