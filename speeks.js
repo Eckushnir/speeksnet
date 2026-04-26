@@ -454,7 +454,7 @@ function addManageUserRow(user = { name: '', pin: '', store: 'LEE', role: 'Emplo
     row.className = 'user-manage-row';
 
     const stores = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL', 'CORP'];
-    const roles = ['CEO', 'District Manager', 'Manager', 'Employee', 'Training'];
+    const roles = ['CEO', 'District Manager', 'Manager', 'Employee', 'Training', 'TOM'];
 
     const storeOptions = stores.map(s => `<option value="${s}" ${(user.store || '').toUpperCase() === s ? 'selected' : ''}>${s}</option>`).join('');
     const roleOptions = roles.map(r => `<option value="${r}" ${(user.role || '').toLowerCase() === r.toLowerCase() ? 'selected' : ''}>${r}</option>`).join('');
@@ -1593,18 +1593,11 @@ function loadKpiData() {
     
     if (loader) {
         loader.style.display = 'flex';
-        loader.innerHTML = '<div class="status-message">Syncing Data...</div>';
+        loader.innerHTML = '<div class="status-message">Syncing Live Data...</div>';
     }
     
-    if (kpiChartCache[currentTimeframe] && Array.isArray(kpiChartCache[currentTimeframe]) && kpiChartCache[currentTimeframe].length > 0) {
-        try {
-            renderKpiChart(kpiChartCache[currentTimeframe], m); 
-        } catch(e) {
-            fetchChartData(currentTimeframe);
-        }
-    } else {
-        fetchChartData(currentTimeframe); 
-    }
+    // Always fetch fresh data from the server, bypassing the stale local cache
+    fetchChartData(currentTimeframe); 
 }
 
 async function fetchChartData(tf) {
@@ -2658,9 +2651,15 @@ async function fetchMasterDistrictDashboard() {
 let goalsRoster = []; 
 let liveGoalsData = [];
 let allDistrictGoalsData = [];
+let editingYesterday = false;
 let goalsTargetStore = 'OVL';
 let currentAppDate = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
 let currentDmGoalView = 'daily';
+
+function toggleEditDate(isYest) {
+    editingYesterday = isYest;
+    buildGoalsEditForm(); // Re-render the form for the selected day
+}
 
 function runScheduledTasks() {
     const now = new Date();
@@ -2865,6 +2864,7 @@ function flipGoalCard(showEdit) {
     const tabContainer = document.querySelector('.goal-tab-container');
     
     if (showEdit) {
+        editingYesterday = false; // Always default to "Today" when initially flipping open
         buildGoalsEditForm();
         flipper.classList.add('is-flipped');
         if (tabContainer) {
@@ -2882,17 +2882,35 @@ function flipGoalCard(showEdit) {
 
 function buildGoalsEditForm() {
     const container = document.getElementById('goals-edit-list');
-    const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
+    const now = new Date();
+    
+    // Shift the target date if they toggled to Yesterday
+    if (editingYesterday) {
+        now.setDate(now.getDate() - 1);
+    }
+    const targetDateStr = now.toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
+    
     let html = '';
-
     const availableRoles = goalsRoster.length <= 3 ? ['B1', 'B2', 'L1'] : ['B1', 'B2', 'L1', 'L2'];
 
+    // Inject the Toggle into the Header title space dynamically
+    const titleEl = document.getElementById('goals-input-title');
+    if (titleEl) {
+        titleEl.innerHTML = `
+            <div class="timeframe-toggle dark-toggle" style="margin-left: 0;">
+                <button class="toggle-btn ${!editingYesterday ? 'active' : ''}" onclick="toggleEditDate(false)">Today</button>
+                <button class="toggle-btn ${editingYesterday ? 'active' : ''}" onclick="toggleEditDate(true)">Yesterday</button>
+            </div>
+        `;
+    }
+
     goalsRoster.forEach((emp, idx) => {
-        const todayRecord = liveGoalsData.find(r => r.employee === emp && r.date === todayStr) || { role: '', goal: '', result: '' };
+        // Find the record for the TARGET date (either Today or Yesterday)
+        const targetRecord = liveGoalsData.find(r => r.employee === emp && r.date === targetDateStr) || { role: '', goal: '', result: '' };
         
         let rolesHtml = '';
         availableRoles.forEach(r => {
-            const isActive = todayRecord.role === r ? 'active' : '';
+            const isActive = targetRecord.role === r ? 'active' : '';
             rolesHtml += `<button type="button" class="role-dot ${isActive}" onclick="selectRole(this, '${emp}', '${r}')">${r}</button>`;
         });
 
@@ -2904,8 +2922,8 @@ function buildGoalsEditForm() {
                     ${rolesHtml}
                 </div>
                 <div style="display:flex; gap: 8px;">
-                    <input type="number" id="input-goal-${idx}" class="goal-input" placeholder="Goal" value="${todayRecord.goal}" title="Target Goal" />
-                    <input type="number" id="input-result-${idx}" class="goal-input" placeholder="Actual" value="${todayRecord.result}" title="Actual Result" style="border-color: #a7f3d0; background: #ecfdf5;" />
+                    <input type="number" id="input-goal-${idx}" class="goal-input" placeholder="Goal" value="${targetRecord.goal}" title="Target Goal" />
+                    <input type="number" id="input-result-${idx}" class="goal-input" placeholder="Actual" value="${targetRecord.result}" title="Actual Result" style="border-color: #a7f3d0; background: #ecfdf5;" />
                 </div>
             </div>
         </div>`;
@@ -2914,11 +2932,77 @@ function buildGoalsEditForm() {
     container.innerHTML = html;
 }
 
-function selectRole(btn, emp, role) {
-    const parent = btn.parentElement;
-    Array.from(parent.children).forEach(c => c.classList.remove('active'));
-    btn.classList.add('active');
-    btn.setAttribute('data-selected-role', role);
+function buildGoalsEditForm() {
+    const container = document.getElementById('goals-edit-list');
+    const now = new Date();
+    
+    // 1. Calculate the current time in Central Time to enforce the 10:30 AM lock
+    const ctTimeString = now.toLocaleString('en-US', { timeZone: 'America/Chicago', hour12: false, hour: 'numeric', minute: 'numeric' });
+    const [hours, minutes] = ctTimeString.split(':').map(Number);
+    const isPastCutoff = (hours > 10) || (hours === 10 && minutes >= 30);
+
+    // 2. Shift the target date if they toggled to Yesterday
+    if (editingYesterday) {
+        now.setDate(now.getDate() - 1);
+    }
+    const targetDateStr = now.toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
+    
+    // 3. Determine if the Goal and Role should be locked
+    const lockGoal = editingYesterday || (!editingYesterday && isPastCutoff);
+    let lockWarning = "Target Goal";
+    if (lockGoal) {
+        lockWarning = editingYesterday ? "Goals cannot be changed retroactively." : "Goal setting locked after 10:30 AM.";
+    }
+    
+    let html = '';
+    const availableRoles = goalsRoster.length <= 3 ? ['B1', 'B2', 'L1'] : ['B1', 'B2', 'L1', 'L2'];
+
+    // Inject the Toggle into the Header title space dynamically
+    const titleEl = document.getElementById('goals-input-title');
+    if (titleEl) {
+        titleEl.innerHTML = `
+            <div class="timeframe-toggle dark-toggle" style="margin-left: 0;">
+                <button class="toggle-btn ${!editingYesterday ? 'active' : ''}" onclick="toggleEditDate(false)">Today</button>
+                <button class="toggle-btn ${editingYesterday ? 'active' : ''}" onclick="toggleEditDate(true)">Yesterday</button>
+            </div>
+        `;
+    }
+    
+    // Optional: Add a visual warning at the top if goals are locked
+    if (lockGoal) {
+        html += `<div style="font-size: 10px; color: var(--red-alert); font-weight: 800; text-align: center; margin-bottom: 12px; text-transform: uppercase;">⚠️ ${lockWarning}</div>`;
+    }
+
+    goalsRoster.forEach((emp, idx) => {
+        const targetRecord = liveGoalsData.find(r => r.employee === emp && r.date === targetDateStr) || { role: '', goal: '', result: '' };
+        
+        let rolesHtml = '';
+        availableRoles.forEach(r => {
+            const isActive = targetRecord.role === r ? 'active' : '';
+            // If the goal is locked, we also lock the role from being changed
+            const disableRole = lockGoal ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : '';
+            rolesHtml += `<button type="button" class="role-dot ${isActive}" ${disableRole} onclick="selectRole(this, '${emp}', '${r}')">${r}</button>`;
+        });
+
+        // If the goal is locked, we make the input unclickable and gray it out
+        const disableGoalAttr = lockGoal ? 'disabled style="background: #f1f5f9; color: #94a3b8; border-color: #e2e8f0; cursor: not-allowed;"' : '';
+
+        html += `
+        <div class="goals-edit-item">
+            <div class="goals-edit-name">${emp}</div>
+            <div class="goals-edit-controls">
+                <div class="goals-edit-roles" id="roles-${idx}">
+                    ${rolesHtml}
+                </div>
+                <div style="display:flex; gap: 8px;">
+                    <input type="number" id="input-goal-${idx}" class="goal-input" placeholder="Goal" value="${targetRecord.goal}" title="${lockWarning}" ${disableGoalAttr} />
+                    <input type="number" id="input-result-${idx}" class="goal-input" placeholder="Actual" value="${targetRecord.result}" title="Actual Result" style="border-color: #a7f3d0; background: #ecfdf5;" />
+                </div>
+            </div>
+        </div>`;
+    });
+
+    container.innerHTML = html;
 }
 
 async function saveGoalsData() {
@@ -2926,7 +3010,12 @@ async function saveGoalsData() {
     btn.innerText = "Saving to Database...";
     btn.style.opacity = "0.7";
 
-    const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
+    const now = new Date();
+    if (editingYesterday) {
+        now.setDate(now.getDate() - 1);
+    }
+    const targetDateStr = now.toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
+
     let payloadEmployees = [];
 
     goalsRoster.forEach((emp, idx) => {
@@ -2946,13 +3035,18 @@ async function saveGoalsData() {
         const response = await fetch(GOALS_API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ store: goalsTargetStore, employees: payloadEmployees })
+            body: JSON.stringify({ 
+                store: goalsTargetStore, 
+                date: targetDateStr, // <--- NOW PASSING THE SPECIFIC DATE
+                employees: payloadEmployees 
+            })
         });
 
         if(response.ok) {
-            liveGoalsData = liveGoalsData.filter(r => r.date !== todayStr);
+            // Instantly update the local cache so the UI reflects it without a full refresh
+            liveGoalsData = liveGoalsData.filter(r => !(r.date === targetDateStr && r.store === goalsTargetStore));
             payloadEmployees.forEach(p => {
-                liveGoalsData.push({ date: todayStr, store: goalsTargetStore, employee: p.employee, role: p.role, goal: p.goal, result: p.result });
+                liveGoalsData.push({ date: targetDateStr, store: goalsTargetStore, employee: p.employee, role: p.role, goal: p.goal, result: p.result });
             });
 
             document.getElementById('goals-pulse-dot').style.display = 'none';
@@ -3702,8 +3796,17 @@ function renderKpiChart(allData, metric) {
                 let secs = parseInt(secsStr.substring(0,2)) || 0;
                 return mins + (secs / 60);
             }
+            
             let p = parseFloat(s.replace(/[^0-9.-]/g, ''));
-            return isNaN(p) ? null : p;
+            if (!isNaN(p)) {
+                // FIX: If the spreadsheet has raw seconds from Column F (like 378),
+                // divide by 60 to convert it into minutes (6.3)
+                if (p > 30) {
+                    return p / 60;
+                }
+                return p;
+            }
+            return null;
         }
         let p = parseNum(v);
         return (isPct && p <= 1.1 && p > 0) ? p * 100 : p;
@@ -3748,25 +3851,12 @@ function renderKpiChart(allData, metric) {
                     sData.push(null);
                     return;
                 }
-                let v = row[sCol]; 
-                let parsed = parseChartVal(v);
                 
-                if (metric === 'time' && parsed !== null) {
-                    let empCols = [];
-                    for(let c = sc; c < sCol; c++) {
-                        let colName = String(d[sr+1][c] || '').trim().toLowerCase();
-                        if (colName && colName !== 'store' && colName !== 'store total' && !colName.includes('average') && colName !== t.toLowerCase() && !strs.some(s => s.key.toLowerCase() === colName)) {
-                            empCols.push(c);
-                        }
-                    }
-                    
-                    let totalTime = 0, validEmps = 0;
-                    empCols.forEach(cIdx => {
-                        let eTime = parseChartVal(row[cIdx]);
-                        if (eTime !== null && eTime > 0) { totalTime += eTime; validEmps++; }
-                    });
-                    if (validEmps > 0) parsed = totalTime / validEmps; 
-                }
+                // Use Column F (index 5) ONLY for the raw 4-Week data. 
+                // For Monthly, the Apps Script already formatted the Store average into sCol.
+                let v = (metric === 'time' && currentTimeframe === '4-Week') ? row[5] : row[sCol];
+                
+                let parsed = parseChartVal(v);
 
                 sData.push(parsed);
                 if (parsed !== null) nums.push(parsed);
