@@ -16,6 +16,7 @@ const QUICK_MSG_URL = 'https://script.google.com/macros/s/AKfycbxpPxDhcyS5gJ90pl
 const GOALS_API_URL = 'https://script.google.com/macros/s/AKfycbw_eV-2Nxizf85J8atBJ6Muyq0aOAjZAsSLwlx9abPjNKJub_RlzrMBKkQuTbcRTbF2/exec';
 const SCORECARD_URL = 'https://script.google.com/macros/s/AKfycbwvelWpXnlXCJZQGagZX5llMCN1k6CjronBpIcenNVDTjUdPISjF0mYhHYy2ry0Vdg0_Q/exec';
 const EBAY_ALERTS_URL = 'https://script.google.com/macros/s/AKfycbxap-4Jgdn5-ntkv_X-vFZLTWlTB29_bDLdwcFxhWd2su3ZQJ0ZS7UpUgZAK08lOIV6/exec';
+const STORE_COMMENT_URL = 'https://script.google.com/macros/s/AKfycbzoqWLZz07niO-dVqDpQS7I-bDvUgLjHT4CYGiqb--yAQYQPkFCUi9EXoi5Wsz-V0Ne/exec';
 
 // --- 2. GLOBAL HELPERS & UTILITIES ---
 function parseNum(val) {
@@ -2025,10 +2026,16 @@ function injectGlobalAuth() {
 }
 
 function handleSignOut() {
+    // Remove the login state
     sessionStorage.removeItem('speeksUnlocked');
     sessionStorage.removeItem('speeksUserName');
     sessionStorage.removeItem('speeksUserRole');
     sessionStorage.removeItem('speeksUserStore');
+    
+    // Remove the comment tracker for today so it pops up again when testing
+    const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
+    sessionStorage.removeItem(`speeksCommentSeen_${todayStr}`);
+    
     location.reload(); 
 }
 
@@ -3536,18 +3543,29 @@ function initDashboardData() {
     const runInit = () => {
         if (typeof initChecklists === 'function') initChecklists(); 
         
-        // ADDED: Re-sync announcements immediately after login so it knows who you are!
+        // Re-sync announcements immediately after login so it knows who you are!
         setTimeout(loadCMS, 50); 
         
         setTimeout(fetchHubData, 100); 
         setTimeout(fetchVarianceData, 300); 
         setTimeout(fetchWeeklyKPIs, 500); 
+        
+        // --- ADD THESE MISSING DASHBOARD WIDGETS ---
+        setTimeout(fetchScorecardData, 600);
+        setTimeout(fetchAlertsData, 650);
+        setTimeout(fetchMasterDistrictDashboard, 680);
+        // -------------------------------------------
+
         setTimeout(fetchKPIData, 700); 
         setTimeout(fetchRecordsData, 800);
         setTimeout(fetchDmGoalsData, 1000);
         setTimeout(fetchAndRenderEmployeeGoals, 1100);
         setTimeout(fetchAndRenderEmployeeKPIs, 1200);
         
+        // --- ADD THE COMMENT POPUP CHECK HERE TOO ---
+        setTimeout(fetchAndDisplayStoreComment, 1500);
+        // --------------------------------------------
+
         if (typeof preloadAllStores === 'function') setTimeout(preloadAllStores, 4000); 
         if (typeof initListingGoals === 'function') setTimeout(initListingGoals, 200);
     };
@@ -4547,4 +4565,183 @@ function submitNewScorecard() {
         btn.innerText = "Save Scorecard";
         btn.disabled = false;
     });
+}
+
+// --- STORE COMMENTS LOGIC ---
+
+// Opens the modal normally from the Speeks Tools menu (Fully Unlocked)
+function toggleSendCommentModal() {
+    openCEOStoreComment(null); 
+}
+
+// Opens the modal from the CEO Rings and locks it to the specific store
+window.openCEOStoreComment = function(targetStore) {
+    closeAllModals();
+    const dropdown = document.getElementById('sendCommentModal');
+    
+    if (dropdown) {
+        dropdown.classList.add('show');
+        lockAndBlurScreen();
+        
+        // Clear previous message
+        document.getElementById('commentMessageInput').value = '';
+        
+        const storeSelect = document.getElementById('commentStoreSelect');
+        if (storeSelect) {
+            if (targetStore) {
+                // Lock it to the specific store clicked
+                storeSelect.value = targetStore;
+                storeSelect.disabled = true;
+                storeSelect.style.opacity = '0.6';
+                storeSelect.style.cursor = 'not-allowed';
+            } else {
+                // Unlock it for general use via the Speeks Tools menu
+                storeSelect.value = 'ALL';
+                storeSelect.disabled = false;
+                storeSelect.style.opacity = '1';
+                storeSelect.style.cursor = 'pointer';
+            }
+        }
+    }
+};
+
+async function submitStoreComment() {
+    const store = document.getElementById('commentStoreSelect').value;
+    const message = document.getElementById('commentMessageInput').value.trim();
+    const btn = document.getElementById('sendCommentBtn');
+
+    if (!message) {
+        alert("Please write a message before sending.");
+        return;
+    }
+
+    btn.innerText = "Sending...";
+    btn.style.opacity = "0.7";
+
+    const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
+    const author = sessionStorage.getItem('speeksUserName') || 'Executive Team';
+
+    const payload = {
+        date: todayStr,
+        store: store,
+        author: author,
+        message: message
+    };
+
+    try {
+        await fetch(STORE_COMMENT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(payload)
+        });
+        
+        alert("Success! The message is live for " + store);
+        closeAllModals();
+    } catch (e) {
+        alert("Failed to send the message.");
+    } finally {
+        btn.innerText = "Send Message";
+        btn.style.opacity = "1";
+    }
+}
+
+// Helper to close the bubble and mark it as seen
+window.closeDailyCommentBubble = function() {
+    const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
+    sessionStorage.setItem(`speeksCommentSeen_${todayStr}`, 'true');
+    const bubble = document.getElementById('dailyMessageBubble');
+    if (bubble) bubble.style.display = 'none';
+};
+
+async function fetchAndDisplayStoreComment() {
+    const userStore = String(sessionStorage.getItem('speeksUserStore') || 'OVL').trim().toUpperCase();
+    const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
+    const sessionKey = `speeksCommentSeen_${todayStr}`;
+
+    console.log("Checking for store comments. Target Store:", userStore, "| Target Date:", todayStr);
+
+    if (sessionStorage.getItem(sessionKey)) {
+        console.log("User already dismissed the message today. Aborting.");
+        return;
+    }
+
+    try {
+        const res = await fetch(`${STORE_COMMENT_URL}?v=${Date.now()}`);
+        const comments = await res.json();
+        
+        const todayComments = comments.filter(c => {
+            const cStore = String(c.store || '').trim().toUpperCase();
+            let rawDateStr = String(c.date || '').trim();
+            let parsedDateStr = "";
+            
+            try {
+                const parsed = new Date(c.date);
+                if (!isNaN(parsed.getTime())) {
+                    parsedDateStr = parsed.toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
+                }
+            } catch(e) {}
+
+            const isToday = (parsedDateStr === todayStr || rawDateStr.includes(todayStr));
+            const isForMe = (cStore === userStore || cStore === 'ALL' || cStore === 'CORP');
+
+            return isToday && isForMe;
+        }).reverse(); // Newest first
+
+        if (todayComments.length > 0) {
+            const bubble = document.getElementById('dailyMessageBubble');
+            const textEl = document.getElementById('dailyMessageBubbleText');
+            const iconEl = document.getElementById('dailyMessageBubbleIcon');
+            
+            if (bubble && textEl && iconEl) {
+                // Hide the single main icon since we will put specific icons on each message line
+                iconEl.style.display = 'none';
+                
+                // Reformat the text container to allow stacking and text-wrapping
+                textEl.style.whiteSpace = 'normal';
+                textEl.style.display = 'flex';
+                textEl.style.flexDirection = 'column';
+                textEl.style.gap = '8px'; // Space between multiple messages
+                textEl.style.padding = '4px 0';
+                textEl.style.maxHeight = '150px'; // Prevent it from taking over the screen if there are 10 messages
+                textEl.style.overflowY = 'auto'; // Add a scrollbar inside the bubble if needed
+                
+                // Align the bubble items to the top so the "X" button stays neatly at the top right
+                bubble.style.alignItems = 'flex-start';
+                const closeBtn = bubble.querySelector('button');
+                if (closeBtn) closeBtn.style.marginTop = '4px';
+
+                // Build the HTML for ALL messages today
+                let messagesHtml = '';
+                todayComments.forEach(msg => {
+                    const authorName = msg.author || 'Executive Team';
+                    
+                    let emoji = '📣';
+                    if (authorName.toLowerCase().includes('ethan'));
+                    else if (authorName.toLowerCase().includes('paul'));
+                    
+                    messagesHtml += `
+                        <div style="display: flex; align-items: flex-start; gap: 8px; line-height: 1.4;">
+                            <span style="font-size: 15px; flex-shrink: 0; margin-top: -2px;">${emoji}</span>
+                            <span><strong style="color: #fef3c7;">${authorName}:</strong> <span style="opacity: 0.95;">${msg.message}</span></span>
+                        </div>
+                    `;
+                });
+
+                textEl.innerHTML = messagesHtml;
+                
+                console.log("Injecting multi-message bubble into the UI...");
+                
+                setTimeout(() => {
+                    bubble.style.display = 'flex';
+                    bubble.animate([
+                        { transform: 'scale(0.9) translateX(10px)', opacity: 0 },
+                        { transform: 'scale(1) translateX(0)', opacity: 1 }
+                    ], { duration: 400, easing: 'cubic-bezier(0.4, 0, 0.2, 1)' });
+                }, 1500); 
+            }
+        }
+    } catch (e) {
+        console.error("Failed to fetch store comments. Error:", e);
+    }
 }
