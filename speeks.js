@@ -3558,6 +3558,7 @@ function initDashboardData() {
 
         setTimeout(fetchKPIData, 700); 
         setTimeout(fetchRecordsData, 800);
+        setTimeout(fetchChampions, 850);
         setTimeout(fetchDmGoalsData, 1000);
         setTimeout(fetchAndRenderEmployeeGoals, 1100);
         setTimeout(fetchAndRenderEmployeeKPIs, 1200);
@@ -3753,6 +3754,7 @@ document.addEventListener('click', async (e) => {
                     if (typeof fetchMasterDistrictDashboard === 'function') fetchMasterDistrictDashboard();
                     if (typeof fetchDistrictMonthlyKPIs === 'function') fetchDistrictMonthlyKPIs();
                     if (document.getElementById('pane-records') && typeof fetchRecordsData === 'function') fetchRecordsData();
+                    if (document.getElementById('listing-champions-body') && typeof fetchChampions === 'function') fetchChampions();
                 }, 100);
             }
 
@@ -4743,5 +4745,159 @@ async function fetchAndDisplayStoreComment() {
         }
     } catch (e) {
         console.error("Failed to fetch store comments. Error:", e);
+    }
+}
+
+// --- 14.5. MODULE: WEEKLY CHAMPIONS (LISTERS & BUYERS) ---
+async function fetchChampions() {
+    const listerBody = document.getElementById('lister-champions-body');
+    const buyerBody = document.getElementById('buyer-champions-body');
+    const lDate = document.getElementById('lister-champions-date');
+    const bDate = document.getElementById('buyer-champions-date');
+    if (!listerBody || !buyerBody) return;
+
+    try {
+        const stores = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
+        let allListers = [];
+        let allBuyers = [];
+
+        // 1. Calculate "Week Of" based on the previous Monday
+        const now = new Date();
+        const day = now.getDay();
+        const diffToMonday = day === 0 ? -6 : 1 - day;
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() + diffToMonday);
+        const weekText = "Week of " + startOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        
+        if (lDate) lDate.innerText = weekText;
+        if (bDate) bDate.innerText = weekText;
+
+        // 2. User Directory matching (Gets Full Names)
+        let authCache = {};
+        try { authCache = JSON.parse(localStorage.getItem('speeksAuthCache')) || {}; } catch(e){}
+        const users = authCache.users || [];
+        const getFullName = (shortName) => {
+            const s = String(shortName).toLowerCase().trim();
+            const matched = users.find(u => {
+                const full = String(u.name).toLowerCase().trim();
+                return full === s || full.split(' ')[0] === s || full.startsWith(s);
+            });
+            return matched ? matched.name : shortName; 
+        };
+
+        // 3. FETCH LISTERS
+        const listerFetches = stores.map(s => fetch(`${WEEKLY_KPI_URL}?store=${s}&time=4-Week&v=${Date.now()}`).then(r => r.json()));
+        const listerResults = await Promise.all(listerFetches);
+
+        listerResults.forEach((d, storeIdx) => {
+            let sIdx = d.findLastIndex(r => String(r[0]).trim().toLowerCase() === "store" || String(r[0]).trim().toLowerCase() === "store total");
+            if (sIdx !== -1) {
+                for (let i = Math.max(0, sIdx - 6); i <= Math.min(d.length - 1, sIdx + 6); i++) {
+                    if (i === sIdx) continue;
+                    let n = String(d[i][0]).trim();
+                    let lN = n.toLowerCase();
+                    if (n && !["name", "employee", "store", "store total", "ovl", "lee", "wsp", "mpl", "bal"].includes(lN) && !lN.includes("average") && !lN.includes("week")) {
+                        let listed = parseNum(d[i][20]); 
+                        if (listed > 0) {
+                            allListers.push({ name: getFullName(n), store: stores[storeIdx], listed: listed });
+                        }
+                    }
+                }
+            }
+        });
+
+        // 4. FETCH BUYERS
+        try {
+            const buyerData = await fetch(`${WEEKLY_KPI_URL}?store=Weekly&time=Scores&v=${Date.now()}`).then(r => r.json());
+            let currentStore = "Store";
+            
+            buyerData.forEach(row => {
+                if (row.length >= 11) {
+                    let colB = String(row[1]).trim(); 
+                    
+                    if (colB.toUpperCase().includes("TEAM")) {
+                        currentStore = colB.split(' ')[0]; 
+                    }
+
+                    let empName = String(row[2]).trim(); 
+                    let finalScore = parseFloat(row[9]); 
+                    let grade = String(row[10]).trim(); 
+
+                    let isWeek4 = colB.toLowerCase().replace(/\s/g, '') === "week4";
+                    
+                    if (isWeek4 && empName && empName !== "Employee" && !isNaN(finalScore)) {
+                        allBuyers.push({
+                            name: getFullName(empName),
+                            store: currentStore,
+                            score: finalScore,
+                            grade: grade
+                        });
+                    }
+                }
+            });
+        } catch (buyerErr) {
+            console.error("Failed to fetch Weekly Scores:", buyerErr);
+        }
+
+        // 5. BUILDER HELPER
+        const buildPodiumHtml = (dataArray, sortBy, labelText, type) => {
+            const merged = {};
+            dataArray.forEach(emp => {
+                if (!merged[emp.name]) merged[emp.name] = { ...emp };
+                else if (type === 'lister') merged[emp.name].listed += emp.listed; 
+            });
+            
+            const uniqueEmps = Object.values(merged);
+            uniqueEmps.sort((a, b) => b[sortBy] - a[sortBy]);
+            const top3 = uniqueEmps.slice(0, 3);
+
+            if (top3.length === 0) return '<div style="color: #888; font-weight: 600; text-align: center; width: 100%;">No data available yet.</div>';
+
+            const podiumTheme = ['#e2e8f0', '#fef08a', '#fed7aa']; 
+
+            const podiumOrder = [
+                { data: top3[1], place: 2, height: '140px', color: podiumTheme[0], medal: '🥈' },
+                { data: top3[0], place: 1, height: '200px', color: podiumTheme[1], medal: '🥇' },
+                { data: top3[2], place: 3, height: '100px', color: podiumTheme[2], medal: '🥉' }
+            ];
+
+            let html = '';
+            podiumOrder.forEach(podium => {
+                if (!podium.data) return; 
+                const emp = podium.data;
+                const isFirst = podium.place === 1;
+                const displayVal = type === 'lister' ? emp.listed : emp.score.toFixed(1);
+                
+                // Just use the label ("Items" or "Score") directly, removing the grade text
+                const subVal = labelText;
+
+                html += `
+                <div style="display: flex; flex-direction: column; align-items: center; width: 130px; margin: 0 5px;">
+                    <div style="margin-bottom: 12px; text-align: center; display: flex; flex-direction: column; align-items: center; z-index: 2;">
+                        <div style="font-size: ${isFirst ? '46px' : '34px'}; line-height: 1; margin-bottom: 8px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));">${podium.medal}</div>
+                        <div style="font-size: ${isFirst ? '14px' : '12px'}; font-weight: 900; color: var(--slate-charcoal); line-height: 1.2; text-align: center;">${emp.name}</div>
+                        <div style="font-size: 10px; font-weight: 800; color: #888; text-transform: uppercase; margin-top: 4px;">${emp.store}</div>
+                    </div>
+                    
+                    <div style="width: 100%; height: ${podium.height}; background: linear-gradient(to bottom, ${podium.color}, #ffffff); border: 1px solid rgba(0,0,0,0.05); border-bottom: none; border-radius: 12px 12px 0 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 15px; position: relative; overflow: hidden;">
+                        
+                        <div style="z-index: 2; display: flex; flex-direction: column; align-items: center;">
+                            <span style="font-size: ${isFirst ? '32px' : '26px'}; font-weight: 900; color: var(--slate-charcoal); line-height: 1;">${displayVal}</span>
+                            <span style="font-size: 9px; font-weight: 900; color: #64748b; text-transform: uppercase; margin-top: 4px;">${subVal}</span>
+                        </div>
+                        
+                        <span style="position: absolute; bottom: -12px; font-size: 60px; font-weight: 900; color: #000000; opacity: 0.12; line-height: 1; user-select: none; z-index: 1;">${podium.place}</span>
+                    </div>
+                </div>`;
+            });
+            return html;
+        };
+
+        listerBody.innerHTML = buildPodiumHtml(allListers, 'listed', 'Items', 'lister');
+        buyerBody.innerHTML = buildPodiumHtml(allBuyers, 'score', 'Score', 'buyer');
+
+    } catch (e) {
+        listerBody.innerHTML = '<div style="color: var(--red-alert); font-weight: bold;">Failed to load Champions.</div>';
+        buyerBody.innerHTML = '<div style="color: var(--red-alert); font-weight: bold;">Failed to load Champions.</div>';
     }
 }
