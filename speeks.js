@@ -1778,29 +1778,51 @@ async function toggleManageRecords() {
     }
 }
 
-function populateRecordsModal() {
-    const list = document.getElementById('manageRecordsList');
+function populateAlertsModal() {
+    const list = document.getElementById('manageAlertsList');
+    const STORES = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
     
-    if (!recordsCache || recordsCache.length === 0) {
-        list.innerHTML = '<div class="status-message">No records found.</div>';
-        return;
-    }
+    // Explicit conversion logic: Decimal to Percentage
+    const fmtInput = (val) => {
+        if (val === null || val === undefined || String(val).trim() === '') return '';
+        let str = String(val).trim();
+        if (str.includes('%')) {
+            return parseFloat(str.replace(/[^0-9.-]/g, '')).toFixed(2);
+        }
+        let num = parseFloat(str.replace(/[^0-9.-]/g, ''));
+        if (isNaN(num)) return str;
+        return (num * 100).toFixed(2);
+    };
 
     let html = '';
-    const stores = [...new Set(recordsCache.map(r => r.section))];
 
-    stores.forEach(store => {
-        html += `<div style="font-weight: 900; color: var(--slate-charcoal); font-size: 14px; margin-top: 15px; border-bottom: 2px solid #eee; padding-bottom: 5px; text-transform: uppercase;">${store} RECORDS</div>`;
+    STORES.forEach(storeName => {
+        let sData = globalAlertsData.find(s => s.store.toUpperCase() === storeName) || { 
+            store: storeName, currentHigh: '', currentVeryHigh: '', projectedHigh: '', projectedVeryHigh: '',
+            defectRate: '', lateShipment: '', casesClosed: '', tracking: '' 
+        };
         
-        const storeRecords = recordsCache.filter(r => r.section === store);
-        storeRecords.forEach(r => {
-            html += `
-            <div class="record-manage-row" data-store="${r.section}" data-label="${r.label}" style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; align-items: center; background: #fff; padding: 12px; border-radius: 8px; border: 1px solid var(--gen-border); margin-top: 8px;">
-                <div style="font-size: 13px; font-weight: 700; color: var(--slate-charcoal);">${r.label}</div>
-                <input type="text" class="r-val" placeholder="Value" value="${r.value || ''}" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none; transition: 0.2s;" onfocus="this.style.borderColor='var(--sage-professional)'" onblur="this.style.borderColor='#ddd'">
-                <input type="text" class="r-date" placeholder="Date" value="${r.subtext || ''}" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none; transition: 0.2s;" onfocus="this.style.borderColor='var(--sage-professional)'" onblur="this.style.borderColor='#ddd'">
-            </div>`;
-        });
+        html += `
+            <div class="alert-manage-row" data-store="${storeName}" style="background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 15px;">
+                <div style="font-weight: 900; color: var(--slate-charcoal); font-size: 14px; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">${storeName}</div>
+                
+                <div style="font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase; margin-bottom: 6px;">Return Rates</div>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 15px;">
+                    <input type="text" class="a-ch" placeholder="Cur. High" title="Current High" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${sData.currentHigh || ''}">
+                    <input type="text" class="a-cvh" placeholder="Cur. Very High" title="Current Very High" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${sData.currentVeryHigh || ''}">
+                    <input type="text" class="a-ph" placeholder="Proj. High" title="Projected High" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${sData.projectedHigh || ''}">
+                    <input type="text" class="a-pvh" placeholder="Proj. Very High" title="Projected Very High" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${sData.projectedVeryHigh || ''}">
+                </div>
+
+                <div style="font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase; margin-bottom: 6px;">Service Metrics (%)</div>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+                    <input type="text" class="a-dr" placeholder="Defect Rate" title="Transaction Defect Rate" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${fmtInput(sData.defectRate)}">
+                    <input type="text" class="a-ls" placeholder="Late Shipment" title="Late Shipment Rate" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${fmtInput(sData.lateShipment)}">
+                    <input type="text" class="a-cc" placeholder="Cases Closed" title="Cases Closed w/o Resolution" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${fmtInput(sData.casesClosed)}">
+                    <input type="text" class="a-tr" placeholder="Tracking" title="Tracking Uploaded" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${fmtInput(sData.tracking)}">
+                </div>
+            </div>
+        `;
     });
 
     list.innerHTML = html;
@@ -2232,49 +2254,114 @@ async function fetchAlertsData() {
         const storeData = json.data.find(item => String(item.store).toUpperCase() === targetStore.toUpperCase());
         if (!storeData) return;
 
-        const buildAlertCard = (title, value, severity) => {
+        const formatPercent = (val) => {
+            if (!val || String(val).trim() === '') return '';
+            let str = String(val).trim();
+            if (str.endsWith('%')) return str;
+            let num = parseFloat(str.replace(/[^0-9.-]/g, ''));
+            if (isNaN(num)) return str; 
+            return (num * 100).toFixed(2) + '%';
+        };
+
+        // NEW: Dynamic Severity Calculator for eBay Top Rated Thresholds
+        const getSeverity = (type, rawVal) => {
+            if (!rawVal || String(rawVal).trim() === '') return 'clear';
+            let str = String(rawVal).trim();
+            
+            let num = parseFloat(str.replace(/[^0-9.-]/g, ''));
+            if (isNaN(num)) return 'clear';
+
+            // Convert raw sheet decimal to percentage for accurate logic comparison
+            let valToCheck = str.endsWith('%') ? num : num * 100;
+
+            if (type === 'defectRate') {
+                if (valToCheck >= 0.5) return 'very-high'; // Red
+                if (valToCheck >= 0.25) return 'high';     // Yellow
+                return 'clear';                            // Green
+            }
+            if (type === 'lateShipment') {
+                if (valToCheck >= 3.0) return 'very-high';
+                if (valToCheck >= 1.5) return 'high';
+                return 'clear';
+            }
+            if (type === 'casesClosed') {
+                if (valToCheck >= 0.3) return 'very-high';
+                if (valToCheck >= 0.15) return 'high';
+                return 'clear';
+            }
+            if (type === 'tracking') {
+                if (valToCheck <= 95.0) return 'very-high';
+                if (valToCheck <= 97.5) return 'high';
+                return 'clear';
+            }
+            return 'clear';
+        };
+
+        const buildMiniAlertCard = (title, rawValue, severity, isPercent) => {
+            // Default styling is Green ("clear")
             let bgColor = '#d1fae5';
             let textColor = '#065f46'; 
             let displayText = 'All Clear';
             let pulseHtml = '';
+            
+            if (rawValue !== '') {
+                if (isPercent) {
+                    displayText = formatPercent(rawValue);
+                } else {
+                    if (String(rawValue).includes(',')) {
+                        displayText = String(rawValue).split(',').map(s => 
+                            `<span style="display:block; padding: 2px 0;">${s.trim()}</span>`
+                        ).join('<div style="height:1px; background:rgba(0,0,0,0.1); margin: 3px 0;"></div>');
+                    } else {
+                        displayText = rawValue;
+                    }
+                }
 
-            if (value !== '') {
-                displayText = value;
                 if (severity === 'high') {
                     bgColor = '#fef3c7'; 
                     textColor = '#92400e';
                 } else if (severity === 'very-high') {
                     bgColor = '#fee2e2';
                     textColor = '#991b1b';
-                    pulseHtml = '<div class="notif-dot active" style="display:block; position:absolute; top:-4px; right:-4px; width:12px; height:12px; border-width: 2px; z-index: 5;"></div>';
+                    pulseHtml = '<div class="notif-dot active" style="display:block; position:absolute; top:-3px; right:-3px; width:8px; height:8px; border-width: 1px; z-index: 5;"></div>';
                 }
             }
 
             return `
-            <div style="position: relative; background: #f9fafb; padding: 12px 15px; border-radius: 8px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); flex: 1; min-height: 65px; box-sizing: border-box;">
+            <div style="position: relative; background: #fff; padding: 8px 12px; border-radius: 8px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.02); height: 100%; box-sizing: border-box;">
                 ${pulseHtml}
-                <div style="font-size: 10px; font-weight: 800; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 15px; flex-shrink: 0;">${title}</div>
-                <div style="display: flex; flex-direction: column; align-items: flex-end; flex-grow: 1; width: 60%;">
-                    <div style="font-size: 11px; font-weight: 900; color: ${textColor}; background-color: ${bgColor}; padding: 4px 10px; border-radius: 6px; width: 100%; height: 46px; display: flex; align-items: center; justify-content: center; text-align: center; line-height: 1.2; box-sizing: border-box;">
-                        ${displayText}
-                    </div>
+                <div style="font-size: 9px; font-weight: 800; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 10px; flex-shrink: 0;">${title}</div>
+                <div style="font-size: 10px; font-weight: 900; color: ${textColor}; background-color: ${bgColor}; padding: 4px 8px; border-radius: 6px; text-align: right; line-height: 1.3;">
+                    ${displayText}
                 </div>
             </div>`;
         };
 
         container.innerHTML = `
-        <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 15px; align-items: stretch; width: 100%; height: 100%;">
-            <div style="display: flex; flex-direction: column; gap: 8px; justify-content: space-between; height: 100%;">
-                <div style="font-size: 10px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 1px; padding-left: 5px;">Current Issues</div>
-                ${buildAlertCard('High', storeData.currentHigh, 'high')}
-                ${buildAlertCard('Very High', storeData.currentVeryHigh, 'very-high')}
+        <div style="display: flex; flex-direction: column; gap: 15px; width: 100%;">
+            
+            <div>
+                <div style="font-size: 10px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Return Rates</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    ${buildMiniAlertCard('Current High', storeData.currentHigh, 'high', false)}
+                    ${buildMiniAlertCard('Current Very High', storeData.currentVeryHigh, 'very-high', false)}
+                    ${buildMiniAlertCard('Projected High', storeData.projectedHigh, 'high', false)}
+                    ${buildMiniAlertCard('Projected Very High', storeData.projectedVeryHigh, 'very-high', false)}
+                </div>
             </div>
-            <div style="width: 2px; background: repeating-linear-gradient(to bottom, #e2e8f0, #e2e8f0 6px, transparent 6px, transparent 12px); margin: 20px 0 0 0;"></div>
-            <div style="display: flex; flex-direction: column; gap: 8px; justify-content: space-between; height: 100%;">
-                <div style="font-size: 10px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 1px; padding-left: 5px;">Projected Issues</div>
-                ${buildAlertCard('High', storeData.projectedHigh, 'high')}
-                ${buildAlertCard('Very High', storeData.projectedVeryHigh, 'very-high')}
+
+            <div style="height: 1px; background: #e2e8f0; width: 100%;"></div>
+            
+            <div>
+                <div style="font-size: 10px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Service Metrics</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    ${buildMiniAlertCard('Defect Rate', storeData.defectRate, getSeverity('defectRate', storeData.defectRate), true)}
+                    ${buildMiniAlertCard('Late Shipment', storeData.lateShipment, getSeverity('lateShipment', storeData.lateShipment), true)}
+                    ${buildMiniAlertCard('Cases Closed', storeData.casesClosed, getSeverity('casesClosed', storeData.casesClosed), true)}
+                    ${buildMiniAlertCard('Tracking', storeData.tracking, getSeverity('tracking', storeData.tracking), true)}
+                </div>
             </div>
+
         </div>`;
     } catch (error) {
         console.error('Error fetching alerts:', error);
@@ -4303,25 +4390,47 @@ function populateAlertsModal() {
     const list = document.getElementById('manageAlertsList');
     const STORES = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
     
-    let html = `
-        <div style="display: grid; grid-template-columns: 60px 1fr 1fr 1fr 1fr; gap: 10px; padding-bottom: 10px; border-bottom: 2px solid #eee; margin-bottom: 10px;">
-            <div style="font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase;">Store</div>
-            <div style="font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase;">Current High</div>
-            <div style="font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase;">Current Very High</div>
-            <div style="font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase;">Projected High</div>
-            <div style="font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase;">Proj. Very High</div>
-        </div>
-    `;
+    const fmtInput = (val) => {
+        if (val === null || val === undefined || String(val).trim() === '') return '';
+        let str = String(val).trim();
+        
+        if (isNaN(parseFloat(str))) return str;
+        
+        if (str.includes('%')) {
+            return parseFloat(str.replace(/[^0-9.-]/g, '')).toFixed(2);
+        }
+        
+        let num = parseFloat(str.replace(/[^0-9.-]/g, ''));
+        return (num * 100).toFixed(2);
+    };
+
+    let html = '';
 
     STORES.forEach(storeName => {
-        let sData = globalAlertsData.find(s => s.store.toUpperCase() === storeName) || { store: storeName, currentHigh: '', currentVeryHigh: '', projectedHigh: '', projectedVeryHigh: '' };
+        let sData = globalAlertsData.find(s => s.store.toUpperCase() === storeName) || { 
+            store: storeName, currentHigh: '', currentVeryHigh: '', projectedHigh: '', projectedVeryHigh: '',
+            defectRate: '', lateShipment: '', casesClosed: '', tracking: '' 
+        };
+        
         html += `
-            <div class="alert-manage-row" data-store="${storeName}" style="display: grid; grid-template-columns: 60px 1fr 1fr 1fr 1fr; gap: 10px; align-items: center; margin-bottom: 10px;">
-                <div style="font-weight: 900; color: var(--slate-charcoal); font-size: 14px;">${storeName}</div>
-                <input type="text" class="a-ch" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${sData.currentHigh || ''}">
-                <input type="text" class="a-cvh" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${sData.currentVeryHigh || ''}">
-                <input type="text" class="a-ph" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${sData.projectedHigh || ''}">
-                <input type="text" class="a-pvh" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${sData.projectedVeryHigh || ''}">
+            <div class="alert-manage-row" data-store="${storeName}" style="background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 15px;">
+                <div style="font-weight: 900; color: var(--slate-charcoal); font-size: 14px; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">${storeName}</div>
+                
+                <div style="font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase; margin-bottom: 6px;">Return Rates</div>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 15px;">
+                    <input type="text" class="a-ch" placeholder="Current High" title="Current High" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${sData.currentHigh || ''}">
+                    <input type="text" class="a-cvh" placeholder="Current Very High" title="Current Very High" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${sData.currentVeryHigh || ''}">
+                    <input type="text" class="a-ph" placeholder="Projected High" title="Projected High" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${sData.projectedHigh || ''}">
+                    <input type="text" class="a-pvh" placeholder="Projected Very High" title="Projected Very High" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${sData.projectedVeryHigh || ''}">
+                </div>
+
+                <div style="font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase; margin-bottom: 6px;">Service Metrics (%)</div>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+                    <input type="text" class="a-dr" placeholder="Defect Rate" title="Transaction Defect Rate" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${fmtInput(sData.defectRate)}">
+                    <input type="text" class="a-ls" placeholder="Late Shipment" title="Late Shipment Rate" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${fmtInput(sData.lateShipment)}">
+                    <input type="text" class="a-cc" placeholder="Cases Closed" title="Cases Closed w/o Resolution" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${fmtInput(sData.casesClosed)}">
+                    <input type="text" class="a-tr" placeholder="Tracking" title="Tracking Uploaded" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${fmtInput(sData.tracking)}">
+                </div>
             </div>
         `;
     });
@@ -4333,6 +4442,22 @@ async function saveAlertsData() {
     const btn = document.getElementById('saveAlertsBtn');
     btn.textContent = "Saving...";
     btn.style.opacity = "0.7";
+    btn.style.pointerEvents = "none"; 
+
+    // Takes your input (e.g. 99.12) and appends "%" for Google Sheets
+    const formatForSheet = (val) => {
+        if (!val || String(val).trim() === '') return '';
+        let str = String(val).trim();
+        
+        // If they typed text like "N/A" or "All Clear", leave it alone
+        if (isNaN(parseFloat(str))) return str;
+        
+        // Strip any accidental % signs the user typed
+        let num = parseFloat(str.replace(/[^0-9.-]/g, ''));
+        
+        // Send back exactly what they typed + "%". e.g. "99.12" -> "99.12%"
+        return num + '%'; 
+    };
 
     const updatedAlerts = [];
     document.querySelectorAll('.alert-manage-row').forEach(row => {
@@ -4341,31 +4466,34 @@ async function saveAlertsData() {
             currentHigh: row.querySelector('.a-ch').value.trim(),
             currentVeryHigh: row.querySelector('.a-cvh').value.trim(),
             projectedHigh: row.querySelector('.a-ph').value.trim(),
-            projectedVeryHigh: row.querySelector('.a-pvh').value.trim()
+            projectedVeryHigh: row.querySelector('.a-pvh').value.trim(),
+            defectRate: formatForSheet(row.querySelector('.a-dr').value),
+            lateShipment: formatForSheet(row.querySelector('.a-ls').value),
+            casesClosed: formatForSheet(row.querySelector('.a-cc').value),
+            tracking: formatForSheet(row.querySelector('.a-tr').value)
         });
     });
 
     try {
-        const res = await fetch(EBAY_ALERTS_URL, {
+        await fetch(EBAY_ALERTS_URL, {
             method: 'POST',
+            mode: 'no-cors', 
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify({ data: updatedAlerts }) 
         });
 
-        if (res.ok) {
-            alert("eBay Performance Metrics successfully updated!");
-            closeAllModals();
-            if (typeof fetchAlertsData === 'function') fetchAlertsData(); 
-            if (typeof fetchMasterDistrictDashboard === 'function') fetchMasterDistrictDashboard();
-        } else {
-            alert("Error saving metrics.");
-        }
+        alert("eBay Performance Metrics successfully updated!");
+        closeAllModals();
+        if (typeof fetchAlertsData === 'function') fetchAlertsData(); 
+        if (typeof fetchMasterDistrictDashboard === 'function') fetchMasterDistrictDashboard();
+        
     } catch (e) {
         console.error(e);
         alert("Failed to connect to server.");
     } finally {
         btn.textContent = "Save Changes";
         btn.style.opacity = "1";
+        btn.style.pointerEvents = "auto";
     }
 }
 
