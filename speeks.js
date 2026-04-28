@@ -1892,11 +1892,13 @@ function switchQMTab(tab) {
     const btnCommon = document.getElementById('qm-tab-common');
     const btnNoDeals = document.getElementById('qm-tab-nodeals');
     const btnReviews = document.getElementById('qm-tab-reviews');
+    const btnNetworking = document.getElementById('qm-tab-networking');
     
     if (btnCommon && btnNoDeals && btnReviews) {
         btnCommon.classList.toggle('active', tab === 'common');
         btnNoDeals.classList.toggle('active', tab === 'nodeals');
         btnReviews.classList.toggle('active', tab === 'reviews');
+        if (btnNetworking) btnNetworking.classList.toggle('active', tab === 'networking');
     }
     
     renderQMTab(tab);
@@ -1909,6 +1911,7 @@ function renderQMTab(tab) {
     let rawData = quickMsgCache.common;
     if (tab === 'nodeals') rawData = quickMsgCache.noDeals;
     if (tab === 'reviews') rawData = quickMsgCache.reviews;
+    if (tab === 'networking') rawData = quickMsgCache.networking;
     
     let userStore = sessionStorage.getItem('speeksUserStore') || 'OVL';
     if (userStore === 'ALL') userStore = 'CORP';
@@ -1922,7 +1925,9 @@ function renderQMTab(tab) {
     
     rawData.forEach(row => {
         const rowStore = String(row.store || "Everyone").trim().toUpperCase();
-        if (rowStore === 'EVERYONE' || rowStore === userStore.toUpperCase()) {
+        
+        // Bypass the specific Store filter for Networking since the sheet uses "Manager" instead of a store abbreviation
+        if (tab === 'networking' || rowStore === 'EVERYONE' || rowStore === userStore.toUpperCase()) {
             const category = row.category;
             if (!groupedData[category]) groupedData[category] = [];
             groupedData[category].push(row);
@@ -1958,7 +1963,7 @@ function renderQMTab(tab) {
                 </div>
             </div>`;
         }
-    } else if (tab === 'nodeals') {
+    } else if (tab === 'nodeals' || tab === 'networking') { // Grouping both to use the flat styling
         html += '<div class="qm-category-items open" style="margin-left: 0; padding-left: 0; border: none; background: transparent;">';
         for (const [category, items] of Object.entries(groupedData)) {
             html += items.map(item => `
