@@ -4811,26 +4811,39 @@ async function fetchChampions() {
             const buyerData = await fetch(`${WEEKLY_KPI_URL}?store=Weekly&time=Scores&v=${Date.now()}`).then(r => r.json());
             let currentStore = "Store";
             
-            buyerData.forEach(row => {
-                if (row.length >= 11) {
-                    let colB = String(row[1]).trim(); 
-                    
-                    if (colB.toUpperCase().includes("TEAM")) {
-                        currentStore = colB.split(' ')[0]; 
-                    }
+            buyerData.forEach((row, index) => {
+                let colA = String(row[0] || "").trim(); // Column A
+                let colB = String(row[1] || "").trim(); // Column B
+                let colC = String(row[2] || "").trim(); // Column C
+                
+                // Track which store's section we are in
+                if (colA.toUpperCase().includes("TEAM")) currentStore = colA.split(' ')[0]; 
+                if (colB.toUpperCase().includes("TEAM")) currentStore = colB.split(' ')[0]; 
 
-                    let empName = String(row[2]).trim(); 
-                    let finalScore = parseFloat(row[9]); 
-                    let grade = String(row[10]).trim(); 
+                let empName = colC; 
+                if (!empName) empName = colB; // Fallback to col B just in case
 
-                    let isWeek4 = colB.toLowerCase().replace(/\s/g, '') === "week4";
-                    
-                    if (isWeek4 && empName && empName !== "Employee" && !isNaN(finalScore)) {
+                // parseNum automatically strips commas. If undefined, defaults to 0.
+                let finalScore = parseNum(row[7]) || 0; // Column H (Index 7)
+
+                let isWeek4 = colA.toLowerCase().replace(/\s/g, '') === "week4" || colB.toLowerCase().replace(/\s/g, '') === "week4";
+                
+                // Hardcoded row fallback (1-indexed for human readability)
+                let rowIndex = index + 1;
+                let isHardcodedWeek4Row = 
+                    (rowIndex >= 19 && rowIndex <= 22) || // OVL
+                    (rowIndex >= 38 && rowIndex <= 40) || // LEE
+                    (rowIndex >= 59 && rowIndex <= 62) || // WSP
+                    (rowIndex >= 78 && rowIndex <= 80) || // MPL
+                    (rowIndex >= 96 && rowIndex <= 98);   // BAL
+                
+                if (isWeek4 || isHardcodedWeek4Row) {
+                    let cleanName = empName.toLowerCase();
+                    if (cleanName && cleanName !== "employee" && cleanName !== "name" && !cleanName.includes("week") && !cleanName.includes("team")) {
                         allBuyers.push({
                             name: getFullName(empName),
                             store: currentStore,
-                            score: finalScore,
-                            grade: grade
+                            score: finalScore
                         });
                     }
                 }
@@ -4844,7 +4857,10 @@ async function fetchChampions() {
             const merged = {};
             dataArray.forEach(emp => {
                 if (!merged[emp.name]) merged[emp.name] = { ...emp };
-                else if (type === 'lister') merged[emp.name].listed += emp.listed; 
+                else {
+                    if (type === 'lister') merged[emp.name].listed += emp.listed; 
+                    if (type === 'buyer') merged[emp.name].score = Math.max(merged[emp.name].score, emp.score);
+                }
             });
             
             const uniqueEmps = Object.values(merged);
@@ -4856,9 +4872,9 @@ async function fetchChampions() {
             const podiumTheme = ['#e2e8f0', '#fef08a', '#fed7aa']; 
 
             const podiumOrder = [
-                { data: top3[1], place: 2, height: '140px', color: podiumTheme[0], medal: '🥈' },
-                { data: top3[0], place: 1, height: '200px', color: podiumTheme[1], medal: '🥇' },
-                { data: top3[2], place: 3, height: '100px', color: podiumTheme[2], medal: '🥉' }
+                { data: top3[1], place: 2, height: '155px', color: podiumTheme[0], medal: '🥈' },
+                { data: top3[0], place: 1, height: '215px', color: podiumTheme[1], medal: '🥇' },
+                { data: top3[2], place: 3, height: '115px', color: podiumTheme[2], medal: '🥉' }
             ];
 
             let html = '';
@@ -4866,10 +4882,16 @@ async function fetchChampions() {
                 if (!podium.data) return; 
                 const emp = podium.data;
                 const isFirst = podium.place === 1;
-                const displayVal = type === 'lister' ? emp.listed : emp.score.toFixed(1);
                 
-                // Just use the label ("Items" or "Score") directly, removing the grade text
-                const subVal = labelText;
+                // Only render the inner score/items text block if it is the Lister podium
+                let blockContent = '';
+                if (type === 'lister') {
+                    blockContent = `
+                        <div style="z-index: 2; display: flex; flex-direction: column; align-items: center;">
+                            <span style="font-size: ${isFirst ? '32px' : '26px'}; font-weight: 900; color: var(--slate-charcoal); line-height: 1;">${emp.listed}</span>
+                            <span style="font-size: 9px; font-weight: 900; color: #64748b; text-transform: uppercase; margin-top: 4px;">${labelText}</span>
+                        </div>`;
+                }
 
                 html += `
                 <div style="display: flex; flex-direction: column; align-items: center; width: 130px; margin: 0 5px;">
@@ -4881,12 +4903,9 @@ async function fetchChampions() {
                     
                     <div style="width: 100%; height: ${podium.height}; background: linear-gradient(to bottom, ${podium.color}, #ffffff); border: 1px solid rgba(0,0,0,0.05); border-bottom: none; border-radius: 12px 12px 0 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 15px; position: relative; overflow: hidden;">
                         
-                        <div style="z-index: 2; display: flex; flex-direction: column; align-items: center;">
-                            <span style="font-size: ${isFirst ? '32px' : '26px'}; font-weight: 900; color: var(--slate-charcoal); line-height: 1;">${displayVal}</span>
-                            <span style="font-size: 9px; font-weight: 900; color: #64748b; text-transform: uppercase; margin-top: 4px;">${subVal}</span>
-                        </div>
+                        ${blockContent}
                         
-                        <span style="position: absolute; bottom: -12px; font-size: 60px; font-weight: 900; color: #000000; opacity: 0.12; line-height: 1; user-select: none; z-index: 1;">${podium.place}</span>
+                        <span style="position: absolute; bottom: 8px; font-size: 42px; font-weight: 900; color: #000000; opacity: 0.12; line-height: 1; user-select: none; z-index: 1;">${podium.place}</span>
                     </div>
                 </div>`;
             });
