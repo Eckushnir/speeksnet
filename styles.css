@@ -2883,3 +2883,142 @@ canvas#leaderboardCanvas, canvas#mainKpiChart {
     50% { transform: rotate(10deg); }
     60%, 100% { transform: rotate(0deg); }
 }
+
+/* =========================================================
+   MANAGER CHECKLIST - SLIDING PANEL & TAB
+   ========================================================= */
+.checklist-side-panel {
+    position: fixed;
+    top: 90px; 
+    /* Hide the panel exactly by its width + borders so only the tab shows */
+    right: -382px; 
+    width: 380px;
+    max-width: 90vw;
+    height: calc(100vh - 110px);
+    background: white;
+    border-radius: 16px 0 0 16px;
+    box-shadow: -4px 0 25px rgba(0,0,0,0.1);
+    z-index: 9999; 
+    display: flex;
+    flex-direction: column;
+    transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid #e2e8f0;
+    border-right: none;
+    /* CRITICAL: Allows the tab to stick out the left side! */
+    overflow: visible; 
+}
+
+.checklist-side-panel.open {
+    right: 0; 
+}
+
+.checklist-pull-tab {
+    position: absolute;
+    /* Adjust this 'top' value to perfectly center it between the nav and hotbars */
+    top: 17px; 
+    
+    /* Anchors it flush against the LEFT border of the side panel */
+    right: 100%; 
+    
+    background: var(--slate-charcoal); 
+    color: white;
+    
+    /* SKINNER PADDING: Reduced the top/bottom padding from 10px to 6px */
+    padding: 6px 14px; 
+    
+    /* Squared on the right so it fuses to the panel border */
+    border-radius: 8px 0 0 8px; 
+    
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px; /* Reduced by 1px to fit the skinnier tab */
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    box-shadow: -4px 4px 10px rgba(0, 0, 0, 0.1); 
+    z-index: 9999;
+}
+
+/* Rotates the arrow so it points right (>) when the panel is open */
+.checklist-side-panel.open .cl-pull-icon { transform: rotate(180deg); }
+
+/* Internal Drawer Styling */
+.cl-panel-header {
+    padding: 20px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #fcfcfc;
+    border-radius: 16px 0 0 0;
+}
+
+.cl-panel-header h3 {
+    font-size: 15px;
+    font-weight: 900;
+    color: var(--slate-charcoal);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 15px;
+}
+
+.cl-panel-header .notif-tabs { width: 100%; display: flex; }
+.cl-panel-header .tab-btn { flex: 1; text-align: center; }
+
+.cl-panel-body {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+    background: #f9fafb;
+    overflow: hidden;
+    border-radius: 0 0 0 16px;
+}
+
+.cl-scroll-area {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding-right: 5px;
+    margin-bottom: 15px;
+}
+
+.cl-scroll-area::-webkit-scrollbar { width: 6px; }
+.cl-scroll-area::-webkit-scrollbar-track { background: transparent; }
+.cl-scroll-area::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+/* Custom Task Input */
+.cl-input-area {
+    display: flex;
+    gap: 10px;
+    background: white;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+    flex-shrink: 0;
+}
+
+.cl-input-area input {
+    flex-grow: 1;
+    border: none;
+    outline: none;
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    background: transparent;
+    color: var(--slate-charcoal);
+}
+
+.cl-add-btn { padding: 6px 12px; font-size: 11px; border-radius: 6px; }
+
+/* Checklist Items */
+.cl-item {
+    display: flex; align-items: flex-start; gap: 12px; padding: 12px;
+    background: white; border: 1px solid #e2e8f0; border-radius: 8px;
+    margin-bottom: 8px; transition: all 0.2s ease;
+}
+.cl-item:hover { border-color: #cbd5e1; box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+.cl-item.completed { opacity: 0.6; background: #f8fafc; }
+.cl-item.completed .cl-text { text-decoration: line-through; color: #94a3b8; }
+.cl-checkbox { margin-top: 2px; width: 16px; height: 16px; cursor: pointer; accent-color: var(--sage-professional); flex-shrink: 0; }
+.cl-content-wrapper { flex-grow: 1; display: flex; flex-direction: column; }
+.cl-text { font-size: 13px; font-weight: 700; color: var(--slate-charcoal); transition: color 0.2s; line-height: 1.4; }
+.cl-delete-btn { background: transparent; border: none; color: #cbd5e1; cursor: pointer; font-size: 14px; padding: 4px; transition: 0.2s; }
+.cl-delete-btn:hover { color: var(--red-alert); }

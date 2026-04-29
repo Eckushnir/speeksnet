@@ -63,7 +63,7 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
         </div>
-      <a href="#" onclick="toggleIdeaModal(); return false;" class="idea-btn action-btn" title="Have an Idea?">💡</a>
+        <a href="#" onclick="toggleIdeaModal(); return false;" class="idea-btn action-btn" title="Have an Idea?">💡</a>
       <div class="action-btn" onclick="toggleModal('quickMsgDropdown'); loadQuickMessages();" title="Quick Messages">💬</div>
       <div class="action-btn" onclick="toggleModal('hotkeysDropdown')" title="Hotkeys & Commands">🚀</div>
       <div class="action-btn" onclick="toggleCalendar()" title="Strategic Calendar">📅</div>
@@ -72,10 +72,14 @@
       </div>
     </div>
     <div class="greeting-stack">
-      <h2 id="userGreeting">Welcome!</h2>
-      <button onclick="handleSignOut()" class="sign-out-mini">Sign Out</button>
+        <h2 id="userGreeting">Welcome!</h2>
+        <button onclick="handleSignOut()" class="sign-out-mini">Sign Out</button>
+      </div>
     </div>
-  </div>
+<div class="checklist-pull-tab dynamic-module-flex role-manager role-district-manager role-ceo" onclick="toggleChecklistPanel(event); loadChecklist();">
+    <span>TASKS</span>
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="cl-pull-icon"><polyline points="6 9 12 15 18 9"></polyline></svg>
+</div>
 </header>
 
 <div class="modal-menu manage-menu" id="manageUsersDropdown">
@@ -972,6 +976,39 @@
     
     <div class="manage-footer flex-end">
         <button onclick="submitNewScorecard()" class="btn-primary" id="submitScorecardBtn">Save Scorecard</button>
+    </div>
+</div>
+
+<div id="checklistSidePanel" class="checklist-side-panel">
+    
+    <div class="checklist-pull-tab" onclick="toggleChecklistPanel(event); loadChecklist();">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="cl-pull-icon"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        <span>TASKS</span>
+    </div>
+
+    <div class="cl-panel-header">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="margin: 0;">Manager Checklist</h3>
+            <button class="modal-close-btn" onclick="toggleChecklistPanel(event)" style="width: 28px; height: 28px; font-size: 14px; background: #f1f5f9; color: #64748b;">✖</button>
+        </div>
+        
+        <div class="notif-tabs">
+            <button id="cl-tab-daily" class="tab-btn active" onclick="switchChecklistTab('daily')">Daily</button>
+            <button id="cl-tab-weekly" class="tab-btn" onclick="switchChecklistTab('weekly')">Weekly</button>
+            <button id="cl-tab-monthly" class="tab-btn" onclick="switchChecklistTab('monthly')">Monthly</button>
+            <button id="cl-tab-quarterly" class="tab-btn" style="display: none;" onclick="switchChecklistTab('quarterly')">Quarterly</button>
+        </div>
+    </div>
+    
+    <div class="cl-panel-body">
+        <div id="checklistContent" class="cl-scroll-area">
+            <div class="status-message">Syncing Data...</div>
+        </div>
+        
+        <div class="cl-input-area">
+            <input type="text" id="newChecklistTask" placeholder="Add a personal task...">
+            <button class="btn-primary cl-add-btn" onclick="addChecklistItem()">Add</button>
+        </div>
     </div>
 </div>
 

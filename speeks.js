@@ -17,6 +17,7 @@ const GOALS_API_URL = 'https://script.google.com/macros/s/AKfycbw_eV-2Nxizf85J8a
 const SCORECARD_URL = 'https://script.google.com/macros/s/AKfycbwvelWpXnlXCJZQGagZX5llMCN1k6CjronBpIcenNVDTjUdPISjF0mYhHYy2ry0Vdg0_Q/exec';
 const EBAY_ALERTS_URL = 'https://script.google.com/macros/s/AKfycbxap-4Jgdn5-ntkv_X-vFZLTWlTB29_bDLdwcFxhWd2su3ZQJ0ZS7UpUgZAK08lOIV6/exec';
 const STORE_COMMENT_URL = 'https://script.google.com/macros/s/AKfycbzoqWLZz07niO-dVqDpQS7I-bDvUgLjHT4CYGiqb--yAQYQPkFCUi9EXoi5Wsz-V0Ne/exec';
+const CHECKLIST_URL = 'https://script.google.com/macros/s/AKfycbxr4ZEoSKeF4BZ1H2-tcmc6Gy30-le5Gdm3CSdee6XxOhZFes3-5SF_PNcWR4OLEGN2hQ/exec';
 
 // --- 2. GLOBAL HELPERS & UTILITIES ---
 function parseNum(val) {
@@ -2248,8 +2249,15 @@ async function fetchAlertsData() {
     const container = document.getElementById('alerts-widget-body');
     if (!container) return;
 
-    let targetStore = sessionStorage.getItem('speeksUserStore') || 'OVL';
+    // 1. Check if they are actually logged in! 
+    let targetStore = sessionStorage.getItem('speeksUserStore');
+    if (!targetStore) return; // ABORT if behind the lock screen!
+    
+    // 2. Default to OVL only if it's the CEO/Corp viewing the widget
     if (targetStore === 'ALL' || targetStore === 'CORP') targetStore = 'OVL'; 
+
+    // 3. Force the loading state immediately to clear any stale UI
+    container.innerHTML = '<div class="status-message">Syncing Data...</div>';
 
     try {
         const response = await fetch(EBAY_ALERTS_URL);
@@ -5052,4 +5060,208 @@ async function fetchChampions() {
         listerBody.innerHTML = '<div style="color: var(--red-alert); font-weight: bold;">Failed to load Champions.</div>';
         buyerBody.innerHTML = '<div style="color: var(--red-alert); font-weight: bold;">Failed to load Champions.</div>';
     }
+}
+
+// ============================================================================
+// MANAGER CHECKLIST MODULE
+// ============================================================================
+let currentChecklistTab = 'daily';
+let checklistDataCache = { daily: [], weekly: [], monthly: [], quarterly: [] };
+
+// Add this near your other UI toggles
+function toggleChecklistPanel() {
+    const panel = document.getElementById('checklistSidePanel');
+    const tab = document.querySelector('.checklist-pull-tab');
+    
+    panel.classList.toggle('open');
+    tab.classList.toggle('open');
+    
+    // Notice we do NOT call closeAllModals() or lockAndBlurScreen() here!
+}
+
+function switchChecklistTab(tab) {
+    currentChecklistTab = tab;
+    document.getElementById('cl-tab-daily').classList.toggle('active', tab === 'daily');
+    document.getElementById('cl-tab-weekly').classList.toggle('active', tab === 'weekly');
+    document.getElementById('cl-tab-monthly').classList.toggle('active', tab === 'monthly');
+    
+    // Safety check just in case the button isn't on the screen
+    const qTab = document.getElementById('cl-tab-quarterly');
+    if (qTab) qTab.classList.toggle('active', tab === 'quarterly');
+    
+    renderChecklist();
+}
+
+async function loadChecklist() {
+    const container = document.getElementById('checklistContent');
+    const userName = sessionStorage.getItem('speeksUserName') || 'Unknown';
+    const store = sessionStorage.getItem('speeksUserStore') || 'OVL';
+
+    // NEW LOGIC: Only show the Quarterly tab if the user is CORP
+    const qTab = document.getElementById('cl-tab-quarterly');
+    if (qTab) {
+        if (store === 'CORP' || store === 'ALL') {
+            qTab.style.display = 'inline-flex';
+        } else {
+            qTab.style.display = 'none';
+            // Failsafe: if a retail manager somehow gets stuck on Quarterly, move them to Daily
+            if (currentChecklistTab === 'quarterly') switchChecklistTab('daily');
+        }
+    }
+
+    container.innerHTML = '<div class="status-message">Syncing Checklist...</div>';
+
+    try {
+        const res = await fetch(`${CHECKLIST_URL}?user=${encodeURIComponent(userName)}&store=${store}&v=${Date.now()}`);
+        checklistDataCache = await res.json();
+        renderChecklist();
+    } catch (e) {
+        console.error("Checklist Fetch Error", e);
+        container.innerHTML = '<div class="status-message" style="color: var(--red-alert);">Failed to load checklist.</div>';
+    }
+}
+
+function renderChecklist() {
+    const container = document.getElementById('checklistContent');
+    const items = checklistDataCache[currentChecklistTab] || [];
+
+    if (items.length === 0) {
+        container.innerHTML = `<div style="text-align: center; padding: 30px; color: #888; font-weight: 600; font-size: 13px;">No tasks for this tab. Add one below!</div>`;
+        return;
+    }
+
+    let html = '';
+    items.forEach(item => {
+        const completedClass = item.checked ? 'completed' : '';
+        
+        // Only allow deletion of personal items
+        const deleteHtml = !item.isGlobal ? 
+            `<button class="cl-delete-btn" onclick="deleteChecklistItem('${item.id}')" title="Delete Task">✖</button>` : '';
+
+        html += `
+        <div class="cl-item ${completedClass}">
+            <input type="checkbox" class="cl-checkbox" ${item.checked ? 'checked' : ''} onchange="toggleChecklistState('${item.id}', this.checked)">
+            <div class="cl-content-wrapper" style="justify-content: center;">
+                <span class="cl-text">${escapeHtml(item.text)}</span>
+            </div>
+            ${deleteHtml}
+        </div>`;
+    });
+
+    container.innerHTML = html;
+}
+
+// --- API ACTIONS (POST to Apps Script) ---
+async function toggleChecklistState(id, isChecked) {
+    const userName = sessionStorage.getItem('speeksUserName');
+    const store = sessionStorage.getItem('speeksUserStore') || 'OVL'; // <--- Added this
+    
+    const item = checklistDataCache[currentChecklistTab].find(i => i.id === id);
+    if (item) item.checked = isChecked;
+    renderChecklist(); 
+
+    fetch(CHECKLIST_URL, {
+        method: 'POST', mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'toggle', id: id, checked: isChecked, user: userName, store: store }) // <--- Added store here
+    }).catch(e => console.log('Checklist sync skipped'));
+}
+
+async function addChecklistItem() {
+    const input = document.getElementById('newChecklistTask');
+    const text = input.value.trim();
+    if (!text) return;
+
+    input.value = 'Saving...';
+    input.disabled = true;
+
+    const userName = sessionStorage.getItem('speeksUserName');
+    const store = sessionStorage.getItem('speeksUserStore');
+    const tempId = 'temp_' + Date.now(); // Temp ID until server refreshes
+
+    const payload = {
+        action: 'add',
+        tab: currentChecklistTab,
+        text: text,
+        user: userName,
+        store: store
+    };
+
+    try {
+        await fetch(CHECKLIST_URL, {
+            method: 'POST', mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(payload)
+        });
+        
+        // Optimistically add to local cache so they see it instantly
+        checklistDataCache[currentChecklistTab].push({ id: tempId, text: text, isGlobal: false, checked: false });
+        renderChecklist();
+    } catch (e) {
+        alert("Failed to add task.");
+    } finally {
+        input.value = '';
+        input.disabled = false;
+        input.focus();
+    }
+}
+
+async function deleteChecklistItem(id) {
+    const userName = sessionStorage.getItem('speeksUserName');
+    const store = sessionStorage.getItem('speeksUserStore') || 'OVL'; // <--- Added this
+
+    checklistDataCache[currentChecklistTab] = checklistDataCache[currentChecklistTab].filter(i => i.id !== id);
+    renderChecklist();
+
+    fetch(CHECKLIST_URL, {
+        method: 'POST', mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'delete', id: id, user: userName, store: store }) // <--- Added store here
+    }).catch(e => console.log('Checklist deletion skipped'));
+}
+
+// --- BULLETPROOF TOGGLE & CLICK-AWAY LOGIC ---
+window.toggleChecklistPanel = function(event) {
+    if (event) {
+        event.stopPropagation();
+    }
+    
+    const panel = document.getElementById('checklistSidePanel');
+    if (panel) panel.classList.toggle('open');
+};
+
+// Closes the panel if you click outside of it
+document.addEventListener('click', function(e) {
+    // CRITICAL FIX: If the clicked element was just removed from the DOM (like deleting a task), ignore the click!
+    if (!document.body.contains(e.target)) return;
+
+    const panel = document.getElementById('checklistSidePanel');
+    
+    if (panel && panel.classList.contains('open')) {
+        // Because the tab is now attached TO the panel, we only need to check if the click was inside the panel
+        if (!panel.contains(e.target)) {
+            panel.classList.remove('open');
+        }
+    }
+});
+
+// Run this on the 1st of EVERY month using the Monthly Time-Driven Trigger
+function resetQuarterlyTasks() {
+  const today = new Date();
+  
+  // In Javascript, months are 0-indexed (Jan = 0, Feb = 1... Apr = 3, Jul = 6, Oct = 9).
+  // If the month number divided by 3 does NOT have a remainder of 0, it is NOT the start of a quarter.
+  if (today.getMonth() % 3 !== 0) {
+    return; // Stop the script immediately. Do nothing.
+  }
+  
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Tasks');
+  const data = sheet.getDataRange().getValues();
+  
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][1]).toLowerCase() === 'quarterly') {
+      // Uncheck OVL through CORP
+      sheet.getRange(i + 1, 7, 1, 6).setValue(false); 
+    }
+  }
 }
