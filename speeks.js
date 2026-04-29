@@ -3110,6 +3110,7 @@ function buildGoalsEditForm() {
     });
 
     container.innerHTML = html;
+    setTimeout(updateRoleLocks, 50); // <--- ADD THIS LINE
 }
 
 async function saveGoalsData() {
@@ -3144,13 +3145,13 @@ async function saveGoalsData() {
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify({ 
                 store: goalsTargetStore, 
-                date: targetDateStr, // <--- NOW PASSING THE SPECIFIC DATE
+                date: targetDateStr, 
                 employees: payloadEmployees 
             })
         });
 
         if(response.ok) {
-            // Instantly update the local cache so the UI reflects it without a full refresh
+            // Instantly update the local cache so the UI reflects it
             liveGoalsData = liveGoalsData.filter(r => !(r.date === targetDateStr && r.store === goalsTargetStore));
             payloadEmployees.forEach(p => {
                 liveGoalsData.push({ date: targetDateStr, store: goalsTargetStore, employee: p.employee, role: p.role, goal: p.goal, result: p.result });
@@ -3160,6 +3161,50 @@ async function saveGoalsData() {
             const activeTab = document.getElementById('tab-daily').classList.contains('active') ? 'daily' : 'weekly';
             renderGoalsScoreboard(activeTab);
             flipGoalCard(false);
+
+            // =========================================================
+            // BULLETPROOF CHECKLIST AUTO-COMPLETE
+            // =========================================================
+            const userName = sessionStorage.getItem('speeksUserName') || 'Unknown';
+            const store = sessionStorage.getItem('speeksUserStore') || 'OVL';
+            let targetTaskId = null;
+
+            // Step 1: Check if the user has already opened the TASKS tab today
+            if (checklistDataCache && checklistDataCache.daily && checklistDataCache.daily.length > 0) {
+                const task = checklistDataCache.daily.find(t => t.text.toLowerCase().includes('listing goals'));
+                if (task) {
+                    targetTaskId = task.id;
+                    if (!task.checked) {
+                        task.checked = true; // Visually check it off in memory
+                        if (typeof renderChecklist === 'function') renderChecklist();
+                    }
+                }
+            } 
+            
+            // Step 2: If the TASKS tab is unopened, silently fetch their list to find the correct Task ID
+            if (!targetTaskId) {
+                try {
+                    const res = await fetch(`${CHECKLIST_URL}?user=${encodeURIComponent(userName)}&store=${store}&v=${Date.now()}`);
+                    const data = await res.json();
+                    if (data && data.daily) {
+                        const task = data.daily.find(t => t.text.toLowerCase().includes('listing goals'));
+                        if (task && !task.checked) targetTaskId = task.id;
+                    }
+                } catch (e) {
+                    console.log("Silent checklist fetch failed.");
+                }
+            }
+
+            // Step 3: Tell the Apps Script to flip the specific store column to TRUE
+            if (targetTaskId) {
+                fetch(CHECKLIST_URL, {
+                    method: 'POST', mode: 'no-cors',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'toggle', id: targetTaskId, checked: true, user: userName, store: store })
+                }).catch(e => console.log('Checklist auto-complete failed', e));
+            }
+            // =========================================================
+
         } else {
             alert("Error saving goals to server.");
         }
@@ -5265,3 +5310,66 @@ function resetQuarterlyTasks() {
     }
   }
 }
+
+// --- ROLE SELECTION LOGIC ---
+window.updateRoleLocks = function() {
+    // Find which roles are currently selected by anyone
+    const activeRoles = Array.from(document.querySelectorAll('.role-dot.active')).map(btn => btn.innerText);
+    
+    document.querySelectorAll('.role-dot').forEach(btn => {
+        if (!btn.classList.contains('active')) {
+            if (activeRoles.includes(btn.innerText)) {
+                // Gray it out and mark it as taken
+                btn.style.opacity = '0.3';
+                btn.style.cursor = 'not-allowed';
+                btn.dataset.roleTaken = 'true';
+            } else {
+                // Only restore if it isn't locked by the 10:30am cutoff
+                if (!btn.hasAttribute('disabled')) {
+                    btn.style.opacity = '1';
+                    btn.style.cursor = 'pointer';
+                    btn.dataset.roleTaken = 'false';
+                }
+            }
+        } else {
+            // If it is active, make sure it looks fully visible
+            if (!btn.hasAttribute('disabled')) {
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            }
+        }
+    });
+};
+
+window.selectRole = function(clickedBtn, emp, role) {
+    if (clickedBtn.hasAttribute('disabled')) return;
+    
+    // Prevent selecting if someone else already has it
+    if (clickedBtn.dataset.roleTaken === 'true') {
+        alert(`The role ${role} is already assigned to another team member. Please deselect it from them first.`);
+        return;
+    }
+
+    const isAlreadyActive = clickedBtn.classList.contains('active');
+
+    // 1. If clicking the already active role, toggle it off and free it up
+    if (isAlreadyActive) {
+        clickedBtn.classList.remove('active');
+        updateRoleLocks(); // Re-check the board
+        return;
+    }
+
+    // 2. Remove ALL roles from the CURRENT employee (Only 1 role per person)
+    const parentRow = clickedBtn.closest('.goals-edit-roles');
+    if (parentRow) {
+        parentRow.querySelectorAll('.role-dot').forEach(btn => {
+            btn.classList.remove('active');
+        });
+    }
+
+    // 3. Make the newly clicked button active
+    clickedBtn.classList.add('active');
+    
+    // 4. Lock this role out for everyone else
+    updateRoleLocks();
+};
