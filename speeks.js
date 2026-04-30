@@ -689,7 +689,7 @@ function renderDocs(docs) {
         .sort((a, b) => a === '📌 Pinned' ? -1 : (b === '📌 Pinned' ? 1 : a.localeCompare(b)))
         .map(cat => {
             const isPin = cat === '📌 Pinned';
-            const catTitleStyle = isPin ? 'color: var(--idea-gold); border-bottom-color: var(--idea-gold);' : '';
+            const catTitleStyle = isPin ? 'color: var(--sage-professional); border-bottom-color: var(--sage-professional);' : '';
             
             let html = `<div class="category-section">`;
             html += `<div class="category-title" style="${catTitleStyle}">${cat}</div>`;
@@ -697,8 +697,8 @@ function renderDocs(docs) {
             
             html += groupedDocs[cat].map(item => {
                 const searchStr = `${item.title} ${item.desc} ${cat}`.toLowerCase();
-                const cardStyle = isPin ? 'position: relative; border: 1px solid var(--idea-gold); box-shadow: 0 4px 10px rgba(245, 158, 11, 0.08);' : 'position: relative;';
-                const pinBadge = isPin ? `<div style="position: absolute; top: 12px; right: 15px; font-size: 16px; filter: drop-shadow(0 2px 4px rgba(245,158,11,0.3));">📌</div>` : '';
+                const cardStyle = isPin ? 'position: relative; border: 1px solid var(--sage-professional); box-shadow: 0 4px 10px rgba(90, 141, 59, 0.08);' : 'position: relative;';
+                const pinBadge = isPin ? `<div style="position: absolute; top: 12px; right: 15px; font-size: 16px; filter: drop-shadow(0 2px 4px rgba(90,141,59,0.3));">📌</div>` : '';
                 
                 return `
                     <a href="${item.link}" target="_blank" class="doc-card" style="${cardStyle}" data-search="${searchStr}">
@@ -1779,6 +1779,30 @@ async function toggleManageRecords() {
     }
 }
 
+function populateRecordsModal() {
+    const list = document.getElementById('manageRecordsList');
+    let html = '';
+    
+    if (!recordsCache || recordsCache.length === 0) {
+        list.innerHTML = '<div style="padding: 20px; text-align: center; color: #888; font-weight: 600;">No records found.</div>';
+        return;
+    }
+
+    recordsCache.forEach(r => {
+        html += `
+        <div class="record-manage-row" data-store="${r.section || ''}" data-label="${r.label || ''}" style="background: #fff; padding: 12px 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 10px; display: flex; align-items: center; gap: 15px;">
+            <div style="flex: 2; display: flex; flex-direction: column; gap: 2px;">
+                <span style="color: #94a3b8; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">${r.section || 'COMPANY'}</span>
+                <span style="font-size: 13px; font-weight: 800; color: var(--slate-charcoal); line-height: 1.2;">${r.label || ''}</span>
+            </div>
+            <input type="text" class="r-val" placeholder="Value (e.g. $5,000)" value="${r.value || ''}" style="flex: 1; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 600; color: var(--slate-charcoal); outline: none;">
+            <input type="text" class="r-date" placeholder="Date (e.g. Oct 12)" value="${r.subtext || ''}" style="flex: 1; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 600; color: var(--slate-charcoal); outline: none;">
+        </div>`;
+    });
+    
+    list.innerHTML = html;
+}
+
 function populateAlertsModal() {
     const list = document.getElementById('manageAlertsList');
     const STORES = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
@@ -1927,7 +1951,6 @@ function renderQMTab(tab) {
     rawData.forEach(row => {
         const rowStore = String(row.store || "Everyone").trim().toUpperCase();
         
-        // Bypass the specific Store filter for Networking since the sheet uses "Manager" instead of a store abbreviation
         if (tab === 'networking' || rowStore === 'EVERYONE' || rowStore === userStore.toUpperCase()) {
             const category = row.category;
             if (!groupedData[category]) groupedData[category] = [];
@@ -1953,7 +1976,7 @@ function renderQMTab(tab) {
                                     ${escapeHtml(item.name)}
                                 </div>
                                 <button class="qm-copy-btn" title="Copy Message" data-message="${escapeHtml(item.message)}" onclick="copyQMToClipboard(this)">
-                                    📋
+                                    Copy
                                 </button>
                             </div>
                             <div class="qm-item-message">
@@ -1964,7 +1987,7 @@ function renderQMTab(tab) {
                 </div>
             </div>`;
         }
-    } else if (tab === 'nodeals' || tab === 'networking') { // Grouping both to use the flat styling
+    } else if (tab === 'nodeals' || tab === 'networking') {
         html += '<div class="qm-category-items open" style="margin-left: 0; padding-left: 0; border: none; background: transparent;">';
         for (const [category, items] of Object.entries(groupedData)) {
             html += items.map(item => `
@@ -1974,7 +1997,7 @@ function renderQMTab(tab) {
                             ${escapeHtml(item.name)}
                         </div>
                         <button class="qm-copy-btn" title="Copy Message" data-message="${escapeHtml(item.message)}" onclick="copyQMToClipboard(this)">
-                            📋
+                            Copy
                         </button>
                     </div>
                     <div class="qm-item-message">
@@ -1985,6 +2008,16 @@ function renderQMTab(tab) {
         }
         html += '</div>';
     } else if (tab === 'reviews') {
+        // --- NEW BANNER FOR NON-5-STAR REVIEWS ---
+        html += `
+        <div style="margin-bottom: 15px; background: #fffbeb; border: 1px solid #fde68a; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+                <span style="font-size: 13px; font-weight: 900; color: #92400e;">Handling a Sub-5-Star Review?</span>
+                <span style="font-size: 11px; font-weight: 700; color: #b45309;">Follow the SOP for mixed or negative feedback before replying.</span>
+            </div>
+            <a href="https://drive.google.com/file/d/1HKhBSVl7dNkgLd6f9O1_9Rhf9sYeAA1b/view?usp=sharing" target="_blank" class="mini-action-btn" style="background: white; border-color: #fde68a; color: #92400e; box-shadow: 0 2px 4px rgba(251,191,36,0.15);">View Process ↗</a>
+        </div>`;
+
         html += '<div class="qm-category-items open" style="margin-left: 0; padding-left: 0; border: none; background: transparent; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start;">';
         for (const [category, items] of Object.entries(groupedData)) {
             html += items.map(item => `
@@ -1994,7 +2027,7 @@ function renderQMTab(tab) {
                             ${escapeHtml(item.name)}
                         </div>
                         <button class="qm-copy-btn" title="Copy Message" data-message="${escapeHtml(item.message)}" onclick="copyQMToClipboard(this)">
-                            📋
+                            Copy
                         </button>
                     </div>
                     <div class="qm-item-message">
@@ -2016,9 +2049,18 @@ function renderQMTab(tab) {
 function copyQMToClipboard(button) {
     const textToCopy = button.getAttribute('data-message');
     navigator.clipboard.writeText(textToCopy).then(() => {
-        const originalIcon = button.innerText;
-        button.innerText = '✅'; 
-        setTimeout(() => { button.innerText = originalIcon; }, 1500);
+        const originalText = button.innerText;
+        button.innerText = 'Copied!'; 
+        button.style.background = '#d1fae5';
+        button.style.color = '#065f46';
+        button.style.borderColor = '#34d399';
+        
+        setTimeout(() => { 
+            button.innerText = originalText; 
+            button.style.background = '';
+            button.style.color = '';
+            button.style.borderColor = '';
+        }, 1500);
     }).catch(err => console.error('Failed to copy text: ', err));
 }
 
@@ -2554,6 +2596,14 @@ async function fetchMasterDistrictDashboard() {
 
     const STORES = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
     const STORE_ICONS = { 'OVL': '🟣', 'LEE': '🔵', 'WSP': '🟢', 'MPL': '🟠', 'BAL': '🔴' };
+    
+    const PORTAL_LINKS = {
+        'OVL': 'https://drive.google.com/drive/folders/1dd1nkndo_Pqt3kztaHcpYWL-NgOWIP-E?usp=drive_link',
+        'LEE': 'https://drive.google.com/drive/folders/1Xv6ICOpEXNMeWk4QJBfS7CR6tIFRuElk?usp=drive_link',
+        'WSP': 'https://drive.google.com/drive/folders/1xGGzefFbX7rzBnusmCUEk2GnHxJaJqhC?usp=drive_link',
+        'MPL': 'https://drive.google.com/drive/folders/1Y5MiKRorTD1mg-lLY4SccYCqw2fZUrND?usp=drive_link',
+        'BAL': 'https://drive.google.com/drive/folders/1LnAuBH9t7MwtrB9egWK5PFJWQqPcZ-tL?usp=drive_link'
+    };
 
     const renderMasterBoard = (hubData, varData, scoreData, alertsData, weeklyResults) => {
         let html = '';
@@ -2579,14 +2629,85 @@ async function fetchMasterDistrictDashboard() {
                 }
             }
 
-            // 2. ACTION NEEDED
-            const issues = [];
+            // 2. EBAY ALERTS DATA
             const sAlerts = alertsData.data?.find(a => a.store.toUpperCase() === store) || {};
+            
+            // Vertical Action Needed List
+            const issues = [];
             if (sAlerts.currentVeryHigh) issues.push({text: sAlerts.currentVeryHigh, type: 'red', tip: 'Active Issue: Very High'});
             if (sAlerts.currentHigh) issues.push({text: sAlerts.currentHigh, type: 'yellow', tip: 'Active Issue: High'});
             if (sAlerts.projectedVeryHigh) issues.push({text: sAlerts.projectedVeryHigh, type: 'red', tip: 'Projected Issue: Very High'});
             if (sAlerts.projectedHigh) issues.push({text: sAlerts.projectedHigh, type: 'yellow', tip: 'Projected Issue: High'});
             if (issues.length === 0) issues.push({text: 'All Clear', type: 'green', tip: 'No active or projected alerts.'});
+
+            // 4 New Service Metrics logic
+            const formatPercent = (val) => {
+                if (!val || String(val).trim() === '') return '';
+                let str = String(val).trim();
+                if (str.endsWith('%')) return str;
+                let num = parseFloat(str.replace(/[^0-9.-]/g, ''));
+                if (isNaN(num)) return str; 
+                return (num * 100).toFixed(2) + '%';
+            };
+
+            const getSev = (type, rawVal) => {
+                if (!rawVal || String(rawVal).trim() === '') return 'clear';
+                let str = String(rawVal).trim();
+                let num = parseFloat(str.replace(/[^0-9.-]/g, ''));
+                if (isNaN(num)) return 'clear';
+                let valToCheck = str.endsWith('%') ? num : num * 100;
+
+                if (type === 'defectRate') {
+                    if (valToCheck >= 0.5) return 'very-high';
+                    if (valToCheck >= 0.25) return 'high';
+                }
+                if (type === 'lateShipment') {
+                    if (valToCheck >= 3.0) return 'very-high';
+                    if (valToCheck >= 1.5) return 'high';
+                }
+                if (type === 'casesClosed') {
+                    if (valToCheck >= 0.3) return 'very-high';
+                    if (valToCheck >= 0.15) return 'high';
+                }
+                if (type === 'tracking') {
+                    if (valToCheck <= 95.0) return 'very-high';
+                    if (valToCheck <= 97.5) return 'high';
+                }
+                return 'clear';
+            };
+
+            const buildMiniAlertCard = (title, rawValue, severity, isPercent) => {
+                let bgColor = '#d1fae5';
+                let textColor = '#065f46'; 
+                let displayText = 'All Clear';
+                let pulseHtml = '';
+                
+                if (rawValue !== undefined && rawValue !== null && String(rawValue).trim() !== '') {
+                    if (isPercent) {
+                        displayText = formatPercent(rawValue);
+                    } else {
+                        displayText = String(rawValue); 
+                    }
+
+                    if (severity === 'high') {
+                        bgColor = '#fef3c7'; 
+                        textColor = '#92400e';
+                    } else if (severity === 'very-high') {
+                        bgColor = '#fee2e2';
+                        textColor = '#991b1b';
+                        // Positioned perfectly on the corner
+                        pulseHtml = '<div class="notif-dot active" style="display:block; position:absolute; top:-4px; right:-4px; width:10px; height:10px; border-width: 2px; z-index: 5;"></div>';
+                    }
+                }
+
+                // REMOVED 'overflow: hidden' from the outer div so the dot isn't clipped!
+                return `
+                <div style="position: relative; background: #fff; padding: 8px 8px; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; width: 100%; box-sizing: border-box; min-height: 42px; gap: 4px;">
+                    ${pulseHtml}
+                    <span style="font-size: 9px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;">${title}</span>
+                    <span style="font-size: 11px; font-weight: 900; color: ${textColor}; background: ${bgColor}; padding: 3px 6px; border-radius: 6px; text-align: center; white-space: nowrap; flex-shrink: 0;">${displayText}</span>
+                </div>`;
+            };
 
             // 3. BUYING & SELLING SNAPSHOT
             let rawPctStr = String(hubData[`${sLower}Pct`]);
@@ -2596,6 +2717,7 @@ async function fetchMasterDistrictDashboard() {
             
             const gpTrack = Math.round(parseFloat(hubData[`${sLower}TrackGP`])) || 0;
             const buyProj = Math.round(parseFloat(hubData[`${sLower}BuyProj`])) || 0;
+            const storeGoalText = `$${Math.round(parseFloat(hubData[`${sLower}Goal`]) || 0).toLocaleString()}`;
             
             let sellMarginNum = 0;
             const rev = parseFloat(hubData[`${sLower}Rev`]) || 0;
@@ -2662,11 +2784,16 @@ async function fetchMasterDistrictDashboard() {
 
             html += `
             <div class="card master-card">
-                <div class="master-card-header" style="background: var(--slate-charcoal);">
-                    <span class="master-card-title">${icon} ${store}</span>
-                    <div class="master-card-score-box">
+                <div class="master-card-header" style="background: var(--slate-charcoal); display: flex; justify-content: space-between; align-items: stretch;">
+                    <div style="display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; gap: 10px;">
+                        <a href="${PORTAL_LINKS[store]}" target="_blank" class="portal-link-title">
+                            ${icon} ${store}
+                        </a>
+                        <span class="master-card-date" style="margin: 0;">Goal: ${storeGoalText}</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; justify-content: space-between; align-items: flex-end; gap: 10px;">
                         <span class="master-card-score" style="background: ${sBg}; color: ${sColor};">${scoreNum.toFixed(1)}</span>
-                        <span class="master-card-date">Week of ${displayDate}</span>
+                        <span class="master-card-date" style="margin: 0;">Week of ${displayDate}</span>
                     </div>
                 </div>
 
@@ -2676,7 +2803,7 @@ async function fetchMasterDistrictDashboard() {
                         <div class="master-stat-box">
                             <div class="master-stat-row"><span class="master-stat-label">Sales vs Goal</span><span class="master-stat-val" style="color: ${pctColor}; background: ${pctBg};">${salesPct}%</span></div>
                             <div class="master-stat-row"><span class="master-stat-label">GP Tracking</span><span class="master-stat-val" style="color: var(--slate-charcoal);">$${gpTrack.toLocaleString()}</span></div>
-                            <div class="master-stat-row"><span class="master-stat-label">Sell Margin</span><span class="master-stat-val" style="color: ${sellMarginColor}; background: ${sellMarginBg};">${sellMarginNum > 0 ? sellMargin + '%' : '-'}</span></div>
+                            <div class="master-stat-row dashed"><span class="master-stat-label">Sell Margin</span><span class="master-stat-val" style="color: ${sellMarginColor}; background: ${sellMarginBg};">${sellMarginNum > 0 ? sellMargin + '%' : '-'}</span></div>
                             <div class="master-stat-row"><span class="master-stat-label">Buy Tracking</span><span class="master-stat-val" style="color: var(--slate-charcoal);">$${buyProj.toLocaleString()}</span></div>
                             <div class="master-stat-row dashed"><span class="master-stat-label">Buy Margin</span><span class="master-stat-val" style="color: ${marginColor}; background: ${marginBg};">${buyMargin}%</span></div>
                             <div class="master-stat-row"><span class="master-stat-label">Variance Total</span><span class="master-stat-val" style="color: ${vColor}; background: ${vBg};">${vSign}${totalVar.toFixed(2)}%</span></div>
@@ -2697,6 +2824,15 @@ async function fetchMasterDistrictDashboard() {
                     </div>
 
                     <div style="flex-grow: 1; display: flex; flex-direction: column;">
+                        
+                        <div class="master-section-title">Service Metrics</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 15px;">
+                            ${buildMiniAlertCard('Defect Rate', sAlerts.defectRate, getSev('defectRate', sAlerts.defectRate), true)}
+                            ${buildMiniAlertCard('Late Shipment', sAlerts.lateShipment, getSev('lateShipment', sAlerts.lateShipment), true)}
+                            ${buildMiniAlertCard('Cases Closed', sAlerts.casesClosed, getSev('casesClosed', sAlerts.casesClosed), true)}
+                            ${buildMiniAlertCard('Tracking', sAlerts.tracking, getSev('tracking', sAlerts.tracking), true)}
+                        </div>
+
                         <div class="master-section-title">Action Needed - eBay Performance</div>
                         <div style="display: flex; flex-direction: column; gap: 6px; flex-grow: 1;">
                             ${issues.map(b => {
@@ -3610,12 +3746,12 @@ async function fetchAndRenderEmployeeKPIs() {
 
         container.innerHTML = `
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; height: 100%;">
-                ${buildStatGridItem('Buying Value', myData.buyVal, sAvg.buyVal, null, false, 'Store:', false)}
-                ${buildStatGridItem('Margin', myData.buyMargin, sAvg.buyMargin, 'margin', true, 'Store:', true)}
-                ${buildStatGridItem('Conversion', myData.conversion, sAvg.conversion, 'conversion', true, 'Store:', true)}
-                ${buildStatGridItem('No Deals', myData.noDeals, sAvg.noDeals, 'nodeals', false, 'Store:', true)}
-                ${buildStatGridItem('Trans. Time', myData.time, sAvg.time, 'time', false, 'Store:', true)}
-                ${buildStatGridItem('Listed Dev.', myData.listed, sAvg.listed, null, false, 'Store:', false)}
+                ${buildStatGridItem('Buying Value', myData.buyVal, sAvg.buyVal, null, false, 'Store Total:', false)}
+                ${buildStatGridItem('Margin', myData.buyMargin, sAvg.buyMargin, 'margin', true, 'Store Avg:', true)}
+                ${buildStatGridItem('Conversion', myData.conversion, sAvg.conversion, 'conversion', true, 'Store Avg:', true)}
+                ${buildStatGridItem('No Deals', myData.noDeals, sAvg.noDeals, 'nodeals', false, 'Store Total:', true)}
+                ${buildStatGridItem('Trans. Time', myData.time, sAvg.time, 'time', false, 'Store Avg:', true)}
+                ${buildStatGridItem('Listed Dev.', myData.listed, sAvg.listed, null, false, 'Store Total:', false)}
             </div>
         `;
     } catch (e) {
@@ -3659,7 +3795,7 @@ function applyRoleBasedUI() {
     }
 
     if (userStore !== 'ALL') {
-        ['kpiStoreSelect', 'weeklyKpiStoreSelect', 'bsStoreSelect', 'vw-primary'].forEach(id => {
+        ['kpiStoreSelect', 'weeklyKpiStoreSelect', 'bsStoreSelect', 'vw-primary', 'dmChartStoreSelector'].forEach(id => {
             const dropdown = document.getElementById(id);
             if (dropdown && Array.from(dropdown.options).some(opt => opt.value === userStore)) {
                 dropdown.value = userStore;
@@ -3946,15 +4082,28 @@ function renderKpiChart(allData, metric) {
     let lbls = [], fData = [], nums = [];
 
     const parseChartVal = (v) => {
-        if (v === undefined || v === "" || v === null) return null;
+        if (v === undefined || v === null) return null;
+        
+        // Convert to string and lowercase to catch everything safely
+        let strVal = String(v).trim().toLowerCase();
+        
+        // 1. Catch completely empty cells or Google Sheets errors
+        if (strVal === "" || strVal === "-" || strVal === "#div/0!" || strVal === "#n/a" || strVal === "null") {
+            return null;
+        }
+
+        // 2. Catch literal zeros. This forces closed stores/employees to be completely blank instead of flatlining at 0.
+        if (strVal === "0" || strVal === "0%" || strVal === "0.00%" || strVal === "0.0%" || strVal === "0:00") {
+            return null;
+        }
+
         if (metric === 'time') {
-            let s = String(v).trim();
-            if (s.includes(':')) {
-                let parts = s.split(':');
+            if (strVal.includes(':')) {
+                let parts = strVal.split(':');
                 return parseInt(parts[0] || 0) + (parseInt(parts[1] || 0) / 60);
             }
-            if (s.includes('.')) {
-                let parts = s.split('.');
+            if (strVal.includes('.')) {
+                let parts = strVal.split('.');
                 let mins = parseInt(parts[0] || 0);
                 let secsStr = parts[1] || '0';
                 if (secsStr.length === 1) secsStr += '0'; 
@@ -3962,19 +4111,18 @@ function renderKpiChart(allData, metric) {
                 return mins + (secs / 60);
             }
             
-            let p = parseFloat(s.replace(/[^0-9.-]/g, ''));
+            let p = parseFloat(strVal.replace(/[^0-9.-]/g, ''));
             if (!isNaN(p)) {
-                // FIX: If the spreadsheet has raw seconds from Column F (like 378),
-                // divide by 60 to convert it into minutes (6.3)
-                if (p > 30) {
-                    return p / 60;
-                }
+                if (p > 30) return p / 60;
                 return p;
             }
             return null;
         }
+        
         let p = parseNum(v);
-        return (isPct && p <= 1.1 && p > 0) ? p * 100 : p;
+        if (p === 0) return null; // Final failsafe for any parsed zero
+        
+        return (isPct && p <= 1.5 && p >= -1.5) ? p * 100 : p;
     };
 
     const dmDropdown = document.getElementById('dmChartStoreSelector');
@@ -4017,17 +4165,15 @@ function renderKpiChart(allData, metric) {
                     return;
                 }
                 
-                // Use Column F (index 5) ONLY for the raw 4-Week data. 
-                // For Monthly, the Apps Script already formatted the Store average into sCol.
                 let v = (metric === 'time' && currentTimeframe === '4-Week') ? row[5] : row[sCol];
-                
                 let parsed = parseChartVal(v);
 
                 sData.push(parsed);
                 if (parsed !== null) nums.push(parsed);
             });
             
-            if (idx < strs.length) {
+            // FIX: Only push to the chart if there is at least one valid data point
+            if (idx < strs.length && sData.some(val => val !== null)) {
                 fData.push({ label: '   ' + strs[idx].label + '   ', data: sData, borderColor: strs[idx].color, backgroundColor: strs[idx].color, tension: 0.4, pointRadius: 5, spanGaps: true });
             }
         });
