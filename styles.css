@@ -64,7 +64,7 @@ html {
 .brand-area { 
     height: 160px; 
     padding: 40px 20px 0 20px; 
-    border-bottom: 1px solid rgba(255,255,255,0.05); 
+    border-bottom: 1px solid rgba(255, 255, 255, 0.251); 
     margin-bottom: 20px; 
     display: flex;
     flex-direction: column;
@@ -3022,3 +3022,30 @@ canvas#leaderboardCanvas, canvas#mainKpiChart {
 .cl-text { font-size: 13px; font-weight: 700; color: var(--slate-charcoal); transition: color 0.2s; line-height: 1.4; }
 .cl-delete-btn { background: transparent; border: none; color: #cbd5e1; cursor: pointer; font-size: 14px; padding: 4px; transition: 0.2s; }
 .cl-delete-btn:hover { color: var(--red-alert); }
+
+/* Version Number Styling */
+.sidebar-footer {
+    margin-top: auto; /* Pushes the version to the bottom of the flex container */
+}
+
+.version-tag {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--gen-text); /* Uses your professional grey color */
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    opacity: 0.6;
+    transition: opacity 0.3s ease;
+}
+
+.version-tag:hover {
+    opacity: 1;
+    color: var(--sage-professional); /* Subtle glow on hover using your brand green */
+}
+
+/* Ensure the version hides correctly when you collapse the sidebar */
+.sidebar.collapsed .version-tag {
+    opacity: 0;
+    pointer-events: none;
+}
