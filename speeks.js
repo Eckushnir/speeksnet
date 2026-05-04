@@ -18,6 +18,7 @@ const SCORECARD_URL = 'https://script.google.com/macros/s/AKfycbwvelWpXnlXCJZQGa
 const EBAY_ALERTS_URL = 'https://script.google.com/macros/s/AKfycbxap-4Jgdn5-ntkv_X-vFZLTWlTB29_bDLdwcFxhWd2su3ZQJ0ZS7UpUgZAK08lOIV6/exec';
 const STORE_COMMENT_URL = 'https://script.google.com/macros/s/AKfycbzoqWLZz07niO-dVqDpQS7I-bDvUgLjHT4CYGiqb--yAQYQPkFCUi9EXoi5Wsz-V0Ne/exec';
 const CHECKLIST_URL = 'https://script.google.com/macros/s/AKfycbxr4ZEoSKeF4BZ1H2-tcmc6Gy30-le5Gdm3CSdee6XxOhZFes3-5SF_PNcWR4OLEGN2hQ/exec';
+const TUTORIAL_URL = 'https://script.google.com/macros/s/AKfycbySrXu6IW3S39GKiEsXkJwd4s75aO0uG-BTTg_swxEx3BMG_W7qqZBwHKnuEm_k_Agh/exec';
 
 // --- 2. NAV COMPACT MODE ---
 (function () {
@@ -880,10 +881,11 @@ async function checkPIN() {
             document.body.style.position = '';
             document.body.style.top = '';
             document.body.classList.add('is-authenticated');
-            
-            closeAllModals(); 
+
+            closeAllModals();
             applyRoleBasedUI();
-            
+            checkAndShowTutorial(matched.name);
+
             if (typeof initDashboardData === 'function') initDashboardData();
         } else {
             err.innerText = "Incorrect PIN. Please try again."; 
@@ -3864,7 +3866,76 @@ async function fetchAndRenderEmployeeKPIs() {
 }
 
 // ============================================================================
-// 22. MODULE: ROLE-BASED UI & INITIALIZATION
+// 22. MODULE: FIRST-LOGIN TUTORIAL
+// ============================================================================
+
+let _tutorialSlide = 0;
+const _TUTORIAL_TOTAL = 8;
+
+async function checkAndShowTutorial(userName) {
+    const key = 'speeksTutorial_' + userName.trim().toLowerCase().replace(/\s+/g, '_');
+    if (localStorage.getItem(key) === 'done') return;
+
+    if (TUTORIAL_URL) {
+        try {
+            const res = await fetch(`${TUTORIAL_URL}?user=${encodeURIComponent(userName)}&v=${Date.now()}`);
+            const data = await res.json();
+            if (data.completed) { localStorage.setItem(key, 'done'); return; }
+        } catch (e) { /* network error — still show tutorial, server will re-check next login */ }
+    }
+
+    _tutorialSlide = 0;
+    _updateTutorialUI();
+    const overlay = document.getElementById('tutorialOverlay');
+    if (overlay) overlay.classList.add('active');
+    document.body.classList.add('no-scroll');
+}
+
+function tutorialNav(dir) {
+    const next = _tutorialSlide + dir;
+    if (next < 0) return;
+    if (next >= _TUTORIAL_TOTAL) { _completeTutorial(); return; }
+    _tutorialSlide = next;
+    _updateTutorialUI();
+}
+
+function _updateTutorialUI() {
+    document.querySelectorAll('.tutorial-slide').forEach((s, i) => s.classList.toggle('active', i === _tutorialSlide));
+    document.querySelectorAll('.tut-dot').forEach((d, i) => d.classList.toggle('active', i === _tutorialSlide));
+
+    const prev = document.getElementById('tutorialPrev');
+    const next = document.getElementById('tutorialNext');
+    const counter = document.getElementById('tutorialCounter');
+    const isLast = _tutorialSlide === _TUTORIAL_TOTAL - 1;
+
+    if (prev) prev.disabled = _tutorialSlide === 0;
+    if (counter) counter.textContent = `${_tutorialSlide + 1} of ${_TUTORIAL_TOTAL}`;
+    if (next) {
+        next.textContent = isLast ? 'Get Started! 🚀' : 'Next →';
+        next.classList.toggle('tut-finish', isLast);
+    }
+}
+
+async function _completeTutorial() {
+    const overlay = document.getElementById('tutorialOverlay');
+    if (overlay) overlay.classList.remove('active');
+    document.body.classList.remove('no-scroll');
+
+    const userName = sessionStorage.getItem('speeksUserName') || '';
+    const key = 'speeksTutorial_' + userName.trim().toLowerCase().replace(/\s+/g, '_');
+    localStorage.setItem(key, 'done');
+
+    if (userName && TUTORIAL_URL) {
+        fetch(TUTORIAL_URL, {
+            method: 'POST', mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'complete', user: userName })
+        }).catch(() => {});
+    }
+}
+
+// ============================================================================
+// 23. MODULE: ROLE-BASED UI & INITIALIZATION
 // ============================================================================
 
 function applyRoleBasedUI() {
