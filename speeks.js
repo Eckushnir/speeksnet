@@ -1297,7 +1297,7 @@ async function fetchWeeklyKPIs() {
         let emps = [];
         let fIdx = -1;
         const _kpiStoreLabels = ["store", "store total", "ovl", "lee", "wsp", "mpl", "bal"];
-        let sIdx = d.findLastIndex(r => _kpiStoreLabels.includes(String(r[0]).trim().toLowerCase()));
+        let sIdx = d.findLastIndex(r => String(r[0]).trim().toLowerCase() === "store" || String(r[0]).trim().toLowerCase() === "store total");
 
         if (sIdx !== -1) {
             let st = d[sIdx];
