@@ -1496,6 +1496,11 @@ function renderBuyingSales() {
         smb.innerText = sellMarginNum.toFixed(1) + '%';
         smb.className = sellMarginNum >= 55.0 ? 'delta-badge delta-pos' : 'delta-badge delta-neg';
     });
+
+    const bsDateEl = document.getElementById('bs-last-updated');
+    if (bsDateEl) {
+        bsDateEl.innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    }
 }
 
 function renderLiveData(d) {
@@ -1506,8 +1511,8 @@ function renderLiveData(d) {
         { base: 'ovl', api: 'ovl' },
         { base: 'lee', api: 'lee' },
         { base: 'wsp', api: 'wsp' },
-        { base: 'mpl', api: 'MPL' },
-        { base: 'bal', api: 'BAL' }
+        { base: 'mpl', api: 'mpl' },
+        { base: 'bal', api: 'bal' }
     ].forEach(store => {
         // --- Core Math ---
         let p = Math.round(d[`${store.api}Pct`] || 0);
@@ -1589,6 +1594,11 @@ function renderLiveData(d) {
         const n = new Date(); 
         const formattedTime = `${n.getHours() % 12 || 12}:${String(n.getMinutes()).padStart(2,'0')} ${n.getHours() >= 12 ? 'PM' : 'AM'}`;
         document.getElementById('lastSyncedText').innerText = `Last Synced: ${formattedTime}`;
+    }
+
+    const ceoBsDateEl = document.getElementById('ceo-bs-last-updated');
+    if (ceoBsDateEl) {
+        ceoBsDateEl.innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
     }
 }
 
