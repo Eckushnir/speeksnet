@@ -4510,13 +4510,15 @@ function renderKpiChart(allData, metric) {
                 } 
             }
             
-            lbls.forEach((_, i) => { 
-                let row = d[sr+2+i];
-                if (!Array.isArray(row)) {
-                    sData.push(null);
-                    return;
+            lbls.forEach((lbl) => {
+                let rowIdx = -1;
+                for (let r = sr + 2; r < d.length; r++) {
+                    if (!Array.isArray(d[r])) continue;
+                    if (String(d[r][monthCol] || '').trim() === lbl) { rowIdx = r; break; }
                 }
-                
+                if (rowIdx === -1) { sData.push(null); return; }
+
+                let row = d[rowIdx];
                 let v = (metric === 'time' && currentTimeframe === '4-Week') ? row[5] : row[sCol];
                 let parsed = parseChartVal(v);
 
@@ -4576,13 +4578,16 @@ function renderKpiChart(allData, metric) {
                 
                 empCols.forEach((emp, eIdx) => {
                     let sData = [];
-                    lbls.forEach((_, i) => { 
-                        let rowIdx = sr+2+i;
-                        if (rowIdx < d.length && Array.isArray(d[rowIdx])) {
-                            let parsed = parseChartVal(d[rowIdx][emp.idx]);
-                            sData.push(parsed);
-                            if (parsed !== null) nums.push(parsed);
-                        } else { sData.push(null); }
+                    lbls.forEach((lbl) => {
+                        let rowIdx = -1;
+                        for (let r = sr + 2; r < d.length; r++) {
+                            if (!Array.isArray(d[r])) continue;
+                            if (String(d[r][monthCol] || '').trim() === lbl) { rowIdx = r; break; }
+                        }
+                        if (rowIdx === -1) { sData.push(null); return; }
+                        let parsed = parseChartVal(d[rowIdx][emp.idx]);
+                        sData.push(parsed);
+                        if (parsed !== null) nums.push(parsed);
                     });
                     
                     if (sData.some(val => val !== null)) {
