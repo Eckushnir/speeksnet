@@ -3044,13 +3044,18 @@ async function fetchMasterDistrictDashboard() {
 // ============================================================================
 // 20. MODULE: LISTING GOALS ENGINE
 // ============================================================================
-let goalsRoster = []; 
+let goalsRoster = [];
 let liveGoalsData = [];
 let allDistrictGoalsData = [];
 let editingYesterday = false;
 let goalsTargetStore = 'OVL';
 let currentAppDate = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
 let currentDmGoalView = 'daily';
+
+function normalizeGoalDate(s) {
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? String(s).trim() : d.toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
+}
 
 function toggleEditDate(isYest) {
     editingYesterday = isYest;
@@ -3136,16 +3141,26 @@ function renderGoalsScoreboard(viewType = 'daily') {
     }
 
     goalsRoster.forEach(emp => {
-        let empGoal = 0; 
-        let empResult = 0; 
+        let empGoal = 0;
+        let empResult = 0;
         let empRole = '-';
         let dailyStats = {};
-        
-        const empRecords = liveGoalsData.filter(r => r.employee === emp);
+
+        const rosterName = String(emp).trim().toLowerCase();
+        const rosterFirst = rosterName.split(' ')[0];
+        const empRecords = liveGoalsData.filter(r => {
+            const dbName = String(r.employee).trim().toLowerCase();
+            if (dbName === rosterName) return true;
+            const dbFirst = dbName.split(' ')[0];
+            if (dbFirst.length > 2 && rosterFirst.length > 2) {
+                if (dbFirst.startsWith(rosterFirst) || rosterFirst.startsWith(dbFirst)) return true;
+            }
+            return false;
+        });
         const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
         empRecords.forEach(record => {
-            const isToday = record.date === todayStr;
+            const isToday = normalizeGoalDate(record.date) === todayStr;
             const recDate = new Date(record.date);
             const isThisWeek = recDate >= startOfWeek;
 
@@ -3363,8 +3378,14 @@ function buildGoalsEditForm() {
     }
 
     goalsRoster.forEach((emp, idx) => {
-        const targetRecord = liveGoalsData.find(r => r.employee === emp && r.date === targetDateStr) || { role: '', goal: '', result: '' };
-        
+        const empNameNorm = String(emp).trim().toLowerCase();
+        const targetRecord = liveGoalsData.find(r => {
+            const dbName = String(r.employee).trim().toLowerCase();
+            const nameMatch = dbName === empNameNorm || dbName.split(' ')[0].startsWith(empNameNorm.split(' ')[0]) || empNameNorm.split(' ')[0].startsWith(dbName.split(' ')[0]);
+            const dateMatch = normalizeGoalDate(r.date) === targetDateStr;
+            return nameMatch && dateMatch;
+        }) || { role: '', goal: '', result: '' };
+
         let rolesHtml = '';
         availableRoles.forEach(r => {
             const isActive = targetRecord.role === r ? 'active' : '';
@@ -3718,7 +3739,7 @@ async function fetchAndRenderEmployeeGoals() {
             const resVal = parseInt(r.result) || 0;
 
             if (r.date === todayStr) {
-                todayGoal += g;
+                todayGoal = g;
                 if (r.role && r.role !== '-') todayRole = r.role;
             }
             
@@ -3731,6 +3752,14 @@ async function fetchAndRenderEmployeeGoals() {
 
         const roleTranslations = { 'B1': 'Buyer 1', 'B2': 'Buyer 2', 'L1': 'Lister 1', 'L2': 'Lister 2' };
         const displayRole = roleTranslations[todayRole] || todayRole;
+
+        const roleDescriptions = {
+            'B1': 'You\'re the lead buyer — first up for every customer who walks through the door. When someone comes in, that\'s your call.',
+            'B2': 'You\'re the second buyer in rotation. Hang back and jump in the moment a second customer arrives.',
+            'L1': 'Dedicated listing only — no buying, no shipping, no exceptions. Your entire focus today is getting items listed and nothing else.',
+            'L2': 'You\'re a primary lister throughout the day, but also serve as the emergency buyer when 4 or more separate customers are in the store at once.'
+        };
+        const roleDesc = roleDescriptions[todayRole] || '';
 
         const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
         const currentDayIdx = (now.getDay() + 6) % 7;
@@ -3762,6 +3791,8 @@ async function fetchAndRenderEmployeeGoals() {
                     <span class="emp-goal-value">${displayRole || '-'}</span>
                 </div>
             </div>
+
+            ${roleDesc ? `<div class="emp-role-description">${roleDesc}</div>` : ''}
 
             <div class="emp-week-section">
                 <span class="emp-goal-label">THIS WEEK'S BREAKDOWN</span>
