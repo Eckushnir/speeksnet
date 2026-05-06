@@ -2418,45 +2418,57 @@ async function fetchScorecardData() {
             displayDate = "Week of " + mondayDate.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric' });
         }
 
-        const isTenPointScale = latestScore > 5;
+        const displayScore = latestScore * 2;
         let scoreColor = 'var(--red-alert)';
-        if (isTenPointScale) {
-            if (latestScore > 8) scoreColor = 'var(--sage-professional)';  
-            else if (latestScore >= 6) scoreColor = 'var(--idea-gold)';
-        } else {
-            if (latestScore >= 4) scoreColor = 'var(--sage-professional)';
-            else if (latestScore >= 3) scoreColor = 'var(--idea-gold)';
-        }
+        if (displayScore > 8) scoreColor = 'var(--sage-professional)';
+        else if (displayScore >= 6) scoreColor = 'var(--idea-gold)';
 
-        const pulse = (isTenPointScale ? latestScore < 6 : latestScore < 3) 
-            ? `<div class="notif-dot active" style="display:block; position:absolute; top:-2px; right:-14px; width:12px; height:12px;"></div>` 
+        const pulse = displayScore < 6
+            ? `<div class="notif-dot active" style="display:block; position:absolute; top:-2px; right:-14px; width:12px; height:12px;"></div>`
             : '';
 
+        const renderCategoryCard = (cat) => {
+            let originalVal = parseFloat(cat.score);
+            let displayVal = cat.score;
+            let bg = '#f1f5f9', color = '#64748b';
+            if (!isNaN(originalVal)) {
+                let sVal = originalVal * 2;
+                displayVal = sVal;
+                if (sVal >= 8) { bg = '#d1fae5'; color = '#059669'; }
+                else if (sVal >= 6) { bg = '#fef3c7'; color = '#d97706'; }
+                else { bg = '#fee2e2'; color = '#dc2626'; }
+            }
+            return `<div style="display: flex; justify-content: space-between; align-items: center; background: #fff; border: 1px solid #e2e8f0; padding: 8px; border-radius: 8px; gap: 6px;">
+                <span style="font-size: 9px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase; line-height: 1.3;">${cat.name}</span>
+                <span style="font-size: 11px; font-weight: 900; background: ${bg}; color: ${color}; padding: 2px 6px; border-radius: 6px; flex-shrink: 0;">${displayVal}</span>
+            </div>`;
+        };
+
         let breakdownHtml = '';
-        if (storeData.breakdown && storeData.breakdown.length > 0) {
-            breakdownHtml = `<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-height: 280px; overflow-y: auto; padding-right: 4px; margin-top: 15px; border-top: 1px solid #f0f0f0; padding-top: 15px;" class="kpi-scroll-area">`;
-            
-            storeData.breakdown.forEach(cat => {
-                let originalVal = parseFloat(cat.score);
-                let displayVal = cat.score;
-                let bg = '#f1f5f9', color = '#64748b';
-                
-                if (!isNaN(originalVal)) {
-                    let sVal = originalVal * 2;
-                    displayVal = sVal; 
-                    
-                    if (sVal >= 8) { bg = '#d1fae5'; color = '#059669'; } 
-                    else if (sVal >= 6) { bg = '#fef3c7'; color = '#d97706'; } 
-                    else { bg = '#fee2e2'; color = '#dc2626'; } 
-                }
-                
-                breakdownHtml += `
-                <div style="display: flex; justify-content: space-between; align-items: center; background: #fff; border: 1px solid #e2e8f0; padding: 8px; border-radius: 8px; gap: 6px;">
-                    <span style="font-size: 9px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase; line-height: 1.3;">${cat.name}</span>
-                    <span style="font-size: 11px; font-weight: 900; background: ${bg}; color: ${color}; padding: 2px 6px; border-radius: 6px; flex-shrink: 0;">${displayVal}</span>
+        if (storeData.buckets && storeData.buckets.some(b => b.categories && b.categories.length > 0)) {
+            breakdownHtml = `<div style="max-height: 340px; overflow-y: auto; padding-right: 4px; margin-top: 15px; border-top: 1px solid #f0f0f0; padding-top: 15px;" class="kpi-scroll-area">`;
+            storeData.buckets.forEach(bucket => {
+                if (!bucket.categories || bucket.categories.length === 0) return;
+                let bAvgNum = bucket.avg * 2;
+                let bBg = '#f1f5f9', bColor = '#64748b';
+                if (bAvgNum >= 8) { bBg = '#d1fae5'; bColor = '#059669'; }
+                else if (bAvgNum >= 6) { bBg = '#fef3c7'; bColor = '#d97706'; }
+                else { bBg = '#fee2e2'; bColor = '#dc2626'; }
+                breakdownHtml += `<div style="margin-bottom: 12px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                        <span style="font-size: 9px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">${bucket.name}</span>
+                        <span style="font-size: 10px; font-weight: 900; background: ${bBg}; color: ${bColor}; padding: 2px 7px; border-radius: 6px;">${bAvgNum.toFixed(1)}</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
+                        ${bucket.categories.map(renderCategoryCard).join('')}
+                    </div>
                 </div>`;
             });
             breakdownHtml += `</div>`;
+        } else if (storeData.breakdown && storeData.breakdown.length > 0) {
+            breakdownHtml = `<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-height: 280px; overflow-y: auto; padding-right: 4px; margin-top: 15px; border-top: 1px solid #f0f0f0; padding-top: 15px;" class="kpi-scroll-area">
+                ${storeData.breakdown.map(renderCategoryCard).join('')}
+            </div>`;
         }
 
         container.innerHTML = `
@@ -2468,7 +2480,7 @@ async function fetchScorecardData() {
                 </div>
                 <div style="position: relative; display: inline-block;">
                     <div class="scorecard-val" style="color: ${scoreColor}; font-size: 36px; text-shadow: 0 4px 15px ${scoreColor}30; line-height: 1;">
-                        ${latestScore.toFixed(1)}
+                        ${displayScore.toFixed(1)}
                     </div>
                     ${pulse}
                 </div>
@@ -2807,7 +2819,7 @@ async function fetchMasterDistrictDashboard() {
 
             // 1. SCORECARD & HEADER
             const sScore = scoreData.data?.find(s => s.store.toUpperCase() === store) || {};
-            const scoreNum = parseFloat(sScore.score) || 0;
+            const scoreNum = (parseFloat(sScore.score) || 0) * 2;
             let sColor = scoreNum > 8 ? '#065f46' : (scoreNum >= 6 ? '#92400e' : '#991b1b');
             let sBg = scoreNum > 8 ? '#d1fae5' : (scoreNum >= 6 ? '#fef3c7' : '#fee2e2');
 
@@ -5140,15 +5152,23 @@ async function saveManageHotkeys() {
 
 // --- DM SCORECARD SUBMISSION LOGIC ---
 const SCORECARD_CATEGORIES = [
-    "Front of House Cleanliness", 
-    "Back of House Cleanliness", 
-    "Recycle Organization", 
-    "Retail Displays", 
-    "Overall Organization", 
-    "Online Store Pictures", 
-    "Staff Goals Readiness", 
-    "5 Facebook Listings", 
-    "2 Social Media Posts"
+    "Front of House Cleanliness",
+    "Back of House Cleanliness",
+    "Recycle Organization",
+    "Retail Displays",
+    "Overall Organization",
+    "Online Store Pictures",
+    "Staff Goals Readiness",
+    "5 Facebook Listings",
+    "2 Social Media Posts",
+    "Store Listing Review",
+    "Store Buying Review"
+];
+
+const SCORECARD_BUCKETS = [
+    { label: "In-Store Operations", count: 7 },
+    { label: "Media and Markets", count: 2 },
+    { label: "Store Reviews", count: 2 }
 ];
 
 function openScorecardModal() {
@@ -5159,23 +5179,33 @@ function openScorecardModal() {
     const dateInput = document.getElementById('dm-score-date');
     if (dateInput) dateInput.valueAsDate = new Date();
     
-    // 3. Generate the inputs
+    // 3. Generate the inputs grouped by bucket
     const container = document.getElementById('dm-category-inputs');
     if (container) {
-        container.innerHTML = SCORECARD_CATEGORIES.map((cat, i) => `
-            <div style="display: flex; flex-direction: column;">
-                <label class="form-label-caps">${cat}</label>
-                <select id="score-input-${i}" class="form-input-lg" style="margin-top: 0; padding: 10px; font-size: 14px;">
-                    <option value="">--</option>
-                    <option value="5">5</option>
-                    <option value="4">4</option>
-                    <option value="3">3</option>
-                    <option value="2">2</option>
-                    <option value="1">1</option>
-                    <option value="0">0</option>
-                </select>
-            </div>
-        `).join('');
+        let html = '';
+        let catIndex = 0;
+        SCORECARD_BUCKETS.forEach((bucket, bIdx) => {
+            html += `<div style="grid-column: 1 / -1; margin-top: ${bIdx > 0 ? '8px' : '0'}; padding-bottom: 4px; border-bottom: 1px solid #e2e8f0;">
+                <span style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">${bucket.label}</span>
+            </div>`;
+            for (let i = 0; i < bucket.count; i++) {
+                const cat = SCORECARD_CATEGORIES[catIndex];
+                html += `<div style="display: flex; flex-direction: column;">
+                    <label class="form-label-caps">${cat}</label>
+                    <select id="score-input-${catIndex}" class="form-input-lg" style="margin-top: 0; padding: 10px; font-size: 14px;">
+                        <option value="">--</option>
+                        <option value="5">5</option>
+                        <option value="4">4</option>
+                        <option value="3">3</option>
+                        <option value="2">2</option>
+                        <option value="1">1</option>
+                        <option value="0">0</option>
+                    </select>
+                </div>`;
+                catIndex++;
+            }
+        });
+        container.innerHTML = html;
     }
 }
 
