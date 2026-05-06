@@ -891,15 +891,40 @@ function startAuthFetch() {
         .catch(() => null); 
 }
 
+let _pinAutoTimer = null;
+
+function handlePINAutoTrigger() {
+    const input = document.getElementById('pinInput');
+    const btn = document.getElementById('unlockBtn');
+
+    if (_pinAutoTimer) {
+        clearTimeout(_pinAutoTimer);
+        _pinAutoTimer = null;
+        btn.classList.remove('loading');
+    }
+
+    if (input.value.length === 4) {
+        input.classList.add('pin-filled');
+        btn.classList.add('loading');
+        _pinAutoTimer = setTimeout(() => {
+            _pinAutoTimer = null;
+            checkPIN();
+        }, 900);
+    } else {
+        input.classList.remove('pin-filled');
+    }
+}
+
 async function checkPIN() {
     const pin = document.getElementById('pinInput').value;
     const err = document.getElementById('pinError');
     const btn = document.getElementById('unlockBtn');
-          
+
     if (!pin) return;
-    
-    btn.innerText = "Verifying..."; 
-    btn.style.opacity = "0.7"; 
+
+    if (_pinAutoTimer) { clearTimeout(_pinAutoTimer); _pinAutoTimer = null; }
+
+    btn.classList.add('loading');
     err.style.display = 'none';
 
     try {
@@ -945,9 +970,9 @@ async function checkPIN() {
         console.error(e);
         err.innerText = "Connection Error."; 
         err.style.display = 'block'; 
-    } finally { 
-        btn.innerText = "Unlock Portal"; 
-        btn.style.opacity = "1"; 
+    } finally {
+        btn.classList.remove('loading');
+        document.getElementById('pinInput').classList.remove('pin-filled');
     }
 }
 
@@ -2211,7 +2236,7 @@ function injectGlobalAuth() {
                         <h2>Welcome Back</h2>
                         <p id="authSubtitle">Please enter your 4-digit PIN to securely access the hub.</p>
                         <div id="pinInputContainer" class="pin-container">
-                            <input type="password" id="pinInput" maxlength="4" placeholder="••••" onkeypress="if(event.key === 'Enter') checkPIN()">
+                            <input type="password" id="pinInput" maxlength="4" placeholder="••••" onkeypress="if(event.key === 'Enter') checkPIN()" oninput="handlePINAutoTrigger()">
                             <button id="unlockBtn" class="btn-primary auth-btn" onclick="checkPIN()">Unlock Portal</button>
                             <div id="pinError" class="pin-error">Incorrect PIN. Please try again.</div>
                         </div>
