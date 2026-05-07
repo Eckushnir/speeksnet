@@ -3136,7 +3136,7 @@ async function fetchLiveGoalsData() {
             const _authData = JSON.parse(_authRaw);
             const _excluded = ['ceo', 'district manager'];
             const _emps = (_authData.users || [])
-                .filter(u => u.store === goalsTargetStore && !_excluded.includes((u.role || '').toLowerCase()))
+                .filter(u => (u.store || '').trim().toUpperCase() === goalsTargetStore.toUpperCase() && !_excluded.includes((u.role || '').toLowerCase()))
                 .map(u => u.name)
                 .filter(Boolean);
             goalsRoster = _emps.length ? _emps : ['No Employees Found'];
