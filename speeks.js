@@ -4159,6 +4159,10 @@ function applyRoleBasedUI() {
             }
         });
     }
+
+    const giToggle = document.querySelector('.gi-nav-toggle');
+    const giHidden = giToggle?.style.getPropertyValue('display') === 'none';
+    document.querySelector('.nav-panel-tabs')?.classList.toggle('gi-tab-hidden', giHidden);
 }
 
 function checkInstantNotifCache() {
@@ -4307,9 +4311,29 @@ document.addEventListener('mouseover', function(e) {
         const title = goalMini.dataset.goalTitle;
         const desc = goalMini.dataset.goalDesc;
         if (title) {
+            customTooltip.style.setProperty('--tip-color', 'var(--sage-professional)');
             customTooltip.innerHTML = `
                 <strong style="display:block; margin-bottom: 6px; color: var(--sage-professional); font-size: 13px;">${title}</strong>
                 ${desc ? `<span style="font-size: 12px; color: var(--slate-charcoal); line-height: 1.5;">${desc}</span>` : ''}`;
+            customTooltip.classList.add('show');
+            return;
+        }
+    }
+
+    const panelItem = e.target.closest('.cpb-project-item, .mgb-goal-item');
+    if (panelItem) {
+        const titleEl = panelItem.querySelector('.mgb-goal-title');
+        const descEl  = panelItem.querySelector('.mgb-goal-desc');
+        const isTitleCut = titleEl && titleEl.scrollWidth > titleEl.clientWidth;
+        const isDescCut  = descEl  && descEl.scrollHeight > descEl.clientHeight;
+        if (isTitleCut || isDescCut) {
+            const color = panelItem.classList.contains('cpb-initiative-item') ? '#f59e0b'
+                        : panelItem.classList.contains('mgb-goal-item')       ? '#5a8d3b'
+                        : '#3b82f6';
+            customTooltip.style.setProperty('--tip-color', color);
+            customTooltip.innerHTML = `
+                <strong style="display:block; margin-bottom: 6px; font-size: 13px; color: var(--slate-charcoal);">${titleEl ? titleEl.innerText.trim() : ''}</strong>
+                ${descEl ? `<span style="font-size: 12px; color: #64748b; line-height: 1.4;">${descEl.innerText.trim()}</span>` : ''}`;
             customTooltip.classList.add('show');
             return;
         }
@@ -5009,54 +5033,155 @@ function _mgbMonthLabel(date) {
 
 let _mgbExpanded = false;
 
-function renderMonthlyGoalsBanner() {
-    const store = sessionStorage.getItem('speeksUserStore') || '';
-    const labelEl = document.getElementById('mgbMonthLabel');
-    if (!labelEl) return;
+const _storeColors = { OVL: '#7c3aed', LEE: '#2563eb', WSP: '#5a8d3b', MPL: '#ea580c', BAL: '#dc2626' };
 
-    const label = _mgbMonthLabel() + ' Goals';
-    ['mgbMonthLabel', 'mgbMonthLabelFull'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = label; });
-    ['mgbStoreTag',   'mgbStoreTagFull'  ].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = store; });
+function renderMonthlyGoalsBanner() {
+    if (_selectedGoalDate) return; // viewing a past month — don't override
+    const store = sessionStorage.getItem('speeksUserStore') || '';
+    const labelEl = document.getElementById('giGoalsLabel');
+    if (labelEl) labelEl.textContent = _mgbMonthLabel() + ' Goals';
 
     const data  = getMonthlyGoals(store);
     const goals = data?.goals || [];
-
-    const snippetEl = document.getElementById('mgbSnippet');
-    const listEl    = document.getElementById('mgbGoalsList');
-    const footerEl  = document.getElementById('mgbFooter');
+    const listEl = document.getElementById('giGoalsList');
 
     if (!goals.length) {
-        if (snippetEl) snippetEl.textContent = 'No goals set for this month yet.';
-        if (listEl)    listEl.innerHTML = '<div class="status-message" style="padding: 20px 0;">No goals have been set yet.</div>';
-        if (footerEl)  footerEl.textContent = '';
+        if (listEl) listEl.innerHTML = '<div class="status-message" style="padding: 8px 0;">No goals have been set for this month yet.</div>';
         return;
-    }
-
-    if (snippetEl) {
-        const snip = goals.slice(0, 3).map(g => escapeHtml(g.title)).join(' · ');
-        snippetEl.textContent = goals.length > 3 ? `${snip} +${goals.length - 3} more` : snip;
     }
 
     let html = '';
     goals.forEach(g => {
-        html += `
-        <div class="mgb-goal-item">
+        html += `<div class="mgb-goal-item">
             <span class="mgb-goal-title">${escapeHtml(g.title)}</span>
             ${g.description ? `<span class="mgb-goal-desc">${escapeHtml(g.description)}</span>` : ''}
         </div>`;
     });
-
-    if (listEl)   listEl.innerHTML = html;
-    if (footerEl) footerEl.textContent = '';
+    if (listEl) listEl.innerHTML = html;
 }
 
-function toggleGoalsBanner() {
-    _mgbExpanded = !_mgbExpanded;
-    const c = document.getElementById('mgbCollapsed');
-    const e = document.getElementById('mgbExpanded');
-    if (c) c.style.display = _mgbExpanded ? 'none' : 'flex';
-    if (e) e.style.display = _mgbExpanded ? 'block' : 'none';
+function toggleGoalsBanner() { toggleGoalsPanel(); }
+
+// --- Previous Months Dropdown ---
+
+let _selectedGoalDate = null; // null = current month
+
+function _closePrevMonths() {
+    const dropdown = document.getElementById('giPrevMonthsList');
+    const btn      = document.getElementById('giPrevToggleBtn');
+    if (dropdown) dropdown.classList.remove('open');
+    // keep btn.active if a past month is selected
+    if (btn) btn.classList.toggle('active', !!_selectedGoalDate);
 }
+
+function _resetToCurrentMonth() {
+    _selectedGoalDate = null;
+    _closePrevMonths();
+    const editBtn = document.getElementById('giEditGoalsBtn');
+    if (editBtn) editBtn.style.display = '';
+    renderMonthlyGoalsBanner();
+}
+
+function _buildMonthDropdown(dropdown) {
+    const now  = new Date();
+    const nowYm = _mgbYearMonth();
+    const selYm = _selectedGoalDate ? _mgbYearMonth(_selectedGoalDate) : nowYm;
+    const months = [now];
+    for (let i = 1; i <= 3; i++) months.push(new Date(now.getFullYear(), now.getMonth() - i, 1));
+    dropdown.innerHTML = months.map((d, idx) => {
+        const ym       = _mgbYearMonth(d);
+        const label    = _mgbMonthLabel(d);
+        const selected = ym === selYm ? ' selected' : '';
+        const tag      = idx === 0 ? '<span class="gi-month-current-tag">Current</span>' : '';
+        return `<div class="gi-month-option${selected}" onclick="selectGoalMonth('${ym}')">${label}${tag}</div>`;
+    }).join('');
+}
+
+window.togglePrevMonths = function(e) {
+    if (e) e.stopPropagation();
+    const dropdown = document.getElementById('giPrevMonthsList');
+    const btn      = document.getElementById('giPrevToggleBtn');
+    if (!dropdown || !btn) return;
+    const opening = !dropdown.classList.contains('open');
+    dropdown.classList.toggle('open', opening);
+    btn.classList.toggle('active', opening || !!_selectedGoalDate);
+    if (opening) {
+        _buildMonthDropdown(dropdown);
+        setTimeout(() => {
+            document.addEventListener('click', function _giClickAway(ev) {
+                const wrap = document.querySelector('.gi-prev-wrapper');
+                if (wrap && wrap.contains(ev.target)) return;
+                document.getElementById('giPrevMonthsList')?.classList.remove('open');
+                const b = document.getElementById('giPrevToggleBtn');
+                if (b) b.classList.toggle('active', !!_selectedGoalDate);
+                document.removeEventListener('click', _giClickAway);
+            });
+        }, 0);
+    }
+};
+
+window.selectGoalMonth = async function(ym) {
+    const dropdown  = document.getElementById('giPrevMonthsList');
+    const btn       = document.getElementById('giPrevToggleBtn');
+    const editBtn   = document.getElementById('giEditGoalsBtn');
+    if (dropdown) dropdown.classList.remove('open');
+
+    const nowYm = _mgbYearMonth();
+    if (ym === nowYm) {
+        _selectedGoalDate = null;
+        if (btn) btn.classList.remove('active');
+        if (editBtn) editBtn.style.display = '';
+        renderMonthlyGoalsBanner();
+        return;
+    }
+
+    if (editBtn) editBtn.style.display = 'none';
+
+    const [year, month] = ym.split('-').map(Number);
+    _selectedGoalDate = new Date(year, month - 1, 1);
+    if (btn) btn.classList.add('active');
+
+    const labelEl = document.getElementById('giGoalsLabel');
+    if (labelEl) labelEl.textContent = _mgbMonthLabel(_selectedGoalDate) + ' Goals';
+
+    const listEl = document.getElementById('giGoalsList');
+    if (!listEl) return;
+    listEl.innerHTML = '<div class="status-message">Loading...</div>';
+
+    const store    = sessionStorage.getItem('speeksUserStore') || '';
+    const cacheKey = _mgbKey(store, _selectedGoalDate);
+    let goals = null;
+    try { const raw = localStorage.getItem(cacheKey); if (raw) goals = JSON.parse(raw)?.goals ?? []; } catch {}
+
+    if (goals === null) {
+        try {
+            const res   = await fetch(`${MONTHLY_GOALS_URL}?action=getAll&yearMonth=${ym}&t=${Date.now()}`);
+            const map   = await res.json();
+            const entry = map[(store || '').toUpperCase()];
+            if (entry) { localStorage.setItem(cacheKey, JSON.stringify(entry)); goals = entry.goals || []; }
+            else goals = [];
+        } catch { goals = null; }
+    }
+
+    if (!goals?.length) {
+        listEl.innerHTML = `<div class="status-message" style="padding:8px 0;">${goals === null ? 'Could not load.' : 'No goals recorded for this month.'}</div>`;
+        return;
+    }
+    listEl.innerHTML = goals.map(g => `<div class="mgb-goal-item">
+        <span class="mgb-goal-title">${escapeHtml(g.title)}</span>
+        ${g.description ? `<span class="mgb-goal-desc">${escapeHtml(g.description)}</span>` : ''}
+    </div>`).join('');
+};
+
+window.toggleGoalsPanel = function(event) {
+    if (event) event.stopPropagation();
+    const panel = document.getElementById('goalsSidePanel');
+    if (!panel) return;
+    const isOpen = panel.classList.toggle('open');
+    const toggle = document.querySelector('.gi-nav-toggle');
+    if (toggle) toggle.classList.toggle('panel-active', isOpen);
+    if (!isOpen) _closePrevMonths();
+};
 
 // --- Edit Modal ---
 
@@ -5123,25 +5248,40 @@ function renderDistrictGoals() {
     if (monthEl) monthEl.textContent = _mgbMonthLabel();
     const stores = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
     const emojis = { OVL: '🟣', LEE: '🔵', WSP: '🟢', MPL: '🟠', BAL: '🔴' };
-    let html = '';
+
+    let goalsRow = '';
+    let initiativesRow = '';
+
     stores.forEach(store => {
         const data        = getMonthlyGoals(store);
         const goals       = data?.goals || [];
         const initiatives = getStoreInitiatives(store)?.initiatives || [];
 
-        const goalsHtml = goals.length
+        const goalsContent = goals.length
             ? goals.map(g => `<div class="dg-goal-mini" data-goal-title="${escapeHtml(g.title)}" data-goal-desc="${escapeHtml(g.description || '')}"><div class="dg-goal-mini-label">${escapeHtml(g.title)}</div></div>`).join('')
             : '<div class="dg-no-goals">No goals set</div>';
 
         const initiativeItems = initiatives.length
-            ? initiatives.map(i => `<div class="dg-goal-mini dg-initiative-mini" data-goal-title="${escapeHtml(i.title)}" data-goal-desc="${escapeHtml(i.description || '')}"><div class="dg-goal-mini-label">${escapeHtml(i.title)}</div></div>`).join('')
+            ? initiatives.map(i => {
+                const badge = i.status === 'upcoming'
+                    ? '<span class="si-status-badge si-status-badge--upcoming">Upcoming</span>'
+                    : '<span class="si-status-badge si-status-badge--current">Current</span>';
+                return `<div class="dg-goal-mini dg-initiative-mini" data-goal-title="${escapeHtml(i.title)}" data-goal-desc="${escapeHtml(i.description || '')}"><div class="dg-goal-mini-label">${escapeHtml(i.title)}</div>${badge}</div>`;
+            }).join('')
             : '<div class="dg-no-goals">No initiatives set</div>';
 
-        const initiativesHtml = `<div class="dg-initiatives-divider">Initiatives <button class="dg-edit-btn" onclick="openEditStoreInitiativesModal('${store}')">Edit ✏️</button></div>${initiativeItems}`;
+        goalsRow += `<div class="dg-goals-col">
+            <div class="dg-store-header">${emojis[store]} ${store}</div>
+            ${goalsContent}
+        </div>`;
 
-        html += `<div class="dg-store-card"><div class="dg-store-header">${emojis[store]} ${store}</div>${goalsHtml}${initiativesHtml}</div>`;
+        initiativesRow += `<div class="dg-initiatives-col">
+            <div class="dg-initiatives-divider">Initiatives &amp; Projects <button class="dg-edit-btn" onclick="openEditStoreInitiativesModal('${store}')">Edit ✏️</button></div>
+            ${initiativeItems}
+        </div>`;
     });
-    container.innerHTML = html;
+
+    container.innerHTML = goalsRow + initiativesRow;
 }
 
 // ============================================================================
@@ -5172,57 +5312,47 @@ let _cpbExpanded = false;
 
 function renderCompanyProjectsBanner() {
     const store       = sessionStorage.getItem('speeksUserStore') || '';
-    const snippetEl   = document.getElementById('cpbSnippet');
-    const listEl      = document.getElementById('cpbProjectsList');
+    const listEl      = document.getElementById('giInitiativesList');
     const projects    = getCompanyProjects()?.projects || [];
     const initiatives = getStoreInitiatives(store)?.initiatives || [];
     const allItems    = [...projects, ...initiatives];
 
     if (!allItems.length) {
-        if (snippetEl) snippetEl.textContent = 'No initiatives set yet.';
-        if (listEl)    listEl.innerHTML = '<div class="status-message" style="padding: 20px 0;">No initiatives have been set yet.</div>';
+        if (listEl) listEl.innerHTML = '<div class="status-message" style="padding: 8px 0;">No initiatives have been set yet.</div>';
         return;
-    }
-
-    if (snippetEl) {
-        const snip = allItems.slice(0, 3).map(i => escapeHtml(i.title)).join(' · ');
-        snippetEl.textContent = allItems.length > 3 ? `${snip} +${allItems.length - 3} more` : snip;
     }
 
     if (listEl) {
         let html = '';
-
         if (projects.length) {
             html += '<div class="cpb-section-label">Company</div>';
             projects.forEach(p => {
+                const badge = p.status === 'upcoming'
+                    ? '<span class="si-status-badge si-status-badge--upcoming">Upcoming</span>'
+                    : '<span class="si-status-badge si-status-badge--current">Current</span>';
                 html += `<div class="cpb-project-item">
-                    <span class="mgb-goal-title">${escapeHtml(p.title)}</span>
+                    <div class="cpb-item-title-row"><span class="mgb-goal-title">${escapeHtml(p.title)}</span>${badge}</div>
                     ${p.description ? `<span class="mgb-goal-desc">${escapeHtml(p.description)}</span>` : ''}
                 </div>`;
             });
         }
-
         if (initiatives.length) {
             html += `<div class="cpb-section-label${projects.length ? ' cpb-section-label--spaced' : ''}">${escapeHtml(store)}</div>`;
             initiatives.forEach(i => {
+                const badge = i.status === 'upcoming'
+                    ? '<span class="si-status-badge si-status-badge--upcoming">Upcoming</span>'
+                    : '<span class="si-status-badge si-status-badge--current">Current</span>';
                 html += `<div class="cpb-project-item cpb-initiative-item">
-                    <span class="mgb-goal-title">${escapeHtml(i.title)}</span>
+                    <div class="cpb-item-title-row"><span class="mgb-goal-title">${escapeHtml(i.title)}</span>${badge}</div>
                     ${i.description ? `<span class="mgb-goal-desc">${escapeHtml(i.description)}</span>` : ''}
                 </div>`;
             });
         }
-
         listEl.innerHTML = html;
     }
 }
 
-function toggleCompanyProjectsBanner() {
-    _cpbExpanded = !_cpbExpanded;
-    const c = document.getElementById('cpbCollapsed');
-    const e = document.getElementById('cpbExpanded');
-    if (c) c.style.display = _cpbExpanded ? 'none' : 'flex';
-    if (e) e.style.display = _cpbExpanded ? 'block' : 'none';
-}
+function toggleCompanyProjectsBanner() { toggleGoalsPanel(); }
 
 // --- Edit Company Projects Modal ---
 
@@ -5236,6 +5366,20 @@ function openEditCompanyProjectsModal() {
     toggleModal('editCompanyProjectsModal');
 }
 
+window.toggleSiStatus = function(btn) {
+    btn.closest('.si-status-toggle')?.querySelectorAll('.si-status-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+};
+
+function _siStatusToggleHtml(status) {
+    const cur = (!status || status === 'current') ? 'active' : '';
+    const upc = status === 'upcoming' ? 'active' : '';
+    return `<div class="si-status-toggle">
+        <button type="button" class="si-status-btn ${cur}" data-val="current" onclick="toggleSiStatus(this)">Current</button>
+        <button type="button" class="si-status-btn ${upc}" data-val="upcoming" onclick="toggleSiStatus(this)">Upcoming</button>
+    </div>`;
+}
+
 function addCompanyProjectRow(existing) {
     const list = document.getElementById('editCompanyProjectsList');
     if (!list || list.children.length >= 8) return;
@@ -5245,6 +5389,7 @@ function addCompanyProjectRow(existing) {
         <div class="edit-goal-inner">
             <input type="text" class="form-input-lg edit-cp-title" style="margin:0; font-size:13px;" placeholder="Initiative title (e.g. Launch Loyalty Program)" value="${escapeHtml(existing?.title || '')}">
             <input type="text" class="form-input-lg edit-cp-desc" style="margin:0; font-size:12px;" placeholder="Description (optional)" value="${escapeHtml(existing?.description || '')}">
+            ${_siStatusToggleHtml(existing?.status)}
         </div>
         <button class="edit-goal-remove-btn" onclick="this.closest('.edit-goal-row').remove(); _updateAddCompanyProjectBtn();" title="Remove">✕</button>`;
     list.appendChild(row);
@@ -5263,8 +5408,9 @@ function saveCompanyProjects() {
     document.querySelectorAll('#editCompanyProjectsList .edit-goal-row').forEach(row => {
         const title       = row.querySelector('.edit-cp-title')?.value.trim();
         const description = row.querySelector('.edit-cp-desc')?.value.trim();
+        const status      = row.querySelector('.si-status-btn.active')?.dataset.val || 'current';
         if (!title) return;
-        projects.push({ title, description });
+        projects.push({ title, description, status });
     });
     const payload = {
         projects,
@@ -5295,27 +5441,7 @@ async function _postCompanyProjectsToSheet(payload) {
 // --- Store Initiatives ---
 
 function renderStoreInitiatives() {
-    const store      = sessionStorage.getItem('speeksUserStore') || '';
-    const listEl     = document.getElementById('siItemsList');
-    if (!listEl) return;
-
-    const data        = getStoreInitiatives(store);
-    const initiatives = data?.initiatives || [];
-
-    if (!initiatives.length) {
-        listEl.innerHTML = '<div class="status-message" style="padding: 8px 0; font-size: 12px;">No store initiatives set.</div>';
-        return;
-    }
-
-    let html = '';
-    initiatives.forEach(item => {
-        html += `
-        <div class="si-item">
-            <span class="mgb-goal-title">${escapeHtml(item.title)}</span>
-            ${item.description ? `<span class="mgb-goal-desc">${escapeHtml(item.description)}</span>` : ''}
-        </div>`;
-    });
-    listEl.innerHTML = html;
+    renderCompanyProjectsBanner();
 }
 
 let _editingInitiativesForStore = null;
@@ -5342,6 +5468,7 @@ function addStoreInitiativeRow(existing) {
         <div class="edit-goal-inner">
             <input type="text" class="form-input-lg edit-si-title" style="margin:0; font-size:13px;" placeholder="Initiative title (e.g. Test new shelf layout)" value="${escapeHtml(existing?.title || '')}">
             <input type="text" class="form-input-lg edit-si-desc" style="margin:0; font-size:12px;" placeholder="Description (optional)" value="${escapeHtml(existing?.description || '')}">
+            ${_siStatusToggleHtml(existing?.status)}
         </div>
         <button class="edit-goal-remove-btn" onclick="this.closest('.edit-goal-row').remove(); _updateAddStoreInitiativeBtn();" title="Remove">✕</button>`;
     list.appendChild(row);
@@ -5361,8 +5488,9 @@ function saveStoreInitiatives() {
     document.querySelectorAll('#editStoreInitiativesList .edit-goal-row').forEach(row => {
         const title       = row.querySelector('.edit-si-title')?.value.trim();
         const description = row.querySelector('.edit-si-desc')?.value.trim();
+        const status      = row.querySelector('.si-status-btn.active')?.dataset.val || 'current';
         if (!title) return;
-        initiatives.push({ title, description });
+        initiatives.push({ title, description, status });
     });
     const payload = {
         initiatives,
@@ -5399,13 +5527,18 @@ function renderDistrictCompanyProjects() {
     const projects = data?.projects || [];
 
     const itemsHtml = projects.length
-        ? projects.map(p => `<div class="dg-goal-mini" data-goal-title="${escapeHtml(p.title)}" data-goal-desc="${escapeHtml(p.description || '')}"><div class="dg-goal-mini-label">${escapeHtml(p.title)}</div></div>`).join('')
+        ? projects.map(p => {
+            const badge = p.status === 'upcoming'
+                ? '<span class="si-status-badge si-status-badge--upcoming">Upcoming</span>'
+                : '<span class="si-status-badge si-status-badge--current">Current</span>';
+            return `<div class="dg-goal-mini" data-goal-title="${escapeHtml(p.title)}" data-goal-desc="${escapeHtml(p.description || '')}"><div class="dg-goal-mini-label">${escapeHtml(p.title)}</div>${badge}</div>`;
+        }).join('')
         : '<div class="dg-no-goals">No company initiatives set</div>';
 
     container.innerHTML = `
         <div class="district-cp-section">
             <div class="district-cp-header-row">
-                <span class="district-cp-header">Company Initiatives</span>
+                <span class="district-cp-header">Company Initiatives &amp; Projects</span>
                 <button class="dg-edit-btn" onclick="openEditCompanyProjectsModal()">Edit ✏️</button>
             </div>
             <div class="district-cp-items">${itemsHtml}</div>
@@ -5427,7 +5560,12 @@ function renderDistrictInitiativesGrid() {
         const items = data?.initiatives || [];
         if (items.length) hasAny = true;
         const inner = items.length
-            ? items.map(i => `<div class="dg-goal-mini" data-goal-title="${escapeHtml(i.title)}" data-goal-desc="${escapeHtml(i.description || '')}"><div class="dg-goal-mini-label">${escapeHtml(i.title)}</div></div>`).join('')
+            ? items.map(i => {
+                const badge = i.status === 'upcoming'
+                    ? '<span class="si-status-badge si-status-badge--upcoming">Upcoming</span>'
+                    : '<span class="si-status-badge si-status-badge--current">Current</span>';
+                return `<div class="dg-goal-mini" data-goal-title="${escapeHtml(i.title)}" data-goal-desc="${escapeHtml(i.description || '')}"><div class="dg-goal-mini-label">${escapeHtml(i.title)}</div>${badge}</div>`;
+            }).join('')
             : '<div class="dg-no-goals">No initiatives set</div>';
         html += `<div class="dg-store-card"><div class="dg-store-header">${emojis[store]} ${store}</div>${inner}</div>`;
     });
@@ -5443,9 +5581,30 @@ async function syncInitiativesFromSheet() {
     try {
         const res  = await fetch(`${MONTHLY_GOALS_URL}?action=getAllInitiatives&t=${Date.now()}`);
         const data = await res.json();
-        if (data.company) putCompanyProjects(data.company);
+        if (data.company) {
+            // Preserve local status values the sheet may not return yet
+            const localCompany = getCompanyProjects();
+            if (localCompany?.projects && data.company.projects) {
+                const localByTitle = {};
+                localCompany.projects.forEach(p => { localByTitle[p.title] = p.status; });
+                data.company.projects = data.company.projects.map(p => ({
+                    ...p, status: p.status || localByTitle[p.title] || 'current'
+                }));
+            }
+            putCompanyProjects(data.company);
+        }
         ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'].forEach(store => {
-            if (data[store]) putStoreInitiatives(store, data[store]);
+            if (data[store]) {
+                const local = getStoreInitiatives(store);
+                if (local?.initiatives && data[store].initiatives) {
+                    const localByTitle = {};
+                    local.initiatives.forEach(i => { localByTitle[i.title] = i.status; });
+                    data[store].initiatives = data[store].initiatives.map(i => ({
+                        ...i, status: i.status || localByTitle[i.title] || 'current'
+                    }));
+                }
+                putStoreInitiatives(store, data[store]);
+            }
         });
         renderCompanyProjectsBanner();
         renderStoreInitiatives();
@@ -6353,14 +6512,26 @@ window.toggleChecklistPanel = function(event) {
 document.addEventListener('click', function(e) {
     // CRITICAL FIX: If the clicked element was just removed from the DOM (like deleting a task), ignore the click!
     if (!document.body.contains(e.target)) return;
+    // Don't close panels while a modal is open or the click was inside one (e.g. ✖ button fires closeAllModals before bubbling)
+    if (document.getElementById('globalOverlay')?.classList.contains('show')) return;
+    if (e.target.closest('.modal-menu')) return;
 
-    const panel = document.getElementById('checklistSidePanel');
-    
-    if (panel && panel.classList.contains('open')) {
-        // Because the tab is now attached TO the panel, we only need to check if the click was inside the panel
-        if (!panel.contains(e.target)) {
-            panel.classList.remove('open');
-        }
+    const clPanel = document.getElementById('checklistSidePanel');
+    if (clPanel && clPanel.classList.contains('open')) {
+        if (!clPanel.contains(e.target)) {
+            clPanel.classList.remove('open');
+            document.querySelector('.cl-nav-toggle')?.classList.remove('panel-active');
+                }
+    }
+
+    const giPanel = document.getElementById('goalsSidePanel');
+    const giToggle = document.querySelector('.gi-nav-toggle');
+    if (giPanel && giPanel.classList.contains('open')) {
+        if (!giPanel.contains(e.target) && !giToggle?.contains(e.target)) {
+            giPanel.classList.remove('open');
+            giToggle?.classList.remove('panel-active');
+            _resetToCurrentMonth();
+                }
     }
 });
 

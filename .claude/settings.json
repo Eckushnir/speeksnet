@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(& 'C:\\\\Users\\\\User\\\\AppData\\\\Local\\\\GitHubDesktop\\\\bin\\\\git.exe' log --oneline -20 2>&1)",
+      "Read(//c/Users/User/AppData/Local/GitHubDesktop/bin/**)",
+      "Read(//c/Users/User/AppData/Local/GitHubDesktop/**)",
+      "PowerShell(cmd /c \"where git 2>&1\")"
+    ]
+  }
+}

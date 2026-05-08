@@ -80,11 +80,18 @@
     </div>
 </header>
 
-<button class="cl-nav-toggle dynamic-module-flex role-manager role-district-manager" onclick="toggleChecklistPanel(event); loadChecklist();" title="Checklist">
-    <span style="font-size: 14px; line-height: 1;">📋</span>
-    <span>Checklist</span>
-    <svg class="cl-toggle-chevron" xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-</button>
+<div class="nav-panel-tabs">
+    <button class="gi-nav-toggle dynamic-module-flex role-manager role-employee role-training" onclick="toggleGoalsPanel()" title="Goals &amp; Initiatives">
+        <span style="font-size: 14px; line-height: 1;">🎯</span>
+        <span>Goals &amp; Initiatives</span>
+        <svg class="gi-toggle-chevron" xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+    </button>
+    <button class="cl-nav-toggle dynamic-module-flex role-manager role-district-manager" onclick="toggleChecklistPanel(event); loadChecklist();" title="Checklist">
+        <span style="font-size: 14px; line-height: 1;">📋</span>
+        <span>Checklist</span>
+        <svg class="cl-toggle-chevron" xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+    </button>
+</div>
 
 <!-- ===== FIRST-LOGIN TUTORIAL ===== -->
 <div id="tutorialOverlay" class="tutorial-overlay">
@@ -380,7 +387,7 @@
       
     <div class="dynamic-module-flex role-ceo hotbar-wrapper">
         <div class="hotbar-container">
-          <span class="hotbar-label">👑 CEO</span>
+          <span class="hotbar-label">CEO</span>
           <div class="hotbar-links">
             <a href="https://docs.google.com/spreadsheets/d/1i_oV37lZXq8s91f9ymzwQlrM8WY2UlQQQ0qsRP3xLJ8/edit" target="_blank" class="hotbar-btn">📊 Sales Summary</a> 
             <a href="https://drive.google.com/drive/folders/1kV1if60GZ9211JGgK0nxY9McBfdtENDK?usp=sharing" target="_blank" class="hotbar-btn">🔑 Store Passwords</a>
@@ -394,7 +401,7 @@
 
       <div class="dynamic-module-flex role-district-manager hotbar-wrapper">
         <div class="hotbar-container">
-          <span class="hotbar-label">🗺️ DM</span>
+          <span class="hotbar-label">DM</span>
           <div class="hotbar-links">
             <a href="https://drive.google.com/drive/folders/1nO9KTRU6Kb9Mv-cTAPp-kffV4DVESdC8?usp=sharing" target="_blank" class="hotbar-btn">📁 Store Manager Folder</a>
             <a href="https://drive.google.com/drive/folders/1kV1if60GZ9211JGgK0nxY9McBfdtENDK?usp=sharing" target="_blank" class="hotbar-btn">🔑 Store Passwords</a>
@@ -412,7 +419,7 @@
 
       <div class="dynamic-module-flex role-tom hotbar-wrapper">
         <div class="hotbar-container">
-          <span class="hotbar-label">🛠️ TOM</span>
+          <span class="hotbar-label">TOM</span>
           <div class="hotbar-links">
             <a href="https://drive.google.com/drive/folders/13qnGzS60VO83iVbyREzCoRFSctMWZeb3?usp=sharing" target="_blank" class="hotbar-btn">📁 TOM Folder</a>
             <a href="https://drive.google.com/drive/folders/1e-2O_0tvdt7J6NiUET01bVly51HGcZwU?usp=sharing" target="_blank" class="hotbar-btn">🏢 B2B Records</a>   
@@ -423,7 +430,7 @@
 
       <div class="dynamic-module-flex role-tom hotbar-wrapper">
         <div class="hotbar-container">
-          <span class="hotbar-label">🌐 PORTALS</span>
+          <span class="hotbar-label">PORTALS</span>
           <div class="hotbar-links">
             <a href="https://drive.google.com/drive/folders/1dd1nkndo_Pqt3kztaHcpYWL-NgOWIP-E?usp=drive_link" target="_blank" class="hotbar-btn">🟣 OVL Portal</a>  
             <a href="https://drive.google.com/drive/folders/1Xv6ICOpEXNMeWk4QJBfS7CR6tIFRuElk?usp=drive_link" target="_blank" class="hotbar-btn">🔵 LEE Portal</a>
@@ -436,7 +443,7 @@
 
       <div class="dynamic-module-flex role-district-manager hotbar-wrapper">
         <div class="hotbar-container">
-          <span class="hotbar-label">📚 Resources</span>
+          <span class="hotbar-label">Resources</span>
           <div class="hotbar-links">
             <a href="https://drive.google.com/drive/folders/1e-2O_0tvdt7J6NiUET01bVly51HGcZwU?usp=sharing" target="_blank" class="hotbar-btn">🏢 B2B Records</a>  
             <a href="https://drive.google.com/drive/folders/1DkfZtDlE2o8O4R4XPqC7cX_qsO-NstmM?usp=sharing" target="_blank" class="hotbar-btn">🎓 Training</a>
@@ -447,7 +454,7 @@
 
       <div class="dynamic-module-flex role-manager hotbar-wrapper">
         <div class="hotbar-container">
-          <span class="hotbar-label">💼 MGR</span>
+          <span class="hotbar-label">MGR</span>
           <div class="hotbar-links">
             <a href="https://docs.google.com/spreadsheets/d/1NkIdw8dlvwXmQ6kdpo73zqRwnPd4kIAkgJ7yAG2XCt4/edit?usp=sharing" target="_blank" class="hotbar-btn">🎯 Daily Listing Goals</a>  
             <a href="https://docs.google.com/spreadsheets/d/1KdQNDYfJT-Gt6wal6cgCbh6aqOUOHxey3PEsoeyztzQ/edit?usp=sharing" target="_blank" class="hotbar-btn">⏳ Aging Inventory</a>
@@ -459,7 +466,7 @@
 
       <div class="dynamic-module-flex store-lee hotbar-wrapper">
         <div class="hotbar-container">
-          <span class="hotbar-label">🔵 LEE</span>
+          <span class="hotbar-label">LEE</span>
           <div class="hotbar-links">
             <a href="https://docs.google.com/spreadsheets/d/1BWWMPddxjoTTZL9ZRfgiH6-EiE5vaOczi-x_41Skaxk/edit?usp=sharing" target="_blank" class="hotbar-btn">🔑 Passwords</a>
             <a href="https://docs.google.com/spreadsheets/d/130-aH4s8pNeggrqVSXSJ0R0JDnWkskXUfhNPxSAlPRg/edit?usp=sharing" target="_blank" class="hotbar-btn">🛒 Marketplace</a>
@@ -474,7 +481,7 @@
 
       <div class="dynamic-module-flex store-ovl hotbar-wrapper">
         <div class="hotbar-container">
-          <span class="hotbar-label">🟣 OVL</span>
+          <span class="hotbar-label">OVL</span>
           <div class="hotbar-links">
             <a href="https://docs.google.com/spreadsheets/d/1Ze3z9iyDZZaXsOEjOekEEsrO7OqDpVeH6Bhk4t67K2I/edit" target="_blank" class="hotbar-btn">🔑 Passwords</a>
             <a href="https://docs.google.com/spreadsheets/d/1r2UfB926QvaSDuO7_mqOE8z4u6IWjgbIqg_N6rfFV9c/edit" target="_blank" class="hotbar-btn">🛒 Marketplace</a>
@@ -489,7 +496,7 @@
 
       <div class="dynamic-module-flex store-wsp hotbar-wrapper">
         <div class="hotbar-container">
-          <span class="hotbar-label">🟢 WSP</span>
+          <span class="hotbar-label">WSP</span>
           <div class="hotbar-links">
             <a href="https://docs.google.com/spreadsheets/d/14AYsHQ0R1IEXqgKqrGEuyURHGi3fFKrAglgu0dVFJPE/edit" target="_blank" class="hotbar-btn">🔑 Passwords</a>
             <a href="https://docs.google.com/spreadsheets/d/1V0TQ1cJXqUzt0mRnrjvPt_TLzlE8vE7MpxxIMQ9X2yE/edit" target="_blank" class="hotbar-btn">🛒 Marketplace</a>
@@ -503,7 +510,7 @@
 
       <div class="dynamic-module-flex store-mpl hotbar-wrapper">
         <div class="hotbar-container">
-          <span class="hotbar-label">🟠 MPL</span>
+          <span class="hotbar-label">MPL</span>
           <div class="hotbar-links">
             <a href="https://docs.google.com/spreadsheets/d/18VeWgGjoIfKRlJUtj0PTU1-uJJavKaPu3W2o_A4vyFs/edit" target="_blank" class="hotbar-btn">🔑 Passwords</a>
             <a href="https://docs.google.com/spreadsheets/d/1xVJ_JJD-wZUbzFfer4fF50CH6RkZ-sqzxe4bYRGqDtE/edit" target="_blank" class="hotbar-btn">🛒 Marketplace</a>
@@ -517,7 +524,7 @@
 
       <div class="dynamic-module-flex store-bal hotbar-wrapper">
         <div class="hotbar-container">
-          <span class="hotbar-label">🔴 BAL</span>
+          <span class="hotbar-label">BAL</span>
           <div class="hotbar-links">
             <a href="https://docs.google.com/spreadsheets/d/1SuXAQc66OzKOfXkPcp7pCCsccWFB4RbHG2N6YGt3wf0/edit" target="_blank" class="hotbar-btn">🔑 Passwords</a>
             <a href="https://docs.google.com/spreadsheets/d/192c0M5Mxe9oy5PR6JQelD_DPh4ebvJpCnK26kYGpnbk/edit" target="_blank" class="hotbar-btn">🛒 Marketplace</a>
@@ -530,67 +537,6 @@
       </div>
   </div>
 
-  <!-- ===== INITIATIVES BANNER ===== -->
-  <div id="companyProjectsBanner" class="company-projects-banner dynamic-module-flex role-manager role-employee role-training">
-    <div class="cpb-collapsed" id="cpbCollapsed" onclick="toggleCompanyProjectsBanner()">
-      <div class="mgb-header-left">
-        <span class="mgb-icon">🏢</span>
-        <span class="mgb-month-label">Initiatives</span>
-        <span class="mgb-snippet" id="cpbSnippet">No initiatives set yet.</span>
-      </div>
-      <div class="mgb-header-right">
-        <button class="mgb-expand-btn" onclick="event.stopPropagation(); toggleCompanyProjectsBanner()">&#9660; View</button>
-      </div>
-    </div>
-    <div id="cpbExpanded" style="display:none;">
-      <div class="cpb-expanded-header">
-        <div class="mgb-header-left">
-          <span class="mgb-icon">🏢</span>
-          <span class="mgb-month-label">Initiatives</span>
-        </div>
-        <div class="mgb-header-right">
-          <button class="mini-action-btn dynamic-module-block role-ceo" onclick="openEditCompanyProjectsModal()">Edit Company ✏️</button>
-          <button class="mini-action-btn dynamic-module-block role-manager" onclick="openEditStoreInitiativesModal()">Edit Store ✏️</button>
-          <button class="mgb-expand-btn" onclick="toggleCompanyProjectsBanner()">&#9650; Collapse</button>
-        </div>
-      </div>
-      <div id="cpbProjectsList" class="cpb-projects-list">
-        <div class="status-message" style="padding: 20px 0;">No initiatives have been set yet.</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== MONTHLY TEAM GOALS BANNER ===== -->
-  <div id="monthlyGoalsBanner" class="monthly-goals-banner dynamic-module-flex role-manager role-employee">
-    <div class="mgb-collapsed" id="mgbCollapsed" onclick="toggleGoalsBanner()">
-      <div class="mgb-header-left">
-        <span class="mgb-icon">🎯</span>
-        <span class="mgb-month-label" id="mgbMonthLabel">Team Goals</span>
-        <span class="mgb-store-tag" id="mgbStoreTag"></span>
-        <span class="mgb-snippet" id="mgbSnippet">No goals set yet.</span>
-      </div>
-      <div class="mgb-header-right">
-        <button class="mgb-expand-btn" onclick="event.stopPropagation(); toggleGoalsBanner()">&#9660; View Goals</button>
-      </div>
-    </div>
-    <div id="mgbExpanded" style="display:none;">
-      <div class="mgb-expanded-header">
-        <div class="mgb-header-left">
-          <span class="mgb-icon">🎯</span>
-          <span class="mgb-month-label" id="mgbMonthLabelFull">Team Goals</span>
-          <span class="mgb-store-tag" id="mgbStoreTagFull"></span>
-        </div>
-        <div class="mgb-header-right">
-          <button class="mini-action-btn dynamic-module-block role-manager" onclick="openEditGoalsModal()">Edit Goals ✏️</button>
-          <button class="mgb-expand-btn" onclick="toggleGoalsBanner()">&#9650; Collapse</button>
-        </div>
-      </div>
-      <div id="mgbGoalsList" class="mgb-goals-list">
-        <div class="status-message" style="padding: 20px 0;">Loading goals...</div>
-      </div>
-      <div class="mgb-footer" id="mgbFooter"></div>
-    </div>
-  </div>
 
   <div id="top-alerts-row" class="top-alerts-row dynamic-module-flex role-manager">
     <div class="card district-master-panel employee-widget-card">
@@ -1155,6 +1101,50 @@
     
     <div class="manage-footer flex-end">
         <button onclick="submitNewScorecard()" class="btn-primary" id="submitScorecardBtn">Save Scorecard</button>
+    </div>
+</div>
+
+<div id="goalsSidePanel" class="goals-side-panel dynamic-module-flex role-manager role-employee role-training">
+    <div class="gi-panel-header">
+        <div class="gi-panel-header-row">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 18px;">🎯</span>
+                <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: var(--slate-charcoal);">Goals &amp; Initiatives</h3>
+            </div>
+            <button class="modal-close-btn" onclick="toggleGoalsPanel()" style="width: 28px; height: 28px; font-size: 14px; background: #f1f5f9; color: #64748b;">✖</button>
+        </div>
+    </div>
+    <div class="gi-panel-body">
+        <div class="gi-section">
+            <div class="gi-section-header">
+                <span class="gi-section-title">Initiatives &amp; Upcoming Projects</span>
+                <div class="gi-section-actions">
+                    <button class="mini-action-btn dynamic-module-block role-district-manager" onclick="openEditCompanyProjectsModal()">Edit Company ✏️</button>
+                    <button class="mini-action-btn dynamic-module-block role-district-manager" onclick="openEditStoreInitiativesModal()">Edit Store ✏️</button>
+                </div>
+            </div>
+            <div id="giInitiativesList" class="gi-items-list">
+                <div class="status-message">Loading...</div>
+            </div>
+        </div>
+        <div class="gi-section">
+            <div class="gi-section-header">
+                <div style="display:flex;align-items:center;gap:7px;min-width:0;">
+                    <span class="gi-section-title" id="giGoalsLabel">Monthly Goals</span>
+                    <div class="gi-prev-wrapper">
+                        <button class="gi-prev-toggle" id="giPrevToggleBtn" onclick="togglePrevMonths(event)">
+                            📅
+                            <svg class="gi-prev-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="10" height="10"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </button>
+                        <div id="giPrevMonthsList" class="gi-months-dropdown"></div>
+                    </div>
+                </div>
+                <button id="giEditGoalsBtn" class="mini-action-btn dynamic-module-block role-manager" onclick="openEditGoalsModal()">Edit Goals ✏️</button>
+            </div>
+            <div id="giGoalsList" class="gi-items-list">
+                <div class="status-message">Loading...</div>
+            </div>
+        </div>
     </div>
 </div>
 
