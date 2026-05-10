@@ -755,6 +755,17 @@ html {
 .notif-item { margin-bottom: 20px; }
 .notif-item:last-child { margin-bottom: 0; }
 
+@keyframes ann-slide-away {
+    0%   { transform: translateX(0);   opacity: 1; max-height: 600px; margin-bottom: 20px; }
+    55%  { transform: translateX(55%); opacity: 0; max-height: 600px; margin-bottom: 20px; }
+    100% { transform: translateX(55%); opacity: 0; max-height: 0;     margin-bottom: 0; }
+}
+.ann-dismissing {
+    animation: ann-slide-away 0.38s ease forwards;
+    overflow: hidden;
+    pointer-events: none;
+}
+
 .ann-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .ann-author { font-weight: 800; font-size: 13px; color: var(--sage-professional); }
 .ann-header-right { display: flex; align-items: center; gap: 8px; }

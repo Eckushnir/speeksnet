@@ -362,7 +362,20 @@ function markAnnouncementRead(rowId) {
         body: JSON.stringify({ type: 'mark_read', user: userName, rowIds: [rowId] })
     }).catch(() => {});
 
-    loadCMS();
+    const card = document.querySelector(`.notif-item[data-ann-id="${rowId}"]`);
+    if (card) {
+        card.classList.add('ann-dismissing');
+        card.addEventListener('animationend', () => {
+            card.remove();
+            const container = document.getElementById('ann-container');
+            if (container && !container.querySelector('.notif-item[data-ann-id]')) {
+                container.innerHTML = '<div style="padding: 20px; color:#999; text-align:center;">No recent announcements</div>';
+                const badge = document.getElementById('notifBadge');
+                if (badge) { badge.style.display = 'none'; badge.classList.remove('active'); }
+                localStorage.removeItem('speeksUnreadAnnouncements_' + cleanUser);
+            }
+        }, { once: true });
+    }
 }
 
 function toggleNotifs() { toggleModal('notifDropdown', 'notifBadge'); }
