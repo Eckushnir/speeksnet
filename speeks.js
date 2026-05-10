@@ -362,7 +362,20 @@ function markAnnouncementRead(rowId) {
         body: JSON.stringify({ type: 'mark_read', user: userName, rowIds: [rowId] })
     }).catch(() => {});
 
-    loadCMS();
+    const card = document.querySelector(`.notif-item[data-ann-id="${rowId}"]`);
+    if (card) {
+        card.classList.add('ann-dismissing');
+        card.addEventListener('animationend', () => {
+            card.remove();
+            const container = document.getElementById('ann-container');
+            if (container && !container.querySelector('.notif-item[data-ann-id]')) {
+                container.innerHTML = '<div style="padding: 20px; color:#999; text-align:center;">No recent announcements</div>';
+                const badge = document.getElementById('notifBadge');
+                if (badge) { badge.style.display = 'none'; badge.classList.remove('active'); }
+                localStorage.removeItem('speeksUnreadAnnouncements_' + cleanUser);
+            }
+        }, { once: true });
+    }
 }
 
 function toggleNotifs() { toggleModal('notifDropdown', 'notifBadge'); }
@@ -371,21 +384,32 @@ function toggleIdeaModal() { toggleModal('ideaModal'); }
 
 function switchAnnTab(tab) {
     const isRecent = tab === 'recent';
-    
+    const isArchive = tab === 'archive';
+    const isPatchNotes = tab === 'patchnotes';
+
     const annC = document.getElementById('ann-container');
     if (annC) {
         annC.style.display = isRecent ? 'block' : 'none';
-        annC.classList.remove('hidden'); // Fixes the !important CSS override
+        annC.classList.remove('hidden');
     }
-    
+
     const archC = document.getElementById('archive-container');
     if (archC) {
-        archC.style.display = isRecent ? 'none' : 'block';
-        archC.classList.remove('hidden'); // Fixes the !important CSS override
+        archC.style.display = isArchive ? 'block' : 'none';
+        archC.classList.remove('hidden');
     }
-    
+
+    const pnC = document.getElementById('pn-container');
+    if (pnC) {
+        pnC.style.display = isPatchNotes ? 'block' : 'none';
+        pnC.classList.remove('hidden');
+        if (isPatchNotes) loadPatchNotes();
+    }
+
     document.getElementById('tab-recent').classList.toggle('active', isRecent);
-    document.getElementById('tab-archive').classList.toggle('active', !isRecent);
+    document.getElementById('tab-archive').classList.toggle('active', isArchive);
+    const pnTab = document.getElementById('tab-patchnotes');
+    if (pnTab) pnTab.classList.toggle('active', isPatchNotes);
 }
 
 // DEV TOOLS DROPDOWN GLOBAL TOGGLE
@@ -2410,14 +2434,15 @@ async function fetchScorecardData() {
 
         // REMOVED the code that overrides the "Store Scorecard" title here!
 
-        const latestScore = parseFloat(storeData.score) || 0; 
+        const latestScore = parseFloat(storeData.score) || 0;
+        const displayScore = latestScore * 2;
         const rawDate = storeData.date || 'Recent';
 
         let displayDate = rawDate;
         const parsedDate = new Date(rawDate);
         if (!isNaN(parsedDate.getTime())) {
-            const day = parsedDate.getUTCDay(); 
-            const diffToMonday = day === 0 ? -6 : 1 - day; 
+            const day = parsedDate.getUTCDay();
+            const diffToMonday = day === 0 ? -6 : 1 - day;
             const mondayDate = new Date(parsedDate);
             mondayDate.setUTCDate(parsedDate.getUTCDate() + diffToMonday);
             displayDate = "Week of " + mondayDate.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric' });
@@ -3159,7 +3184,7 @@ async function fetchLiveGoalsData() {
             const _authData = JSON.parse(_authRaw);
             const _excluded = ['ceo', 'district manager'];
             const _emps = (_authData.users || [])
-                .filter(u => u.store === goalsTargetStore && !_excluded.includes((u.role || '').toLowerCase()))
+                .filter(u => (u.store || '').trim().toUpperCase() === goalsTargetStore.toUpperCase() && !_excluded.includes((u.role || '').toLowerCase()))
                 .map(u => u.name)
                 .filter(Boolean);
             goalsRoster = _emps.length ? _emps : ['No Employees Found'];
@@ -4568,11 +4593,10 @@ function renderKpiChart(allData, metric) {
                     if (String(d[r][monthCol] || '').trim() === lbl) { rowIdx = r; break; }
                 }
                 if (rowIdx === -1) { sData.push(null); return; }
-
                 let row = d[rowIdx];
                 let v = (metric === 'time' && currentTimeframe === '4-Week') ? row[5] : row[sCol];
                 let parsed = parseChartVal(v);
-
+            
                 sData.push(parsed);
                 if (parsed !== null) nums.push(parsed);
             });
@@ -6669,7 +6693,7 @@ function buildPatchGroups(entries) {
 }
 
 function buildPatchCardHTML(group, isLatest) {
-    const versionLabel = 'v' + group.title.replace(/^v/i, '');
+    const versionLabel = group.title;
     const catOrder = ['New Features', 'Improvements', 'Bug Fixes'];
     const catIcons = { 'New Features': '✨', 'Improvements': '🚀', 'Bug Fixes': '🔧' };
     const sections = catOrder.map(cat => {
@@ -6698,61 +6722,41 @@ function buildPatchCardHTML(group, isLatest) {
 }
 
 async function loadPatchNotes() {
-    const latestEl   = document.getElementById('patchNotesLatest');
-    const archivedEl = document.getElementById('patchNotesArchived');
-    if (latestEl)   latestEl.innerHTML   = '<div class="pn-loading">Loading patch notes...</div>';
-    if (archivedEl) archivedEl.innerHTML = '<div class="pn-loading">Loading...</div>';
+    const listEl = document.getElementById('patchNotesList');
+    if (listEl) listEl.innerHTML = '<div class="pn-loading">Loading patch notes...</div>';
 
     try {
         const response = await fetch(`${PATCH_NOTES_URL}?v=${Date.now()}`);
         const data = await response.json();
         renderPatchNotes(data);
     } catch (e) {
-        if (latestEl) latestEl.innerHTML = '<div class="pn-loading">Failed to load patch notes.</div>';
+        if (listEl) listEl.innerHTML = '<div class="pn-loading">Failed to load patch notes.</div>';
     }
 }
 
 function renderPatchNotes(data) {
-    const latestEl   = document.getElementById('patchNotesLatest');
-    const archivedEl = document.getElementById('patchNotesArchived');
-    if (!latestEl) return;
+    const listEl = document.getElementById('patchNotesList');
+    if (!listEl) return;
 
     const { entries } = data;
     if (!entries || !entries.length) {
-        latestEl.innerHTML = '<div class="pn-loading">No patch notes available.</div>';
-        if (archivedEl) archivedEl.innerHTML = '<div class="pn-loading">No archived patch notes.</div>';
+        listEl.innerHTML = '<div class="pn-loading">No patch notes available.</div>';
         return;
     }
 
     const sorted = buildPatchGroups(entries);
-    latestEl.innerHTML   = sorted.length > 0 ? buildPatchCardHTML(sorted[0], true) : '<div class="pn-loading">No patch notes available.</div>';
-    if (archivedEl) {
-        archivedEl.innerHTML = sorted.length > 1
-            ? sorted.slice(1).map(g => buildPatchCardHTML(g, false)).join('')
-            : '<div class="pn-loading">No archived patch notes yet.</div>';
-    }
-}
-
-function switchPatchViewTab(tab) {
-    const isLatest = tab === 'latest';
-    const latestEl   = document.getElementById('patchNotesLatest');
-    const archivedEl = document.getElementById('patchNotesArchived');
-    if (latestEl)   latestEl.style.display   = isLatest ? '' : 'none';
-    if (archivedEl) archivedEl.style.display = isLatest ? 'none' : '';
-    document.getElementById('pnvTab-latest').classList.toggle('active',   isLatest);
-    document.getElementById('pnvTab-archived').classList.toggle('active', !isLatest);
+    listEl.innerHTML = sorted.map((g, i) => buildPatchCardHTML(g, i === 0)).join('');
 }
 
 function togglePatchNotes() {
-    const modal = document.getElementById('patchNotesModal');
+    const modal = document.getElementById('notifDropdown');
     if (!modal) return;
     const isOpen = modal.classList.contains('show');
     closeAllModals();
     if (!isOpen) {
         modal.classList.add('show');
         lockAndBlurScreen();
-        switchPatchViewTab('latest');
-        loadPatchNotes();
+        switchAnnTab('patchnotes');
     }
 }
 
@@ -6876,7 +6880,7 @@ function renderPatchNotesEditor(data) {
     const catBadge = { 'New Features': 'pn-badge-new', 'Improvements': 'pn-badge-improved', 'Bug Fixes': 'pn-badge-fixed' };
 
     list.innerHTML = sorted.map(group => {
-        const vLabel = 'v' + group.title.replace(/^v/i, '');
+        const vLabel = group.title;
         return `
             <div class="pne-group">
                 <div class="pne-group-header">
