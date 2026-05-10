@@ -19,6 +19,7 @@ const EBAY_ALERTS_URL = 'https://script.google.com/macros/s/AKfycbxap-4Jgdn5-ntk
 const STORE_COMMENT_URL = 'https://script.google.com/macros/s/AKfycbzoqWLZz07niO-dVqDpQS7I-bDvUgLjHT4CYGiqb--yAQYQPkFCUi9EXoi5Wsz-V0Ne/exec';
 const CHECKLIST_URL = 'https://script.google.com/macros/s/AKfycbxr4ZEoSKeF4BZ1H2-tcmc6Gy30-le5Gdm3CSdee6XxOhZFes3-5SF_PNcWR4OLEGN2hQ/exec';
 const TUTORIAL_URL = 'https://script.google.com/macros/s/AKfycbySrXu6IW3S39GKiEsXkJwd4s75aO0uG-BTTg_swxEx3BMG_W7qqZBwHKnuEm_k_Agh/exec';
+const PATCH_NOTES_URL = 'https://script.google.com/macros/s/AKfycbzzk6beS7HWINw8GtQZ12FpezgFhBXj_1GgV1Fs342bc05Y6x9-tJGgr_MMl13rIfP3/exec';
 
 // --- 2. NAV COMPACT MODE ---
 (function () {
@@ -157,32 +158,6 @@ function toggleModal(modalId, badgeId = null) {
         dropdown.classList.add('show');
         lockAndBlurScreen();
         
-        if (badgeId === 'notifBadge') {
-            const badge = document.getElementById(badgeId);
-            const userName = sessionStorage.getItem('speeksUserName'); 
-            
-            if (badge && badge.classList.contains('active') && userName) {
-                badge.classList.remove('active');
-                badge.style.display = 'none';
-                
-                localStorage.removeItem('speeksUnreadAnnouncements_' + userName);
-                
-                const unreadEls = document.querySelectorAll('.notif-item[data-unread-id]');
-                const unreadIds = Array.from(unreadEls).map(el => parseInt(el.getAttribute('data-unread-id')));
-                
-                if (unreadIds.length > 0) {
-                    setTimeout(() => {
-                        fetch(CMS_URL, {
-                            method: 'POST', mode: 'no-cors',
-                            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                            body: JSON.stringify({ type: 'mark_read', user: userName, rowIds: unreadIds })
-                        }).catch(() => {});
-                    }, 2500);
-                    
-                    unreadEls.forEach(el => el.removeAttribute('data-unread-id'));
-                }
-            }
-        }
     }
 }
 
@@ -201,6 +176,8 @@ async function loadCMS() {
             
             const currentUser = sessionStorage.getItem('speeksUserName');
             const cleanUser = currentUser ? String(currentUser).trim().toLowerCase() : null;
+            const userRole = (sessionStorage.getItem('speeksUserRole') || '').toLowerCase();
+            const isPrivileged = userRole === 'ceo' || userRole === 'district manager';
 
             if (data.announcements && data.announcements.length > 0) {
                 const sortedAnns = [...data.announcements].reverse();
@@ -215,19 +192,26 @@ async function loadCMS() {
                         const annDate = new Date(item.date);
                         if (!isNaN(annDate.getTime())) {
                             displayDate = annDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-                            const diffHours = (now - annDate) / (1000 * 60 * 60);
+                        }
+                    }
 
-                            if (diffHours > 48) {
-                                isArchived = true;
-                            } else {
-                                if (cleanUser) {
-                                    const isUnread = !item.readBy || !item.readBy.some(u => String(u).trim().toLowerCase() === cleanUser);
-                                    if (isUnread) {
-                                        showBadge = true;
-                                        unreadHtmlAttr = `data-unread-id="${item.rowId}"`; 
-                                    }
-                                }
-                            }
+                    if (cleanUser) {
+                        const localReadKey = 'speeksLocalRead_' + cleanUser;
+                        const localRead = new Set(JSON.parse(localStorage.getItem(localReadKey) || '[]'));
+                        const inReadBy = !!(item.readBy && item.readBy.some(u => String(u).trim().toLowerCase() === cleanUser));
+                        if (inReadBy && localRead.has(item.rowId)) {
+                            localRead.delete(item.rowId);
+                            localStorage.setItem(localReadKey, JSON.stringify([...localRead]));
+                        }
+                        isArchived = inReadBy || localRead.has(item.rowId);
+                        if (!isArchived) {
+                            showBadge = true;
+                            unreadHtmlAttr = `data-ann-id="${item.rowId}"`;
+                        }
+                    } else if (item.date) {
+                        const annDate = new Date(item.date);
+                        if (!isNaN(annDate.getTime())) {
+                            isArchived = (now - annDate) / (1000 * 60 * 60) > 48;
                         }
                     }
 
@@ -253,36 +237,60 @@ async function loadCMS() {
 
                         let displayStyle = count > 0 ? 'flex' : 'none';
                         let activeClass = hasReacted ? 'reacted' : '';
-                        let disabledAttr = isArchived ? 'disabled style="cursor: default;"' : `onclick="toggleReaction('${annId}', '${emoji}')"`;
                         let tooltipText = usersList.length > 0 ? `title="Reacted by: ${usersList.join(', ')}"` : '';
-                        
-                        reactionsHtml += `<button class="reaction-btn ${activeClass}" id="btn_${annId}_${eIdx}" data-emoji="${emoji}" style="display: ${displayStyle};" ${disabledAttr} ${tooltipText}><span style="pointer-events: none;">${emoji}</span> <span class="count" style="pointer-events: none;">${count}</span></button>`;
+
+                        reactionsHtml += `<button class="reaction-btn ${activeClass}" id="btn_${annId}_${eIdx}" data-emoji="${emoji}" style="display: ${displayStyle};" onclick="toggleReaction('${annId}', '${emoji}')" ${tooltipText}><span style="pointer-events: none;">${emoji}</span> <span class="count" style="pointer-events: none;">${count}</span></button>`;
                     });
 
-                    if (!isArchived) {
-                        reactionsHtml += `
-                            <div class="reaction-picker-wrapper" style="position: relative;">
-                                <button class="add-reaction-btn" onclick="toggleReactionPicker('${annId}')">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
-                                    <span style="font-size: 14px; margin-left: -4px;">+</span>
-                                </button>
-                                <div class="reaction-picker-popover" id="picker_${annId}">
-                                    ${availableEmojis.map(emoji => `<button type="button" onclick="toggleReaction('${annId}', '${emoji}'); toggleReactionPicker('${annId}')">${emoji}</button>`).join('')}
-                                </div>
+                    reactionsHtml += `
+                        <div class="reaction-picker-wrapper" style="position: relative;">
+                            <button class="add-reaction-btn" onclick="toggleReactionPicker('${annId}')">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
+                                <span style="font-size: 14px; margin-left: -4px;">+</span>
+                            </button>
+                            <div class="reaction-picker-popover" id="picker_${annId}">
+                                ${availableEmojis.map(emoji => `<button type="button" onclick="toggleReaction('${annId}', '${emoji}'); toggleReactionPicker('${annId}')">${emoji}</button>`).join('')}
                             </div>
-                        `;
-                    }
+                        </div>
+                    `;
                     reactionsHtml += `</div>`;
 
+                    const markReadBtn = (!isArchived && cleanUser) ? `
+                        <button class="mark-read-btn" onclick="markAnnouncementRead(${annId})">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            Mark as Read
+                        </button>` : '';
+
+                    const readBy = item.readBy || [];
+                    const readReceiptHtml = isPrivileged ? `
+                        <div class="read-receipt" id="receipt_${annId}">
+                            <button class="read-receipt-btn" onclick="toggleReadReceipt('${annId}')">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                ${readBy.length} read
+                            </button>
+                            <div class="read-receipt-popover" id="receipt-popover_${annId}">
+                                <div class="rr-title">Read by</div>
+                                ${readBy.length === 0
+                                    ? '<div class="rr-empty">No reads yet</div>'
+                                    : readBy.map(u => `<div class="rr-name">${u}</div>`).join('')}
+                            </div>
+                        </div>` : '';
+
                     const html = `
-                        <div class="notif-item" ${unreadHtmlAttr}>
+                        <div class="notif-item"${unreadHtmlAttr ? ` ${unreadHtmlAttr}` : ''}>
                             <div class="ann-header">
                                 <span class="ann-author">${item.author || 'Announcement'}</span>
-                                ${displayDate ? `<small class="ann-date">${displayDate}</small>` : ''}
+                                <div class="ann-header-right">
+                                    ${readReceiptHtml}
+                                    ${displayDate ? `<small class="ann-date">${displayDate}</small>` : ''}
+                                </div>
                             </div>
                             <hr />
                             <div class="ann-text">${item.text || ''}</div>
-                            ${reactionsHtml}
+                            <div class="ann-card-footer">
+                                ${reactionsHtml}
+                                ${markReadBtn}
+                            </div>
                         </div>`;
 
                     if (isArchived) {
@@ -338,27 +346,70 @@ async function loadCMS() {
     }
 }
 
+function markAnnouncementRead(rowId) {
+    const userName = sessionStorage.getItem('speeksUserName');
+    if (!userName) return;
+
+    const cleanUser = String(userName).trim().toLowerCase();
+    const localReadKey = 'speeksLocalRead_' + cleanUser;
+    const localRead = new Set(JSON.parse(localStorage.getItem(localReadKey) || '[]'));
+    localRead.add(rowId);
+    localStorage.setItem(localReadKey, JSON.stringify([...localRead]));
+
+    fetch(CMS_URL, {
+        method: 'POST', mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ type: 'mark_read', user: userName, rowIds: [rowId] })
+    }).catch(() => {});
+
+    const card = document.querySelector(`.notif-item[data-ann-id="${rowId}"]`);
+    if (card) {
+        card.classList.add('ann-dismissing');
+        card.addEventListener('animationend', () => {
+            card.remove();
+            const container = document.getElementById('ann-container');
+            if (container && !container.querySelector('.notif-item[data-ann-id]')) {
+                container.innerHTML = '<div style="padding: 20px; color:#999; text-align:center;">No recent announcements</div>';
+                const badge = document.getElementById('notifBadge');
+                if (badge) { badge.style.display = 'none'; badge.classList.remove('active'); }
+                localStorage.removeItem('speeksUnreadAnnouncements_' + cleanUser);
+            }
+        }, { once: true });
+    }
+}
+
 function toggleNotifs() { toggleModal('notifDropdown', 'notifBadge'); }
 function toggleCalendar() { toggleModal('calendarDropdown'); }
 function toggleIdeaModal() { toggleModal('ideaModal'); }
 
 function switchAnnTab(tab) {
     const isRecent = tab === 'recent';
-    
+    const isArchive = tab === 'archive';
+    const isPatchNotes = tab === 'patchnotes';
+
     const annC = document.getElementById('ann-container');
     if (annC) {
         annC.style.display = isRecent ? 'block' : 'none';
-        annC.classList.remove('hidden'); // Fixes the !important CSS override
+        annC.classList.remove('hidden');
     }
-    
+
     const archC = document.getElementById('archive-container');
     if (archC) {
-        archC.style.display = isRecent ? 'none' : 'block';
-        archC.classList.remove('hidden'); // Fixes the !important CSS override
+        archC.style.display = isArchive ? 'block' : 'none';
+        archC.classList.remove('hidden');
     }
-    
+
+    const pnC = document.getElementById('pn-container');
+    if (pnC) {
+        pnC.style.display = isPatchNotes ? 'block' : 'none';
+        pnC.classList.remove('hidden');
+        if (isPatchNotes) loadPatchNotes();
+    }
+
     document.getElementById('tab-recent').classList.toggle('active', isRecent);
-    document.getElementById('tab-archive').classList.toggle('active', !isRecent);
+    document.getElementById('tab-archive').classList.toggle('active', isArchive);
+    const pnTab = document.getElementById('tab-patchnotes');
+    if (pnTab) pnTab.classList.toggle('active', isPatchNotes);
 }
 
 // DEV TOOLS DROPDOWN GLOBAL TOGGLE
@@ -448,6 +499,66 @@ document.addEventListener('click', (e) => {
         document.querySelectorAll('.reaction-picker-popover.show').forEach(p => p.classList.remove('show'));
     }
 });
+
+window.toggleReadReceipt = function(id) {
+    const popover = document.getElementById('receipt-popover_' + id);
+    if (!popover) return;
+    const isOpen = popover.classList.contains('show');
+    document.querySelectorAll('.read-receipt-popover.show').forEach(p => p.classList.remove('show'));
+    if (!isOpen) popover.classList.add('show');
+};
+
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.read-receipt')) {
+        document.querySelectorAll('.read-receipt-popover.show').forEach(p => p.classList.remove('show'));
+    }
+});
+
+// --- REACTION LIVE POLLING ---
+let _reactionPollInterval = null;
+
+async function pollReactions() {
+    try {
+        const response = await fetch(`${CMS_URL}?v=${Date.now()}`);
+        const data = await response.json();
+        if (!data.announcements) return;
+
+        const currentUser = sessionStorage.getItem('speeksUserName');
+        const cleanUser = currentUser ? String(currentUser).trim().toLowerCase() : null;
+        const availableEmojis = ['👍', '🎉', '👀', '🔥', '🫡', '💵'];
+
+        data.announcements.forEach(item => {
+            const annId = item.rowId;
+            if (!document.getElementById(`reactions_${annId}`)) return;
+
+            const rData = item.reactions || {};
+            availableEmojis.forEach((emoji, eIdx) => {
+                const btn = document.getElementById(`btn_${annId}_${eIdx}`);
+                if (!btn || btn.hasAttribute('disabled')) return;
+
+                const usersList = Array.isArray(rData[emoji]) ? rData[emoji] : [];
+                const count = usersList.length;
+                const hasReacted = cleanUser ? usersList.some(u => String(u).trim().toLowerCase() === cleanUser) : false;
+
+                const countSpan = btn.querySelector('.count');
+                if (countSpan) countSpan.innerText = count;
+                btn.style.display = count > 0 ? 'flex' : 'none';
+                btn.classList.toggle('reacted', hasReacted);
+
+                if (usersList.length > 0) {
+                    btn.setAttribute('title', `Reacted by: ${usersList.join(', ')}`);
+                } else {
+                    btn.removeAttribute('title');
+                }
+            });
+        });
+    } catch (e) {}
+}
+
+function startReactionPolling() {
+    if (_reactionPollInterval) clearInterval(_reactionPollInterval);
+    _reactionPollInterval = setInterval(pollReactions, 15000);
+}
 
 // --- 5. MODULE: USER MANAGEMENT ---
 let globalUsersData = [];
@@ -845,15 +956,40 @@ function startAuthFetch() {
         .catch(() => null); 
 }
 
+let _pinAutoTimer = null;
+
+function handlePINAutoTrigger() {
+    const input = document.getElementById('pinInput');
+    const btn = document.getElementById('unlockBtn');
+
+    if (_pinAutoTimer) {
+        clearTimeout(_pinAutoTimer);
+        _pinAutoTimer = null;
+        btn.classList.remove('loading');
+    }
+
+    if (input.value.length === 4) {
+        input.classList.add('pin-filled');
+        btn.classList.add('loading');
+        _pinAutoTimer = setTimeout(() => {
+            _pinAutoTimer = null;
+            checkPIN();
+        }, 900);
+    } else {
+        input.classList.remove('pin-filled');
+    }
+}
+
 async function checkPIN() {
     const pin = document.getElementById('pinInput').value;
     const err = document.getElementById('pinError');
     const btn = document.getElementById('unlockBtn');
-          
+
     if (!pin) return;
-    
-    btn.innerText = "Verifying..."; 
-    btn.style.opacity = "0.7"; 
+
+    if (_pinAutoTimer) { clearTimeout(_pinAutoTimer); _pinAutoTimer = null; }
+
+    btn.classList.add('loading');
     err.style.display = 'none';
 
     try {
@@ -899,9 +1035,9 @@ async function checkPIN() {
         console.error(e);
         err.innerText = "Connection Error."; 
         err.style.display = 'block'; 
-    } finally { 
-        btn.innerText = "Unlock Portal"; 
-        btn.style.opacity = "1"; 
+    } finally {
+        btn.classList.remove('loading');
+        document.getElementById('pinInput').classList.remove('pin-filled');
     }
 }
 
@@ -1296,18 +1432,19 @@ async function fetchWeeklyKPIs() {
         let sAvg = {};
         let emps = [];
         let fIdx = -1;
+        const _kpiStoreLabels = ["store", "store total", "ovl", "lee", "wsp", "mpl", "bal"];
         let sIdx = d.findLastIndex(r => String(r[0]).trim().toLowerCase() === "store" || String(r[0]).trim().toLowerCase() === "store total");
-        
+
         if (sIdx !== -1) {
-            let st = d[sIdx]; 
+            let st = d[sIdx];
             sAvg = { buyVal: st[2], buyMargin: st[5], customers: st[6], conversion: st[8], time: formatTime(st[12]), noDeals: st[14], listed: st[20] };
-            
+
             for (let i = Math.max(0, sIdx - 6); i <= Math.min(d.length - 1, sIdx + 6); i++) {
                 if (i === sIdx) continue;
                 let n = String(d[i][0]).trim();
                 let lN = n.toLowerCase();
-                
-                if (n && !["name", "employee", "store", "store total", "ovl", "lee", "wsp", "mpl", "bal"].includes(lN) && !lN.includes("average") && !lN.includes("week")) {
+
+                if (n && !_kpiStoreLabels.includes(lN) && !lN.includes("average") && !lN.includes("week")) {
                     if (String(d[i][2]).trim() !== "" || String(d[i][20]).trim() !== "") {
                         if (fIdx === -1) fIdx = i; 
                         emps.push({ name: n, buyVal: d[i][2], buyMargin: d[i][5], customers: d[i][6], conversion: d[i][8], time: formatTime(d[i][12]), noDeals: d[i][14], listed: d[i][20] });
@@ -1423,8 +1560,24 @@ async function fetchWeeklyKPIs() {
 async function fetchHubData() {
     try {
         const response = await fetch(`${HUB_URL}?v=${Date.now()}`);
-        hubDataCache = await response.json();
-        
+        const freshData = await response.json();
+
+        // Track per-store last-updated timestamps based on actual data changes
+        const _bsStores = ['ovl', 'lee', 'wsp', 'mpl', 'bal'];
+        const _bsFields = s => [`${s}BuyVal`,`${s}BuyProj`,`${s}BuyMargin`,`${s}Pct`,`${s}Goal`,`${s}TrackGP`,`${s}GP`,`${s}Rev`,`${s}SellMargin`];
+        const _bsPrev = JSON.parse(localStorage.getItem('bsPrevHubCache') || '{}');
+        const _bsTs = JSON.parse(localStorage.getItem('bsStoreTimestamps') || '{}');
+        _bsStores.forEach(s => { if (_bsTs[s]) _bsTs[s] = _bsTs[s].replace(/\s+\d{1,2}:\d{2}\s*(AM|PM)/i, ''); });
+        const _bsNow = new Date();
+        const _bsLabel = _bsNow.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+        _bsStores.forEach(s => {
+            if (_bsFields(s).some(f => freshData[f] !== _bsPrev[f])) _bsTs[s] = _bsLabel;
+        });
+        localStorage.setItem('bsStoreTimestamps', JSON.stringify(_bsTs));
+        localStorage.setItem('bsPrevHubCache', JSON.stringify(freshData));
+
+        hubDataCache = freshData;
+
         if (document.getElementById('bs-buy-val')) renderBuyingSales();
         
         // Render Live Data globally (Fixes CEO Rings)
@@ -1496,6 +1649,12 @@ function renderBuyingSales() {
         smb.innerText = sellMarginNum.toFixed(1) + '%';
         smb.className = sellMarginNum >= 55.0 ? 'delta-badge delta-pos' : 'delta-badge delta-neg';
     });
+
+    const bsDateEl = document.getElementById('bs-last-updated');
+    if (bsDateEl) {
+        const _bsTs = JSON.parse(localStorage.getItem('bsStoreTimestamps') || '{}');
+        bsDateEl.innerText = _bsTs[store] || '—';
+    }
 }
 
 function renderLiveData(d) {
@@ -1506,8 +1665,8 @@ function renderLiveData(d) {
         { base: 'ovl', api: 'ovl' },
         { base: 'lee', api: 'lee' },
         { base: 'wsp', api: 'wsp' },
-        { base: 'mpl', api: 'MPL' },
-        { base: 'bal', api: 'BAL' }
+        { base: 'mpl', api: 'mpl' },
+        { base: 'bal', api: 'bal' }
     ].forEach(store => {
         // --- Core Math ---
         let p = Math.round(d[`${store.api}Pct`] || 0);
@@ -1589,6 +1748,11 @@ function renderLiveData(d) {
         const n = new Date(); 
         const formattedTime = `${n.getHours() % 12 || 12}:${String(n.getMinutes()).padStart(2,'0')} ${n.getHours() >= 12 ? 'PM' : 'AM'}`;
         document.getElementById('lastSyncedText').innerText = `Last Synced: ${formattedTime}`;
+    }
+
+    const ceoBsDateEl = document.getElementById('ceo-bs-last-updated');
+    if (ceoBsDateEl) {
+        ceoBsDateEl.innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
     }
 }
 
@@ -1885,7 +2049,7 @@ function populateAlertsModal() {
             <div class="alert-manage-row" data-store="${storeName}" style="background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 15px;">
                 <div style="font-weight: 900; color: var(--slate-charcoal); font-size: 14px; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">${storeName}</div>
                 
-                <div style="font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase; margin-bottom: 6px;">Return Rates</div>
+                <div style="font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase; margin-bottom: 6px;">eBay Performance Metrics</div>
                 <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 15px;">
                     <input type="text" class="a-ch" placeholder="Cur. High" title="Current High" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${sData.currentHigh || ''}">
                     <input type="text" class="a-cvh" placeholder="Cur. Very High" title="Current Very High" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${sData.currentVeryHigh || ''}">
@@ -1893,7 +2057,7 @@ function populateAlertsModal() {
                     <input type="text" class="a-pvh" placeholder="Proj. Very High" title="Projected Very High" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${sData.projectedVeryHigh || ''}">
                 </div>
 
-                <div style="font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase; margin-bottom: 6px;">Service Metrics (%)</div>
+                <div style="font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase; margin-bottom: 6px;">eBay Top Rated Metrics</div>
                 <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
                     <input type="text" class="a-dr" placeholder="Defect Rate" title="Transaction Defect Rate" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${fmtInput(sData.defectRate)}">
                     <input type="text" class="a-ls" placeholder="Late Shipment" title="Late Shipment Rate" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${fmtInput(sData.lateShipment)}">
@@ -2137,7 +2301,7 @@ function injectGlobalAuth() {
                         <h2>Welcome Back</h2>
                         <p id="authSubtitle">Please enter your 4-digit PIN to securely access the hub.</p>
                         <div id="pinInputContainer" class="pin-container">
-                            <input type="password" id="pinInput" maxlength="4" placeholder="••••" onkeypress="if(event.key === 'Enter') checkPIN()">
+                            <input type="password" id="pinInput" maxlength="4" placeholder="••••" onkeypress="if(event.key === 'Enter') checkPIN()" oninput="handlePINAutoTrigger()">
                             <button id="unlockBtn" class="btn-primary auth-btn" onclick="checkPIN()">Unlock Portal</button>
                             <div id="pinError" class="pin-error">Incorrect PIN. Please try again.</div>
                         </div>
@@ -2265,31 +2429,26 @@ async function fetchScorecardData() {
 
         // REMOVED the code that overrides the "Store Scorecard" title here!
 
-        const latestScore = parseFloat(storeData.score) || 0; 
+        const latestScore = parseFloat(storeData.score) || 0;
+        const displayScore = latestScore * 2;
         const rawDate = storeData.date || 'Recent';
 
         let displayDate = rawDate;
         const parsedDate = new Date(rawDate);
         if (!isNaN(parsedDate.getTime())) {
-            const day = parsedDate.getUTCDay(); 
-            const diffToMonday = day === 0 ? -6 : 1 - day; 
+            const day = parsedDate.getUTCDay();
+            const diffToMonday = day === 0 ? -6 : 1 - day;
             const mondayDate = new Date(parsedDate);
             mondayDate.setUTCDate(parsedDate.getUTCDate() + diffToMonday);
             displayDate = "Week of " + mondayDate.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric' });
         }
 
-        const isTenPointScale = latestScore > 5;
         let scoreColor = 'var(--red-alert)';
-        if (isTenPointScale) {
-            if (latestScore > 8) scoreColor = 'var(--sage-professional)';  
-            else if (latestScore >= 6) scoreColor = 'var(--idea-gold)';
-        } else {
-            if (latestScore >= 4) scoreColor = 'var(--sage-professional)';
-            else if (latestScore >= 3) scoreColor = 'var(--idea-gold)';
-        }
+        if (displayScore > 8) scoreColor = 'var(--sage-professional)';
+        else if (displayScore >= 6) scoreColor = 'var(--idea-gold)';
 
-        const pulse = (isTenPointScale ? latestScore < 6 : latestScore < 3) 
-            ? `<div class="notif-dot active" style="display:block; position:absolute; top:-2px; right:-14px; width:12px; height:12px;"></div>` 
+        const pulse = displayScore < 6
+            ? `<div class="notif-dot active" style="display:block; position:absolute; top:-2px; right:-14px; width:12px; height:12px;"></div>`
             : '';
 
         let breakdownHtml = '';
@@ -2328,7 +2487,7 @@ async function fetchScorecardData() {
                 </div>
                 <div style="position: relative; display: inline-block;">
                     <div class="scorecard-val" style="color: ${scoreColor}; font-size: 36px; text-shadow: 0 4px 15px ${scoreColor}30; line-height: 1;">
-                        ${latestScore.toFixed(1)}
+                        ${displayScore.toFixed(1)}
                     </div>
                     ${pulse}
                 </div>
@@ -2450,7 +2609,7 @@ async function fetchAlertsData() {
         <div style="display: flex; flex-direction: column; gap: 15px; width: 100%;">
             
             <div>
-                <div style="font-size: 10px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Return Rates</div>
+                <div style="font-size: 10px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">eBay Performance Metrics</div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     ${buildMiniAlertCard('Current High', storeData.currentHigh, 'high', false)}
                     ${buildMiniAlertCard('Current Very High', storeData.currentVeryHigh, 'very-high', false)}
@@ -2462,7 +2621,7 @@ async function fetchAlertsData() {
             <div style="height: 1px; background: #e2e8f0; width: 100%;"></div>
             
             <div>
-                <div style="font-size: 10px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Service Metrics</div>
+                <div style="font-size: 10px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">eBay Top Rated Metrics</div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     ${buildMiniAlertCard('Defect Rate', storeData.defectRate, getSeverity('defectRate', storeData.defectRate), true)}
                     ${buildMiniAlertCard('Late Shipment', storeData.lateShipment, getSeverity('lateShipment', storeData.lateShipment), true)}
@@ -2667,7 +2826,7 @@ async function fetchMasterDistrictDashboard() {
 
             // 1. SCORECARD & HEADER
             const sScore = scoreData.data?.find(s => s.store.toUpperCase() === store) || {};
-            const scoreNum = parseFloat(sScore.score) || 0;
+            const scoreNum = (parseFloat(sScore.score) || 0) * 2;
             let sColor = scoreNum > 8 ? '#065f46' : (scoreNum >= 6 ? '#92400e' : '#991b1b');
             let sBg = scoreNum > 8 ? '#d1fae5' : (scoreNum >= 6 ? '#fef3c7' : '#fee2e2');
 
@@ -2879,7 +3038,7 @@ async function fetchMasterDistrictDashboard() {
 
                     <div style="flex-grow: 1; display: flex; flex-direction: column;">
                         
-                        <div class="master-section-title">Service Metrics</div>
+                        <div class="master-section-title">eBay Top Rated Metrics</div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 15px;">
                             ${buildMiniAlertCard('Defect Rate', sAlerts.defectRate, getSev('defectRate', sAlerts.defectRate), true)}
                             ${buildMiniAlertCard('Late Shipment', sAlerts.lateShipment, getSev('lateShipment', sAlerts.lateShipment), true)}
@@ -2887,7 +3046,7 @@ async function fetchMasterDistrictDashboard() {
                             ${buildMiniAlertCard('Tracking', sAlerts.tracking, getSev('tracking', sAlerts.tracking), true)}
                         </div>
 
-                        <div class="master-section-title">Action Needed - eBay Performance</div>
+                        <div class="master-section-title">eBay Performance Metrics</div>
                         <div style="display: flex; flex-direction: column; gap: 6px; flex-grow: 1;">
                             ${issues.map(b => {
                                 let bg = b.type === 'red' ? '#fee2e2' : (b.type === 'yellow' ? '#fef3c7' : '#d1fae5');
@@ -2945,13 +3104,18 @@ async function fetchMasterDistrictDashboard() {
 // ============================================================================
 // 20. MODULE: LISTING GOALS ENGINE
 // ============================================================================
-let goalsRoster = []; 
+let goalsRoster = [];
 let liveGoalsData = [];
 let allDistrictGoalsData = [];
 let editingYesterday = false;
 let goalsTargetStore = 'OVL';
 let currentAppDate = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
 let currentDmGoalView = 'daily';
+
+function normalizeGoalDate(s) {
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? String(s).trim() : d.toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
+}
 
 function toggleEditDate(isYest) {
     editingYesterday = isYest;
@@ -2990,28 +3154,21 @@ async function fetchLiveGoalsData() {
     if (goalsTargetStore === 'ALL' || goalsTargetStore === 'CORP') goalsTargetStore = 'OVL'; 
 
     try {
-        const d = await fetch(`${WEEKLY_KPI_URL}?store=${goalsTargetStore}&time=4-Week&v=${Date.now()}`).then(r => r.json());
-        let emps = [];
-        let sIdx = d.findLastIndex(r => String(r[0]).trim().toLowerCase() === "store" || String(r[0]).trim().toLowerCase() === "store total");
-        
-        if (sIdx !== -1) {
-            for (let i = Math.max(0, sIdx - 6); i <= Math.min(d.length - 1, sIdx + 6); i++) {
-                if (i === sIdx) continue;
-                let n = String(d[i][0]).trim(), lN = n.toLowerCase();
-                if (n && !["name", "employee", "store", "store total", "ovl", "lee", "wsp", "mpl", "bal"].includes(lN) && !lN.includes("average") && !lN.includes("week")) {
-                    if (String(d[i][2]).trim() !== "" || String(d[i][20]).trim() !== "") emps.push(n);
-                }
-            }
+        // Build roster from auth cache — works for all stores immediately, no extra API call
+        const _authRaw = localStorage.getItem('speeksAuthCache');
+        if (_authRaw) {
+            const _authData = JSON.parse(_authRaw);
+            const _excluded = ['ceo', 'district manager'];
+            const _emps = (_authData.users || [])
+                .filter(u => (u.store || '').trim().toUpperCase() === goalsTargetStore.toUpperCase() && !_excluded.includes((u.role || '').toLowerCase()))
+                .map(u => u.name)
+                .filter(Boolean);
+            goalsRoster = _emps.length ? _emps : ['No Employees Found'];
         }
-        goalsRoster = emps.length ? [...new Set(emps)] : ['No Employees Found'];
 
-        try {
-            const res = await fetch(`${GOALS_API_URL}?store=${goalsTargetStore}&v=${Date.now()}`);
-            liveGoalsData = await res.json();
-        } catch (dbError) {
-            liveGoalsData = []; 
-        }
-        
+        liveGoalsData = await fetch(`${GOALS_API_URL}?store=${goalsTargetStore}&v=${Date.now()}`).then(r => r.json()).catch(() => []);
+        if (!Array.isArray(liveGoalsData)) liveGoalsData = [];
+
         renderGoalsScoreboard('daily');
     } catch (e) {
         list.innerHTML = '<div style="color: var(--red-alert); font-weight: bold; text-align: center; padding: 20px 0;">Error loading roster.</div>';
@@ -3044,16 +3201,26 @@ function renderGoalsScoreboard(viewType = 'daily') {
     }
 
     goalsRoster.forEach(emp => {
-        let empGoal = 0; 
-        let empResult = 0; 
+        let empGoal = 0;
+        let empResult = 0;
         let empRole = '-';
         let dailyStats = {};
-        
-        const empRecords = liveGoalsData.filter(r => r.employee === emp);
+
+        const rosterName = String(emp).trim().toLowerCase();
+        const rosterFirst = rosterName.split(' ')[0];
+        const empRecords = liveGoalsData.filter(r => {
+            const dbName = String(r.employee).trim().toLowerCase();
+            if (dbName === rosterName) return true;
+            const dbFirst = dbName.split(' ')[0];
+            if (dbFirst.length > 2 && rosterFirst.length > 2) {
+                if (dbFirst.startsWith(rosterFirst) || rosterFirst.startsWith(dbFirst)) return true;
+            }
+            return false;
+        });
         const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
         empRecords.forEach(record => {
-            const isToday = record.date === todayStr;
+            const isToday = normalizeGoalDate(record.date) === todayStr;
             const recDate = new Date(record.date);
             const isThisWeek = recDate >= startOfWeek;
 
@@ -3188,7 +3355,7 @@ function buildGoalsEditForm() {
     const targetDateStr = now.toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
     
     let html = '';
-    const availableRoles = goalsRoster.length <= 3 ? ['B1', 'B2', 'L1'] : ['B1', 'B2', 'L1', 'L2'];
+    const availableRoles = goalsRoster.length <= 2 ? ['B1', 'B2', 'L1'] : ['B1', 'B2', 'L1', 'L2'];
 
     // Inject the Toggle into the Header title space dynamically
     const titleEl = document.getElementById('goals-input-title');
@@ -3252,7 +3419,7 @@ function buildGoalsEditForm() {
     }
     
     let html = '';
-    const availableRoles = goalsRoster.length <= 3 ? ['B1', 'B2', 'L1'] : ['B1', 'B2', 'L1', 'L2'];
+    const availableRoles = goalsRoster.length <= 2 ? ['B1', 'B2', 'L1'] : ['B1', 'B2', 'L1', 'L2'];
 
     // Inject the Toggle into the Header title space dynamically
     const titleEl = document.getElementById('goals-input-title');
@@ -3271,8 +3438,14 @@ function buildGoalsEditForm() {
     }
 
     goalsRoster.forEach((emp, idx) => {
-        const targetRecord = liveGoalsData.find(r => r.employee === emp && r.date === targetDateStr) || { role: '', goal: '', result: '' };
-        
+        const empNameNorm = String(emp).trim().toLowerCase();
+        const targetRecord = liveGoalsData.find(r => {
+            const dbName = String(r.employee).trim().toLowerCase();
+            const nameMatch = dbName === empNameNorm || dbName.split(' ')[0].startsWith(empNameNorm.split(' ')[0]) || empNameNorm.split(' ')[0].startsWith(dbName.split(' ')[0]);
+            const dateMatch = normalizeGoalDate(r.date) === targetDateStr;
+            return nameMatch && dateMatch;
+        }) || { role: '', goal: '', result: '' };
+
         let rolesHtml = '';
         availableRoles.forEach(r => {
             const isActive = targetRecord.role === r ? 'active' : '';
@@ -3626,7 +3799,7 @@ async function fetchAndRenderEmployeeGoals() {
             const resVal = parseInt(r.result) || 0;
 
             if (r.date === todayStr) {
-                todayGoal += g;
+                todayGoal = g;
                 if (r.role && r.role !== '-') todayRole = r.role;
             }
             
@@ -3639,6 +3812,14 @@ async function fetchAndRenderEmployeeGoals() {
 
         const roleTranslations = { 'B1': 'Buyer 1', 'B2': 'Buyer 2', 'L1': 'Lister 1', 'L2': 'Lister 2' };
         const displayRole = roleTranslations[todayRole] || todayRole;
+
+        const roleDescriptions = {
+            'B1': 'You\'re the lead buyer — first up for every customer who walks through the door. When someone comes in, that\'s your call.',
+            'B2': 'You\'re the second buyer in rotation. Hang back and jump in the moment a second customer arrives.',
+            'L1': 'Dedicated listing only — no buying, no shipping, no exceptions. Your entire focus today is getting items listed and nothing else.',
+            'L2': 'You\'re a primary lister throughout the day, but also serve as the emergency buyer when 4 or more separate customers are in the store at once.'
+        };
+        const roleDesc = roleDescriptions[todayRole] || '';
 
         const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
         const currentDayIdx = (now.getDay() + 6) % 7;
@@ -3670,6 +3851,8 @@ async function fetchAndRenderEmployeeGoals() {
                     <span class="emp-goal-value">${displayRole || '-'}</span>
                 </div>
             </div>
+
+            ${roleDesc ? `<div class="emp-role-description">${roleDesc}</div>` : ''}
 
             <div class="emp-week-section">
                 <span class="emp-goal-label">THIS WEEK'S BREAKDOWN</span>
@@ -4000,8 +4183,9 @@ function initDashboardData() {
         if (typeof initChecklists === 'function') initChecklists(); 
         
         // Re-sync announcements immediately after login so it knows who you are!
-        setTimeout(loadCMS, 50); 
-        
+        setTimeout(loadCMS, 50);
+        setTimeout(startReactionPolling, 3000);
+
         setTimeout(fetchHubData, 100); 
         setTimeout(fetchVarianceData, 300); 
         setTimeout(fetchWeeklyKPIs, 500); 
@@ -4333,16 +4517,18 @@ function renderKpiChart(allData, metric) {
                 } 
             }
             
-            lbls.forEach((_, i) => { 
-                let row = d[sr+2+i];
-                if (!Array.isArray(row)) {
-                    sData.push(null);
-                    return;
+            lbls.forEach((lbl) => {
+                let rowIdx = -1;
+                for (let r = sr + 2; r < d.length; r++) {
+                    if (!Array.isArray(d[r])) continue;
+                    if (String(d[r][monthCol] || '').trim() === lbl) { rowIdx = r; break; }
                 }
-                
+                if (rowIdx === -1) { sData.push(null); return; }
+            
+                let row = d[rowIdx];
                 let v = (metric === 'time' && currentTimeframe === '4-Week') ? row[5] : row[sCol];
                 let parsed = parseChartVal(v);
-
+            
                 sData.push(parsed);
                 if (parsed !== null) nums.push(parsed);
             });
@@ -4398,15 +4584,18 @@ function renderKpiChart(allData, metric) {
                 const empColors = ['#a855f7', '#3b82f6', '#22c55e', '#f97316', '#ef4444', '#14b8a6', '#eab308', '#ec4899'];
                 
                 empCols.forEach((emp, eIdx) => {
-                    let sData = [];
-                    lbls.forEach((_, i) => { 
-                        let rowIdx = sr+2+i;
-                        if (rowIdx < d.length && Array.isArray(d[rowIdx])) {
-                            let parsed = parseChartVal(d[rowIdx][emp.idx]);
-                            sData.push(parsed);
-                            if (parsed !== null) nums.push(parsed);
-                        } else { sData.push(null); }
-                    });
+                   let sData = [];
+                   lbls.forEach((lbl) => {
+                       let rowIdx = -1;
+                       for (let r = sr + 2; r < d.length; r++) {
+                           if (!Array.isArray(d[r])) continue;
+                           if (String(d[r][monthCol] || '').trim() === lbl) { rowIdx = r; break; }
+                       }
+                       if (rowIdx === -1) { sData.push(null); return; }
+                       let parsed = parseChartVal(d[rowIdx][emp.idx]);
+                       sData.push(parsed);
+                       if (parsed !== null) nums.push(parsed);
+                   });
                     
                     if (sData.some(val => val !== null)) {
                         let color = empColors[eIdx % empColors.length];
@@ -4795,7 +4984,7 @@ function populateAlertsModal() {
             <div class="alert-manage-row" data-store="${storeName}" style="background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 15px;">
                 <div style="font-weight: 900; color: var(--slate-charcoal); font-size: 14px; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">${storeName}</div>
                 
-                <div style="font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase; margin-bottom: 6px;">Return Rates</div>
+                <div style="font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase; margin-bottom: 6px;">eBay Performance Metrics</div>
                 <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 15px;">
                     <input type="text" class="a-ch" placeholder="Current High" title="Current High" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${sData.currentHigh || ''}">
                     <input type="text" class="a-cvh" placeholder="Current Very High" title="Current Very High" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${sData.currentVeryHigh || ''}">
@@ -4803,7 +4992,7 @@ function populateAlertsModal() {
                     <input type="text" class="a-pvh" placeholder="Projected Very High" title="Projected Very High" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${sData.projectedVeryHigh || ''}">
                 </div>
 
-                <div style="font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase; margin-bottom: 6px;">Service Metrics (%)</div>
+                <div style="font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase; margin-bottom: 6px;">eBay Top Rated Metrics</div>
                 <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
                     <input type="text" class="a-dr" placeholder="Defect Rate" title="Transaction Defect Rate" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${fmtInput(sData.defectRate)}">
                     <input type="text" class="a-ls" placeholder="Late Shipment" title="Late Shipment Rate" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none;" value="${fmtInput(sData.lateShipment)}">
@@ -5692,7 +5881,348 @@ window.selectRole = function(clickedBtn, emp, role) {
 
     // 3. Make the newly clicked button active
     clickedBtn.classList.add('active');
-    
+
     // 4. Lock this role out for everyone else
     updateRoleLocks();
 };
+
+// --- PATCH NOTES ---
+function parsePatchDate(d) {
+    if (!d) return new Date(0);
+    if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(d)) {
+        const p = d.split('/');
+        return new Date(p[2], p[0] - 1, p[1]);
+    }
+    const fallback = new Date(d);
+    return isNaN(fallback) ? new Date(0) : fallback;
+}
+
+function formatPatchDate(d) {
+    const date = parsePatchDate(d);
+    if (!date || isNaN(date.getTime()) || date.getTime() === 0) return d;
+    return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase();
+}
+
+function formatPatchSummary(text) {
+    if (!text) return '';
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+    if (!lines.length) return text;
+    let html = '', inList = false;
+    lines.forEach(l => {
+        if (/^[-•]/.test(l)) {
+            if (!inList) { html += '<ul class="pn-bullet-list">'; inList = true; }
+            html += `<li>${l.replace(/^[-•]\s*/, '')}</li>`;
+        } else {
+            if (inList) { html += '</ul>'; inList = false; }
+            html += `<span class="pn-item-line">${l}</span>`;
+        }
+    });
+    if (inList) html += '</ul>';
+    return html;
+}
+
+function buildPatchGroups(entries) {
+    const groups = {};
+    entries.forEach(e => {
+        const key = e.title + '|' + e.date;
+        if (!groups[key]) groups[key] = { title: e.title, date: e.date, items: [] };
+        groups[key].items.push(e);
+    });
+    return Object.values(groups).sort((a, b) => parsePatchDate(b.date) - parsePatchDate(a.date));
+}
+
+function buildPatchCardHTML(group, isLatest) {
+    const versionLabel = group.title;
+    const catOrder = ['New Features', 'Improvements', 'Bug Fixes'];
+    const catIcons = { 'New Features': '✨', 'Improvements': '🚀', 'Bug Fixes': '🔧' };
+    const sections = catOrder.map(cat => {
+        const items = group.items.filter(i => i.category === cat);
+        if (!items.length) return '';
+        return `
+            <div class="pn-section">
+                <h4 class="pn-section-title">${catIcons[cat]} ${cat.toUpperCase()}</h4>
+                ${items.map(item => `
+                    <div class="pn-item">
+                        <div class="pn-item-text">${formatPatchSummary(item.summary)}</div>
+                    </div>`).join('')}
+            </div>`;
+    }).join('');
+    return `
+        <div class="pn-release-card">
+            <div class="pn-release-card-header">
+                <div class="pn-header-left">
+                    <span class="pn-version">${versionLabel}</span>
+                    ${isLatest ? '<span class="pn-latest-badge">Latest</span>' : ''}
+                </div>
+                <span class="pn-date">${formatPatchDate(group.date)}</span>
+            </div>
+            <div class="pn-release-card-body">${sections}</div>
+        </div>`;
+}
+
+async function loadPatchNotes() {
+    const listEl = document.getElementById('patchNotesList');
+    if (listEl) listEl.innerHTML = '<div class="pn-loading">Loading patch notes...</div>';
+
+    try {
+        const response = await fetch(`${PATCH_NOTES_URL}?v=${Date.now()}`);
+        const data = await response.json();
+        renderPatchNotes(data);
+    } catch (e) {
+        if (listEl) listEl.innerHTML = '<div class="pn-loading">Failed to load patch notes.</div>';
+    }
+}
+
+function renderPatchNotes(data) {
+    const listEl = document.getElementById('patchNotesList');
+    if (!listEl) return;
+
+    const { entries } = data;
+    if (!entries || !entries.length) {
+        listEl.innerHTML = '<div class="pn-loading">No patch notes available.</div>';
+        return;
+    }
+
+    const sorted = buildPatchGroups(entries);
+    listEl.innerHTML = sorted.map((g, i) => buildPatchCardHTML(g, i === 0)).join('');
+}
+
+function togglePatchNotes() {
+    const modal = document.getElementById('notifDropdown');
+    if (!modal) return;
+    const isOpen = modal.classList.contains('show');
+    closeAllModals();
+    if (!isOpen) {
+        modal.classList.add('show');
+        lockAndBlurScreen();
+        switchAnnTab('patchnotes');
+    }
+}
+
+// --- PATCH NOTES MANAGE ---
+function switchPNManageTab(tab) {
+    const isAdd = tab === 'add';
+    document.getElementById('pnManageAdd').style.display   = isAdd  ? '' : 'none';
+    document.getElementById('pnManageEdit').style.display  = isAdd  ? 'none' : '';
+    document.getElementById('pnActionsBar').style.display  = isAdd  ? '' : 'none';
+    document.getElementById('pnmTab-add').classList.toggle('active',  isAdd);
+    document.getElementById('pnmTab-edit').classList.toggle('active', !isAdd);
+    if (!isAdd) loadPatchNotesEditor();
+}
+
+function togglePatchNotesManage() {
+    const modal = document.getElementById('patchNotesManageModal');
+    if (!modal) return;
+    const isOpen = modal.classList.contains('show');
+    closeAllModals();
+    if (!isOpen) {
+        modal.classList.add('show');
+        lockAndBlurScreen();
+        switchPNManageTab('add');
+        const list = document.getElementById('pnItemsList');
+        if (list) { list.innerHTML = ''; addPatchItem(); }
+    }
+}
+
+function addPatchItem() {
+    const list = document.getElementById('pnItemsList');
+    if (!list) return;
+    const row = document.createElement('div');
+    row.className = 'pn-item-row';
+    row.innerHTML = `
+        <div class="pn-item-row-top">
+            <select class="form-input-lg pn-item-category">
+                <option value="">— Select a category —</option>
+                <option value="New Features">✨ New Features</option>
+                <option value="Improvements">🚀 Improvements</option>
+                <option value="Bug Fixes">🔧 Bug Fixes</option>
+            </select>
+            <button class="pn-remove-btn" onclick="removePatchItem(this)" title="Remove">✖</button>
+        </div>
+        <textarea class="form-input-lg pn-textarea pn-item-summary" placeholder="Describe what changed... (start lines with - for bullet points)"></textarea>`;
+    list.appendChild(row);
+}
+
+function removePatchItem(btn) {
+    const list = document.getElementById('pnItemsList');
+    if (list && list.querySelectorAll('.pn-item-row').length > 1) btn.closest('.pn-item-row').remove();
+}
+
+async function savePatchEntry() {
+    const title   = document.getElementById('pnEntryTitle').value.trim();
+    const dateRaw = document.getElementById('pnEntryDate').value;
+    const status  = document.getElementById('pnEntrySaveStatus');
+    const btn     = document.getElementById('pnSaveEntryBtn');
+
+    if (!title || !dateRaw) { status.textContent = 'Version title and date are required.'; status.className = 'pn-save-status pn-save-error'; return; }
+
+    const rows = document.querySelectorAll('.pn-item-row');
+    const items = [];
+    let allValid = true;
+    rows.forEach(row => {
+        const category = row.querySelector('.pn-item-category').value;
+        const summary  = row.querySelector('.pn-item-summary').value.trim();
+        if (!category || !summary) { allValid = false; return; }
+        items.push({ category, summary });
+    });
+
+    if (!allValid || !items.length) { status.textContent = 'Each item needs a category and summary.'; status.className = 'pn-save-status pn-save-error'; return; }
+
+    const [y, m, d] = dateRaw.split('-');
+    const date = `${m}/${d}/${y}`;
+
+    btn.disabled = true;
+    status.textContent = 'Saving...';
+    status.className = 'pn-save-status';
+
+    try {
+        await fetch(PATCH_NOTES_URL, {
+            method: 'POST', mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'addEntries', title, date, items })
+        });
+        status.textContent = `${items.length} item${items.length !== 1 ? 's' : ''} saved!`;
+        status.className = 'pn-save-status pn-save-ok';
+        document.getElementById('pnEntryTitle').value = '';
+        document.getElementById('pnEntryDate').value  = '';
+        document.getElementById('pnItemsList').innerHTML = '';
+        addPatchItem();
+    } catch (e) {
+        status.textContent = 'Save failed.';
+        status.className = 'pn-save-status pn-save-error';
+    }
+    btn.disabled = false;
+    setTimeout(() => { status.textContent = ''; }, 4000);
+}
+
+// --- PATCH NOTES EDITOR ---
+async function loadPatchNotesEditor() {
+    const list = document.getElementById('pnEditList');
+    if (!list) return;
+    list.innerHTML = '<div class="pn-loading">Loading...</div>';
+    try {
+        const response = await fetch(`${PATCH_NOTES_URL}?v=${Date.now()}`);
+        const data = await response.json();
+        renderPatchNotesEditor(data);
+    } catch (e) {
+        list.innerHTML = '<div class="pn-loading">Failed to load.</div>';
+    }
+}
+
+function renderPatchNotesEditor(data) {
+    const list = document.getElementById('pnEditList');
+    if (!list) return;
+    const { entries } = data;
+    if (!entries || !entries.length) { list.innerHTML = '<div class="pn-loading">No patch notes to edit.</div>'; return; }
+
+    const sorted = buildPatchGroups(entries);
+    const catBadge = { 'New Features': 'pn-badge-new', 'Improvements': 'pn-badge-improved', 'Bug Fixes': 'pn-badge-fixed' };
+
+    list.innerHTML = sorted.map(group => {
+        const vLabel = group.title;
+        return `
+            <div class="pne-group">
+                <div class="pne-group-header">
+                    <span class="pne-group-title">${vLabel}</span>
+                    <span class="pne-group-date">${formatPatchDate(group.date)}</span>
+                </div>
+                ${group.items.map(item => `
+                    <div class="pne-item" id="pne-item-${item.rowNum}"
+                         data-rownum="${item.rowNum}"
+                         data-category="${item.category}"
+                         data-summary="${item.summary.replace(/"/g, '&quot;').replace(/\n/g, '&#10;')}"
+                         data-title="${group.title}"
+                         data-date="${group.date}">
+                        <div class="pne-item-view">
+                            <span class="pn-badge ${catBadge[item.category] || ''}">${item.category}</span>
+                            <span class="pne-item-summary">${item.summary.replace(/\n/g, ' ')}</span>
+                            <div class="pne-item-actions">
+                                <button class="pne-btn" onclick="startEditPatchItem(${item.rowNum})">Edit</button>
+                                <button class="pne-btn pne-btn-delete" onclick="promptDeletePatchItem(${item.rowNum})">Delete</button>
+                            </div>
+                        </div>
+                    </div>`).join('')}
+            </div>`;
+    }).join('');
+}
+
+function startEditPatchItem(rowNum) {
+    const el = document.getElementById(`pne-item-${rowNum}`);
+    if (!el) return;
+    const { category, summary } = el.dataset;
+    const decodedSummary = summary.replace(/&#10;/g, '\n');
+    const viewDiv = el.querySelector('.pne-item-view');
+    if (viewDiv) viewDiv.style.display = 'none';
+
+    const editDiv = document.createElement('div');
+    editDiv.className = 'pne-item-edit';
+    editDiv.innerHTML = `
+        <select class="form-input-lg pne-edit-cat">
+            <option value="New Features" ${category === 'New Features' ? 'selected' : ''}>✨ New Features</option>
+            <option value="Improvements" ${category === 'Improvements' ? 'selected' : ''}>🚀 Improvements</option>
+            <option value="Bug Fixes"    ${category === 'Bug Fixes'    ? 'selected' : ''}>🔧 Bug Fixes</option>
+        </select>
+        <textarea class="form-input-lg pn-textarea pne-edit-sum">${decodedSummary}</textarea>
+        <div class="pne-edit-actions">
+            <button class="btn-primary" onclick="saveEditPatchItem(${rowNum})">Save Changes</button>
+            <button class="pne-btn" onclick="cancelEditPatchItem(${rowNum})">Cancel</button>
+        </div>`;
+    el.appendChild(editDiv);
+}
+
+function cancelEditPatchItem(rowNum) {
+    const el = document.getElementById(`pne-item-${rowNum}`);
+    if (!el) return;
+    const viewDiv = el.querySelector('.pne-item-view');
+    const editDiv = el.querySelector('.pne-item-edit');
+    if (viewDiv) viewDiv.style.display = '';
+    if (editDiv) editDiv.remove();
+}
+
+async function saveEditPatchItem(rowNum) {
+    const el       = document.getElementById(`pne-item-${rowNum}`);
+    if (!el) return;
+    const category = el.querySelector('.pne-edit-cat').value;
+    const summary  = el.querySelector('.pne-edit-sum').value.trim();
+    const { title, date } = el.dataset;
+    if (!category || !summary) return;
+
+    const saveBtn = el.querySelector('.btn-primary');
+    if (saveBtn) saveBtn.textContent = 'Saving...';
+    if (saveBtn) saveBtn.disabled = true;
+
+    try {
+        await fetch(PATCH_NOTES_URL, {
+            method: 'POST', mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'editEntry', rowNum, title, date, category, summary })
+        });
+        loadPatchNotesEditor();
+    } catch (e) {
+        if (saveBtn) { saveBtn.textContent = 'Save Changes'; saveBtn.disabled = false; }
+    }
+}
+
+function promptDeletePatchItem(rowNum) {
+    const el = document.getElementById(`pne-item-${rowNum}`);
+    if (!el) return;
+    const actions = el.querySelector('.pne-item-actions');
+    if (!actions) return;
+    actions.innerHTML = `
+        <span class="pne-confirm-label">Delete this item?</span>
+        <button class="pne-btn pne-btn-confirm-delete" onclick="confirmDeletePatchItem(${rowNum})">Yes, Delete</button>
+        <button class="pne-btn" onclick="loadPatchNotesEditor()">Cancel</button>`;
+}
+
+async function confirmDeletePatchItem(rowNum) {
+    const btn = document.querySelector(`#pne-item-${rowNum} .pne-btn-confirm-delete`);
+    if (btn) { btn.textContent = 'Deleting...'; btn.disabled = true; }
+    try {
+        await fetch(PATCH_NOTES_URL, {
+            method: 'POST', mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'deleteEntry', rowNum })
+        });
+    } catch (e) { /* no-cors always throws, reload regardless */ }
+    loadPatchNotesEditor();
+}
