@@ -2447,8 +2447,6 @@ async function fetchScorecardData() {
             mondayDate.setUTCDate(parsedDate.getUTCDate() + diffToMonday);
             displayDate = "Week of " + mondayDate.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric' });
         }
-
-        const displayScore = latestScore * 2;
         let scoreColor = 'var(--red-alert)';
         if (displayScore > 8) scoreColor = 'var(--sage-professional)';
         else if (displayScore >= 6) scoreColor = 'var(--idea-gold)';
