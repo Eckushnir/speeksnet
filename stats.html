@@ -75,11 +75,18 @@
     </div>
 </header>
 
-<button class="cl-nav-toggle dynamic-module-flex role-manager role-district-manager" onclick="toggleChecklistPanel(event); loadChecklist();" title="Checklist">
-    <span style="font-size: 14px; line-height: 1;">📋</span>
-    <span>Checklist</span>
-    <svg class="cl-toggle-chevron" xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-</button>
+<div class="nav-panel-tabs">
+    <button class="gi-nav-toggle dynamic-module-flex role-manager role-employee role-training" onclick="toggleGoalsPanel()" title="Goals &amp; Initiatives">
+        <span style="font-size: 14px; line-height: 1;">🎯</span>
+        <span>Goals &amp; Initiatives</span>
+        <svg class="gi-toggle-chevron" xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+    </button>
+    <button class="cl-nav-toggle dynamic-module-flex role-manager role-district-manager" onclick="toggleChecklistPanel(event); loadChecklist();" title="Checklist">
+        <span style="font-size: 14px; line-height: 1;">📋</span>
+        <span>Checklist</span>
+        <svg class="cl-toggle-chevron" xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+    </button>
+</div>
 
 <!-- ===== FIRST-LOGIN TUTORIAL ===== -->
 <div id="tutorialOverlay" class="tutorial-overlay">
@@ -324,7 +331,7 @@
 
   <div id="pane-records" class="tab-pane active">
       
-      <div style="display: flex; flex-direction: row; justify-content: center; width: 100%; margin-bottom: 70px; flex-wrap: wrap; gap: 150px;">
+      <div style="display: flex; flex-direction: row; justify-content: center; align-items: flex-end; width: 100%; margin-bottom: 70px; flex-wrap: wrap; gap: 150px;">
           
           <div style="display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 420px;">
               <div style="text-align: center; margin-bottom: 35px; width: 100%; display: flex; flex-direction: column; align-items: center;">
@@ -338,6 +345,18 @@
               </div>
           </div>
           
+          <div style="display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 420px;">
+              <div style="text-align: center; margin-bottom: 35px; width: 100%; display: flex; flex-direction: column; align-items: center;">
+                  <h3 style="font-size: 19px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; white-space: nowrap; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                      ⭐ Monthly Google Review Champion
+                  </h3>
+                  <div id="google-review-champions-date" style="font-size: 13px; font-weight: 800; color: #888; text-transform: uppercase; letter-spacing: 1px; text-align: center;"></div>
+              </div>
+              <div id="google-review-champions-body" style="display: flex; justify-content: center; align-items: flex-end; gap: 15px; width: 100%; min-height: 250px;">
+                  <div class="status-message">Syncing Reviews...</div>
+              </div>
+          </div>
+
           <div style="display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 420px;">
               <div style="text-align: center; margin-bottom: 35px; width: 100%; display: flex; flex-direction: column; align-items: center;">
                   <h3 style="font-size: 19px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; white-space: nowrap; display: flex; align-items: center; justify-content: center; gap: 8px;">
@@ -383,6 +402,98 @@
     
     <div class="manage-footer flex-end">
         <button onclick="submitNewScorecard()" class="btn-primary" id="submitScorecardBtn">Save Scorecard</button>
+    </div>
+</div>
+
+<!-- ===== EDIT MONTHLY GOALS MODAL ===== -->
+<div class="modal-menu manage-menu" id="editMonthlyGoalsModal">
+    <div class="modal-header">
+        <h3>🎯 Set Monthly Team Goals</h3>
+        <button class="modal-close-btn" onclick="closeAllModals()">✖</button>
+    </div>
+    <div class="manage-content">
+        <p style="font-size: 13px; color: #666; margin-bottom: 15px;">Set up to 6 goals for your team this month. Give each goal a title and an optional description.</p>
+        <div id="editGoalsList" class="edit-goals-list"></div>
+        <button class="btn-secondary" id="addGoalRowBtn" onclick="addGoalRow()" style="margin-top: 6px; padding: 8px 16px; font-size: 12px;">+ Add Goal</button>
+    </div>
+    <div class="manage-footer flex-end">
+        <button class="btn-primary" onclick="saveMonthlyGoals()" id="saveMonthlyGoalsBtn">Save Goals</button>
+    </div>
+</div>
+
+<!-- ===== EDIT COMPANY PROJECTS MODAL ===== -->
+<div class="modal-menu manage-menu" id="editCompanyProjectsModal">
+    <div class="modal-header">
+        <h3>🏢 Company Initiatives</h3>
+        <button class="modal-close-btn" onclick="closeAllModals()">✖</button>
+    </div>
+    <div class="manage-content">
+        <p style="font-size: 13px; color: #666; margin-bottom: 15px;">Set up to 8 company-wide initiatives or projects. All stores will see these.</p>
+        <div id="editCompanyProjectsList" class="edit-goals-list"></div>
+        <button class="btn-secondary" id="addCompanyProjectRowBtn" onclick="addCompanyProjectRow()" style="margin-top: 6px; padding: 8px 16px; font-size: 12px;">+ Add Initiative</button>
+    </div>
+    <div class="manage-footer flex-end">
+        <button class="btn-primary" onclick="saveCompanyProjects()">Save Initiatives</button>
+    </div>
+</div>
+
+<!-- ===== EDIT STORE INITIATIVES MODAL ===== -->
+<div class="modal-menu manage-menu" id="editStoreInitiativesModal">
+    <div class="modal-header">
+        <h3 id="editStoreInitiativesTitle">🧪 Store Initiatives</h3>
+        <button class="modal-close-btn" onclick="closeAllModals()">✖</button>
+    </div>
+    <div class="manage-content">
+        <p style="font-size: 13px; color: #666; margin-bottom: 15px;">Set up to 6 ongoing initiatives or experiments for your store. These persist until you remove them.</p>
+        <div id="editStoreInitiativesList" class="edit-goals-list"></div>
+        <button class="btn-secondary" id="addStoreInitiativeRowBtn" onclick="addStoreInitiativeRow()" style="margin-top: 6px; padding: 8px 16px; font-size: 12px;">+ Add Initiative</button>
+    </div>
+    <div class="manage-footer flex-end">
+        <button class="btn-primary" onclick="saveStoreInitiatives()">Save Initiatives</button>
+    </div>
+</div>
+
+<div id="goalsSidePanel" class="goals-side-panel dynamic-module-flex role-manager role-employee role-training">
+    <div class="gi-panel-header">
+        <div class="gi-panel-header-row">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 18px;">🎯</span>
+                <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: var(--slate-charcoal);">Goals &amp; Initiatives</h3>
+            </div>
+            <button class="modal-close-btn" onclick="toggleGoalsPanel()" style="width: 28px; height: 28px; font-size: 14px; background: #f1f5f9; color: #64748b;">✖</button>
+        </div>
+    </div>
+    <div class="gi-panel-body">
+        <div class="gi-section">
+            <div class="gi-section-header">
+                <span class="gi-section-title">Initiatives &amp; Upcoming Projects</span>
+                <div class="gi-section-actions">
+                    <button class="mini-action-btn dynamic-module-block role-district-manager" onclick="openEditCompanyProjectsModal()">Edit Company ✏️</button>
+                    <button class="mini-action-btn dynamic-module-block role-district-manager" onclick="openEditStoreInitiativesModal()">Edit Store ✏️</button>
+                </div>
+            </div>
+            <div id="giInitiativesList" class="gi-items-list">
+                <div class="status-message">Loading...</div>
+            </div>
+        </div>
+        <div class="gi-section">
+            <div class="gi-section-header">
+                <div style="display:flex;align-items:center;gap:7px;min-width:0;">
+                    <span class="gi-section-title" id="giGoalsLabel">Monthly Goals</span>
+                    <div class="gi-prev-wrapper">
+                        <button class="gi-prev-toggle" id="giPrevToggleBtn" onclick="togglePrevMonths(event)">
+                            📅
+                            <svg class="gi-prev-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="10" height="10"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </button>
+                        <div id="giPrevMonthsList" class="gi-months-dropdown"></div>
+                    </div>
+                </div>
+                <button id="giEditGoalsBtn" class="mini-action-btn dynamic-module-block role-manager" onclick="openEditGoalsModal()">Edit Goals ✏️</button>
+            </div>
+            <div id="giGoalsList" class="gi-items-list">
+                <div class="status-message">Loading...</div>
+            </div>
+        </div>
     </div>
 </div>
 

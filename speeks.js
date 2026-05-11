@@ -1579,6 +1579,8 @@ async function fetchHubData() {
         hubDataCache = freshData;
 
         if (document.getElementById('bs-buy-val')) renderBuyingSales();
+        renderMonthlyGoalsBanner();
+        renderDistrictGoals();
         
         // Render Live Data globally (Fixes CEO Rings)
         renderLiveData(hubDataCache);
@@ -1650,6 +1652,8 @@ function renderBuyingSales() {
         smb.className = sellMarginNum >= 55.0 ? 'delta-badge delta-pos' : 'delta-badge delta-neg';
     });
 
+    document.querySelectorAll('#bs-rev').forEach(el => el.innerText = `$${Math.round(rev).toLocaleString()}`);
+
     const bsDateEl = document.getElementById('bs-last-updated');
     if (bsDateEl) {
         const _bsTs = JSON.parse(localStorage.getItem('bsStoreTimestamps') || '{}');
@@ -1698,6 +1702,7 @@ function renderLiveData(d) {
         // 2. Update CEO Rings (Sales)
         if(document.getElementById(`ceo-${store.base}-pct`)) document.getElementById(`ceo-${store.base}-pct`).innerText = p + '%';
         if(document.getElementById(`ceo-${store.base}-goal`)) document.getElementById(`ceo-${store.base}-goal`).innerText = goalTxt;
+        if(document.getElementById(`ceo-${store.base}-rev`)) document.getElementById(`ceo-${store.base}-rev`).innerText = `$${Math.round(rev).toLocaleString()}`;
         if(document.getElementById(`ceo-${store.base}-t-gp`)) document.getElementById(`ceo-${store.base}-t-gp`).innerText = tGpTxt;
         if(document.getElementById(`ceo-${store.base}-sell-margin`)) {
             let el = document.getElementById(`ceo-${store.base}-sell-margin`);
@@ -2442,7 +2447,6 @@ async function fetchScorecardData() {
             mondayDate.setUTCDate(parsedDate.getUTCDate() + diffToMonday);
             displayDate = "Week of " + mondayDate.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric' });
         }
-
         let scoreColor = 'var(--red-alert)';
         if (displayScore > 8) scoreColor = 'var(--sage-professional)';
         else if (displayScore >= 6) scoreColor = 'var(--idea-gold)';
@@ -2451,31 +2455,48 @@ async function fetchScorecardData() {
             ? `<div class="notif-dot active" style="display:block; position:absolute; top:-2px; right:-14px; width:12px; height:12px;"></div>`
             : '';
 
+        const renderCategoryCard = (cat) => {
+            let originalVal = parseFloat(cat.score);
+            let displayVal = cat.score;
+            let bg = '#f1f5f9', color = '#64748b';
+            if (!isNaN(originalVal)) {
+                let sVal = originalVal * 2;
+                displayVal = sVal;
+                if (sVal >= 8) { bg = '#d1fae5'; color = '#059669'; }
+                else if (sVal >= 6) { bg = '#fef3c7'; color = '#d97706'; }
+                else { bg = '#fee2e2'; color = '#dc2626'; }
+            }
+            return `<div style="display: flex; justify-content: space-between; align-items: center; background: #fff; border: 1px solid #e2e8f0; padding: 8px; border-radius: 8px; gap: 6px;">
+                <span style="font-size: 9px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase; line-height: 1.3;">${cat.name}</span>
+                <span style="font-size: 11px; font-weight: 900; background: ${bg}; color: ${color}; padding: 2px 6px; border-radius: 6px; flex-shrink: 0;">${displayVal}</span>
+            </div>`;
+        };
+
         let breakdownHtml = '';
-        if (storeData.breakdown && storeData.breakdown.length > 0) {
-            breakdownHtml = `<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-height: 280px; overflow-y: auto; padding-right: 4px; margin-top: 15px; border-top: 1px solid #f0f0f0; padding-top: 15px;" class="kpi-scroll-area">`;
-            
-            storeData.breakdown.forEach(cat => {
-                let originalVal = parseFloat(cat.score);
-                let displayVal = cat.score;
-                let bg = '#f1f5f9', color = '#64748b';
-                
-                if (!isNaN(originalVal)) {
-                    let sVal = originalVal * 2;
-                    displayVal = sVal; 
-                    
-                    if (sVal >= 8) { bg = '#d1fae5'; color = '#059669'; } 
-                    else if (sVal >= 6) { bg = '#fef3c7'; color = '#d97706'; } 
-                    else { bg = '#fee2e2'; color = '#dc2626'; } 
-                }
-                
-                breakdownHtml += `
-                <div style="display: flex; justify-content: space-between; align-items: center; background: #fff; border: 1px solid #e2e8f0; padding: 8px; border-radius: 8px; gap: 6px;">
-                    <span style="font-size: 9px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase; line-height: 1.3;">${cat.name}</span>
-                    <span style="font-size: 11px; font-weight: 900; background: ${bg}; color: ${color}; padding: 2px 6px; border-radius: 6px; flex-shrink: 0;">${displayVal}</span>
+        if (storeData.buckets && storeData.buckets.some(b => b.categories && b.categories.length > 0)) {
+            breakdownHtml = `<div style="max-height: 340px; overflow-y: auto; padding-right: 4px; margin-top: 15px; border-top: 1px solid #f0f0f0; padding-top: 15px;" class="kpi-scroll-area">`;
+            storeData.buckets.forEach(bucket => {
+                if (!bucket.categories || bucket.categories.length === 0) return;
+                let bAvgNum = bucket.avg * 2;
+                let bBg = '#f1f5f9', bColor = '#64748b';
+                if (bAvgNum >= 8) { bBg = '#d1fae5'; bColor = '#059669'; }
+                else if (bAvgNum >= 6) { bBg = '#fef3c7'; bColor = '#d97706'; }
+                else { bBg = '#fee2e2'; bColor = '#dc2626'; }
+                breakdownHtml += `<div style="margin-bottom: 12px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                        <span style="font-size: 9px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">${bucket.name}</span>
+                        <span style="font-size: 10px; font-weight: 900; background: ${bBg}; color: ${bColor}; padding: 2px 7px; border-radius: 6px;">${bAvgNum.toFixed(1)}</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
+                        ${bucket.categories.map(renderCategoryCard).join('')}
+                    </div>
                 </div>`;
             });
             breakdownHtml += `</div>`;
+        } else if (storeData.breakdown && storeData.breakdown.length > 0) {
+            breakdownHtml = `<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-height: 280px; overflow-y: auto; padding-right: 4px; margin-top: 15px; border-top: 1px solid #f0f0f0; padding-top: 15px;" class="kpi-scroll-area">
+                ${storeData.breakdown.map(renderCategoryCard).join('')}
+            </div>`;
         }
 
         container.innerHTML = `
@@ -3015,6 +3036,7 @@ async function fetchMasterDistrictDashboard() {
                         <div class="master-section-title">Buying & Selling Snapshot</div>
                         <div class="master-stat-box">
                             <div class="master-stat-row"><span class="master-stat-label">Sales vs Goal</span><span class="master-stat-val" style="color: ${pctColor}; background: ${pctBg};">${salesPct}%</span></div>
+                            <div class="master-stat-row"><span class="master-stat-label">Revenue</span><span class="master-stat-val" style="color: var(--slate-charcoal);">$${Math.round(rev).toLocaleString()}</span></div>
                             <div class="master-stat-row"><span class="master-stat-label">GP Tracking</span><span class="master-stat-val" style="color: var(--slate-charcoal);">$${gpTrack.toLocaleString()}</span></div>
                             <div class="master-stat-row dashed"><span class="master-stat-label">Sell Margin</span><span class="master-stat-val" style="color: ${sellMarginColor}; background: ${sellMarginBg};">${sellMarginNum > 0 ? sellMargin + '%' : '-'}</span></div>
                             <div class="master-stat-row"><span class="master-stat-label">Buy Tracking</span><span class="master-stat-val" style="color: var(--slate-charcoal);">$${buyProj.toLocaleString()}</span></div>
@@ -4160,6 +4182,10 @@ function applyRoleBasedUI() {
             }
         });
     }
+
+    const giToggle = document.querySelector('.gi-nav-toggle');
+    const giHidden = giToggle?.style.getPropertyValue('display') === 'none';
+    document.querySelector('.nav-panel-tabs')?.classList.toggle('gi-tab-hidden', giHidden);
 }
 
 function checkInstantNotifCache() {
@@ -4180,8 +4206,16 @@ function initDashboardData() {
     checkInstantNotifCache();
 
     const runInit = () => {
-        if (typeof initChecklists === 'function') initChecklists(); 
-        
+        if (typeof initChecklists === 'function') initChecklists();
+        renderMonthlyGoalsBanner();
+        renderDistrictGoals();
+        syncGoalsFromSheet();
+        renderCompanyProjectsBanner();
+        renderStoreInitiatives();
+        renderDistrictCompanyProjects();
+        renderDistrictInitiativesGrid();
+        syncInitiativesFromSheet();
+
         // Re-sync announcements immediately after login so it knows who you are!
         setTimeout(loadCMS, 50);
         setTimeout(startReactionPolling, 3000);
@@ -4295,16 +4329,49 @@ customTooltip.className = 'speeks-tooltip';
 document.body.appendChild(customTooltip);
 
 document.addEventListener('mouseover', function(e) {
+    const goalMini = e.target.closest('.dg-goal-mini');
+    if (goalMini) {
+        const title = goalMini.dataset.goalTitle;
+        const desc = goalMini.dataset.goalDesc;
+        if (title) {
+            customTooltip.style.setProperty('--tip-color', 'var(--sage-professional)');
+            customTooltip.innerHTML = `
+                <strong style="display:block; margin-bottom: 6px; color: var(--sage-professional); font-size: 13px;">${title}</strong>
+                ${desc ? `<span style="font-size: 12px; color: var(--slate-charcoal); line-height: 1.5;">${desc}</span>` : ''}`;
+            customTooltip.classList.add('show');
+            return;
+        }
+    }
+
+    const panelItem = e.target.closest('.cpb-project-item, .mgb-goal-item');
+    if (panelItem) {
+        const titleEl = panelItem.querySelector('.mgb-goal-title');
+        const descEl  = panelItem.querySelector('.mgb-goal-desc');
+        const isTitleCut = titleEl && titleEl.scrollWidth > titleEl.clientWidth;
+        const isDescCut  = descEl  && descEl.scrollHeight > descEl.clientHeight;
+        if (isTitleCut || isDescCut) {
+            const color = panelItem.classList.contains('cpb-initiative-item') ? '#f59e0b'
+                        : panelItem.classList.contains('mgb-goal-item')       ? '#5a8d3b'
+                        : '#3b82f6';
+            customTooltip.style.setProperty('--tip-color', color);
+            customTooltip.innerHTML = `
+                <strong style="display:block; margin-bottom: 6px; font-size: 13px; color: var(--slate-charcoal);">${titleEl ? titleEl.innerText.trim() : ''}</strong>
+                ${descEl ? `<span style="font-size: 12px; color: #64748b; line-height: 1.4;">${descEl.innerText.trim()}</span>` : ''}`;
+            customTooltip.classList.add('show');
+            return;
+        }
+    }
+
     const card = e.target.closest('.doc-card');
-    
+
     if (card) {
         const titleEl = card.querySelector('.doc-title');
         const descEl = card.querySelector('.doc-desc');
-        
+
         if (titleEl && descEl) {
             const isTitleCut = titleEl.scrollWidth > titleEl.clientWidth;
             const isDescCut = descEl.scrollHeight > descEl.clientHeight;
-            
+
             if (isTitleCut || isDescCut) {
                 customTooltip.innerHTML = `
                     <strong style="display:block; margin-bottom: 6px; color: var(--sage-professional); font-size: 14px; white-space: nowrap;">
@@ -4336,7 +4403,7 @@ document.addEventListener('mousemove', function(e) {
 });
 
 document.addEventListener('mouseout', function(e) {
-    if (e.target.closest('.doc-card')) {
+    if (e.target.closest('.doc-card') || e.target.closest('.dg-goal-mini')) {
         customTooltip.classList.remove('show');
     }
 });
@@ -4524,7 +4591,6 @@ function renderKpiChart(allData, metric) {
                     if (String(d[r][monthCol] || '').trim() === lbl) { rowIdx = r; break; }
                 }
                 if (rowIdx === -1) { sData.push(null); return; }
-            
                 let row = d[rowIdx];
                 let v = (metric === 'time' && currentTimeframe === '4-Week') ? row[5] : row[sCol];
                 let parsed = parseChartVal(v);
@@ -4584,18 +4650,18 @@ function renderKpiChart(allData, metric) {
                 const empColors = ['#a855f7', '#3b82f6', '#22c55e', '#f97316', '#ef4444', '#14b8a6', '#eab308', '#ec4899'];
                 
                 empCols.forEach((emp, eIdx) => {
-                   let sData = [];
-                   lbls.forEach((lbl) => {
-                       let rowIdx = -1;
-                       for (let r = sr + 2; r < d.length; r++) {
-                           if (!Array.isArray(d[r])) continue;
-                           if (String(d[r][monthCol] || '').trim() === lbl) { rowIdx = r; break; }
-                       }
-                       if (rowIdx === -1) { sData.push(null); return; }
-                       let parsed = parseChartVal(d[rowIdx][emp.idx]);
-                       sData.push(parsed);
-                       if (parsed !== null) nums.push(parsed);
-                   });
+                    let sData = [];
+                    lbls.forEach((lbl) => {
+                        let rowIdx = -1;
+                        for (let r = sr + 2; r < d.length; r++) {
+                            if (!Array.isArray(d[r])) continue;
+                            if (String(d[r][monthCol] || '').trim() === lbl) { rowIdx = r; break; }
+                        }
+                        if (rowIdx === -1) { sData.push(null); return; }
+                        let parsed = parseChartVal(d[rowIdx][emp.idx]);
+                        sData.push(parsed);
+                        if (parsed !== null) nums.push(parsed);
+                    });
                     
                     if (sData.some(val => val !== null)) {
                         let color = empColors[eIdx % empColors.length];
@@ -4924,6 +4990,657 @@ async function publishAnnouncement() {
     }
 }
 
+// ============================================================================
+// 24. MODULE: MONTHLY TEAM GOALS
+// ============================================================================
+
+function _mgbKey(store, date) {
+    const d = date || new Date();
+    return `monthlyGoals_${(store || 'NONE').toUpperCase()}_${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function getMonthlyGoals(store) {
+    try { const r = localStorage.getItem(_mgbKey(store)); return r ? JSON.parse(r) : null; } catch { return null; }
+}
+
+function putMonthlyGoals(store, data) {
+    localStorage.setItem(_mgbKey(store), JSON.stringify(data));
+}
+
+const MONTHLY_GOALS_URL = 'https://script.google.com/macros/s/AKfycbyytrXgeMLoFMqxKBqW2SfLoXk-8SnoKQoKVmhgPkW84ffuj5sgMumekFdZN1CsJcpMJQ/exec';
+
+function _mgbYearMonth(date) {
+    const d = date || new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+async function syncGoalsFromSheet() {
+    if (!MONTHLY_GOALS_URL) return;
+    try {
+        const ym  = _mgbYearMonth();
+        const res = await fetch(`${MONTHLY_GOALS_URL}?action=getAll&yearMonth=${ym}&t=${Date.now()}`);
+        const map = await res.json();
+        ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'].forEach(store => {
+            if (map[store]) putMonthlyGoals(store, map[store]);
+        });
+        renderMonthlyGoalsBanner();
+        renderDistrictGoals();
+    } catch (err) {
+        console.warn('Goals sync failed:', err);
+    }
+}
+
+async function _postGoalsToSheet(store, payload) {
+    if (!MONTHLY_GOALS_URL) return;
+    try {
+        await fetch(MONTHLY_GOALS_URL, {
+            method:   'POST',
+            headers:  { 'Content-Type': 'text/plain' },
+            body:     JSON.stringify({ store, yearMonth: _mgbYearMonth(), ...payload }),
+            redirect: 'follow',
+        });
+    } catch (err) {
+        console.warn('Goals post failed:', err);
+    }
+}
+
+
+
+
+function _mgbMonthLabel(date) {
+    return (date || new Date()).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
+
+// --- Banner ---
+
+let _mgbExpanded = false;
+
+const _storeColors = { OVL: '#7c3aed', LEE: '#2563eb', WSP: '#5a8d3b', MPL: '#ea580c', BAL: '#dc2626' };
+
+function renderMonthlyGoalsBanner() {
+    if (_selectedGoalDate) return; // viewing a past month — don't override
+    const store = sessionStorage.getItem('speeksUserStore') || '';
+    const labelEl = document.getElementById('giGoalsLabel');
+    if (labelEl) labelEl.textContent = _mgbMonthLabel() + ' Goals';
+
+    const data  = getMonthlyGoals(store);
+    const goals = data?.goals || [];
+    const listEl = document.getElementById('giGoalsList');
+
+    if (!goals.length) {
+        if (listEl) listEl.innerHTML = '<div class="status-message" style="padding: 8px 0;">No goals have been set for this month yet.</div>';
+        return;
+    }
+
+    let html = '';
+    goals.forEach(g => {
+        html += `<div class="mgb-goal-item">
+            <span class="mgb-goal-title">${escapeHtml(g.title)}</span>
+            ${g.description ? `<span class="mgb-goal-desc">${escapeHtml(g.description)}</span>` : ''}
+        </div>`;
+    });
+    if (listEl) listEl.innerHTML = html;
+}
+
+function toggleGoalsBanner() { toggleGoalsPanel(); }
+
+// --- Previous Months Dropdown ---
+
+let _selectedGoalDate = null; // null = current month
+
+function _closePrevMonths() {
+    const dropdown = document.getElementById('giPrevMonthsList');
+    const btn      = document.getElementById('giPrevToggleBtn');
+    if (dropdown) dropdown.classList.remove('open');
+    // keep btn.active if a past month is selected
+    if (btn) btn.classList.toggle('active', !!_selectedGoalDate);
+}
+
+function _resetToCurrentMonth() {
+    _selectedGoalDate = null;
+    _closePrevMonths();
+    const editBtn = document.getElementById('giEditGoalsBtn');
+    if (editBtn) {
+        const isManager = (sessionStorage.getItem('speeksUserRole') || '').toLowerCase().replace(/\s+/g, '-') === 'manager';
+        editBtn.style.setProperty('display', isManager ? 'block' : 'none', 'important');
+    }
+    renderMonthlyGoalsBanner();
+}
+
+function _buildMonthDropdown(dropdown) {
+    const now  = new Date();
+    const nowYm = _mgbYearMonth();
+    const selYm = _selectedGoalDate ? _mgbYearMonth(_selectedGoalDate) : nowYm;
+    const months = [now];
+    for (let i = 1; i <= 3; i++) months.push(new Date(now.getFullYear(), now.getMonth() - i, 1));
+    dropdown.innerHTML = months.map((d, idx) => {
+        const ym       = _mgbYearMonth(d);
+        const label    = _mgbMonthLabel(d);
+        const selected = ym === selYm ? ' selected' : '';
+        const tag      = idx === 0 ? '<span class="gi-month-current-tag">Current</span>' : '';
+        return `<div class="gi-month-option${selected}" onclick="selectGoalMonth('${ym}')">${label}${tag}</div>`;
+    }).join('');
+}
+
+window.togglePrevMonths = function(e) {
+    if (e) e.stopPropagation();
+    const dropdown = document.getElementById('giPrevMonthsList');
+    const btn      = document.getElementById('giPrevToggleBtn');
+    if (!dropdown || !btn) return;
+    const opening = !dropdown.classList.contains('open');
+    dropdown.classList.toggle('open', opening);
+    btn.classList.toggle('active', opening || !!_selectedGoalDate);
+    if (opening) {
+        _buildMonthDropdown(dropdown);
+        setTimeout(() => {
+            document.addEventListener('click', function _giClickAway(ev) {
+                const wrap = document.querySelector('.gi-prev-wrapper');
+                if (wrap && wrap.contains(ev.target)) return;
+                document.getElementById('giPrevMonthsList')?.classList.remove('open');
+                const b = document.getElementById('giPrevToggleBtn');
+                if (b) b.classList.toggle('active', !!_selectedGoalDate);
+                document.removeEventListener('click', _giClickAway);
+            });
+        }, 0);
+    }
+};
+
+window.selectGoalMonth = async function(ym) {
+    const dropdown  = document.getElementById('giPrevMonthsList');
+    const btn       = document.getElementById('giPrevToggleBtn');
+    const editBtn   = document.getElementById('giEditGoalsBtn');
+    if (dropdown) dropdown.classList.remove('open');
+
+    const nowYm = _mgbYearMonth();
+    const isManager = (sessionStorage.getItem('speeksUserRole') || '').toLowerCase().replace(/\s+/g, '-') === 'manager';
+    if (ym === nowYm) {
+        _selectedGoalDate = null;
+        if (btn) btn.classList.remove('active');
+        if (editBtn) editBtn.style.setProperty('display', isManager ? 'block' : 'none', 'important');
+        renderMonthlyGoalsBanner();
+        return;
+    }
+
+    if (editBtn) editBtn.style.setProperty('display', 'none', 'important');
+
+    const [year, month] = ym.split('-').map(Number);
+    _selectedGoalDate = new Date(year, month - 1, 1);
+    if (btn) btn.classList.add('active');
+
+    const labelEl = document.getElementById('giGoalsLabel');
+    if (labelEl) labelEl.textContent = _mgbMonthLabel(_selectedGoalDate) + ' Goals';
+
+    const listEl = document.getElementById('giGoalsList');
+    if (!listEl) return;
+    listEl.innerHTML = '<div class="status-message">Loading...</div>';
+
+    const store    = sessionStorage.getItem('speeksUserStore') || '';
+    const cacheKey = _mgbKey(store, _selectedGoalDate);
+    let goals = null;
+    try { const raw = localStorage.getItem(cacheKey); if (raw) goals = JSON.parse(raw)?.goals ?? []; } catch {}
+
+    if (goals === null) {
+        try {
+            const res   = await fetch(`${MONTHLY_GOALS_URL}?action=getAll&yearMonth=${ym}&t=${Date.now()}`);
+            const map   = await res.json();
+            const entry = map[(store || '').toUpperCase()];
+            if (entry) { localStorage.setItem(cacheKey, JSON.stringify(entry)); goals = entry.goals || []; }
+            else goals = [];
+        } catch { goals = null; }
+    }
+
+    if (!goals?.length) {
+        listEl.innerHTML = `<div class="status-message" style="padding:8px 0;">${goals === null ? 'Could not load.' : 'No goals recorded for this month.'}</div>`;
+        return;
+    }
+    listEl.innerHTML = goals.map(g => `<div class="mgb-goal-item">
+        <span class="mgb-goal-title">${escapeHtml(g.title)}</span>
+        ${g.description ? `<span class="mgb-goal-desc">${escapeHtml(g.description)}</span>` : ''}
+    </div>`).join('');
+};
+
+window.toggleGoalsPanel = function(event) {
+    if (event) event.stopPropagation();
+    const panel = document.getElementById('goalsSidePanel');
+    if (!panel) return;
+    const isOpen = panel.classList.toggle('open');
+    const toggle = document.querySelector('.gi-nav-toggle');
+    if (toggle) toggle.classList.toggle('panel-active', isOpen);
+    if (!isOpen) _closePrevMonths();
+};
+
+// --- Edit Modal ---
+
+function openEditGoalsModal() {
+    const store = sessionStorage.getItem('speeksUserStore') || '';
+    const goals = getMonthlyGoals(store)?.goals || [];
+    const list  = document.getElementById('editGoalsList');
+    if (!list) return;
+    list.innerHTML = '';
+    if (goals.length === 0) { addGoalRow(); } else { goals.forEach(g => addGoalRow(g)); }
+    _updateAddGoalBtn();
+    toggleModal('editMonthlyGoalsModal');
+}
+
+function addGoalRow(existing) {
+    const list = document.getElementById('editGoalsList');
+    if (!list || list.children.length >= 6) return;
+    const row = document.createElement('div');
+    row.className = 'edit-goal-row';
+    row.innerHTML = `
+        <div class="edit-goal-inner">
+            <input type="text" class="form-input-lg edit-goal-title" style="margin:0; font-size:13px;" placeholder="Goal title  (e.g. Hit $45K Revenue)" value="${escapeHtml(existing?.title || '')}">
+            <input type="text" class="form-input-lg edit-goal-desc" style="margin:0; font-size:12px;" placeholder="Description (optional)" value="${escapeHtml(existing?.description || '')}">
+        </div>
+        <button class="edit-goal-remove-btn" onclick="this.closest('.edit-goal-row').remove(); _updateAddGoalBtn();" title="Remove">✕</button>`;
+    list.appendChild(row);
+    _updateAddGoalBtn();
+}
+
+function _updateAddGoalBtn() {
+    const list = document.getElementById('editGoalsList');
+    const btn  = document.getElementById('addGoalRowBtn');
+    if (btn) btn.style.display = (list?.children.length ?? 0) >= 6 ? 'none' : '';
+}
+
+function saveMonthlyGoals() {
+    const store    = sessionStorage.getItem('speeksUserStore') || '';
+    const userName = sessionStorage.getItem('speeksUserName')  || 'Manager';
+    const goals    = [];
+    document.querySelectorAll('#editGoalsList .edit-goal-row').forEach(row => {
+        const title       = row.querySelector('.edit-goal-title')?.value.trim();
+        const description = row.querySelector('.edit-goal-desc')?.value.trim();
+        if (!title) return;
+        goals.push({ title, description });
+    });
+    const payload = {
+        goals,
+        setBy:     userName,
+        updatedAt: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+    };
+    putMonthlyGoals(store, payload);
+    closeAllModals();
+    renderMonthlyGoalsBanner();
+    renderDistrictGoals();
+    _postGoalsToSheet(store, payload);
+}
+
+// --- District Overview ---
+
+function renderDistrictGoals() {
+    const container = document.getElementById('districtGoalsGrid');
+    if (!container) return;
+    const monthEl = document.getElementById('districtGoalsMonth');
+    if (monthEl) monthEl.textContent = _mgbMonthLabel();
+    const stores = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
+    const emojis = { OVL: '🟣', LEE: '🔵', WSP: '🟢', MPL: '🟠', BAL: '🔴' };
+
+    let goalsRow = '';
+    let initiativesRow = '';
+
+    stores.forEach(store => {
+        const data        = getMonthlyGoals(store);
+        const goals       = data?.goals || [];
+        const initiatives = getStoreInitiatives(store)?.initiatives || [];
+
+        const goalsContent = goals.length
+            ? goals.map(g => `<div class="dg-goal-mini" data-goal-title="${escapeHtml(g.title)}" data-goal-desc="${escapeHtml(g.description || '')}"><div class="dg-goal-mini-label">${escapeHtml(g.title)}</div></div>`).join('')
+            : '<div class="dg-no-goals">No goals set</div>';
+
+        const initiativeItems = initiatives.length
+            ? initiatives.map(i => {
+                const badge = i.status === 'upcoming'
+                    ? '<span class="si-status-badge si-status-badge--upcoming">Upcoming</span>'
+                    : '<span class="si-status-badge si-status-badge--current">Current</span>';
+                return `<div class="dg-goal-mini dg-initiative-mini" data-goal-title="${escapeHtml(i.title)}" data-goal-desc="${escapeHtml(i.description || '')}"><div class="dg-goal-mini-label">${escapeHtml(i.title)}</div>${badge}</div>`;
+            }).join('')
+            : '<div class="dg-no-goals">No initiatives set</div>';
+
+        goalsRow += `<div class="dg-goals-col">
+            <div class="dg-store-header">${emojis[store]} ${store}</div>
+            ${goalsContent}
+        </div>`;
+
+        initiativesRow += `<div class="dg-initiatives-col">
+            <div class="dg-initiatives-divider">Initiatives &amp; Projects <button class="dg-edit-btn" onclick="openEditStoreInitiativesModal('${store}')">Edit ✏️</button></div>
+            ${initiativeItems}
+        </div>`;
+    });
+
+    container.innerHTML = goalsRow + initiativesRow;
+}
+
+// ============================================================================
+// 25. MODULE: COMPANY INITIATIVES & STORE PROJECTS
+// ============================================================================
+
+// --- Storage helpers ---
+
+function getCompanyProjects() {
+    try { const r = localStorage.getItem('companyProjects'); return r ? JSON.parse(r) : null; } catch { return null; }
+}
+
+function putCompanyProjects(data) {
+    localStorage.setItem('companyProjects', JSON.stringify(data));
+}
+
+function getStoreInitiatives(store) {
+    try { const r = localStorage.getItem(`storeInitiatives_${(store || '').toUpperCase()}`); return r ? JSON.parse(r) : null; } catch { return null; }
+}
+
+function putStoreInitiatives(store, data) {
+    localStorage.setItem(`storeInitiatives_${(store || '').toUpperCase()}`, JSON.stringify(data));
+}
+
+// --- Company Projects Banner ---
+
+let _cpbExpanded = false;
+
+function renderCompanyProjectsBanner() {
+    const store       = sessionStorage.getItem('speeksUserStore') || '';
+    const listEl      = document.getElementById('giInitiativesList');
+    const projects    = getCompanyProjects()?.projects || [];
+    const initiatives = getStoreInitiatives(store)?.initiatives || [];
+    const allItems    = [...projects, ...initiatives];
+
+    if (!allItems.length) {
+        if (listEl) listEl.innerHTML = '<div class="status-message" style="padding: 8px 0;">No initiatives have been set yet.</div>';
+        return;
+    }
+
+    if (listEl) {
+        let html = '';
+        if (projects.length) {
+            html += '<div class="cpb-section-label">Company</div>';
+            projects.forEach(p => {
+                const badge = p.status === 'upcoming'
+                    ? '<span class="si-status-badge si-status-badge--upcoming">Upcoming</span>'
+                    : '<span class="si-status-badge si-status-badge--current">Current</span>';
+                html += `<div class="cpb-project-item">
+                    <div class="cpb-item-title-row"><span class="mgb-goal-title">${escapeHtml(p.title)}</span>${badge}</div>
+                    ${p.description ? `<span class="mgb-goal-desc">${escapeHtml(p.description)}</span>` : ''}
+                </div>`;
+            });
+        }
+        if (initiatives.length) {
+            html += `<div class="cpb-section-label${projects.length ? ' cpb-section-label--spaced' : ''}">${escapeHtml(store)}</div>`;
+            initiatives.forEach(i => {
+                const badge = i.status === 'upcoming'
+                    ? '<span class="si-status-badge si-status-badge--upcoming">Upcoming</span>'
+                    : '<span class="si-status-badge si-status-badge--current">Current</span>';
+                html += `<div class="cpb-project-item cpb-initiative-item">
+                    <div class="cpb-item-title-row"><span class="mgb-goal-title">${escapeHtml(i.title)}</span>${badge}</div>
+                    ${i.description ? `<span class="mgb-goal-desc">${escapeHtml(i.description)}</span>` : ''}
+                </div>`;
+            });
+        }
+        listEl.innerHTML = html;
+    }
+}
+
+function toggleCompanyProjectsBanner() { toggleGoalsPanel(); }
+
+// --- Edit Company Projects Modal ---
+
+function openEditCompanyProjectsModal() {
+    const projects = getCompanyProjects()?.projects || [];
+    const list = document.getElementById('editCompanyProjectsList');
+    if (!list) return;
+    list.innerHTML = '';
+    if (projects.length === 0) { addCompanyProjectRow(); } else { projects.forEach(p => addCompanyProjectRow(p)); }
+    _updateAddCompanyProjectBtn();
+    toggleModal('editCompanyProjectsModal');
+}
+
+window.toggleSiStatus = function(btn) {
+    btn.closest('.si-status-toggle')?.querySelectorAll('.si-status-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+};
+
+function _siStatusToggleHtml(status) {
+    const cur = (!status || status === 'current') ? 'active' : '';
+    const upc = status === 'upcoming' ? 'active' : '';
+    return `<div class="si-status-toggle">
+        <button type="button" class="si-status-btn ${cur}" data-val="current" onclick="toggleSiStatus(this)">Current</button>
+        <button type="button" class="si-status-btn ${upc}" data-val="upcoming" onclick="toggleSiStatus(this)">Upcoming</button>
+    </div>`;
+}
+
+function addCompanyProjectRow(existing) {
+    const list = document.getElementById('editCompanyProjectsList');
+    if (!list || list.children.length >= 8) return;
+    const row = document.createElement('div');
+    row.className = 'edit-goal-row';
+    row.innerHTML = `
+        <div class="edit-goal-inner">
+            <input type="text" class="form-input-lg edit-cp-title" style="margin:0; font-size:13px;" placeholder="Initiative title (e.g. Launch Loyalty Program)" value="${escapeHtml(existing?.title || '')}">
+            <input type="text" class="form-input-lg edit-cp-desc" style="margin:0; font-size:12px;" placeholder="Description (optional)" value="${escapeHtml(existing?.description || '')}">
+            ${_siStatusToggleHtml(existing?.status)}
+        </div>
+        <button class="edit-goal-remove-btn" onclick="this.closest('.edit-goal-row').remove(); _updateAddCompanyProjectBtn();" title="Remove">✕</button>`;
+    list.appendChild(row);
+    _updateAddCompanyProjectBtn();
+}
+
+function _updateAddCompanyProjectBtn() {
+    const list = document.getElementById('editCompanyProjectsList');
+    const btn  = document.getElementById('addCompanyProjectRowBtn');
+    if (btn) btn.style.display = (list?.children.length ?? 0) >= 8 ? 'none' : '';
+}
+
+function saveCompanyProjects() {
+    const userName = sessionStorage.getItem('speeksUserName') || 'CEO';
+    const projects = [];
+    document.querySelectorAll('#editCompanyProjectsList .edit-goal-row').forEach(row => {
+        const title       = row.querySelector('.edit-cp-title')?.value.trim();
+        const description = row.querySelector('.edit-cp-desc')?.value.trim();
+        const status      = row.querySelector('.si-status-btn.active')?.dataset.val || 'current';
+        if (!title) return;
+        projects.push({ title, description, status });
+    });
+    const payload = {
+        projects,
+        setBy:     userName,
+        updatedAt: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+    };
+    putCompanyProjects(payload);
+    closeAllModals();
+    renderCompanyProjectsBanner();
+    renderDistrictCompanyProjects();
+    _postCompanyProjectsToSheet(payload);
+}
+
+async function _postCompanyProjectsToSheet(payload) {
+    if (!MONTHLY_GOALS_URL) return;
+    try {
+        await fetch(MONTHLY_GOALS_URL, {
+            method:  'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body:    JSON.stringify({ action: 'setCompanyProjects', ...payload }),
+            redirect: 'follow',
+        });
+    } catch (err) {
+        console.warn('Company projects post failed:', err);
+    }
+}
+
+// --- Store Initiatives ---
+
+function renderStoreInitiatives() {
+    renderCompanyProjectsBanner();
+}
+
+let _editingInitiativesForStore = null;
+
+function openEditStoreInitiativesModal(storeOverride) {
+    _editingInitiativesForStore = storeOverride || sessionStorage.getItem('speeksUserStore') || '';
+    const initiatives = getStoreInitiatives(_editingInitiativesForStore)?.initiatives || [];
+    const list        = document.getElementById('editStoreInitiativesList');
+    const titleEl     = document.getElementById('editStoreInitiativesTitle');
+    if (titleEl) titleEl.textContent = `${_editingInitiativesForStore} Initiatives`;
+    if (!list) return;
+    list.innerHTML = '';
+    if (initiatives.length === 0) { addStoreInitiativeRow(); } else { initiatives.forEach(i => addStoreInitiativeRow(i)); }
+    _updateAddStoreInitiativeBtn();
+    toggleModal('editStoreInitiativesModal');
+}
+
+function addStoreInitiativeRow(existing) {
+    const list = document.getElementById('editStoreInitiativesList');
+    if (!list || list.children.length >= 6) return;
+    const row = document.createElement('div');
+    row.className = 'edit-goal-row';
+    row.innerHTML = `
+        <div class="edit-goal-inner">
+            <input type="text" class="form-input-lg edit-si-title" style="margin:0; font-size:13px;" placeholder="Initiative title (e.g. Test new shelf layout)" value="${escapeHtml(existing?.title || '')}">
+            <input type="text" class="form-input-lg edit-si-desc" style="margin:0; font-size:12px;" placeholder="Description (optional)" value="${escapeHtml(existing?.description || '')}">
+            ${_siStatusToggleHtml(existing?.status)}
+        </div>
+        <button class="edit-goal-remove-btn" onclick="this.closest('.edit-goal-row').remove(); _updateAddStoreInitiativeBtn();" title="Remove">✕</button>`;
+    list.appendChild(row);
+    _updateAddStoreInitiativeBtn();
+}
+
+function _updateAddStoreInitiativeBtn() {
+    const list = document.getElementById('editStoreInitiativesList');
+    const btn  = document.getElementById('addStoreInitiativeRowBtn');
+    if (btn) btn.style.display = (list?.children.length ?? 0) >= 6 ? 'none' : '';
+}
+
+function saveStoreInitiatives() {
+    const store       = _editingInitiativesForStore || sessionStorage.getItem('speeksUserStore') || '';
+    const userName    = sessionStorage.getItem('speeksUserName') || 'Manager';
+    const initiatives = [];
+    document.querySelectorAll('#editStoreInitiativesList .edit-goal-row').forEach(row => {
+        const title       = row.querySelector('.edit-si-title')?.value.trim();
+        const description = row.querySelector('.edit-si-desc')?.value.trim();
+        const status      = row.querySelector('.si-status-btn.active')?.dataset.val || 'current';
+        if (!title) return;
+        initiatives.push({ title, description, status });
+    });
+    const payload = {
+        initiatives,
+        setBy:     userName,
+        updatedAt: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+    };
+    putStoreInitiatives(store, payload);
+    closeAllModals();
+    renderStoreInitiatives();
+    renderDistrictGoals();
+    _postStoreInitiativesToSheet(store, payload);
+}
+
+async function _postStoreInitiativesToSheet(store, payload) {
+    if (!MONTHLY_GOALS_URL) return;
+    try {
+        await fetch(MONTHLY_GOALS_URL, {
+            method:  'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body:    JSON.stringify({ action: 'setStoreInitiatives', store, ...payload }),
+            redirect: 'follow',
+        });
+    } catch (err) {
+        console.warn('Store initiatives post failed:', err);
+    }
+}
+
+// --- District Views ---
+
+function renderDistrictCompanyProjects() {
+    const container = document.getElementById('districtCompanyProjects');
+    if (!container) return;
+    const data     = getCompanyProjects();
+    const projects = data?.projects || [];
+
+    const itemsHtml = projects.length
+        ? projects.map(p => {
+            const badge = p.status === 'upcoming'
+                ? '<span class="si-status-badge si-status-badge--upcoming">Upcoming</span>'
+                : '<span class="si-status-badge si-status-badge--current">Current</span>';
+            return `<div class="dg-goal-mini" data-goal-title="${escapeHtml(p.title)}" data-goal-desc="${escapeHtml(p.description || '')}"><div class="dg-goal-mini-label">${escapeHtml(p.title)}</div>${badge}</div>`;
+        }).join('')
+        : '<div class="dg-no-goals">No company initiatives set</div>';
+
+    container.innerHTML = `
+        <div class="district-cp-section">
+            <div class="district-cp-header-row">
+                <span class="district-cp-header">Company Initiatives &amp; Projects</span>
+                <button class="dg-edit-btn" onclick="openEditCompanyProjectsModal()">Edit ✏️</button>
+            </div>
+            <div class="district-cp-items">${itemsHtml}</div>
+        </div>`;
+}
+
+function renderDistrictInitiativesGrid() {
+    const panel     = document.getElementById('districtInitiativesPanel');
+    const container = document.getElementById('districtInitiativesGrid');
+    if (!container) return;
+
+    const stores = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
+    const emojis = { OVL: '🟣', LEE: '🔵', WSP: '🟢', MPL: '🟠', BAL: '🔴' };
+    let hasAny = false;
+    let html   = '';
+
+    stores.forEach(store => {
+        const data  = getStoreInitiatives(store);
+        const items = data?.initiatives || [];
+        if (items.length) hasAny = true;
+        const inner = items.length
+            ? items.map(i => {
+                const badge = i.status === 'upcoming'
+                    ? '<span class="si-status-badge si-status-badge--upcoming">Upcoming</span>'
+                    : '<span class="si-status-badge si-status-badge--current">Current</span>';
+                return `<div class="dg-goal-mini" data-goal-title="${escapeHtml(i.title)}" data-goal-desc="${escapeHtml(i.description || '')}"><div class="dg-goal-mini-label">${escapeHtml(i.title)}</div>${badge}</div>`;
+            }).join('')
+            : '<div class="dg-no-goals">No initiatives set</div>';
+        html += `<div class="dg-store-card"><div class="dg-store-header">${emojis[store]} ${store}</div>${inner}</div>`;
+    });
+
+    container.innerHTML = html;
+    if (panel) panel.style.display = hasAny ? 'block' : 'none';
+}
+
+// --- Sync from Sheet ---
+
+async function syncInitiativesFromSheet() {
+    if (!MONTHLY_GOALS_URL) return;
+    try {
+        const res  = await fetch(`${MONTHLY_GOALS_URL}?action=getAllInitiatives&t=${Date.now()}`);
+        const data = await res.json();
+        if (data.company) {
+            // Preserve local status values the sheet may not return yet
+            const localCompany = getCompanyProjects();
+            if (localCompany?.projects && data.company.projects) {
+                const localByTitle = {};
+                localCompany.projects.forEach(p => { localByTitle[p.title] = p.status; });
+                data.company.projects = data.company.projects.map(p => ({
+                    ...p, status: p.status || localByTitle[p.title] || 'current'
+                }));
+            }
+            putCompanyProjects(data.company);
+        }
+        ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'].forEach(store => {
+            if (data[store]) {
+                const local = getStoreInitiatives(store);
+                if (local?.initiatives && data[store].initiatives) {
+                    const localByTitle = {};
+                    local.initiatives.forEach(i => { localByTitle[i.title] = i.status; });
+                    data[store].initiatives = data[store].initiatives.map(i => ({
+                        ...i, status: i.status || localByTitle[i.title] || 'current'
+                    }));
+                }
+                putStoreInitiatives(store, data[store]);
+            }
+        });
+        renderCompanyProjectsBanner();
+        renderStoreInitiatives();
+        renderDistrictCompanyProjects();
+        renderDistrictInitiativesGrid();
+    } catch (err) {
+        console.warn('Initiatives sync failed:', err);
+    }
+}
+
 // --- MODAL: MANAGE ALERTS ---
 async function toggleManageAlerts() {
     const dropdown = document.getElementById('manageAlertsDropdown');
@@ -5164,15 +5881,23 @@ async function saveManageHotkeys() {
 
 // --- DM SCORECARD SUBMISSION LOGIC ---
 const SCORECARD_CATEGORIES = [
-    "Front of House Cleanliness", 
-    "Back of House Cleanliness", 
-    "Recycle Organization", 
-    "Retail Displays", 
-    "Overall Organization", 
-    "Online Store Pictures", 
-    "Staff Goals Readiness", 
-    "5 Facebook Listings", 
-    "2 Social Media Posts"
+    "Front of House Cleanliness",
+    "Back of House Cleanliness",
+    "Recycle Organization",
+    "Retail Displays",
+    "Overall Organization",
+    "Online Store Pictures",
+    "Staff Goals Readiness",
+    "5 Facebook Listings",
+    "2 Social Media Posts",
+    "Store Listing Review",
+    "Store Buying Review"
+];
+
+const SCORECARD_BUCKETS = [
+    { label: "In-Store Operations", count: 7 },
+    { label: "Media and Markets", count: 2 },
+    { label: "Store Reviews", count: 2 }
 ];
 
 function openScorecardModal() {
@@ -5183,23 +5908,33 @@ function openScorecardModal() {
     const dateInput = document.getElementById('dm-score-date');
     if (dateInput) dateInput.valueAsDate = new Date();
     
-    // 3. Generate the inputs
+    // 3. Generate the inputs grouped by bucket
     const container = document.getElementById('dm-category-inputs');
     if (container) {
-        container.innerHTML = SCORECARD_CATEGORIES.map((cat, i) => `
-            <div style="display: flex; flex-direction: column;">
-                <label class="form-label-caps">${cat}</label>
-                <select id="score-input-${i}" class="form-input-lg" style="margin-top: 0; padding: 10px; font-size: 14px;">
-                    <option value="">--</option>
-                    <option value="5">5</option>
-                    <option value="4">4</option>
-                    <option value="3">3</option>
-                    <option value="2">2</option>
-                    <option value="1">1</option>
-                    <option value="0">0</option>
-                </select>
-            </div>
-        `).join('');
+        let html = '';
+        let catIndex = 0;
+        SCORECARD_BUCKETS.forEach((bucket, bIdx) => {
+            html += `<div style="grid-column: 1 / -1; margin-top: ${bIdx > 0 ? '8px' : '0'}; padding-bottom: 4px; border-bottom: 1px solid #e2e8f0;">
+                <span style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">${bucket.label}</span>
+            </div>`;
+            for (let i = 0; i < bucket.count; i++) {
+                const cat = SCORECARD_CATEGORIES[catIndex];
+                html += `<div style="display: flex; flex-direction: column;">
+                    <label class="form-label-caps">${cat}</label>
+                    <select id="score-input-${catIndex}" class="form-input-lg" style="margin-top: 0; padding: 10px; font-size: 14px;">
+                        <option value="">--</option>
+                        <option value="5">5</option>
+                        <option value="4">4</option>
+                        <option value="3">3</option>
+                        <option value="2">2</option>
+                        <option value="1">1</option>
+                        <option value="0">0</option>
+                    </select>
+                </div>`;
+                catIndex++;
+            }
+        });
+        container.innerHTML = html;
     }
 }
 
@@ -5441,14 +6176,17 @@ async function fetchAndDisplayStoreComment() {
 async function fetchChampions() {
     const listerBody = document.getElementById('lister-champions-body');
     const buyerBody = document.getElementById('buyer-champions-body');
+    const grBody = document.getElementById('google-review-champions-body');
     const lDate = document.getElementById('lister-champions-date');
     const bDate = document.getElementById('buyer-champions-date');
+    const grDate = document.getElementById('google-review-champions-date');
     if (!listerBody || !buyerBody) return;
 
     try {
         const stores = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL'];
         let allListers = [];
         let allBuyers = [];
+        let allGoogleReviews = [];
 
         // 1. Calculate "Week Of" based on the previous Monday
         const now = new Date();
@@ -5460,6 +6198,7 @@ async function fetchChampions() {
         
         if (lDate) lDate.innerText = weekText;
         if (bDate) bDate.innerText = weekText;
+        if (grDate) grDate.innerText = weekText;
 
         // 2. User Directory matching (Gets Full Names)
         let authCache = {};
@@ -5486,9 +6225,13 @@ async function fetchChampions() {
                     let n = String(d[i][0]).trim();
                     let lN = n.toLowerCase();
                     if (n && !["name", "employee", "store", "store total", "ovl", "lee", "wsp", "mpl", "bal"].includes(lN) && !lN.includes("average") && !lN.includes("week")) {
-                        let listed = parseNum(d[i][20]); 
+                        let listed = parseNum(d[i][20]);
                         if (listed > 0) {
                             allListers.push({ name: getFullName(n), store: stores[storeIdx], listed: listed });
+                        }
+                        let reviews = parseNum(d[i][29]); // Column AD
+                        if (reviews > 0) {
+                            allGoogleReviews.push({ name: getFullName(n), store: stores[storeIdx], reviews: reviews });
                         }
                     }
                 }
@@ -5547,8 +6290,9 @@ async function fetchChampions() {
             dataArray.forEach(emp => {
                 if (!merged[emp.name]) merged[emp.name] = { ...emp };
                 else {
-                    if (type === 'lister') merged[emp.name].listed += emp.listed; 
+                    if (type === 'lister') merged[emp.name].listed += emp.listed;
                     if (type === 'buyer') merged[emp.name].score = Math.max(merged[emp.name].score, emp.score);
+                    if (type === 'review') merged[emp.name].reviews += emp.reviews;
                 }
             });
             
@@ -5572,18 +6316,19 @@ async function fetchChampions() {
                 const emp = podium.data;
                 const isFirst = podium.place === 1;
                 
-                // Only render the inner score/items text block if it is the Lister podium
+                // Only render the inner score/items text block if it is the Lister or Review podium
                 let blockContent = '';
-                if (type === 'lister') {
+                if (type === 'lister' || type === 'review') {
+                    const val = type === 'lister' ? emp.listed : emp.reviews;
                     blockContent = `
                         <div style="z-index: 2; display: flex; flex-direction: column; align-items: center;">
-                            <span style="font-size: ${isFirst ? '32px' : '26px'}; font-weight: 900; color: var(--slate-charcoal); line-height: 1;">${emp.listed}</span>
+                            <span style="font-size: ${isFirst ? '32px' : '26px'}; font-weight: 900; color: var(--slate-charcoal); line-height: 1;">${val}</span>
                             <span style="font-size: 9px; font-weight: 900; color: #64748b; text-transform: uppercase; margin-top: 4px;">${labelText}</span>
                         </div>`;
                 }
 
                 html += `
-                <div style="display: flex; flex-direction: column; align-items: center; width: 130px; margin: 0 5px;">
+                <div style="display: flex; flex-direction: column; align-items: center; width: 130px;">
                     <div style="margin-bottom: 12px; text-align: center; display: flex; flex-direction: column; align-items: center; z-index: 2;">
                         <div style="font-size: ${isFirst ? '46px' : '34px'}; line-height: 1; margin-bottom: 8px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));">${podium.medal}</div>
                         <div style="font-size: ${isFirst ? '14px' : '12px'}; font-weight: 900; color: var(--slate-charcoal); line-height: 1.2; text-align: center;">${emp.name}</div>
@@ -5602,10 +6347,12 @@ async function fetchChampions() {
         };
 
         listerBody.innerHTML = buildPodiumHtml(allListers, 'listed', 'Items', 'lister');
+        if (grBody) grBody.innerHTML = buildPodiumHtml(allGoogleReviews, 'reviews', 'Reviews', 'review');
         buyerBody.innerHTML = buildPodiumHtml(allBuyers, 'score', 'Score', 'buyer');
 
     } catch (e) {
         listerBody.innerHTML = '<div style="color: var(--red-alert); font-weight: bold;">Failed to load Champions.</div>';
+        if (grBody) grBody.innerHTML = '<div style="color: var(--red-alert); font-weight: bold;">Failed to load Champions.</div>';
         buyerBody.innerHTML = '<div style="color: var(--red-alert); font-weight: bold;">Failed to load Champions.</div>';
     }
 }
@@ -5791,14 +6538,26 @@ window.toggleChecklistPanel = function(event) {
 document.addEventListener('click', function(e) {
     // CRITICAL FIX: If the clicked element was just removed from the DOM (like deleting a task), ignore the click!
     if (!document.body.contains(e.target)) return;
+    // Don't close panels while a modal is open or the click was inside one (e.g. ✖ button fires closeAllModals before bubbling)
+    if (document.getElementById('globalOverlay')?.classList.contains('show')) return;
+    if (e.target.closest('.modal-menu')) return;
 
-    const panel = document.getElementById('checklistSidePanel');
-    
-    if (panel && panel.classList.contains('open')) {
-        // Because the tab is now attached TO the panel, we only need to check if the click was inside the panel
-        if (!panel.contains(e.target)) {
-            panel.classList.remove('open');
-        }
+    const clPanel = document.getElementById('checklistSidePanel');
+    if (clPanel && clPanel.classList.contains('open')) {
+        if (!clPanel.contains(e.target)) {
+            clPanel.classList.remove('open');
+            document.querySelector('.cl-nav-toggle')?.classList.remove('panel-active');
+                }
+    }
+
+    const giPanel = document.getElementById('goalsSidePanel');
+    const giToggle = document.querySelector('.gi-nav-toggle');
+    if (giPanel && giPanel.classList.contains('open')) {
+        if (!giPanel.contains(e.target) && !giToggle?.contains(e.target)) {
+            giPanel.classList.remove('open');
+            giToggle?.classList.remove('panel-active');
+            _resetToCurrentMonth();
+                }
     }
 });
 
