@@ -704,7 +704,7 @@
       
   </div>
 
-  <div class="dynamic-module-block role-district-manager district-command-section">
+  <div class="dynamic-module-block role-district-manager role-ceo district-command-section">
     
       <div class="district-header-wrapper">
           <h3 class="district-command-title">🌐 District Command Center</h3>
@@ -714,7 +714,7 @@
           <div class="status-message">Syncing Data...</div>
       </div>
 
-      <div class="card district-master-panel district-kpi-panel" style="margin-bottom: 30px;">
+      <div class="card district-master-panel district-kpi-panel dynamic-module-block role-district-manager" style="margin-bottom: 30px;">
           <div class="district-kpi-header">
               <span class="district-kpi-title">Monthly Team Goals <span class="widget-date-display" id="districtGoalsMonth"></span></span>
           </div>
@@ -724,7 +724,7 @@
           </div>
       </div>
 
-      <div class="district-split-row">
+      <div class="district-split-row dynamic-module-flex role-district-manager">
           
           <div class="flex-col-gap-30">
               <div class="card district-master-panel district-kpi-panel">
@@ -776,157 +776,6 @@
 
 
   </div>
-
-<div class="card master-card dynamic-module-block role-ceo mb-30" style="height: auto; min-height: 0; padding: 0; overflow: hidden;">
-    <div class="master-card-header" style="margin: 0; border-radius: 0;">
-        <div class="align-center gap-8">
-            <span class="master-card-title">District Buying & Sales Progress <span id="ceo-bs-last-updated" class="widget-date-display"></span></span>
-        </div>
-    </div>
-    
-    <div class="ceo-rings-grid" style="padding: 20px 0; gap: 0 !important; display: flex; flex-direction: row; width: 100%; flex-wrap: nowrap;">
-        
-        <div class="ceo-ring-col">
-            <button class="ceo-comment-btn" onclick="openCEOStoreComment('OVL')" title="Message OVL">💬 <span>Send Comment</span></button>
-            <div class="ceo-goal-badge">Goal: <span id="ceo-ovl-goal">--</span></div>
-            <div class="ceo-ring-title">OVL</div>
-            
-            <div class="ceo-mini-section-title">Sales</div>
-            <div class="bs-ring-wrapper ceo-ring-scale">
-                <div class="progress-ring">
-                    <svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="ceo-ovl-bar" cx="70" cy="70" r="64"></circle></svg>
-                    <div class="percentage" id="ceo-ovl-pct">0%</div>
-                </div>
-            </div>
-            <div class="ceo-ring-stats">
-                <div class="ceo-stat-row"><span>Revenue:</span> <span id="ceo-ovl-rev" style="color: var(--sage-professional);">--</span></div>
-                <div class="ceo-stat-row"><span>GP Tracking:</span> <span id="ceo-ovl-t-gp" style="color: var(--sage-professional);">--</span></div>
-                <div class="ceo-stat-row"><span>Margin:</span> <span id="ceo-ovl-sell-margin" class="ceo-badge">--</span></div>
-            </div>
-
-            <div style="width:100%; height:1px; background:#e2e8f0; margin:10px 0;"></div>
-
-            <div class="ceo-mini-section-title">Buying</div>
-            <div class="ceo-ring-stats">
-                <div class="ceo-stat-row"><span>Purchased:</span> <span id="ceo-ovl-buy-val">--</span></div>
-                <div class="ceo-stat-row"><span>Buy Tracking:</span> <span id="ceo-ovl-buy-proj">--</span></div>
-                <div class="ceo-stat-row"><span>Margin:</span> <span id="ceo-ovl-buy-margin" class="ceo-badge">--</span></div>
-            </div>
-        </div>
-
-        <div class="ceo-ring-col">
-            <button class="ceo-comment-btn" onclick="openCEOStoreComment('LEE')" title="Message LEE">💬 <span>Send Comment</span></button>
-            <div class="ceo-goal-badge">Goal: <span id="ceo-lee-goal">--</span></div>
-            <div class="ceo-ring-title">LEE</div>
-            
-            <div class="ceo-mini-section-title">Sales</div>
-            <div class="bs-ring-wrapper ceo-ring-scale">
-                <div class="progress-ring">
-                    <svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="ceo-lee-bar" cx="70" cy="70" r="64"></circle></svg>
-                    <div class="percentage" id="ceo-lee-pct">0%</div>
-                </div>
-            </div>
-            <div class="ceo-ring-stats">
-                <div class="ceo-stat-row"><span>Revenue:</span> <span id="ceo-lee-rev" style="color: var(--sage-professional);">--</span></div>
-                <div class="ceo-stat-row"><span>GP Tracking:</span> <span id="ceo-lee-t-gp" style="color: var(--sage-professional);">--</span></div>
-                <div class="ceo-stat-row"><span>Margin:</span> <span id="ceo-lee-sell-margin" class="ceo-badge">--</span></div>
-            </div>
-
-            <div style="width:100%; height:1px; background:#e2e8f0; margin:10px 0;"></div>
-
-            <div class="ceo-mini-section-title">Buying</div>
-            <div class="ceo-ring-stats">
-                <div class="ceo-stat-row"><span>Purchased:</span> <span id="ceo-lee-buy-val">--</span></div>
-                <div class="ceo-stat-row"><span>Buy Tracking:</span> <span id="ceo-lee-buy-proj">--</span></div>
-                <div class="ceo-stat-row"><span>Margin:</span> <span id="ceo-lee-buy-margin" class="ceo-badge">--</span></div>
-            </div>
-        </div>
-
-        <div class="ceo-ring-col">
-            <button class="ceo-comment-btn" onclick="openCEOStoreComment('WSP')" title="Message WSP">💬 <span>Send Comment</span></button>
-            <div class="ceo-goal-badge">Goal: <span id="ceo-wsp-goal">--</span></div>
-            <div class="ceo-ring-title">WSP</div>
-            
-            <div class="ceo-mini-section-title">Sales</div>
-            <div class="bs-ring-wrapper ceo-ring-scale">
-                <div class="progress-ring">
-                    <svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="ceo-wsp-bar" cx="70" cy="70" r="64"></circle></svg>
-                    <div class="percentage" id="ceo-wsp-pct">0%</div>
-                </div>
-            </div>
-            <div class="ceo-ring-stats">
-                <div class="ceo-stat-row"><span>Revenue:</span> <span id="ceo-wsp-rev" style="color: var(--sage-professional);">--</span></div>
-                <div class="ceo-stat-row"><span>GP Tracking:</span> <span id="ceo-wsp-t-gp" style="color: var(--sage-professional);">--</span></div>
-                <div class="ceo-stat-row"><span>Margin:</span> <span id="ceo-wsp-sell-margin" class="ceo-badge">--</span></div>
-            </div>
-
-            <div style="width:100%; height:1px; background:#e2e8f0; margin:10px 0;"></div>
-
-            <div class="ceo-mini-section-title">Buying</div>
-            <div class="ceo-ring-stats">
-                <div class="ceo-stat-row"><span>Purchased:</span> <span id="ceo-wsp-buy-val">--</span></div>
-                <div class="ceo-stat-row"><span>Buy Tracking:</span> <span id="ceo-wsp-buy-proj">--</span></div>
-                <div class="ceo-stat-row"><span>Margin:</span> <span id="ceo-wsp-buy-margin" class="ceo-badge">--</span></div>
-            </div>
-        </div>
-
-        <div class="ceo-ring-col">
-            <button class="ceo-comment-btn" onclick="openCEOStoreComment('MPL')" title="Message MPL">💬 <span>Send Comment</span></button>
-            <div class="ceo-goal-badge">Goal: <span id="ceo-mpl-goal">--</span></div>
-            <div class="ceo-ring-title">MPL</div>
-            
-            <div class="ceo-mini-section-title">Sales</div>
-            <div class="bs-ring-wrapper ceo-ring-scale">
-                <div class="progress-ring">
-                    <svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="ceo-mpl-bar" cx="70" cy="70" r="64"></circle></svg>
-                    <div class="percentage" id="ceo-mpl-pct">0%</div>
-                </div>
-            </div>
-            <div class="ceo-ring-stats">
-                <div class="ceo-stat-row"><span>Revenue:</span> <span id="ceo-mpl-rev" style="color: var(--sage-professional);">--</span></div>
-                <div class="ceo-stat-row"><span>GP Tracking:</span> <span id="ceo-mpl-t-gp" style="color: var(--sage-professional);">--</span></div>
-                <div class="ceo-stat-row"><span>Margin:</span> <span id="ceo-mpl-sell-margin" class="ceo-badge">--</span></div>
-            </div>
-
-            <div style="width:100%; height:1px; background:#e2e8f0; margin:10px 0;"></div>
-
-            <div class="ceo-mini-section-title">Buying</div>
-            <div class="ceo-ring-stats">
-                <div class="ceo-stat-row"><span>Purchased:</span> <span id="ceo-mpl-buy-val">--</span></div>
-                <div class="ceo-stat-row"><span>Buy Tracking:</span> <span id="ceo-mpl-buy-proj">--</span></div>
-                <div class="ceo-stat-row"><span>Margin:</span> <span id="ceo-mpl-buy-margin" class="ceo-badge">--</span></div>
-            </div>
-        </div>
-
-        <div class="ceo-ring-col">
-            <button class="ceo-comment-btn" onclick="openCEOStoreComment('BAL')" title="Message BAL">💬 <span>Send Comment</span></button>
-            <div class="ceo-goal-badge">Goal: <span id="ceo-bal-goal">--</span></div>
-            <div class="ceo-ring-title">BAL</div>
-            
-            <div class="ceo-mini-section-title">Sales</div>
-            <div class="bs-ring-wrapper ceo-ring-scale">
-                <div class="progress-ring">
-                    <svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="ceo-bal-bar" cx="70" cy="70" r="64"></circle></svg>
-                    <div class="percentage" id="ceo-bal-pct">0%</div>
-                </div>
-            </div>
-            <div class="ceo-ring-stats">
-                <div class="ceo-stat-row"><span>Revenue:</span> <span id="ceo-bal-rev" style="color: var(--sage-professional);">--</span></div>
-                <div class="ceo-stat-row"><span>GP Tracking:</span> <span id="ceo-bal-t-gp" style="color: var(--sage-professional);">--</span></div>
-                <div class="ceo-stat-row"><span>Margin:</span> <span id="ceo-bal-sell-margin" class="ceo-badge">--</span></div>
-            </div>
-
-            <div style="width:100%; height:1px; background:#e2e8f0; margin:10px 0;"></div>
-
-            <div class="ceo-mini-section-title">Buying</div>
-            <div class="ceo-ring-stats">
-                <div class="ceo-stat-row"><span>Purchased:</span> <span id="ceo-bal-buy-val">--</span></div>
-                <div class="ceo-stat-row"><span>Buy Tracking:</span> <span id="ceo-bal-buy-proj">--</span></div>
-                <div class="ceo-stat-row"><span>Margin:</span> <span id="ceo-bal-buy-margin" class="ceo-badge">--</span></div>
-            </div>
-        </div>
-    </div>
-</div>
 
   <div class="dashboard-layout mb-30">
     
