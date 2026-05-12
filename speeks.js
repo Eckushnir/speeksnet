@@ -185,6 +185,7 @@ async function loadCMS() {
 
                 sortedAnns.forEach((item, index) => {
                     let displayDate = "";
+                    let displayTime = "";
                     let isArchived = false;
                     let unreadHtmlAttr = "";
 
@@ -192,6 +193,11 @@ async function loadCMS() {
                         const annDate = new Date(item.date);
                         if (!isNaN(annDate.getTime())) {
                             displayDate = annDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                            const h = annDate.getHours(), min = annDate.getMinutes();
+                            if (h !== 0 || min !== 0) {
+                                const ampm = h >= 12 ? 'pm' : 'am';
+                                displayTime = `${h % 12 || 12}:${String(min).padStart(2, '0')}${ampm}`;
+                            }
                         }
                     }
 
@@ -282,7 +288,7 @@ async function loadCMS() {
                                 <span class="ann-author">${item.author || 'Announcement'}</span>
                                 <div class="ann-header-right">
                                     ${readReceiptHtml}
-                                    ${displayDate ? `<small class="ann-date">${displayDate}</small>` : ''}
+                                    ${displayDate ? `<small class="ann-date">${displayDate}${displayTime ? ` · ${displayTime}` : ''}</small>` : ''}
                                 </div>
                             </div>
                             <hr />
@@ -4969,7 +4975,7 @@ async function publishAnnouncement() {
 
     const payload = {
         text: compiledMessage,
-        date: new Date().toLocaleDateString('en-US'), 
+        date: new Date().toISOString(),
         author: sessionStorage.getItem('speeksUserName') || 'Executive Team'
     };
 
