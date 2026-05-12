@@ -3246,6 +3246,66 @@ canvas#leaderboardCanvas, canvas#mainKpiChart {
     transform: translateY(0);
 }
 
+/* --- Checklist nudge: progress chip --- */
+.cl-progress-chip {
+    font-size: 10px;
+    font-weight: 700;
+    background: rgba(255,255,255,0.22);
+    color: rgba(255,255,255,0.88);
+    padding: 2px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+    letter-spacing: 0.3px;
+    transition: opacity 0.3s;
+}
+.cl-progress-chip:empty { display: none; }
+
+/* --- Checklist nudge: soft gold glow on button --- */
+@keyframes cl-glow-pulse {
+    0%, 100% { box-shadow: 0 0 0px rgba(255, 200, 60, 0); }
+    50%       { box-shadow: 0 0 14px rgba(255, 200, 60, 0.55), 0 0 28px rgba(255, 200, 60, 0.2); }
+}
+.cl-nav-toggle.cl-needs-attention {
+    animation: cl-glow-pulse 2.8s ease-in-out infinite;
+}
+
+/* --- Checklist nudge: daily toast --- */
+.cl-toast {
+    position: fixed;
+    bottom: -80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--slate-charcoal, #1e293b);
+    color: white;
+    padding: 11px 18px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    z-index: 99999;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.28);
+    transition: bottom 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    white-space: nowrap;
+    pointer-events: none;
+}
+.cl-toast.show {
+    bottom: 28px;
+    pointer-events: auto;
+}
+.cl-toast-close {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.55);
+    cursor: pointer;
+    font-size: 11px;
+    padding: 0 0 0 4px;
+    line-height: 1;
+    transition: color 0.2s;
+}
+.cl-toast-close:hover { color: white; }
+
 /* =========================================================
    GOALS & INITIATIVES SIDE PANEL (RIGHT)
    ========================================================= */

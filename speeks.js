@@ -4308,6 +4308,14 @@ function initDashboardData() {
         setTimeout(fetchAndDisplayStoreComment, 1500);
         // --------------------------------------------
 
+        setTimeout(showChecklistToast, 3000);
+
+        // Pre-load checklist in background so chip + glow appear without opening the panel
+        const _clRole = (sessionStorage.getItem('speeksUserRole') || '').toLowerCase();
+        if (_clRole === 'manager' || _clRole === 'district manager') {
+            setTimeout(loadChecklist, 1200);
+        }
+
         if (typeof preloadAllStores === 'function') setTimeout(preloadAllStores, 4000); 
         if (typeof initListingGoals === 'function') setTimeout(initListingGoals, 200);
     };
@@ -6536,6 +6544,7 @@ function renderChecklist() {
     });
 
     container.innerHTML = html;
+    updateChecklistChip();
 }
 
 // --- API ACTIONS (POST to Apps Script) ---
@@ -6627,6 +6636,49 @@ function clearChecklistTab() {
     });
 }
 
+// --- CHECKLIST NUDGE HELPERS ---
+function updateChecklistChip() {
+    const chip = document.getElementById('cl-progress-chip');
+    const btn = document.querySelector('.cl-nav-toggle');
+    if (!chip || !btn) return;
+
+    const dailyItems = checklistDataCache['daily'] || [];
+    const total = dailyItems.length;
+    if (total === 0) {
+        chip.textContent = '';
+        btn.classList.remove('cl-needs-attention');
+        return;
+    }
+
+    const done = dailyItems.filter(i => i.checked).length;
+    chip.textContent = done === total ? '✓ All done' : `${done}/${total} done`;
+
+    const panel = document.getElementById('checklistSidePanel');
+    const isOpen = panel && panel.classList.contains('open');
+    btn.classList.toggle('cl-needs-attention', done < total && !isOpen);
+}
+
+function showChecklistToast() {
+    const role = (sessionStorage.getItem('speeksUserRole') || '').toLowerCase();
+    if (role !== 'manager' && role !== 'district manager') return;
+
+    const user = (sessionStorage.getItem('speeksUserName') || '').trim().toLowerCase();
+    if (!user) return;
+    const key = `speeksChecklistToastDate_${user}`;
+    const today = new Date().toLocaleDateString('en-CA');
+    if (localStorage.getItem(key) === today) return;
+
+    localStorage.setItem(key, today);
+    const toast = document.getElementById('checklistToast');
+    if (!toast) return;
+    toast.classList.add('show');
+}
+
+function dismissChecklistToast() {
+    const toast = document.getElementById('checklistToast');
+    if (toast) toast.classList.remove('show');
+}
+
 // --- BULLETPROOF TOGGLE & CLICK-AWAY LOGIC ---
 window.toggleChecklistPanel = function(event) {
     if (event) event.stopPropagation();
@@ -6634,7 +6686,10 @@ window.toggleChecklistPanel = function(event) {
     if (!panel) return;
     const isOpen = panel.classList.toggle('open');
     const toggle = document.querySelector('.cl-nav-toggle');
-    if (toggle) toggle.classList.toggle('panel-active', isOpen);
+    if (toggle) {
+        toggle.classList.toggle('panel-active', isOpen);
+        if (isOpen) toggle.classList.remove('cl-needs-attention');
+    }
 };
 
 // Closes the panel if you click outside of it
