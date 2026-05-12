@@ -2727,7 +2727,25 @@ async function fetchScorecardData() {
         if (displayScore > 8) scoreColor = 'var(--sage-professional)';
         else if (displayScore >= 6) scoreColor = 'var(--idea-gold)';
 
-        const pulse = displayScore < 6
+        const isRecent = (dateStr) => {
+            if (!dateStr) return false;
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return false;
+            return Date.now() - d.getTime() < 48 * 60 * 60 * 1000;
+        };
+
+        const recentBucketIndices = [];
+        if (storeData.buckets) {
+            storeData.buckets.forEach((b, i) => {
+                if (b.categories && b.categories.length > 0 && isRecent(b.sectionDate)) {
+                    recentBucketIndices.push(i);
+                }
+            });
+        }
+        const showOverallDot = recentBucketIndices.length > 1;
+        const singleRecentBucketIdx = recentBucketIndices.length === 1 ? recentBucketIndices[0] : -1;
+
+        const pulse = (displayScore < 6 || showOverallDot)
             ? `<div class="notif-dot active" style="display:block; position:absolute; top:-2px; right:-14px; width:12px; height:12px;"></div>`
             : '';
 
@@ -2751,7 +2769,7 @@ async function fetchScorecardData() {
         let breakdownHtml = '';
         if (storeData.buckets && storeData.buckets.some(b => b.categories && b.categories.length > 0)) {
             breakdownHtml = `<div style="max-height: 340px; overflow-y: auto; padding-right: 4px; margin-top: 15px; border-top: 1px solid #f0f0f0; padding-top: 15px;" class="kpi-scroll-area">`;
-            storeData.buckets.forEach(bucket => {
+            storeData.buckets.forEach((bucket, bIdx) => {
                 if (!bucket.categories || bucket.categories.length === 0) return;
                 let bAvgNum = bucket.avg * 2;
                 let bBg = '#f1f5f9', bColor = '#64748b';
@@ -2759,11 +2777,15 @@ async function fetchScorecardData() {
                 else if (bAvgNum >= 6) { bBg = '#fef3c7'; bColor = '#d97706'; }
                 else { bBg = '#fee2e2'; bColor = '#dc2626'; }
                 const bDateStr = bucket.sectionDate ? formatWeekOf(bucket.sectionDate) : '';
+                const sectionPulse = (!showOverallDot && bIdx === singleRecentBucketIdx)
+                    ? `<div class="notif-dot active" style="position:relative; top:auto; right:auto; width:9px; height:9px; border:1px solid white; flex-shrink:0;"></div>`
+                    : '';
                 breakdownHtml += `<div style="margin-bottom: 12px;">
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; min-width: 0;">
                         <span style="font-size: 9px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;">${bucket.name}</span>
                         <span style="font-size: 10px; font-weight: 900; background: ${bBg}; color: ${bColor}; padding: 2px 7px; border-radius: 6px; flex-shrink: 0;">${bAvgNum.toFixed(1)}</span>
                         ${bDateStr ? `<span style="font-size: 9px; color: #94a3b8; font-style: italic; white-space: nowrap; flex-shrink: 0;">${bDateStr}</span>` : ''}
+                        ${sectionPulse}
                     </div>
                     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
                         ${bucket.categories.map(renderCategoryCard).join('')}
