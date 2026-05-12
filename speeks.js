@@ -185,6 +185,7 @@ async function loadCMS() {
 
                 sortedAnns.forEach((item, index) => {
                     let displayDate = "";
+                    let displayTime = "";
                     let isArchived = false;
                     let unreadHtmlAttr = "";
 
@@ -192,6 +193,11 @@ async function loadCMS() {
                         const annDate = new Date(item.date);
                         if (!isNaN(annDate.getTime())) {
                             displayDate = annDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                            const h = annDate.getHours(), min = annDate.getMinutes();
+                            if (h !== 0 || min !== 0) {
+                                const ampm = h >= 12 ? 'pm' : 'am';
+                                displayTime = `${h % 12 || 12}:${String(min).padStart(2, '0')}${ampm}`;
+                            }
                         }
                     }
 
@@ -282,7 +288,7 @@ async function loadCMS() {
                                 <span class="ann-author">${item.author || 'Announcement'}</span>
                                 <div class="ann-header-right">
                                     ${readReceiptHtml}
-                                    ${displayDate ? `<small class="ann-date">${displayDate}</small>` : ''}
+                                    ${displayDate ? `<small class="ann-date">${displayDate}${displayTime ? ` · ${displayTime}` : ''}</small>` : ''}
                                 </div>
                             </div>
                             <hr />
@@ -316,13 +322,17 @@ async function loadCMS() {
             if (badge) {
                 if (showBadge) {
                     if (currentUser) localStorage.setItem('speeksUnreadAnnouncements_' + currentUser, 'true');
-                    badge.style.display = 'block'; 
-                    badge.classList.add('active'); 
+                    badge.style.display = 'block';
+                    badge.classList.add('active');
                 } else {
                     if (currentUser) localStorage.removeItem('speeksUnreadAnnouncements_' + currentUser);
-                    badge.style.display = 'none';
-                    badge.classList.remove('active');
+                    updateMainBadge(); // keep dot alive if patch notes are also unseen
                 }
+            }
+            const recentBadge = document.getElementById('recentBadge');
+            if (recentBadge) {
+                recentBadge.style.display = showBadge ? 'block' : 'none';
+                recentBadge.classList.toggle('active', showBadge);
             }
         }
 
@@ -369,11 +379,11 @@ function markAnnouncementRead(rowId) {
             card.remove();
             const container = document.getElementById('ann-container');
             if (container && !container.querySelector('.notif-item[data-ann-id]')) {
-                container.innerHTML = '<div style="padding: 20px; color:#999; text-align:center;">No recent announcements</div>';
-                const badge = document.getElementById('notifBadge');
-                if (badge) { badge.style.display = 'none'; badge.classList.remove('active'); }
                 localStorage.removeItem('speeksUnreadAnnouncements_' + cleanUser);
+                updateMainBadge(); // keep dot alive if patch notes are also unseen
             }
+            // Reload both tabs so the item appears in Archive immediately
+            loadCMS();
         }, { once: true });
     }
 }
@@ -526,6 +536,10 @@ async function pollReactions() {
         const currentUser = sessionStorage.getItem('speeksUserName');
         const cleanUser = currentUser ? String(currentUser).trim().toLowerCase() : null;
         const availableEmojis = ['👍', '🎉', '👀', '🔥', '🫡', '💵'];
+
+        // If any announcement isn't rendered yet, a new one was posted — reload the full list
+        const hasNew = data.announcements.some(item => !document.getElementById(`reactions_${item.rowId}`));
+        if (hasNew) { loadCMS(); return; }
 
         data.announcements.forEach(item => {
             const annId = item.rowId;
@@ -1769,6 +1783,7 @@ let cachedLeaderboardData = null;
 let currentTimeframe = '4-Week'; 
 let currentChartMode = 'averages';
 let kpiChartCache = JSON.parse(localStorage.getItem('speeksKpiChartCache')) || { '4-Week': null, 'Monthly': null };
+let _latestPatchKey = null; // title|date of the most recent patch notes group
 
 function switchPageTab(tab) {
     ['trends', 'records'].forEach(t => { 
@@ -2114,7 +2129,265 @@ async function saveManageRecords() {
     }
 }
 
-// --- 15. MODULE: QUICK MESSAGES ---
+// --- 15. MODULE: MONTHLY AWARDS ---
+let awardsCache = null;
+let currentAwardVideoUrl = null;
+
+const STORE_EMOJI_MAP = { OVL: '🟣', LEE: '🔵', WSP: '🟢', MPL: '🟠', BAL: '🔴' };
+const AWARD_NAMES = ['The Beyond The Benchmark Award', 'The Scroll Stopper Award', 'The Brand Beacon Award'];
+const AWARD_EMOJIS = ['🎯', '👀', '💡'];
+const AWARD_DISPLAY_LINES = [['The Beyond The', 'Benchmark Award'], ['The Scroll', 'Stopper Award'], ['The Brand', 'Beacon Award']];
+const AWARD_DESCRIPTIONS = ['Best Store Performance Relative to Monthly Goal', 'Funniest Post/Video', 'Best Brand Encapsulation Post/Video'];
+
+function toVideoEmbed(url) {
+    if (!url) return null;
+    // Google Drive file link
+    const driveFile = url.match(/drive\.google\.com\/file\/d\/([A-Za-z0-9_-]+)/);
+    if (driveFile) return { type: 'iframe', src: `https://drive.google.com/file/d/${driveFile[1]}/preview` };
+    const driveOpen = url.match(/drive\.google\.com\/open\?id=([A-Za-z0-9_-]+)/);
+    if (driveOpen) return { type: 'iframe', src: `https://drive.google.com/file/d/${driveOpen[1]}/preview` };
+    // Direct video file (MP4, WebM, etc.)
+    if (/\.(mp4|webm|ogg)(\?|$)/i.test(url)) return { type: 'video', src: url };
+    // YouTube fallback
+    const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+    if (yt) return { type: 'iframe', src: `https://www.youtube.com/embed/${yt[1]}` };
+    return null;
+}
+
+function buildVideoHtml(url) {
+    const v = toVideoEmbed(url);
+    if (!v) return '';
+    if (v.type === 'video') return `<video controls src="${v.src}" style="width:100%;height:100%;display:block;"></video>`;
+    return `<iframe src="${v.src}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen loading="lazy" style="width:100%;height:100%;display:block;"></iframe>`;
+}
+
+async function fetchAwardsData() {
+    try {
+        const res = await fetch(`${RECORDS_URL}?type=awards&v=${Date.now()}`);
+        const raw = await res.json();
+        // Deduplicate by month — later rows win (most recent save for a month)
+        const byMonth = new Map();
+        raw.forEach(a => byMonth.set(a.month, a));
+        awardsCache = Array.from(byMonth.values());
+        renderAwards();
+        renderAwardVideos();
+    } catch (e) {}
+}
+
+function renderAwards() {
+    const container = document.getElementById('awards-cards-container');
+    const monthLabel = document.getElementById('awards-month-label');
+    if (!container) return;
+
+    if (!awardsCache || awardsCache.length === 0) {
+        container.innerHTML = '<div class="status-message">No awards data yet.</div>';
+        return;
+    }
+
+    const latest = awardsCache[awardsCache.length - 1];
+    if (monthLabel) monthLabel.textContent = latest.month || '';
+
+    const winners = [latest.winner1, latest.winner2, latest.winner3];
+    const hasAny = winners.some(w => w);
+    if (!hasAny) {
+        container.innerHTML = '<div class="status-message">No award winners set for this month yet.</div>';
+        return;
+    }
+
+    container.innerHTML = AWARD_NAMES.map((name, i) => {
+        const store = winners[i];
+        const [line1, line2] = AWARD_DISPLAY_LINES[i];
+        return `
+        <div class="award-card-trophy-wrap">
+            <button class="award-info-btn" data-desc="${escapeHtml(AWARD_DESCRIPTIONS[i])}">i</button>
+            <div class="award-card">
+                <div class="award-card-header">
+                    <div class="award-card-name">${escapeHtml(line1)}<br>${escapeHtml(line2)}</div>
+                </div>
+                <div class="award-card-sep"><span>◆</span></div>
+                <div class="award-card-body">
+                    <div class="award-card-winner">${store ? escapeHtml(store) : '<span style="opacity:0.45;">—</span>'}</div>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+
+}
+
+function renderAwardVideos() {
+    const btn = document.getElementById('awards-video-btn');
+    const latest = (awardsCache || []).slice(-1)[0];
+    currentAwardVideoUrl = (latest && latest.videoUrl) ? latest.videoUrl : null;
+    if (btn) btn.style.display = currentAwardVideoUrl ? '' : 'none';
+}
+
+function openAwardVideo() {
+    if (!currentAwardVideoUrl) return;
+    const overlay = document.getElementById('awardVideoOverlay');
+    const content = document.getElementById('awardVideoContent');
+    if (!overlay || !content) return;
+    content.innerHTML = buildVideoHtml(currentAwardVideoUrl);
+    overlay.style.display = 'flex';
+}
+
+function closeAwardVideo() {
+    const overlay = document.getElementById('awardVideoOverlay');
+    const content = document.getElementById('awardVideoContent');
+    if (overlay) overlay.style.display = 'none';
+    if (content) content.innerHTML = '';
+}
+
+function toggleManageAwards() {
+    const dropdown = document.getElementById('manageAwardsDropdown');
+    if (!dropdown) return;
+
+    const isOpen = dropdown.classList.contains('show');
+    closeAllModals();
+
+    if (!isOpen) {
+        dropdown.classList.add('show');
+        lockAndBlurScreen();
+
+        const editTabBtn = document.getElementById('awards-tab-edit');
+        if (editTabBtn) editTabBtn.style.display = '';
+        const editFooter = document.getElementById('awardsEditFooter');
+        if (editFooter) editFooter.style.display = '';
+
+        switchAwardsTab('edit');
+
+        if (!awardsCache) {
+            fetchAwardsData().then(prefillAwardsForm);
+        } else {
+            prefillAwardsForm();
+        }
+    }
+}
+
+function prefillAwardsForm() {
+    const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+    if (awardsCache && awardsCache.length > 0) {
+        const latest = awardsCache[awardsCache.length - 1];
+        setVal('awardsMonthInput', latest.month);
+        setVal('awardsVideoInput', latest.videoUrl);
+        setVal('award1Store', latest.winner1);
+        setVal('award2Store', latest.winner2);
+        setVal('award3Store', latest.winner3);
+    } else {
+        setVal('awardsMonthInput', new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }));
+    }
+}
+
+function toggleAwardsHistory() {
+    const dropdown = document.getElementById('manageAwardsDropdown');
+    if (!dropdown) return;
+
+    const isOpen = dropdown.classList.contains('show');
+    closeAllModals();
+
+    if (!isOpen) {
+        dropdown.classList.add('show');
+        lockAndBlurScreen();
+
+        const editTabBtn = document.getElementById('awards-tab-edit');
+        if (editTabBtn) editTabBtn.style.display = 'none';
+        const editFooter = document.getElementById('awardsEditFooter');
+        if (editFooter) editFooter.style.display = 'none';
+
+        if (!awardsCache) {
+            fetchAwardsData().then(() => switchAwardsTab('history'));
+        } else {
+            switchAwardsTab('history');
+        }
+    }
+}
+
+function switchAwardsTab(tab) {
+    document.getElementById('awardsTabEdit').style.display = tab === 'edit' ? '' : 'none';
+    document.getElementById('awardsTabHistory').style.display = tab === 'history' ? '' : 'none';
+    document.getElementById('awards-tab-edit')?.classList.toggle('active', tab === 'edit');
+    document.getElementById('awards-tab-history')?.classList.toggle('active', tab === 'history');
+    if (tab === 'history') renderAwardsHistory();
+}
+
+function renderAwardsHistory() {
+    const list = document.getElementById('awardsHistoryList');
+    if (!list) return;
+
+    if (!awardsCache || awardsCache.length === 0) {
+        list.innerHTML = '<div class="status-message">No history yet.</div>';
+        return;
+    }
+
+    const winnerKeys = ['winner1', 'winner2', 'winner3'];
+
+    list.innerHTML = [...awardsCache].reverse().map(a => `
+        <div class="awards-history-entry">
+            <div class="awards-history-month">${escapeHtml(a.month)}</div>
+            ${AWARD_NAMES.map((name, i) => {
+                const store = a[winnerKeys[i]];
+                return `<div class="awards-history-row">
+                    <span class="awards-history-medal">${AWARD_EMOJIS[i]}</span>
+                    <span class="awards-history-awardname">${escapeHtml(name)}</span>
+                    <span class="awards-history-winner">${store ? `${STORE_EMOJI_MAP[store] || ''} ${store}` : '—'}</span>
+                </div>`;
+            }).join('')}
+            ${a.videoUrl ? `<div class="awards-history-video-link"><a href="${escapeHtml(a.videoUrl)}" target="_blank">🎬 Watch Video</a></div>` : ''}
+        </div>`).join('');
+}
+
+function clearAwardsForm() {
+    ['awardsMonthInput', 'awardsVideoInput', 'award1Store', 'award2Store', 'award3Store'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    const status = document.getElementById('awardsSaveStatus');
+    if (status) status.textContent = '';
+}
+
+async function saveAwards() {
+    const btn = document.getElementById('saveAwardsBtn');
+    const status = document.getElementById('awardsSaveStatus');
+    const getVal = id => (document.getElementById(id)?.value || '').trim();
+
+    const month = getVal('awardsMonthInput');
+    if (!month) { alert('Please enter the month (e.g. May 2026).'); return; }
+
+    btn.textContent = 'Saving...';
+    btn.disabled = true;
+
+    const payload = {
+        type: 'awards',
+        month,
+        winner1: getVal('award1Store'),
+        winner2: getVal('award2Store'),
+        winner3: getVal('award3Store'),
+        videoUrl: getVal('awardsVideoInput'),
+    };
+
+    try {
+        await fetch(RECORDS_URL, {
+            method: 'POST', mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!awardsCache) awardsCache = [];
+        const idx = awardsCache.findIndex(a => a.month === month);
+        if (idx >= 0) awardsCache[idx] = { ...payload };
+        else awardsCache.push({ ...payload });
+
+        renderAwards();
+        renderAwardVideos();
+        closeAllModals();
+    } catch (e) {
+        if (status) status.textContent = '✗ Error saving.';
+    } finally {
+        btn.textContent = 'Save Awards';
+        btn.disabled = false;
+    }
+}
+
+// --- 16. MODULE: QUICK MESSAGES ---
 let quickMsgCache = null;
 let currentQMTab = 'common';
 
@@ -2438,15 +2711,18 @@ async function fetchScorecardData() {
         const displayScore = latestScore * 2;
         const rawDate = storeData.date || 'Recent';
 
+        const formatWeekOf = (d) => {
+            const p = new Date(d);
+            if (isNaN(p.getTime())) return String(d);
+            const diff = p.getUTCDay() === 0 ? -6 : 1 - p.getUTCDay();
+            const mon = new Date(p);
+            mon.setUTCDate(p.getUTCDate() + diff);
+            return "Week of " + mon.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric' });
+        };
+
         let displayDate = rawDate;
         const parsedDate = new Date(rawDate);
-        if (!isNaN(parsedDate.getTime())) {
-            const day = parsedDate.getUTCDay();
-            const diffToMonday = day === 0 ? -6 : 1 - day;
-            const mondayDate = new Date(parsedDate);
-            mondayDate.setUTCDate(parsedDate.getUTCDate() + diffToMonday);
-            displayDate = "Week of " + mondayDate.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric' });
-        }
+        if (!isNaN(parsedDate.getTime())) displayDate = formatWeekOf(rawDate);
         let scoreColor = 'var(--red-alert)';
         if (displayScore > 8) scoreColor = 'var(--sage-professional)';
         else if (displayScore >= 6) scoreColor = 'var(--idea-gold)';
@@ -2482,10 +2758,12 @@ async function fetchScorecardData() {
                 if (bAvgNum >= 8) { bBg = '#d1fae5'; bColor = '#059669'; }
                 else if (bAvgNum >= 6) { bBg = '#fef3c7'; bColor = '#d97706'; }
                 else { bBg = '#fee2e2'; bColor = '#dc2626'; }
+                const bDateStr = bucket.sectionDate ? formatWeekOf(bucket.sectionDate) : '';
                 breakdownHtml += `<div style="margin-bottom: 12px;">
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-                        <span style="font-size: 9px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">${bucket.name}</span>
-                        <span style="font-size: 10px; font-weight: 900; background: ${bBg}; color: ${bColor}; padding: 2px 7px; border-radius: 6px;">${bAvgNum.toFixed(1)}</span>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; min-width: 0;">
+                        <span style="font-size: 9px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;">${bucket.name}</span>
+                        <span style="font-size: 10px; font-weight: 900; background: ${bBg}; color: ${bColor}; padding: 2px 7px; border-radius: 6px; flex-shrink: 0;">${bAvgNum.toFixed(1)}</span>
+                        ${bDateStr ? `<span style="font-size: 9px; color: #94a3b8; font-style: italic; white-space: nowrap; flex-shrink: 0;">${bDateStr}</span>` : ''}
                     </div>
                     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
                         ${bucket.categories.map(renderCategoryCard).join('')}
@@ -4190,15 +4468,61 @@ function applyRoleBasedUI() {
 
 function checkInstantNotifCache() {
     const currentUser = sessionStorage.getItem('speeksUserName');
-    if (!currentUser) return; // Don't fire if they aren't logged in yet
-    
-    if (localStorage.getItem('speeksUnreadAnnouncements_' + currentUser) === 'true') {
+    if (!currentUser) return;
+
+    const hasAnns   = localStorage.getItem('speeksUnreadAnnouncements_' + currentUser) === 'true';
+    const hasPatch  = localStorage.getItem('speeksUnseenPatchNotes_'     + currentUser) === 'true';
+    if (hasAnns || hasPatch) {
         const badge = document.getElementById('notifBadge');
-        if (badge) {
-            badge.style.display = 'block';
-            badge.classList.add('active');
-        }
+        if (badge) { badge.style.display = 'block'; badge.classList.add('active'); }
     }
+}
+
+// Shows/hides the main bell badge based on BOTH unread announcements AND unseen patch notes
+function updateMainBadge() {
+    const currentUser = sessionStorage.getItem('speeksUserName');
+    const cleanUser   = currentUser ? String(currentUser).trim().toLowerCase() : null;
+    const hasAnns  = cleanUser && localStorage.getItem('speeksUnreadAnnouncements_' + cleanUser) === 'true';
+    const hasPatch = cleanUser && localStorage.getItem('speeksUnseenPatchNotes_'     + cleanUser) === 'true';
+    const show = hasAnns || hasPatch;
+    const badge = document.getElementById('notifBadge');
+    if (badge) { badge.style.display = show ? 'block' : 'none'; badge.classList.toggle('active', show); }
+}
+
+// Called after fetching patch notes — shows/hides the tab dot and main badge
+function checkPatchNotesBadge() {
+    if (!_latestPatchKey) return;
+    const currentUser = sessionStorage.getItem('speeksUserName');
+    const cleanUser   = currentUser ? String(currentUser).trim().toLowerCase() : null;
+    const seen  = cleanUser ? localStorage.getItem('speeksPatchNotesSeen_' + cleanUser) : null;
+    const isNew = seen !== _latestPatchKey;
+
+    if (cleanUser) {
+        if (isNew) localStorage.setItem('speeksUnseenPatchNotes_' + cleanUser, 'true');
+        else        localStorage.removeItem('speeksUnseenPatchNotes_' + cleanUser);
+    }
+    const pnBadge = document.getElementById('patchNotesBadge');
+    if (pnBadge) { pnBadge.style.display = isNew ? 'block' : 'none'; pnBadge.classList.toggle('active', isNew); }
+
+    if (isNew) {
+        const mainBadge = document.getElementById('notifBadge');
+        if (mainBadge) { mainBadge.style.display = 'block'; mainBadge.classList.add('active'); }
+    } else {
+        updateMainBadge();
+    }
+}
+
+// Lightweight background fetch — just checks if there's a new patch notes version
+async function checkForNewPatchNotes() {
+    try {
+        const data = await fetch(`${PATCH_NOTES_URL}?v=${Date.now()}`).then(r => r.json());
+        if (!data.entries || !data.entries.length) return;
+        const groups = buildPatchGroups(data.entries);
+        if (groups.length > 0) {
+            _latestPatchKey = groups[0].title + '|' + groups[0].date;
+            checkPatchNotesBadge();
+        }
+    } catch (e) {}
 }
 
 function initDashboardData() { 
@@ -4218,6 +4542,7 @@ function initDashboardData() {
 
         // Re-sync announcements immediately after login so it knows who you are!
         setTimeout(loadCMS, 50);
+        setTimeout(checkForNewPatchNotes, 800); // background check for new patch notes
         setTimeout(startReactionPolling, 3000);
 
         setTimeout(fetchHubData, 100); 
@@ -4232,6 +4557,7 @@ function initDashboardData() {
 
         setTimeout(fetchKPIData, 700); 
         setTimeout(fetchRecordsData, 800);
+        setTimeout(fetchAwardsData, 900);
         setTimeout(fetchChampions, 850);
         setTimeout(fetchDmGoalsData, 1000);
         setTimeout(fetchAndRenderEmployeeGoals, 1100);
@@ -4240,6 +4566,14 @@ function initDashboardData() {
         // --- ADD THE COMMENT POPUP CHECK HERE TOO ---
         setTimeout(fetchAndDisplayStoreComment, 1500);
         // --------------------------------------------
+
+        setTimeout(showChecklistToast, 3000);
+
+        // Pre-load checklist in background so chip + glow appear without opening the panel
+        const _clRole = (sessionStorage.getItem('speeksUserRole') || '').toLowerCase();
+        if (_clRole === 'manager' || _clRole === 'district manager') {
+            setTimeout(loadChecklist, 1200);
+        }
 
         if (typeof preloadAllStores === 'function') setTimeout(preloadAllStores, 4000); 
         if (typeof initListingGoals === 'function') setTimeout(initListingGoals, 200);
@@ -4519,7 +4853,8 @@ function renderKpiChart(allData, metric) {
         }
 
         // 2. Catch literal zeros. This forces closed stores/employees to be completely blank instead of flatlining at 0.
-        if (strVal === "0" || strVal === "0%" || strVal === "0.00%" || strVal === "0.0%" || strVal === "0:00") {
+        // Exception: nodeals — 0 is a valid meaningful result (employee had no bad deals that week).
+        if (metric !== 'nodeals' && (strVal === "0" || strVal === "0%" || strVal === "0.00%" || strVal === "0.0%" || strVal === "0:00")) {
             return null;
         }
 
@@ -4546,8 +4881,8 @@ function renderKpiChart(allData, metric) {
         }
         
         let p = parseNum(v);
-        if (p === 0) return null; // Final failsafe for any parsed zero
-        
+        if (p === 0 && metric !== 'nodeals') return null; // Final failsafe — zero means no data except for no-deals
+
         return (isPct && p <= 1.5 && p >= -1.5) ? p * 100 : p;
     };
 
@@ -4682,8 +5017,8 @@ function renderKpiChart(allData, metric) {
             yMin = Math.max(0, Math.floor(mn) - 1);
             yMax = Math.ceil(mx) + 1;
         } else {
-            yMin = 0; 
-            yMax = Math.ceil(mx * 1.2);
+            yMin = 0;
+            yMax = Math.max(1, Math.ceil(mx * 1.2));
         }
     }
 
@@ -4964,7 +5299,7 @@ async function publishAnnouncement() {
 
     const payload = {
         text: compiledMessage,
-        date: new Date().toLocaleDateString('en-US'), 
+        date: new Date().toISOString(),
         author: sessionStorage.getItem('speeksUserName') || 'Executive Team'
     };
 
@@ -5903,20 +6238,25 @@ const SCORECARD_BUCKETS = [
 function openScorecardModal() {
     // 1. Let your native portal handle the animations and overlays!
     toggleModal('scorecardSubmitModal');
-    
+
     // 2. Auto-fill today's date
     const dateInput = document.getElementById('dm-score-date');
     if (dateInput) dateInput.valueAsDate = new Date();
-    
-    // 3. Generate the inputs grouped by bucket
+
+    // 3. Generate the inputs grouped by bucket, each with a section toggle
     const container = document.getElementById('dm-category-inputs');
     if (container) {
         let html = '';
         let catIndex = 0;
         SCORECARD_BUCKETS.forEach((bucket, bIdx) => {
-            html += `<div style="grid-column: 1 / -1; margin-top: ${bIdx > 0 ? '8px' : '0'}; padding-bottom: 4px; border-bottom: 1px solid #e2e8f0;">
+            html += `<div style="grid-column: 1 / -1; margin-top: ${bIdx > 0 ? '8px' : '0'}; padding-bottom: 4px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
                 <span style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">${bucket.label}</span>
-            </div>`;
+                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 10px; color: #94a3b8; font-weight: 700;">
+                    <input type="checkbox" id="section-toggle-${bIdx}" checked onchange="toggleScorecardSection(${bIdx})" style="cursor: pointer; width: 13px; height: 13px;">
+                    Update
+                </label>
+            </div>
+            <div id="section-inputs-${bIdx}" style="display: contents;">`;
             for (let i = 0; i < bucket.count; i++) {
                 const cat = SCORECARD_CATEGORIES[catIndex];
                 html += `<div style="display: flex; flex-direction: column;">
@@ -5933,9 +6273,16 @@ function openScorecardModal() {
                 </div>`;
                 catIndex++;
             }
+            html += `</div>`;
         });
         container.innerHTML = html;
     }
+}
+
+function toggleScorecardSection(bIdx) {
+    const enabled = document.getElementById(`section-toggle-${bIdx}`).checked;
+    const wrapper = document.getElementById(`section-inputs-${bIdx}`);
+    if (wrapper) wrapper.style.display = enabled ? 'contents' : 'none';
 }
 
 // We don't even need a custom close function anymore!
@@ -5949,43 +6296,66 @@ function submitNewScorecard() {
     const store = document.getElementById('dm-store-select').value;
     const date = document.getElementById('dm-score-date').value;
     const btn = document.getElementById('submitScorecardBtn');
-    
-    // Gather all the scores from the dropdowns
-    let scores = [];
-    let isComplete = true;
-    for (let i = 0; i < SCORECARD_CATEGORIES.length; i++) {
-        let val = document.getElementById(`score-input-${i}`).value;
-        if (val === "") isComplete = false;
-        scores.push(val);
-    }
 
-    if (!isComplete) {
-        alert("Please fill out all categories before submitting.");
+    // Determine which sections are enabled
+    const enabledSections = SCORECARD_BUCKETS.map((b, i) => {
+        const toggle = document.getElementById(`section-toggle-${i}`);
+        return toggle ? toggle.checked : true;
+    });
+
+    const isPartial = !enabledSections.every(e => e);
+
+    if (!enabledSections.some(e => e)) {
+        alert("Please enable at least one section to update.");
         return;
     }
+
+    // Gather scores per section — blanks are allowed (Apps Script carries previous value forward)
+    let catIndex = 0;
+    let sectionData = [];
+
+    SCORECARD_BUCKETS.forEach((bucket, bIdx) => {
+        const enabled = enabledSections[bIdx];
+        const scores = [];
+        for (let i = 0; i < bucket.count; i++) {
+            const val = document.getElementById(`score-input-${catIndex}`).value;
+            scores.push(val === '' ? null : parseFloat(val));
+            catIndex++;
+        }
+        if (enabled) sectionData.push({ bucketIndex: bIdx, scores: scores });
+    });
 
     btn.innerText = "Saving...";
     btn.style.opacity = "0.7";
     btn.disabled = true;
 
-    const payload = {
-        action: 'submit_scorecard',
-        store: store,
-        date: date,
-        scores: scores
-    };
+    let payload;
+    if (isPartial) {
+        payload = {
+            action: 'submit_scorecard',
+            store: store,
+            date: date,
+            partial: true,
+            sections: sectionData
+        };
+    } else {
+        payload = {
+            action: 'submit_scorecard',
+            store: store,
+            date: date,
+            scores: sectionData.flatMap(s => s.scores)
+        };
+    }
 
-    // Fire the data to Apps Script!
     fetch(SCORECARD_URL, {
-        method: 'POST', 
+        method: 'POST',
         mode: 'no-cors',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(payload)
     }).then(() => {
         btn.innerText = "Saved Successfully!";
         btn.style.background = "var(--sage-professional)";
-        
-        // Refresh the widget if they are looking at it, then close modal
+
         setTimeout(() => {
             if (typeof fetchScorecardData === 'function') fetchScorecardData();
             closeScorecardModal();
@@ -6433,6 +6803,7 @@ function renderChecklist() {
     });
 
     container.innerHTML = html;
+    updateChecklistChip();
 }
 
 // --- API ACTIONS (POST to Apps Script) ---
@@ -6524,6 +6895,49 @@ function clearChecklistTab() {
     });
 }
 
+// --- CHECKLIST NUDGE HELPERS ---
+function updateChecklistChip() {
+    const chip = document.getElementById('cl-progress-chip');
+    const btn = document.querySelector('.cl-nav-toggle');
+    if (!chip || !btn) return;
+
+    const dailyItems = checklistDataCache['daily'] || [];
+    const total = dailyItems.length;
+    if (total === 0) {
+        chip.textContent = '';
+        btn.classList.remove('cl-needs-attention');
+        return;
+    }
+
+    const done = dailyItems.filter(i => i.checked).length;
+    chip.textContent = done === total ? '✓ All done' : `${done}/${total} done`;
+
+    const panel = document.getElementById('checklistSidePanel');
+    const isOpen = panel && panel.classList.contains('open');
+    btn.classList.toggle('cl-needs-attention', done < total && !isOpen);
+}
+
+function showChecklistToast() {
+    const role = (sessionStorage.getItem('speeksUserRole') || '').toLowerCase();
+    if (role !== 'manager' && role !== 'district manager') return;
+
+    const user = (sessionStorage.getItem('speeksUserName') || '').trim().toLowerCase();
+    if (!user) return;
+    const key = `speeksChecklistToastDate_${user}`;
+    const today = new Date().toLocaleDateString('en-CA');
+    if (localStorage.getItem(key) === today) return;
+
+    localStorage.setItem(key, today);
+    const toast = document.getElementById('checklistToast');
+    if (!toast) return;
+    toast.classList.add('show');
+}
+
+function dismissChecklistToast() {
+    const toast = document.getElementById('checklistToast');
+    if (toast) toast.classList.remove('show');
+}
+
 // --- BULLETPROOF TOGGLE & CLICK-AWAY LOGIC ---
 window.toggleChecklistPanel = function(event) {
     if (event) event.stopPropagation();
@@ -6531,7 +6945,10 @@ window.toggleChecklistPanel = function(event) {
     if (!panel) return;
     const isOpen = panel.classList.toggle('open');
     const toggle = document.querySelector('.cl-nav-toggle');
-    if (toggle) toggle.classList.toggle('panel-active', isOpen);
+    if (toggle) {
+        toggle.classList.toggle('panel-active', isOpen);
+        if (isOpen) toggle.classList.remove('cl-needs-attention');
+    }
 };
 
 // Closes the panel if you click outside of it
@@ -6744,6 +7161,20 @@ function renderPatchNotes(data) {
 
     const sorted = buildPatchGroups(entries);
     listEl.innerHTML = sorted.map((g, i) => buildPatchCardHTML(g, i === 0)).join('');
+
+    // User is now viewing the patch notes — mark latest version as seen
+    if (sorted.length > 0) {
+        _latestPatchKey = sorted[0].title + '|' + sorted[0].date;
+        const currentUser = sessionStorage.getItem('speeksUserName');
+        const cleanUser   = currentUser ? String(currentUser).trim().toLowerCase() : null;
+        if (cleanUser) {
+            localStorage.setItem('speeksPatchNotesSeen_'   + cleanUser, _latestPatchKey);
+            localStorage.removeItem('speeksUnseenPatchNotes_' + cleanUser);
+        }
+        const pnBadge = document.getElementById('patchNotesBadge');
+        if (pnBadge) { pnBadge.style.display = 'none'; pnBadge.classList.remove('active'); }
+        updateMainBadge();
+    }
 }
 
 function togglePatchNotes() {

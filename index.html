@@ -52,6 +52,7 @@
             <a class="dev-dropdown-link dynamic-module-block role-district-manager" onclick="toggleManageDocs()">Manage Policies</a>
             <a class="dev-dropdown-link dynamic-module-block role-district-manager" onclick="toggleManageHotkeys()">System Hotkeys</a>
             <a class="dev-dropdown-link dynamic-module-block role-district-manager" onclick="togglePatchNotesManage()">Patch Notes</a>
+            <a class="dev-dropdown-link dynamic-module-block role-district-manager" onclick="toggleManageAwards()">Monthly Awards</a>
         </div>
       </div>
 
@@ -89,6 +90,7 @@
     <button class="cl-nav-toggle dynamic-module-flex role-manager role-district-manager" onclick="toggleChecklistPanel(event); loadChecklist();" title="Checklist">
         <span style="font-size: 14px; line-height: 1;">📋</span>
         <span>Checklist</span>
+        <span id="cl-progress-chip" class="cl-progress-chip"></span>
         <svg class="cl-toggle-chevron" xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
     </button>
 </div>
@@ -353,9 +355,9 @@
             <h3>SPEEKS Announcements Hub</h3>
             <div class="align-center gap-15">
                 <div class="notif-tabs">
-                    <button id="tab-recent" class="tab-btn active" onclick="switchAnnTab('recent')">Recent</button>
+                    <button id="tab-recent" class="tab-btn active" onclick="switchAnnTab('recent')" style="position: relative;">Recent<div class="notif-dot" id="recentBadge" style="top: -3px; right: -3px;"></div></button>
                     <button id="tab-archive" class="tab-btn" onclick="switchAnnTab('archive')">Archived</button>
-                    <button id="tab-patchnotes" class="tab-btn" onclick="switchAnnTab('patchnotes')">📋 Patch Notes</button>
+                    <button id="tab-patchnotes" class="tab-btn" onclick="switchAnnTab('patchnotes')" style="position: relative;">📋 Patch Notes<div class="notif-dot" id="patchNotesBadge" style="top: -3px; right: -3px;"></div></button>
                 </div>
                 <button class="modal-close-btn" onclick="closeAllModals()">✖</button>
             </div>
@@ -704,7 +706,7 @@
       
   </div>
 
-  <div class="dynamic-module-block role-district-manager district-command-section">
+  <div class="dynamic-module-block role-district-manager role-ceo district-command-section">
     
       <div class="district-header-wrapper">
           <h3 class="district-command-title">🌐 District Command Center</h3>
@@ -714,7 +716,7 @@
           <div class="status-message">Syncing Data...</div>
       </div>
 
-      <div class="card district-master-panel district-kpi-panel" style="margin-bottom: 30px;">
+      <div class="card district-master-panel district-kpi-panel dynamic-module-block role-district-manager" style="margin-bottom: 30px;">
           <div class="district-kpi-header">
               <span class="district-kpi-title">Monthly Team Goals <span class="widget-date-display" id="districtGoalsMonth"></span></span>
           </div>
@@ -724,7 +726,7 @@
           </div>
       </div>
 
-      <div class="district-split-row">
+      <div class="district-split-row dynamic-module-flex role-district-manager">
           
           <div class="flex-col-gap-30">
               <div class="card district-master-panel district-kpi-panel">
@@ -776,157 +778,6 @@
 
 
   </div>
-
-<div class="card master-card dynamic-module-block role-ceo mb-30" style="height: auto; min-height: 0; padding: 0; overflow: hidden;">
-    <div class="master-card-header" style="margin: 0; border-radius: 0;">
-        <div class="align-center gap-8">
-            <span class="master-card-title">District Buying & Sales Progress <span id="ceo-bs-last-updated" class="widget-date-display"></span></span>
-        </div>
-    </div>
-    
-    <div class="ceo-rings-grid" style="padding: 20px 0; gap: 0 !important; display: flex; flex-direction: row; width: 100%; flex-wrap: nowrap;">
-        
-        <div class="ceo-ring-col">
-            <button class="ceo-comment-btn" onclick="openCEOStoreComment('OVL')" title="Message OVL">💬 <span>Send Comment</span></button>
-            <div class="ceo-goal-badge">Goal: <span id="ceo-ovl-goal">--</span></div>
-            <div class="ceo-ring-title">OVL</div>
-            
-            <div class="ceo-mini-section-title">Sales</div>
-            <div class="bs-ring-wrapper ceo-ring-scale">
-                <div class="progress-ring">
-                    <svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="ceo-ovl-bar" cx="70" cy="70" r="64"></circle></svg>
-                    <div class="percentage" id="ceo-ovl-pct">0%</div>
-                </div>
-            </div>
-            <div class="ceo-ring-stats">
-                <div class="ceo-stat-row"><span>Revenue:</span> <span id="ceo-ovl-rev" style="color: var(--sage-professional);">--</span></div>
-                <div class="ceo-stat-row"><span>GP Tracking:</span> <span id="ceo-ovl-t-gp" style="color: var(--sage-professional);">--</span></div>
-                <div class="ceo-stat-row"><span>Margin:</span> <span id="ceo-ovl-sell-margin" class="ceo-badge">--</span></div>
-            </div>
-
-            <div style="width:100%; height:1px; background:#e2e8f0; margin:10px 0;"></div>
-
-            <div class="ceo-mini-section-title">Buying</div>
-            <div class="ceo-ring-stats">
-                <div class="ceo-stat-row"><span>Purchased:</span> <span id="ceo-ovl-buy-val">--</span></div>
-                <div class="ceo-stat-row"><span>Buy Tracking:</span> <span id="ceo-ovl-buy-proj">--</span></div>
-                <div class="ceo-stat-row"><span>Margin:</span> <span id="ceo-ovl-buy-margin" class="ceo-badge">--</span></div>
-            </div>
-        </div>
-
-        <div class="ceo-ring-col">
-            <button class="ceo-comment-btn" onclick="openCEOStoreComment('LEE')" title="Message LEE">💬 <span>Send Comment</span></button>
-            <div class="ceo-goal-badge">Goal: <span id="ceo-lee-goal">--</span></div>
-            <div class="ceo-ring-title">LEE</div>
-            
-            <div class="ceo-mini-section-title">Sales</div>
-            <div class="bs-ring-wrapper ceo-ring-scale">
-                <div class="progress-ring">
-                    <svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="ceo-lee-bar" cx="70" cy="70" r="64"></circle></svg>
-                    <div class="percentage" id="ceo-lee-pct">0%</div>
-                </div>
-            </div>
-            <div class="ceo-ring-stats">
-                <div class="ceo-stat-row"><span>Revenue:</span> <span id="ceo-lee-rev" style="color: var(--sage-professional);">--</span></div>
-                <div class="ceo-stat-row"><span>GP Tracking:</span> <span id="ceo-lee-t-gp" style="color: var(--sage-professional);">--</span></div>
-                <div class="ceo-stat-row"><span>Margin:</span> <span id="ceo-lee-sell-margin" class="ceo-badge">--</span></div>
-            </div>
-
-            <div style="width:100%; height:1px; background:#e2e8f0; margin:10px 0;"></div>
-
-            <div class="ceo-mini-section-title">Buying</div>
-            <div class="ceo-ring-stats">
-                <div class="ceo-stat-row"><span>Purchased:</span> <span id="ceo-lee-buy-val">--</span></div>
-                <div class="ceo-stat-row"><span>Buy Tracking:</span> <span id="ceo-lee-buy-proj">--</span></div>
-                <div class="ceo-stat-row"><span>Margin:</span> <span id="ceo-lee-buy-margin" class="ceo-badge">--</span></div>
-            </div>
-        </div>
-
-        <div class="ceo-ring-col">
-            <button class="ceo-comment-btn" onclick="openCEOStoreComment('WSP')" title="Message WSP">💬 <span>Send Comment</span></button>
-            <div class="ceo-goal-badge">Goal: <span id="ceo-wsp-goal">--</span></div>
-            <div class="ceo-ring-title">WSP</div>
-            
-            <div class="ceo-mini-section-title">Sales</div>
-            <div class="bs-ring-wrapper ceo-ring-scale">
-                <div class="progress-ring">
-                    <svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="ceo-wsp-bar" cx="70" cy="70" r="64"></circle></svg>
-                    <div class="percentage" id="ceo-wsp-pct">0%</div>
-                </div>
-            </div>
-            <div class="ceo-ring-stats">
-                <div class="ceo-stat-row"><span>Revenue:</span> <span id="ceo-wsp-rev" style="color: var(--sage-professional);">--</span></div>
-                <div class="ceo-stat-row"><span>GP Tracking:</span> <span id="ceo-wsp-t-gp" style="color: var(--sage-professional);">--</span></div>
-                <div class="ceo-stat-row"><span>Margin:</span> <span id="ceo-wsp-sell-margin" class="ceo-badge">--</span></div>
-            </div>
-
-            <div style="width:100%; height:1px; background:#e2e8f0; margin:10px 0;"></div>
-
-            <div class="ceo-mini-section-title">Buying</div>
-            <div class="ceo-ring-stats">
-                <div class="ceo-stat-row"><span>Purchased:</span> <span id="ceo-wsp-buy-val">--</span></div>
-                <div class="ceo-stat-row"><span>Buy Tracking:</span> <span id="ceo-wsp-buy-proj">--</span></div>
-                <div class="ceo-stat-row"><span>Margin:</span> <span id="ceo-wsp-buy-margin" class="ceo-badge">--</span></div>
-            </div>
-        </div>
-
-        <div class="ceo-ring-col">
-            <button class="ceo-comment-btn" onclick="openCEOStoreComment('MPL')" title="Message MPL">💬 <span>Send Comment</span></button>
-            <div class="ceo-goal-badge">Goal: <span id="ceo-mpl-goal">--</span></div>
-            <div class="ceo-ring-title">MPL</div>
-            
-            <div class="ceo-mini-section-title">Sales</div>
-            <div class="bs-ring-wrapper ceo-ring-scale">
-                <div class="progress-ring">
-                    <svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="ceo-mpl-bar" cx="70" cy="70" r="64"></circle></svg>
-                    <div class="percentage" id="ceo-mpl-pct">0%</div>
-                </div>
-            </div>
-            <div class="ceo-ring-stats">
-                <div class="ceo-stat-row"><span>Revenue:</span> <span id="ceo-mpl-rev" style="color: var(--sage-professional);">--</span></div>
-                <div class="ceo-stat-row"><span>GP Tracking:</span> <span id="ceo-mpl-t-gp" style="color: var(--sage-professional);">--</span></div>
-                <div class="ceo-stat-row"><span>Margin:</span> <span id="ceo-mpl-sell-margin" class="ceo-badge">--</span></div>
-            </div>
-
-            <div style="width:100%; height:1px; background:#e2e8f0; margin:10px 0;"></div>
-
-            <div class="ceo-mini-section-title">Buying</div>
-            <div class="ceo-ring-stats">
-                <div class="ceo-stat-row"><span>Purchased:</span> <span id="ceo-mpl-buy-val">--</span></div>
-                <div class="ceo-stat-row"><span>Buy Tracking:</span> <span id="ceo-mpl-buy-proj">--</span></div>
-                <div class="ceo-stat-row"><span>Margin:</span> <span id="ceo-mpl-buy-margin" class="ceo-badge">--</span></div>
-            </div>
-        </div>
-
-        <div class="ceo-ring-col">
-            <button class="ceo-comment-btn" onclick="openCEOStoreComment('BAL')" title="Message BAL">💬 <span>Send Comment</span></button>
-            <div class="ceo-goal-badge">Goal: <span id="ceo-bal-goal">--</span></div>
-            <div class="ceo-ring-title">BAL</div>
-            
-            <div class="ceo-mini-section-title">Sales</div>
-            <div class="bs-ring-wrapper ceo-ring-scale">
-                <div class="progress-ring">
-                    <svg><circle class="bg" cx="70" cy="70" r="64"></circle><circle class="bar" id="ceo-bal-bar" cx="70" cy="70" r="64"></circle></svg>
-                    <div class="percentage" id="ceo-bal-pct">0%</div>
-                </div>
-            </div>
-            <div class="ceo-ring-stats">
-                <div class="ceo-stat-row"><span>Revenue:</span> <span id="ceo-bal-rev" style="color: var(--sage-professional);">--</span></div>
-                <div class="ceo-stat-row"><span>GP Tracking:</span> <span id="ceo-bal-t-gp" style="color: var(--sage-professional);">--</span></div>
-                <div class="ceo-stat-row"><span>Margin:</span> <span id="ceo-bal-sell-margin" class="ceo-badge">--</span></div>
-            </div>
-
-            <div style="width:100%; height:1px; background:#e2e8f0; margin:10px 0;"></div>
-
-            <div class="ceo-mini-section-title">Buying</div>
-            <div class="ceo-ring-stats">
-                <div class="ceo-stat-row"><span>Purchased:</span> <span id="ceo-bal-buy-val">--</span></div>
-                <div class="ceo-stat-row"><span>Buy Tracking:</span> <span id="ceo-bal-buy-proj">--</span></div>
-                <div class="ceo-stat-row"><span>Margin:</span> <span id="ceo-bal-buy-margin" class="ceo-badge">--</span></div>
-            </div>
-        </div>
-    </div>
-</div>
 
   <div class="dashboard-layout mb-30">
     
@@ -1228,6 +1079,74 @@
             <span class="pn-save-status" id="pnEntrySaveStatus"></span>
         </div>
     </div>
+</div>
+
+<!-- ===== MANAGE MONTHLY AWARDS MODAL ===== -->
+<div class="modal-menu manage-menu" id="manageAwardsDropdown">
+    <div class="modal-header">
+        <h3>Monthly Awards</h3>
+        <button class="modal-close-btn" onclick="closeAllModals()">✖</button>
+    </div>
+
+    <div class="manage-content" id="awardsTabEdit">
+        <div class="awards-form-month-row">
+            <div style="flex:1;">
+                <label class="form-label-caps">Month</label>
+                <input type="text" id="awardsMonthInput" class="form-input-lg" placeholder="e.g. May 2026">
+            </div>
+            <div style="flex:2;">
+                <label class="form-label-caps">Award Video URL (Google Drive share link)</label>
+                <input type="text" id="awardsVideoInput" class="form-input-lg" placeholder="https://drive.google.com/file/d/.../view?usp=sharing">
+            </div>
+        </div>
+
+        <div class="awards-form-grid">
+            <div class="awards-form-award-block">
+                <div class="awards-form-award-title">🥇 The Beyond The Benchmark Award</div>
+                <label class="form-label-caps">Winning Store</label>
+                <select id="award1Store" class="form-input-lg">
+                    <option value="">— Select Store —</option>
+                    <option value="OVL">🟣 OVL</option><option value="LEE">🔵 LEE</option><option value="WSP">🟢 WSP</option><option value="MPL">🟠 MPL</option><option value="BAL">🔴 BAL</option>
+                </select>
+            </div>
+            <div class="awards-form-award-block">
+                <div class="awards-form-award-title">🥈 The Scroll Stopper Award</div>
+                <label class="form-label-caps">Winning Store</label>
+                <select id="award2Store" class="form-input-lg">
+                    <option value="">— Select Store —</option>
+                    <option value="OVL">🟣 OVL</option><option value="LEE">🔵 LEE</option><option value="WSP">🟢 WSP</option><option value="MPL">🟠 MPL</option><option value="BAL">🔴 BAL</option>
+                </select>
+            </div>
+            <div class="awards-form-award-block">
+                <div class="awards-form-award-title">🥉 The Brand Beacon Award</div>
+                <label class="form-label-caps">Winning Store</label>
+                <select id="award3Store" class="form-input-lg">
+                    <option value="">— Select Store —</option>
+                    <option value="OVL">🟣 OVL</option><option value="LEE">🔵 LEE</option><option value="WSP">🟢 WSP</option><option value="MPL">🟠 MPL</option><option value="BAL">🔴 BAL</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="manage-content" id="awardsTabHistory" style="display:none;">
+        <div id="awardsHistoryList" class="awards-history-list">
+            <div class="status-message">Loading history...</div>
+        </div>
+    </div>
+
+    <div class="manage-footer" id="awardsEditFooter">
+        <span id="awardsSaveStatus" class="pn-save-status"></span>
+        <div style="display:flex;gap:10px;align-items:center;">
+            <button class="btn-ghost" onclick="clearAwardsForm()">↺ New Month</button>
+            <button class="btn-primary" id="saveAwardsBtn" onclick="saveAwards()">Save Awards</button>
+        </div>
+    </div>
+</div>
+
+<div id="checklistToast" class="cl-toast">
+    <span class="cl-toast-icon">📋</span>
+    <span class="cl-toast-msg">Don't forget your daily checklist!</span>
+    <button class="cl-toast-close" onclick="dismissChecklistToast()">✖</button>
 </div>
 
 </body>
