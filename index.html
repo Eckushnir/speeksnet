@@ -353,9 +353,9 @@
             <h3>SPEEKS Announcements Hub</h3>
             <div class="align-center gap-15">
                 <div class="notif-tabs">
-                    <button id="tab-recent" class="tab-btn active" onclick="switchAnnTab('recent')">Recent</button>
+                    <button id="tab-recent" class="tab-btn active" onclick="switchAnnTab('recent')" style="position: relative;">Recent<div class="notif-dot" id="recentBadge" style="top: -3px; right: -3px;"></div></button>
                     <button id="tab-archive" class="tab-btn" onclick="switchAnnTab('archive')">Archived</button>
-                    <button id="tab-patchnotes" class="tab-btn" onclick="switchAnnTab('patchnotes')">📋 Patch Notes</button>
+                    <button id="tab-patchnotes" class="tab-btn" onclick="switchAnnTab('patchnotes')" style="position: relative;">📋 Patch Notes<div class="notif-dot" id="patchNotesBadge" style="top: -3px; right: -3px;"></div></button>
                 </div>
                 <button class="modal-close-btn" onclick="closeAllModals()">✖</button>
             </div>

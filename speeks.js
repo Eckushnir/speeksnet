@@ -322,13 +322,17 @@ async function loadCMS() {
             if (badge) {
                 if (showBadge) {
                     if (currentUser) localStorage.setItem('speeksUnreadAnnouncements_' + currentUser, 'true');
-                    badge.style.display = 'block'; 
-                    badge.classList.add('active'); 
+                    badge.style.display = 'block';
+                    badge.classList.add('active');
                 } else {
                     if (currentUser) localStorage.removeItem('speeksUnreadAnnouncements_' + currentUser);
-                    badge.style.display = 'none';
-                    badge.classList.remove('active');
+                    updateMainBadge(); // keep dot alive if patch notes are also unseen
                 }
+            }
+            const recentBadge = document.getElementById('recentBadge');
+            if (recentBadge) {
+                recentBadge.style.display = showBadge ? 'block' : 'none';
+                recentBadge.classList.toggle('active', showBadge);
             }
         }
 
@@ -375,9 +379,8 @@ function markAnnouncementRead(rowId) {
             card.remove();
             const container = document.getElementById('ann-container');
             if (container && !container.querySelector('.notif-item[data-ann-id]')) {
-                const badge = document.getElementById('notifBadge');
-                if (badge) { badge.style.display = 'none'; badge.classList.remove('active'); }
                 localStorage.removeItem('speeksUnreadAnnouncements_' + cleanUser);
+                updateMainBadge(); // keep dot alive if patch notes are also unseen
             }
             // Reload both tabs so the item appears in Archive immediately
             loadCMS();
@@ -1780,6 +1783,7 @@ let cachedLeaderboardData = null;
 let currentTimeframe = '4-Week'; 
 let currentChartMode = 'averages';
 let kpiChartCache = JSON.parse(localStorage.getItem('speeksKpiChartCache')) || { '4-Week': null, 'Monthly': null };
+let _latestPatchKey = null; // title|date of the most recent patch notes group
 
 function switchPageTab(tab) {
     ['trends', 'records'].forEach(t => { 
@@ -4206,15 +4210,61 @@ function applyRoleBasedUI() {
 
 function checkInstantNotifCache() {
     const currentUser = sessionStorage.getItem('speeksUserName');
-    if (!currentUser) return; // Don't fire if they aren't logged in yet
-    
-    if (localStorage.getItem('speeksUnreadAnnouncements_' + currentUser) === 'true') {
+    if (!currentUser) return;
+
+    const hasAnns   = localStorage.getItem('speeksUnreadAnnouncements_' + currentUser) === 'true';
+    const hasPatch  = localStorage.getItem('speeksUnseenPatchNotes_'     + currentUser) === 'true';
+    if (hasAnns || hasPatch) {
         const badge = document.getElementById('notifBadge');
-        if (badge) {
-            badge.style.display = 'block';
-            badge.classList.add('active');
-        }
+        if (badge) { badge.style.display = 'block'; badge.classList.add('active'); }
     }
+}
+
+// Shows/hides the main bell badge based on BOTH unread announcements AND unseen patch notes
+function updateMainBadge() {
+    const currentUser = sessionStorage.getItem('speeksUserName');
+    const cleanUser   = currentUser ? String(currentUser).trim().toLowerCase() : null;
+    const hasAnns  = cleanUser && localStorage.getItem('speeksUnreadAnnouncements_' + cleanUser) === 'true';
+    const hasPatch = cleanUser && localStorage.getItem('speeksUnseenPatchNotes_'     + cleanUser) === 'true';
+    const show = hasAnns || hasPatch;
+    const badge = document.getElementById('notifBadge');
+    if (badge) { badge.style.display = show ? 'block' : 'none'; badge.classList.toggle('active', show); }
+}
+
+// Called after fetching patch notes — shows/hides the tab dot and main badge
+function checkPatchNotesBadge() {
+    if (!_latestPatchKey) return;
+    const currentUser = sessionStorage.getItem('speeksUserName');
+    const cleanUser   = currentUser ? String(currentUser).trim().toLowerCase() : null;
+    const seen  = cleanUser ? localStorage.getItem('speeksPatchNotesSeen_' + cleanUser) : null;
+    const isNew = seen !== _latestPatchKey;
+
+    if (cleanUser) {
+        if (isNew) localStorage.setItem('speeksUnseenPatchNotes_' + cleanUser, 'true');
+        else        localStorage.removeItem('speeksUnseenPatchNotes_' + cleanUser);
+    }
+    const pnBadge = document.getElementById('patchNotesBadge');
+    if (pnBadge) { pnBadge.style.display = isNew ? 'block' : 'none'; pnBadge.classList.toggle('active', isNew); }
+
+    if (isNew) {
+        const mainBadge = document.getElementById('notifBadge');
+        if (mainBadge) { mainBadge.style.display = 'block'; mainBadge.classList.add('active'); }
+    } else {
+        updateMainBadge();
+    }
+}
+
+// Lightweight background fetch — just checks if there's a new patch notes version
+async function checkForNewPatchNotes() {
+    try {
+        const data = await fetch(`${PATCH_NOTES_URL}?v=${Date.now()}`).then(r => r.json());
+        if (!data.entries || !data.entries.length) return;
+        const groups = buildPatchGroups(data.entries);
+        if (groups.length > 0) {
+            _latestPatchKey = groups[0].title + '|' + groups[0].date;
+            checkPatchNotesBadge();
+        }
+    } catch (e) {}
 }
 
 function initDashboardData() { 
@@ -4234,6 +4284,7 @@ function initDashboardData() {
 
         // Re-sync announcements immediately after login so it knows who you are!
         setTimeout(loadCMS, 50);
+        setTimeout(checkForNewPatchNotes, 800); // background check for new patch notes
         setTimeout(startReactionPolling, 3000);
 
         setTimeout(fetchHubData, 100); 
@@ -6796,6 +6847,20 @@ function renderPatchNotes(data) {
 
     const sorted = buildPatchGroups(entries);
     listEl.innerHTML = sorted.map((g, i) => buildPatchCardHTML(g, i === 0)).join('');
+
+    // User is now viewing the patch notes — mark latest version as seen
+    if (sorted.length > 0) {
+        _latestPatchKey = sorted[0].title + '|' + sorted[0].date;
+        const currentUser = sessionStorage.getItem('speeksUserName');
+        const cleanUser   = currentUser ? String(currentUser).trim().toLowerCase() : null;
+        if (cleanUser) {
+            localStorage.setItem('speeksPatchNotesSeen_'   + cleanUser, _latestPatchKey);
+            localStorage.removeItem('speeksUnseenPatchNotes_' + cleanUser);
+        }
+        const pnBadge = document.getElementById('patchNotesBadge');
+        if (pnBadge) { pnBadge.style.display = 'none'; pnBadge.classList.remove('active'); }
+        updateMainBadge();
+    }
 }
 
 function togglePatchNotes() {
