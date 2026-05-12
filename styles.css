@@ -1556,6 +1556,8 @@ select.bs-hidden-select:focus {
 /* ---- Octagonal Trophy style ---- */
 .award-style-octo .award-card-trophy-wrap {
     filter: drop-shadow(0 6px 20px rgba(59, 130, 246, 0.28));
+    position: relative;
+    padding-top: 28px;
 }
 .award-style-octo .award-card-trophy-wrap:hover {
     filter: drop-shadow(0 14px 32px rgba(59, 130, 246, 0.45));
@@ -1566,44 +1568,105 @@ select.bs-hidden-select:focus {
 .award-style-octo .award-card {
     clip-path: polygon(14% 0%, 86% 0%, 100% 14%, 100% 86%, 86% 100%, 14% 100%, 0% 86%, 0% 14%);
     border-radius: 0;
-    background: linear-gradient(145deg, #dbeafe 0%, #bfdbfe 25%, #eff6ff 55%, #dbeafe 100%);
+    background:
+        linear-gradient(135deg, rgba(255,255,255,0.65) 0%, rgba(186,230,253,0.55) 40%, rgba(147,197,253,0.45) 70%, rgba(96,165,250,0.35) 100%),
+        linear-gradient(145deg, #dbeafe 0%, #bfdbfe 25%, #eff6ff 55%, #dbeafe 100%);
     border: none;
     box-shadow: none;
-}
-.award-style-octo .award-card:hover { box-shadow: none; }
-.award-style-octo .award-card-header {
-    background: linear-gradient(135deg, rgba(255,255,255,0.65) 0%, rgba(186,230,253,0.55) 40%, rgba(147,197,253,0.45) 70%, rgba(96,165,250,0.35) 100%);
-    padding-top: 32px;
     position: relative;
     overflow: hidden;
 }
-.award-style-octo .award-card-header::after {
-    content: '';
-    position: absolute;
-    top: 0; left: -120%;
-    width: 55%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.65), transparent);
-    animation: crystal-shimmer 3.6s ease-in-out infinite;
-    pointer-events: none;
+.award-style-octo .award-card:hover { box-shadow: none; }
+.award-style-octo .award-card-header {
+    background: transparent;
+    padding-top: 38px;
+    padding-bottom: 16px;
 }
 .award-style-octo .award-card-name {
-    color: rgba(30, 64, 175, 0.9);
-    text-shadow: 0 1px 0 rgba(255,255,255,0.8);
+    font-size: 12px;
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.25);
+}
+.award-style-octo .award-card-sep {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0 28px;
+    margin: 0 0 6px;
+}
+.award-style-octo .award-card-sep::before,
+.award-style-octo .award-card-sep::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(255,255,255,0.55);
+}
+.award-style-octo .award-card-sep span {
+    font-size: 5px;
+    color: rgba(255,255,255,0.75);
+    line-height: 1;
 }
 .award-style-octo .award-card-body {
     background: transparent;
-    border-top: 1px solid rgba(147, 197, 253, 0.35);
-    padding-bottom: 32px;
+    padding-bottom: 38px;
 }
-.award-style-octo .award-card-winner { color: #1e3a8a; text-shadow: 0 1px 2px rgba(255,255,255,0.6); }
+.award-style-octo .award-card-winner { font-size: 24px; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+/* Info button */
+.award-info-btn {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(30,58,138,0.4);
+    color: rgba(255,255,255,0.85);
+    border: 1px solid rgba(255,255,255,0.45);
+    font-size: 11px;
+    font-style: italic;
+    font-weight: 700;
+    font-family: Georgia, serif;
+    cursor: default;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    line-height: 1;
+    padding: 0;
+}
+.award-info-btn::after {
+    content: attr(data-desc);
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 150px;
+    max-width: 190px;
+    background: rgba(15,23,42,0.93);
+    color: #fff;
+    font-size: 11px;
+    font-style: normal;
+    font-weight: 500;
+    font-family: inherit;
+    padding: 7px 10px;
+    border-radius: 7px;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.45;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s;
+    z-index: 100;
+}
+.award-info-btn:hover::after { opacity: 1; }
 /* Trophy stand */
 .award-style-octo .award-card-trophy-wrap::after {
     content: '';
     display: block;
     width: 68%;
     height: 28px;
-    background: linear-gradient(160deg, #dbeafe 0%, #93c5fd 35%, #60a5fa 65%, #bfdbfe 100%);
+    background:
+        linear-gradient(135deg, rgba(255,255,255,0.65) 0%, rgba(186,230,253,0.55) 40%, rgba(147,197,253,0.45) 70%, rgba(96,165,250,0.35) 100%),
+        linear-gradient(145deg, #dbeafe 0%, #bfdbfe 25%, #eff6ff 55%, #dbeafe 100%);
     clip-path: polygon(33% 0%, 67% 0%, 67% 44%, 100% 44%, 100% 100%, 0% 100%, 0% 44%, 33% 44%);
     margin-top: -2px;
 }

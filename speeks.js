@@ -2137,6 +2137,7 @@ const STORE_EMOJI_MAP = { OVL: '🟣', LEE: '🔵', WSP: '🟢', MPL: '🟠', BA
 const AWARD_NAMES = ['The Beyond The Benchmark Award', 'The Scroll Stopper Award', 'The Brand Beacon Award'];
 const AWARD_EMOJIS = ['🎯', '👀', '💡'];
 const AWARD_DISPLAY_LINES = [['The Beyond The', 'Benchmark Award'], ['The Scroll', 'Stopper Award'], ['The Brand', 'Beacon Award']];
+const AWARD_DESCRIPTIONS = ['Best Store Performance Relative to Monthly Goal', 'Funniest Post/Video', 'Best Brand Encapsulation Post/Video'];
 
 function toVideoEmbed(url) {
     if (!url) return null;
@@ -2198,13 +2199,14 @@ function renderAwards() {
         const [line1, line2] = AWARD_DISPLAY_LINES[i];
         return `
         <div class="award-card-trophy-wrap">
+            <button class="award-info-btn" data-desc="${escapeHtml(AWARD_DESCRIPTIONS[i])}">i</button>
             <div class="award-card">
                 <div class="award-card-header">
-                    <div class="award-card-medal">${AWARD_EMOJIS[i]}</div>
                     <div class="award-card-name">${escapeHtml(line1)}<br>${escapeHtml(line2)}</div>
                 </div>
+                <div class="award-card-sep"><span>◆</span></div>
                 <div class="award-card-body">
-                    <div class="award-card-winner">${store ? `${STORE_EMOJI_MAP[store] || ''} ${store}` : '<span style="color:#94a3b8;">—</span>'}</div>
+                    <div class="award-card-winner">${store ? escapeHtml(store) : '<span style="opacity:0.45;">—</span>'}</div>
                 </div>
             </div>
         </div>`;
