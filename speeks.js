@@ -2,6 +2,30 @@
    SPEEKSNET | UNIVERSAL APP JAVASCRIPT
    ========================================================= */
 
+(function () {
+  const img = new Image();
+  img.src = 'favicon.svg';
+  img.onload = function () {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    function applyFavicon() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 64;
+      canvas.height = 64;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, 64, 64);
+      ctx.globalCompositeOperation = 'source-in';
+      ctx.fillStyle = mq.matches ? '#FAFAFA' : '#0A0A0A';
+      ctx.fillRect(0, 0, 64, 64);
+      let link = document.querySelector('link[rel="icon"]');
+      if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
+      link.type = 'image/png';
+      link.href = canvas.toDataURL('image/png');
+    }
+    applyFavicon();
+    mq.addEventListener('change', applyFavicon);
+  };
+})();
+
 // --- 1. API URLS ---
 const CMS_URL = 'https://script.google.com/macros/s/AKfycbxZviJiiQKcQYyp3SK4tcNBHrHXkID7cmwwuONStVPE9DHCSAMappqAs9dBns7ufECI/exec';
 const HOTKEYS_URL = 'https://script.google.com/macros/s/AKfycbyLburcVWM8xAKwDt2RHAQhZBLb_rJjb2__EzhoAKx1KgkNFi-BchVetgaTKvwCwqZiRw/exec';
