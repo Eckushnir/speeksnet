@@ -2,6 +2,30 @@
    SPEEKSNET | UNIVERSAL APP JAVASCRIPT
    ========================================================= */
 
+(function () {
+  const img = new Image();
+  img.src = 'favicon.svg';
+  img.onload = function () {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    function applyFavicon() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 64;
+      canvas.height = 64;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, 64, 64);
+      ctx.globalCompositeOperation = 'source-in';
+      ctx.fillStyle = mq.matches ? '#FAFAFA' : '#0A0A0A';
+      ctx.fillRect(0, 0, 64, 64);
+      let link = document.querySelector('link[rel="icon"]');
+      if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
+      link.type = 'image/png';
+      link.href = canvas.toDataURL('image/png');
+    }
+    applyFavicon();
+    mq.addEventListener('change', applyFavicon);
+  };
+})();
+
 // --- 1. API URLS ---
 const CMS_URL = 'https://script.google.com/macros/s/AKfycbxZviJiiQKcQYyp3SK4tcNBHrHXkID7cmwwuONStVPE9DHCSAMappqAs9dBns7ufECI/exec';
 const HOTKEYS_URL = 'https://script.google.com/macros/s/AKfycbyLburcVWM8xAKwDt2RHAQhZBLb_rJjb2__EzhoAKx1KgkNFi-BchVetgaTKvwCwqZiRw/exec';
@@ -630,7 +654,7 @@ function addManageUserRow(user = { name: '', pin: '', store: 'LEE', role: 'Emplo
     row.className = 'user-manage-row';
 
     const stores = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL', 'CORP'];
-    const roles = ['CEO', 'District Manager', 'Manager', 'Employee', 'Training', 'TOM'];
+    const roles = ['CEO', 'District Manager', 'Owner (Manager)', 'Manager', 'Employee', 'Training', 'TOM'];
 
     const storeOptions = stores.map(s => `<option value="${s}" ${(user.store || '').toUpperCase() === s ? 'selected' : ''}>${s}</option>`).join('');
     const roleOptions = roles.map(r => `<option value="${r}" ${(user.role || '').toLowerCase() === r.toLowerCase() ? 'selected' : ''}>${r}</option>`).join('');
@@ -2598,9 +2622,8 @@ function handleSignOut() {
     sessionStorage.removeItem('speeksUserRole');
     sessionStorage.removeItem('speeksUserStore');
     
-    // Remove the comment tracker for today so it pops up again when testing
-    const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
-    sessionStorage.removeItem(`speeksCommentSeen_${todayStr}`);
+    // Remove the comment tracker so it pops up again on next login
+    sessionStorage.removeItem('speeksSeenCommentKeys');
     
     location.reload(); 
 }
@@ -2727,7 +2750,25 @@ async function fetchScorecardData() {
         if (displayScore > 8) scoreColor = 'var(--sage-professional)';
         else if (displayScore >= 6) scoreColor = 'var(--idea-gold)';
 
-        const pulse = displayScore < 6
+        const isRecent = (dateStr) => {
+            if (!dateStr) return false;
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return false;
+            return Date.now() - d.getTime() < 48 * 60 * 60 * 1000;
+        };
+
+        const recentBucketIndices = [];
+        if (storeData.buckets) {
+            storeData.buckets.forEach((b, i) => {
+                if (b.categories && b.categories.length > 0 && isRecent(b.sectionDate)) {
+                    recentBucketIndices.push(i);
+                }
+            });
+        }
+        const showOverallDot = recentBucketIndices.length > 1;
+        const singleRecentBucketIdx = recentBucketIndices.length === 1 ? recentBucketIndices[0] : -1;
+
+        const pulse = (displayScore < 6 || showOverallDot)
             ? `<div class="notif-dot active" style="display:block; position:absolute; top:-2px; right:-14px; width:12px; height:12px;"></div>`
             : '';
 
@@ -2751,7 +2792,7 @@ async function fetchScorecardData() {
         let breakdownHtml = '';
         if (storeData.buckets && storeData.buckets.some(b => b.categories && b.categories.length > 0)) {
             breakdownHtml = `<div style="max-height: 340px; overflow-y: auto; padding-right: 4px; margin-top: 15px; border-top: 1px solid #f0f0f0; padding-top: 15px;" class="kpi-scroll-area">`;
-            storeData.buckets.forEach(bucket => {
+            storeData.buckets.forEach((bucket, bIdx) => {
                 if (!bucket.categories || bucket.categories.length === 0) return;
                 let bAvgNum = bucket.avg * 2;
                 let bBg = '#f1f5f9', bColor = '#64748b';
@@ -2759,11 +2800,15 @@ async function fetchScorecardData() {
                 else if (bAvgNum >= 6) { bBg = '#fef3c7'; bColor = '#d97706'; }
                 else { bBg = '#fee2e2'; bColor = '#dc2626'; }
                 const bDateStr = bucket.sectionDate ? formatWeekOf(bucket.sectionDate) : '';
+                const sectionPulse = (!showOverallDot && bIdx === singleRecentBucketIdx)
+                    ? `<div class="notif-dot active" style="position:relative; top:auto; right:auto; width:9px; height:9px; border:1px solid white; flex-shrink:0;"></div>`
+                    : '';
                 breakdownHtml += `<div style="margin-bottom: 12px;">
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; min-width: 0;">
                         <span style="font-size: 9px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;">${bucket.name}</span>
                         <span style="font-size: 10px; font-weight: 900; background: ${bBg}; color: ${bColor}; padding: 2px 7px; border-radius: 6px; flex-shrink: 0;">${bAvgNum.toFixed(1)}</span>
                         ${bDateStr ? `<span style="font-size: 9px; color: #94a3b8; font-style: italic; white-space: nowrap; flex-shrink: 0;">${bDateStr}</span>` : ''}
+                        ${sectionPulse}
                     </div>
                     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
                         ${bucket.categories.map(renderCategoryCard).join('')}
@@ -3531,13 +3576,14 @@ function renderGoalsScoreboard(viewType = 'daily') {
             } else if (viewType === 'weekly' && isThisWeek) {
                 const rG = parseInt(record.goal) || 0;
                 const rR = parseInt(record.result) || 0;
-                empGoal += rG;
-                empResult += rR;
-                
-                const dayIdx = (recDate.getDay() + 6) % 7; 
-                dailyStats[daysOfWeek[dayIdx]] = { goal: rG, result: rR };
+                const dayKey = daysOfWeek[(recDate.getDay() + 6) % 7];
+                dailyStats[dayKey] = { goal: rG, result: rR }; // last row in sheet wins per day
             }
         });
+
+        if (viewType === 'weekly') {
+            Object.values(dailyStats).forEach(d => { empGoal += d.goal; empResult += d.result; });
+        }
 
         totalG += empGoal;
         totalR += empResult;
@@ -3934,16 +3980,20 @@ function renderCompactDmGoals() {
         let tGoal = 0, tResult = 0;
         let activeEmps = new Set();
 
+        const storeDedup = {};
         storeData.forEach(r => {
             const recDate = new Date(r.date);
             const isToday = r.date === todayStr;
             const isThisWeek = recDate >= startOfWeek;
 
             if ((currentDmGoalView === 'daily' && isToday) || (currentDmGoalView === 'weekly' && isThisWeek)) {
-                tGoal += parseInt(r.goal) || 0;
-                tResult += parseInt(r.result) || 0;
+                storeDedup[`${r.employee}|${r.date}`] = r; // last row in sheet wins per employee per day
                 activeEmps.add(r.employee);
             }
+        });
+        Object.values(storeDedup).forEach(r => {
+            tGoal += parseInt(r.goal) || 0;
+            tResult += parseInt(r.result) || 0;
         });
 
         const progress = tGoal > 0 ? Math.min(100, Math.round((tResult / tGoal) * 100)) : 0;
@@ -3976,21 +4026,24 @@ function renderCompactDmGoals() {
             let eG = 0, eR = 0;
             let dailyStats = {}; 
 
+            const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
             empRecords.forEach(r => {
                 const recDate = new Date(r.date);
                 if ((currentDmGoalView === 'daily' && r.date === todayStr) || (currentDmGoalView === 'weekly' && recDate >= startOfWeek)) {
                     const rG = parseInt(r.goal) || 0;
                     const rR = parseInt(r.result) || 0;
-                    eG += rG;
-                    eR += rR;
-                    
                     if (currentDmGoalView === 'weekly') {
-                        const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                        const dayIdx = (recDate.getDay() + 6) % 7; 
-                        dailyStats[daysOfWeek[dayIdx]] = { goal: rG, result: rR };
+                        const dayIdx = (recDate.getDay() + 6) % 7;
+                        dailyStats[daysOfWeek[dayIdx]] = { goal: rG, result: rR }; // last row wins per day
+                    } else {
+                        eG = rG; // daily: last record wins
+                        eR = rR;
                     }
                 }
             });
+            if (currentDmGoalView === 'weekly') {
+                Object.values(dailyStats).forEach(d => { eG += d.goal; eR += d.result; });
+            }
 
             const rClass = eG > 0 || eR > 0 ? (eR >= eG ? 'delta-pos' : 'delta-neg') : 'delta-neutral';
 
@@ -4429,7 +4482,7 @@ function applyRoleBasedUI() {
     const greetingEl = document.getElementById('userGreeting');
     if (greetingEl) greetingEl.innerText = `Welcome ${userName}!`;
 
-    const userRoleClass = `role-${userRole.toLowerCase().replace(/\s+/g, '-')}`; 
+    const userRoleClass = `role-${userRole.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '-')}`;
     const userStoreClass = `store-${userStore.toLowerCase()}`;
 
     document.querySelectorAll('.dynamic-module-flex, .dynamic-module-block, .dynamic-module').forEach(module => {
@@ -4565,6 +4618,7 @@ function initDashboardData() {
         
         // --- ADD THE COMMENT POPUP CHECK HERE TOO ---
         setTimeout(fetchAndDisplayStoreComment, 1500);
+        startStoreCommentPolling();
         // --------------------------------------------
 
         setTimeout(showChecklistToast, 3000);
@@ -6372,6 +6426,25 @@ function submitNewScorecard() {
 
 // --- STORE COMMENTS LOGIC ---
 
+// Per-comment fingerprint tracking so new comments always show even after closing a previous one
+function _getSeenCommentKeys() {
+    try { return new Set(JSON.parse(sessionStorage.getItem('speeksSeenCommentKeys') || '[]')); }
+    catch(e) { return new Set(); }
+}
+function _saveSeenCommentKeys(keys) {
+    sessionStorage.setItem('speeksSeenCommentKeys', JSON.stringify([...keys]));
+}
+function _commentKey(c) {
+    return `${String(c.store||'').trim()}|${String(c.date||'').trim()}|${String(c.author||'').trim()}|${String(c.message||'').trim()}`.slice(0, 120);
+}
+
+let _storeCommentPollingStarted = false;
+function startStoreCommentPolling() {
+    if (_storeCommentPollingStarted) return;
+    _storeCommentPollingStarted = true;
+    setInterval(fetchAndDisplayStoreComment, 30 * 1000);
+}
+
 // Opens the modal normally from the Speeks Tools menu (Fully Unlocked)
 function toggleSendCommentModal() {
     openCEOStoreComment(null); 
@@ -6449,10 +6522,8 @@ async function submitStoreComment() {
     }
 }
 
-// Helper to close the bubble and mark it as seen
+// Helper to close the bubble (comments already marked seen when bubble was shown)
 window.closeDailyCommentBubble = function() {
-    const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
-    sessionStorage.setItem(`speeksCommentSeen_${todayStr}`, 'true');
     const bubble = document.getElementById('dailyMessageBubble');
     if (bubble) bubble.style.display = 'none';
 };
@@ -6460,21 +6531,16 @@ window.closeDailyCommentBubble = function() {
 async function fetchAndDisplayStoreComment() {
     const userStore = String(sessionStorage.getItem('speeksUserStore') || 'OVL').trim().toUpperCase();
     const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
-    const sessionKey = `speeksCommentSeen_${todayStr}`;
-
-    if (sessionStorage.getItem(sessionKey)) {
-        return;
-    }
 
     try {
         const res = await fetch(`${STORE_COMMENT_URL}?v=${Date.now()}`);
         const comments = await res.json();
-        
+
         const todayComments = comments.filter(c => {
             const cStore = String(c.store || '').trim().toUpperCase();
             let rawDateStr = String(c.date || '').trim();
             let parsedDateStr = "";
-            
+
             try {
                 const parsed = new Date(c.date);
                 if (!isNaN(parsed.getTime())) {
@@ -6488,7 +6554,16 @@ async function fetchAndDisplayStoreComment() {
             return isToday && isForMe;
         }).reverse(); // Newest first
 
-        if (todayComments.length > 0) {
+        // Only show comments the user hasn't seen yet in this session
+        const seenKeys = _getSeenCommentKeys();
+        const newComments = todayComments.filter(c => !seenKeys.has(_commentKey(c)));
+        if (newComments.length === 0) return;
+
+        // Mark all today's comments seen now so repeat polls don't re-show the same ones
+        todayComments.forEach(c => seenKeys.add(_commentKey(c)));
+        _saveSeenCommentKeys(seenKeys);
+
+        if (newComments.length > 0) {
             const bubble = document.getElementById('dailyMessageBubble');
             const textEl = document.getElementById('dailyMessageBubbleText');
             const iconEl = document.getElementById('dailyMessageBubbleIcon');
@@ -6511,17 +6586,22 @@ async function fetchAndDisplayStoreComment() {
                 const closeBtn = bubble.querySelector('button');
                 if (closeBtn) closeBtn.style.marginTop = '4px';
 
-                // Build the HTML for ALL messages today
+                // Build the HTML for new (unseen) messages only
                 let messagesHtml = '';
-                todayComments.forEach(msg => {
+                newComments.forEach(msg => {
                     const authorName = msg.author || 'Executive Team';
-                    
                     const emoji = '📣';
-                    
+
+                    const cStore = String(msg.store || '').trim().toUpperCase();
+                    const isAllStores = (cStore === 'ALL' || cStore === 'CORP');
+                    const scopeBadge = isAllStores
+                        ? `<span style="display:inline-block;font-size:10px;font-weight:600;background:rgba(255,255,255,0.12);color:#fde68a;border:1px solid rgba(253,230,138,0.35);border-radius:4px;padding:1px 5px;margin-left:5px;vertical-align:middle;letter-spacing:0.3px;">Company</span>`
+                        : `<span style="display:inline-block;font-size:10px;font-weight:600;background:rgba(255,255,255,0.08);color:#a7f3d0;border:1px solid rgba(167,243,208,0.3);border-radius:4px;padding:1px 5px;margin-left:5px;vertical-align:middle;letter-spacing:0.3px;">${cStore}</span>`;
+
                     messagesHtml += `
                         <div style="display: flex; align-items: flex-start; gap: 8px; line-height: 1.4;">
                             <span style="font-size: 15px; flex-shrink: 0; margin-top: -2px;">${emoji}</span>
-                            <span><strong style="color: #fef3c7;">${authorName}:</strong> <span style="opacity: 0.95;">${msg.message}</span></span>
+                            <span><strong style="color: #fef3c7;">${authorName}:</strong>${scopeBadge} <span style="opacity: 0.95;">${msg.message}</span></span>
                         </div>
                     `;
                 });
