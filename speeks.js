@@ -3957,16 +3957,20 @@ function renderCompactDmGoals() {
         let tGoal = 0, tResult = 0;
         let activeEmps = new Set();
 
+        const storeDedup = {};
         storeData.forEach(r => {
             const recDate = new Date(r.date);
             const isToday = r.date === todayStr;
             const isThisWeek = recDate >= startOfWeek;
 
             if ((currentDmGoalView === 'daily' && isToday) || (currentDmGoalView === 'weekly' && isThisWeek)) {
-                tGoal += parseInt(r.goal) || 0;
-                tResult += parseInt(r.result) || 0;
+                storeDedup[`${r.employee}|${r.date}`] = r; // last row in sheet wins per employee per day
                 activeEmps.add(r.employee);
             }
+        });
+        Object.values(storeDedup).forEach(r => {
+            tGoal += parseInt(r.goal) || 0;
+            tResult += parseInt(r.result) || 0;
         });
 
         const progress = tGoal > 0 ? Math.min(100, Math.round((tResult / tGoal) * 100)) : 0;
@@ -3999,21 +4003,24 @@ function renderCompactDmGoals() {
             let eG = 0, eR = 0;
             let dailyStats = {}; 
 
+            const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
             empRecords.forEach(r => {
                 const recDate = new Date(r.date);
                 if ((currentDmGoalView === 'daily' && r.date === todayStr) || (currentDmGoalView === 'weekly' && recDate >= startOfWeek)) {
                     const rG = parseInt(r.goal) || 0;
                     const rR = parseInt(r.result) || 0;
-                    eG += rG;
-                    eR += rR;
-                    
                     if (currentDmGoalView === 'weekly') {
-                        const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                        const dayIdx = (recDate.getDay() + 6) % 7; 
-                        dailyStats[daysOfWeek[dayIdx]] = { goal: rG, result: rR };
+                        const dayIdx = (recDate.getDay() + 6) % 7;
+                        dailyStats[daysOfWeek[dayIdx]] = { goal: rG, result: rR }; // last row wins per day
+                    } else {
+                        eG = rG; // daily: last record wins
+                        eR = rR;
                     }
                 }
             });
+            if (currentDmGoalView === 'weekly') {
+                Object.values(dailyStats).forEach(d => { eG += d.goal; eR += d.result; });
+            }
 
             const rClass = eG > 0 || eR > 0 ? (eR >= eG ? 'delta-pos' : 'delta-neg') : 'delta-neutral';
 
