@@ -661,15 +661,64 @@ html {
     background: white; 
 }
 
-.manage-footer button { 
-    padding: 10px 20px; 
-    border-radius: 8px; 
-    font-weight: 600; 
-    font-size: 14px; 
-    cursor: pointer; 
-    border: none; 
+.manage-footer button {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
     transition: 0.2s;
 }
+
+.ticker-manage-row { grid-template-columns: auto 1fr 40px; }
+
+.t-icon-wrap { position: relative; flex-shrink: 0; }
+
+.t-icon-btn {
+    width: 52px;
+    height: 38px;
+    font-size: 20px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    background: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+}
+.t-icon-btn:hover { border-color: var(--sage-professional); box-shadow: 0 0 0 3px rgba(90,141,59,0.1); }
+
+.emoji-picker-panel {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    padding: 10px;
+    z-index: 500;
+    width: 236px;
+    display: none;
+}
+.emoji-picker-panel.show { display: block; }
+
+.emoji-picker-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+
+.emoji-option {
+    font-size: 18px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.1s;
+    user-select: none;
+}
+.emoji-option:hover { background: #f3f4f6; }
 
 /* =========================================================
    OVERLAYS, MODALS & NOTIFICATIONS
