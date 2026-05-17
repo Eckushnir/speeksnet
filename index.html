@@ -83,21 +83,22 @@
 </header>
 
 <div id="infoTicker" class="info-ticker">
-  <div class="ticker-track" id="tickerTrack"></div>
-</div>
-
-<div class="nav-panel-tabs">
+  <div class="ticker-scroll-area">
+    <div class="ticker-track" id="tickerTrack"></div>
+  </div>
+  <div class="ticker-panel-buttons">
     <button class="gi-nav-toggle dynamic-module-flex role-manager role-owner-manager role-employee role-training" onclick="toggleGoalsPanel()" title="Goals &amp; Initiatives">
-        <span style="font-size: 14px; line-height: 1;">🎯</span>
+        <span style="font-size: 13px; line-height: 1;">🎯</span>
         <span>Goals &amp; Initiatives</span>
         <svg class="gi-toggle-chevron" xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
     </button>
     <button class="cl-nav-toggle dynamic-module-flex role-manager role-owner-manager role-district-manager" onclick="toggleChecklistPanel(event); loadChecklist();" title="Checklist">
-        <span style="font-size: 14px; line-height: 1;">📋</span>
+        <span style="font-size: 13px; line-height: 1;">📋</span>
         <span>Checklist</span>
         <span id="cl-progress-chip" class="cl-progress-chip"></span>
         <svg class="cl-toggle-chevron" xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
     </button>
+  </div>
 </div>
 
 <!-- ===== FIRST-LOGIN TUTORIAL ===== -->
@@ -1160,11 +1161,6 @@
     </div>
 </div>
 
-<div id="checklistToast" class="cl-toast">
-    <span class="cl-toast-icon">📋</span>
-    <span class="cl-toast-msg">Don't forget your daily checklist!</span>
-    <button class="cl-toast-close" onclick="dismissChecklistToast()">✖</button>
-</div>
 
 </body>
 </html>

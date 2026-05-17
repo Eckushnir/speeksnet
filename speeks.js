@@ -601,31 +601,66 @@ function startReactionPolling() {
 }
 
 // --- 4B. MODULE: INFO TICKER ---
-const _TICKER_PPS = 40; // pixels per second — constant speed used for both intro and loop
 const _TICKER_DEFAULTS = [
     { icon: '⭐', text: 'Ask every customer for a Google Review — every one counts', _type: 'static' },
     { icon: '📋', text: 'Use the Margin Guide for every offer', _type: 'static' },
     { icon: '📦', text: 'Listing efficiency is key — process fast, list faster', _type: 'static' },
     { icon: '💬', text: 'Use PayMore and SPEEKS Discord for buying & listing help', _type: 'static' },
 ];
-let _tickerItems = [];
-let _tickerReady = false;
-let _tickerShown = false;
-let _tickerIntroActive = false;
-let _tickerFetchDone = false;
-let _tickerRebuildTimeout = null;
+const _TICKER_FADE_MS   = 500;
+const _TICKER_HOLD_MS   = 5000;
+
+let _tickerItems        = [];
+let _tickerReady        = false;
+let _tickerCycleIndex   = 0;
+let _tickerCycleTimeout = null;
+let _tickerCycling      = false; // true once the cycle loop is running
 
 function _syncLayout() {
     const nav = document.querySelector('.top-nav');
     const ticker = document.getElementById('infoTicker');
-    const tabs = document.querySelector('.nav-panel-tabs');
     if (!nav) return;
     const navH = Math.round(nav.getBoundingClientRect().height);
     const tickerH = document.body.classList.contains('is-authenticated') ? 32 : 0;
     const totalTop = navH + tickerH;
     if (ticker) ticker.style.top = navH + 'px';
-    if (tabs) tabs.style.top = totalTop + 'px';
     document.documentElement.style.setProperty('--panel-top', totalTop + 'px');
+}
+
+function _tickerFadeIn(track) {
+    track.style.transition = 'none';
+    track.style.opacity = '0';
+    void track.offsetHeight;
+    track.style.transition = `opacity ${_TICKER_FADE_MS}ms ease`;
+    track.style.opacity = '1';
+}
+
+function _tickerFadeOut(track, cb) {
+    track.style.transition = `opacity ${_TICKER_FADE_MS}ms ease`;
+    track.style.opacity = '0';
+    _tickerCycleTimeout = setTimeout(cb, _TICKER_FADE_MS);
+}
+
+function _tickerStep() {
+    const track = document.getElementById('tickerTrack');
+    if (!track) return;
+    const items = _tickerItems.length > 0 ? _tickerItems : _TICKER_DEFAULTS;
+    const item  = items[_tickerCycleIndex % items.length];
+    track.innerHTML = `<span class="ticker-item"><span class="t-icon">${item.icon}</span>${escapeHtml(item.text)}</span>`;
+    _tickerFadeIn(track);
+    _tickerCycleTimeout = setTimeout(() => {
+        _tickerFadeOut(track, () => {
+            _tickerCycleIndex = (_tickerCycleIndex + 1) % items.length;
+            _tickerStep();
+        });
+    }, _TICKER_HOLD_MS);
+}
+
+function _startTickerCycle() {
+    if (_tickerCycling) return; // already running — new items picked up naturally at next step
+    _tickerCycling = true;
+    _tickerCycleIndex = 0;
+    _tickerStep();
 }
 
 function initTicker() {
@@ -635,83 +670,33 @@ function initTicker() {
     _tickerReady = true;
     requestAnimationFrame(_syncLayout);
     const nav = document.querySelector('.top-nav');
-    if (nav && window.ResizeObserver) {
-        new ResizeObserver(_syncLayout).observe(nav);
-    }
+    if (nav && window.ResizeObserver) new ResizeObserver(_syncLayout).observe(nav);
     window.addEventListener('resize', _syncLayout);
-    loadTickerItems();
-}
 
-function _rebuildTicker() {
-    if (_tickerIntroActive) return; // silently accumulate data, intro handles the final apply
-    if (_tickerRebuildTimeout) clearTimeout(_tickerRebuildTimeout);
-    _tickerRebuildTimeout = setTimeout(() => {
-        _tickerRebuildTimeout = null;
-        if (!_tickerShown) {
-            if (!_tickerFetchDone) return; // AppScript fetch not resolved yet — wait
-            _showTickerFirstTime();
-        } else {
-            const track = document.getElementById('tickerTrack');
-            if (!track) return;
-            track.style.transition = 'opacity 0.15s ease';
-            track.style.opacity = '0';
-            setTimeout(() => {
-                _applyTickerContent();
-                track.style.opacity = '1';
-            }, 150);
-        }
-    }, _tickerShown ? 250 : 800);
-}
+    loadTickerItems(); // fetch in background; _rebuildTicker will start cycle when done
 
-function _showTickerFirstTime() {
-    _tickerShown = true;
-    _tickerIntroActive = true;
-    const track = document.getElementById('tickerTrack');
-    if (!track) { _tickerIntroActive = false; return; }
-    if (_tickerItems.length === 0) _tickerItems = [..._TICKER_DEFAULTS];
-    const sep = '<span class="ticker-sep">◆</span>';
-    const html = _tickerItems.map(item =>
-        `<span class="ticker-item"><span class="t-icon">${item.icon}</span>${escapeHtml(item.text)}</span>${sep}`
-    ).join('');
-    track.innerHTML = html + html;
-    track.style.animation = 'none';
-    void track.offsetHeight;
-    const introDurationMs = Math.round(window.innerWidth / _TICKER_PPS * 1000);
-    const introSnapshot = JSON.stringify(_tickerItems);
-    track.style.animation = `ticker-intro ${introDurationMs}ms linear forwards`;
-    track.addEventListener('animationend', () => {
-        _tickerIntroActive = false;
-        if (JSON.stringify(_tickerItems) !== introSnapshot) {
-            // Data changed during intro — fade and rebuild once
-            track.style.transition = 'opacity 0.25s ease';
-            track.style.opacity = '0';
-            setTimeout(() => {
-                track.style.transition = '';
-                _applyTickerContent();
-                track.style.opacity = '1';
-            }, 250);
-        } else {
-            // Nothing changed — switch seamlessly to the loop at the same fixed speed
-            track.style.animation = 'none';
-            void track.offsetHeight;
-            const cw = track.scrollWidth / 2;
-            track.style.animation = `ticker-scroll ${(cw / _TICKER_PPS).toFixed(1)}s linear infinite`;
-        }
-    }, { once: true });
-}
-
-function _applyTickerContent() {
     const track = document.getElementById('tickerTrack');
     if (!track) return;
-    const sep = '<span class="ticker-sep">◆</span>';
-    const html = _tickerItems.map(item =>
-        `<span class="ticker-item"><span class="t-icon">${item.icon}</span>${escapeHtml(item.text)}</span>${sep}`
-    ).join('');
-    track.innerHTML = html + html;
-    track.style.animation = 'none';
-    void track.offsetHeight;
-    const cw = track.scrollWidth / 2;
-    track.style.animation = `ticker-scroll ${(cw / _TICKER_PPS).toFixed(1)}s linear infinite`;
+
+    // Welcome shown only once per session (not on every page navigation)
+    if (sessionStorage.getItem('_tickerWelcomeShown')) {
+        _startTickerCycle();
+        return;
+    }
+    sessionStorage.setItem('_tickerWelcomeShown', '1');
+
+    const firstName = (sessionStorage.getItem('speeksUserName') || '').trim().split(' ')[0] || 'there';
+    track.innerHTML = `<span class="ticker-item"><span class="t-icon">👋</span>${escapeHtml('Hello ' + firstName + '! Welcome to SPEEKSNET!')}</span>`;
+    _tickerFadeIn(track);
+    _tickerCycleTimeout = setTimeout(() => {
+        _tickerFadeOut(track, _startTickerCycle);
+    }, _TICKER_HOLD_MS);
+}
+
+// Called by loadTickerItems and feed functions when data arrives.
+// Never restarts a running cycle — new items are picked up at the next natural step.
+function _rebuildTicker() {
+    _startTickerCycle();
 }
 
 function feedAnnouncementsToTicker(announcements) {
@@ -787,8 +772,7 @@ async function loadTickerItems() {
         }
     } catch (e) { console.warn('[Ticker] AppScript fetch failed — check deployment access settings:', e); }
     clearTimeout(tid);
-    _tickerFetchDone = true;
-    _rebuildTicker(); // now safe — AppScript content is in _tickerItems
+    _rebuildTicker();
 }
 
 const TICKER_EMOJIS = [
@@ -2918,6 +2902,7 @@ function handleSignOut() {
     
     // Remove the comment tracker so it pops up again on next login
     sessionStorage.removeItem('speeksSeenCommentKeys');
+    sessionStorage.removeItem('_tickerWelcomeShown');
     
     location.reload(); 
 }
@@ -4808,9 +4793,6 @@ function applyRoleBasedUI() {
         });
     }
 
-    const giToggle = document.querySelector('.gi-nav-toggle');
-    const giHidden = giToggle?.style.getPropertyValue('display') === 'none';
-    document.querySelector('.nav-panel-tabs')?.classList.toggle('gi-tab-hidden', giHidden);
 }
 
 function checkInstantNotifCache() {
@@ -4915,7 +4897,6 @@ function initDashboardData() {
         startStoreCommentPolling();
         // --------------------------------------------
 
-        setTimeout(showChecklistToast, 3000);
 
         // Pre-load checklist in background so chip + glow appear without opening the panel
         const _clRole = (sessionStorage.getItem('speeksUserRole') || '').toLowerCase();
@@ -7281,26 +7262,6 @@ function updateChecklistChip() {
     btn.classList.toggle('cl-needs-attention', done < total && !isOpen);
 }
 
-function showChecklistToast() {
-    const role = (sessionStorage.getItem('speeksUserRole') || '').toLowerCase();
-    if (role !== 'manager' && role !== 'district manager') return;
-
-    const user = (sessionStorage.getItem('speeksUserName') || '').trim().toLowerCase();
-    if (!user) return;
-    const key = `speeksChecklistToastDate_${user}`;
-    const today = new Date().toLocaleDateString('en-CA');
-    if (localStorage.getItem(key) === today) return;
-
-    localStorage.setItem(key, today);
-    const toast = document.getElementById('checklistToast');
-    if (!toast) return;
-    toast.classList.add('show');
-}
-
-function dismissChecklistToast() {
-    const toast = document.getElementById('checklistToast');
-    if (toast) toast.classList.remove('show');
-}
 
 // --- BULLETPROOF TOGGLE & CLICK-AWAY LOGIC ---
 window.toggleChecklistPanel = function(event) {
