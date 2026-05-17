@@ -91,6 +91,9 @@ const TICKER_URL = 'https://script.google.com/macros/s/AKfycbyfvqCn2Vwwp1xGzKiXM
         }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
         checkNavCompact(); // no-op if not yet auth'd, harmless
+
+        // Pre-fetch ticker data during login screen so it's ready the moment the user logs in.
+        loadTickerItems();
     });
 })();
 
@@ -130,7 +133,7 @@ function formatSmartValue(val, name) {
     return new Intl.NumberFormat('en-US').format(num);
 }
 
-// --- 3. GLOBAL UI, MODALS & TABS ---
+// --- 4. GLOBAL UI, MODALS & TABS ---
 let savedScrollPosition = 0;
 
 function toggleSidebar() {
@@ -335,7 +338,7 @@ async function loadCMS() {
 
                 recentHtml = recentCount === 0 ? '<div style="padding: 20px; color:#999; text-align:center;">No recent announcements</div>' : recentHtml;
                 archiveHtml = archiveCount === 0 ? '<div style="padding: 20px; color:#999; text-align:center;">No archived announcements</div>' : archiveHtml;
-                feedAnnouncementsToTicker(sortedAnns.filter((_, i) => i < 2));
+                feedAnnouncementsToTicker(sortedAnns.slice(0, 2));
             } else {
                 recentHtml = archiveHtml = '<div style="padding: 20px; color:#999; text-align:center;">No announcements</div>';
             }
@@ -601,30 +604,28 @@ function startReactionPolling() {
 }
 
 // --- 4B. MODULE: INFO TICKER ---
-const _TICKER_PPS = 40; // pixels per second — constant speed used for both intro and loop
+const _TICKER_PPS = 40;
 const _TICKER_DEFAULTS = [
     { icon: '⭐', text: 'Ask every customer for a Google Review — every one counts', _type: 'static' },
     { icon: '📋', text: 'Use the Margin Guide for every offer', _type: 'static' },
     { icon: '📦', text: 'Listing efficiency is key — process fast, list faster', _type: 'static' },
     { icon: '💬', text: 'Use PayMore and SPEEKS Discord for buying & listing help', _type: 'static' },
 ];
-let _tickerItems = [];
-let _tickerReady = false;
-let _tickerShown = false;
-let _tickerIntroActive = false;
-let _tickerFetchDone = false;
+
+let _tickerItems          = [];
+let _tickerReady          = false;
+let _tickerShown          = false;
+let _tickerFetchDone      = false;
 let _tickerRebuildTimeout = null;
 
 function _syncLayout() {
     const nav = document.querySelector('.top-nav');
     const ticker = document.getElementById('infoTicker');
-    const tabs = document.querySelector('.nav-panel-tabs');
     if (!nav) return;
     const navH = Math.round(nav.getBoundingClientRect().height);
     const tickerH = document.body.classList.contains('is-authenticated') ? 32 : 0;
     const totalTop = navH + tickerH;
     if (ticker) ticker.style.top = navH + 'px';
-    if (tabs) tabs.style.top = totalTop + 'px';
     document.documentElement.style.setProperty('--panel-top', totalTop + 'px');
 }
 
@@ -635,75 +636,35 @@ function initTicker() {
     _tickerReady = true;
     requestAnimationFrame(_syncLayout);
     const nav = document.querySelector('.top-nav');
-    if (nav && window.ResizeObserver) {
-        new ResizeObserver(_syncLayout).observe(nav);
-    }
+    if (nav && window.ResizeObserver) new ResizeObserver(_syncLayout).observe(nav);
     window.addEventListener('resize', _syncLayout);
-    loadTickerItems();
+    // Data may already be fetched (pre-loaded at page load); trigger display now.
+    _rebuildTicker();
 }
 
 function _rebuildTicker() {
-    if (_tickerIntroActive) return; // silently accumulate data, intro handles the final apply
+    // Don't attempt to render before the user is authenticated and the ticker DOM is live.
+    if (!_tickerReady) return;
+    // Once scrolling, never restart — feed updates land in _tickerItems for the next page load.
+    if (_tickerShown) return;
     if (_tickerRebuildTimeout) clearTimeout(_tickerRebuildTimeout);
     _tickerRebuildTimeout = setTimeout(() => {
         _tickerRebuildTimeout = null;
-        if (!_tickerShown) {
-            if (!_tickerFetchDone) return; // AppScript fetch not resolved yet — wait
-            _showTickerFirstTime();
-        } else {
-            const track = document.getElementById('tickerTrack');
-            if (!track) return;
-            track.style.transition = 'opacity 0.15s ease';
-            track.style.opacity = '0';
-            setTimeout(() => {
-                _applyTickerContent();
-                track.style.opacity = '1';
-            }, 150);
-        }
-    }, _tickerShown ? 250 : 800);
+        if (!_tickerFetchDone) return;
+        _showTickerFirstTime();
+    }, 800);
 }
 
 function _showTickerFirstTime() {
     _tickerShown = true;
-    _tickerIntroActive = true;
-    const track = document.getElementById('tickerTrack');
-    if (!track) { _tickerIntroActive = false; return; }
     if (_tickerItems.length === 0) _tickerItems = [..._TICKER_DEFAULTS];
-    const sep = '<span class="ticker-sep">◆</span>';
-    const html = _tickerItems.map(item =>
-        `<span class="ticker-item"><span class="t-icon">${item.icon}</span>${escapeHtml(item.text)}</span>${sep}`
-    ).join('');
-    track.innerHTML = html + html;
-    track.style.animation = 'none';
-    void track.offsetHeight;
-    const introDurationMs = Math.round(window.innerWidth / _TICKER_PPS * 1000);
-    const introSnapshot = JSON.stringify(_tickerItems);
-    track.style.animation = `ticker-intro ${introDurationMs}ms linear forwards`;
-    track.addEventListener('animationend', () => {
-        _tickerIntroActive = false;
-        if (JSON.stringify(_tickerItems) !== introSnapshot) {
-            // Data changed during intro — fade and rebuild once
-            track.style.transition = 'opacity 0.25s ease';
-            track.style.opacity = '0';
-            setTimeout(() => {
-                track.style.transition = '';
-                _applyTickerContent();
-                track.style.opacity = '1';
-            }, 250);
-        } else {
-            // Nothing changed — switch seamlessly to the loop at the same fixed speed
-            track.style.animation = 'none';
-            void track.offsetHeight;
-            const cw = track.scrollWidth / 2;
-            track.style.animation = `ticker-scroll ${(cw / _TICKER_PPS).toFixed(1)}s linear infinite`;
-        }
-    }, { once: true });
+    _applyTickerContent();
 }
 
 function _applyTickerContent() {
     const track = document.getElementById('tickerTrack');
     if (!track) return;
-    const sep = '<span class="ticker-sep">◆</span>';
+    const sep  = '<span class="ticker-sep">◆</span>';
     const html = _tickerItems.map(item =>
         `<span class="ticker-item"><span class="t-icon">${item.icon}</span>${escapeHtml(item.text)}</span>${sep}`
     ).join('');
@@ -788,7 +749,7 @@ async function loadTickerItems() {
     } catch (e) { console.warn('[Ticker] AppScript fetch failed — check deployment access settings:', e); }
     clearTimeout(tid);
     _tickerFetchDone = true;
-    _rebuildTicker(); // now safe — AppScript content is in _tickerItems
+    _rebuildTicker();
 }
 
 const TICKER_EMOJIS = [
@@ -948,7 +909,7 @@ function addManageUserRow(user = { name: '', pin: '', store: 'LEE', role: 'Emplo
     row.className = 'user-manage-row';
 
     const stores = ['OVL', 'LEE', 'WSP', 'MPL', 'BAL', 'CORP'];
-    const roles = ['CEO', 'District Manager', 'Owner (Manager)', 'Manager', 'Employee', 'Training', 'TOM'];
+    const roles = ['CEO', 'District Manager', 'Owner (Manager)', 'Manager', 'Assistant Manager', 'Employee', 'Training', 'TOM'];
 
     const storeOptions = stores.map(s => `<option value="${s}" ${(user.store || '').toUpperCase() === s ? 'selected' : ''}>${s}</option>`).join('');
     const roleOptions = roles.map(r => `<option value="${r}" ${(user.role || '').toLowerCase() === r.toLowerCase() ? 'selected' : ''}>${r}</option>`).join('');
@@ -1573,7 +1534,9 @@ function renderKPIDashboard() {
 }
 
 // --- 10. MODULE: LIVE VARIANCE REPORTS ---
-function formatVariancePct(num) { 
+let _varianceSyncListener = null;
+let _weeklyGridResizeListener = null;
+function formatVariancePct(num) {
     return Math.abs(num) < 0.001 ? '0.00%' : `${num < 0 ? '-' : '+'}${Math.abs(num).toFixed(2)}%`; 
 }
 
@@ -1670,8 +1633,10 @@ function renderVariance() {
             };
             
             syncHeights();
-            
+
             // If the user resizes their window, re-sync the heights!
+            if (_varianceSyncListener) window.removeEventListener('resize', _varianceSyncListener);
+            _varianceSyncListener = syncHeights;
             window.addEventListener('resize', syncHeights);
         }
     }, 50); // 50ms delay gives the browser time to paint the HTML before we measure it
@@ -1834,6 +1799,8 @@ async function fetchWeeklyKPIs() {
             else nV.style.gridTemplateColumns = '1fr';
         };
         applyGridColumns();
+        if (_weeklyGridResizeListener) window.removeEventListener('resize', _weeklyGridResizeListener);
+        _weeklyGridResizeListener = applyGridColumns;
         window.addEventListener('resize', applyGridColumns);
 
         // HTML Column Builder Helper
@@ -4784,7 +4751,9 @@ function applyRoleBasedUI() {
         const requiredRoles = classes.filter(c => c.startsWith('role-'));
         const requiredStores = classes.filter(c => c.startsWith('store-'));
 
-        const passesRole = requiredRoles.length === 0 || requiredRoles.includes(userRoleClass);
+        const passesRole = requiredRoles.length === 0 ||
+            requiredRoles.includes(userRoleClass) ||
+            (userRoleClass === 'role-assistant-manager' && requiredRoles.includes('role-employee'));
         const passesStore = requiredStores.length === 0 || requiredStores.includes(userStoreClass);
 
         if (passesRole && passesStore) {
@@ -4795,7 +4764,7 @@ function applyRoleBasedUI() {
         }
     });
 
-    if (userRole === 'employee') {
+    if (userRole === 'employee' || userRole === 'assistant manager') {
         document.querySelectorAll('.manager-only').forEach(el => el.style.setProperty('display', 'none', 'important'));
     }
 
@@ -4808,9 +4777,6 @@ function applyRoleBasedUI() {
         });
     }
 
-    const giToggle = document.querySelector('.gi-nav-toggle');
-    const giHidden = giToggle?.style.getPropertyValue('display') === 'none';
-    document.querySelector('.nav-panel-tabs')?.classList.toggle('gi-tab-hidden', giHidden);
 }
 
 function checkInstantNotifCache() {
@@ -4896,26 +4862,20 @@ function initDashboardData() {
         setTimeout(fetchVarianceData, 300); 
         setTimeout(fetchWeeklyKPIs, 500); 
         
-        // --- ADD THESE MISSING DASHBOARD WIDGETS ---
         setTimeout(fetchScorecardData, 600);
         setTimeout(fetchAlertsData, 650);
         setTimeout(fetchMasterDistrictDashboard, 680);
-        // -------------------------------------------
-
-        setTimeout(fetchKPIData, 700); 
+        setTimeout(fetchKPIData, 700);
+        setTimeout(fetchDistrictMonthlyKPIs, 750);
         setTimeout(fetchRecordsData, 800);
-        setTimeout(fetchAwardsData, 900);
         setTimeout(fetchChampions, 850);
+        setTimeout(fetchAwardsData, 900);
         setTimeout(fetchDmGoalsData, 1000);
         setTimeout(fetchAndRenderEmployeeGoals, 1100);
         setTimeout(fetchAndRenderEmployeeKPIs, 1200);
-        
-        // --- ADD THE COMMENT POPUP CHECK HERE TOO ---
         setTimeout(fetchAndDisplayStoreComment, 1500);
         startStoreCommentPolling();
-        // --------------------------------------------
 
-        setTimeout(showChecklistToast, 3000);
 
         // Pre-load checklist in background so chip + glow appear without opening the panel
         const _clRole = (sessionStorage.getItem('speeksUserRole') || '').toLowerCase();
@@ -4975,6 +4935,7 @@ document.addEventListener("DOMContentLoaded", () => {
         applyRoleBasedUI();
         initDashboardData();
         initTicker();
+        if (document.getElementById('mainKpiChart')) syncAllData();
     } else {
         if (!window.location.href.includes('index.html') && document.getElementById('authOverlay')) {
             window.location.href = "index.html"; 
@@ -4996,12 +4957,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
     
-    if (document.getElementById('mainKpiChart') && typeof syncAllData === 'function') syncAllData();
-
-    if (typeof fetchScorecardData === 'function') fetchScorecardData();
-    if (typeof fetchAlertsData === 'function') fetchAlertsData();
-    if (typeof fetchMasterDistrictDashboard === 'function') fetchMasterDistrictDashboard();
-    if (typeof fetchDistrictMonthlyKPIs === 'function') fetchDistrictMonthlyKPIs();
 });
 
 // ============================================================================
@@ -5139,10 +5094,6 @@ document.addEventListener('click', async (e) => {
                 setTimeout(() => {
                     if (typeof initDashboardData === 'function') initDashboardData();
                     if (document.getElementById('mainKpiChart') && typeof syncAllData === 'function') syncAllData();
-                    if (typeof fetchScorecardData === 'function') fetchScorecardData();
-                    if (typeof fetchAlertsData === 'function') fetchAlertsData();
-                    if (typeof fetchMasterDistrictDashboard === 'function') fetchMasterDistrictDashboard();
-                    if (typeof fetchDistrictMonthlyKPIs === 'function') fetchDistrictMonthlyKPIs();
                     if (document.getElementById('pane-records') && typeof fetchRecordsData === 'function') fetchRecordsData();
                     if (document.getElementById('listing-champions-body') && typeof fetchChampions === 'function') fetchChampions();
                 }, 100);
@@ -5891,6 +5842,10 @@ window.toggleGoalsPanel = function(event) {
     const toggle = document.querySelector('.gi-nav-toggle');
     if (toggle) toggle.classList.toggle('panel-active', isOpen);
     if (!isOpen) _closePrevMonths();
+    if (isOpen) {
+        document.getElementById('checklistSidePanel')?.classList.remove('open');
+        document.querySelector('.cl-nav-toggle')?.classList.remove('panel-active');
+    }
 };
 
 // --- Edit Modal ---
@@ -7097,6 +7052,30 @@ async function fetchChampions() {
 let currentChecklistTab = 'daily';
 let checklistDataCache = { daily: [], weekly: [], monthly: [], quarterly: [] };
 
+// For assistant managers, returns the store's primary manager name so both share the same checklist data.
+// All other roles return their own name, preserving existing behavior.
+function getChecklistUser() {
+    const role = sessionStorage.getItem('speeksUserRole') || '';
+    const store = sessionStorage.getItem('speeksUserStore') || 'OVL';
+    const userName = sessionStorage.getItem('speeksUserName') || 'Unknown';
+
+    if (role !== 'assistant manager') return userName;
+
+    try {
+        const authCache = JSON.parse(localStorage.getItem('speeksAuthCache')) || {};
+        const users = authCache.users || [];
+        for (const targetRole of ['owner (manager)', 'manager']) {
+            const mgr = users.find(u =>
+                u.store && u.store.toUpperCase() === store &&
+                u.role && u.role.toLowerCase() === targetRole
+            );
+            if (mgr) return mgr.name;
+        }
+    } catch (e) {}
+
+    return userName;
+}
+
 function switchChecklistTab(tab) {
     currentChecklistTab = tab;
     document.getElementById('cl-tab-daily').classList.toggle('active', tab === 'daily');
@@ -7112,17 +7091,26 @@ function switchChecklistTab(tab) {
 
 async function loadChecklist() {
     const container = document.getElementById('checklistContent');
-    const userName = sessionStorage.getItem('speeksUserName') || 'Unknown';
+    const userName = getChecklistUser();
     const store = sessionStorage.getItem('speeksUserStore') || 'OVL';
 
-    // NEW LOGIC: Only show the Quarterly tab if the user is CORP
+    const role = sessionStorage.getItem('speeksUserRole') || '';
+    const isAssistantManager = role === 'assistant manager';
+
+    // Assistant managers only see Daily
+    const weeklyTab = document.getElementById('cl-tab-weekly');
+    const monthlyTab = document.getElementById('cl-tab-monthly');
+    if (weeklyTab) weeklyTab.style.display = isAssistantManager ? 'none' : '';
+    if (monthlyTab) monthlyTab.style.display = isAssistantManager ? 'none' : '';
+    if (isAssistantManager && currentChecklistTab !== 'daily') switchChecklistTab('daily');
+
+    // Only show Quarterly tab for CORP/ALL stores
     const qTab = document.getElementById('cl-tab-quarterly');
     if (qTab) {
-        if (store === 'CORP' || store === 'ALL') {
+        if (!isAssistantManager && (store === 'CORP' || store === 'ALL')) {
             qTab.style.display = 'inline-flex';
         } else {
             qTab.style.display = 'none';
-            // Failsafe: if a retail manager somehow gets stuck on Quarterly, move them to Daily
             if (currentChecklistTab === 'quarterly') switchChecklistTab('daily');
         }
     }
@@ -7172,8 +7160,8 @@ function renderChecklist() {
 
 // --- API ACTIONS (POST to Apps Script) ---
 async function toggleChecklistState(id, isChecked) {
-    const userName = sessionStorage.getItem('speeksUserName');
-    const store = sessionStorage.getItem('speeksUserStore') || 'OVL'; // <--- Added this
+    const userName = getChecklistUser();
+    const store = sessionStorage.getItem('speeksUserStore') || 'OVL';
     
     const item = checklistDataCache[currentChecklistTab].find(i => i.id === id);
     if (item) item.checked = isChecked;
@@ -7194,9 +7182,9 @@ async function addChecklistItem() {
     input.value = 'Saving...';
     input.disabled = true;
 
-    const userName = sessionStorage.getItem('speeksUserName');
+    const userName = getChecklistUser();
     const store = sessionStorage.getItem('speeksUserStore');
-    const tempId = 'temp_' + Date.now(); // Temp ID until server refreshes
+    const tempId = 'temp_' + Date.now();
 
     const payload = {
         action: 'add',
@@ -7226,8 +7214,8 @@ async function addChecklistItem() {
 }
 
 async function deleteChecklistItem(id) {
-    const userName = sessionStorage.getItem('speeksUserName');
-    const store = sessionStorage.getItem('speeksUserStore') || 'OVL'; // <--- Added this
+    const userName = getChecklistUser();
+    const store = sessionStorage.getItem('speeksUserStore') || 'OVL';
 
     checklistDataCache[currentChecklistTab] = checklistDataCache[currentChecklistTab].filter(i => i.id !== id);
     renderChecklist();
@@ -7235,7 +7223,7 @@ async function deleteChecklistItem(id) {
     fetch(CHECKLIST_URL, {
         method: 'POST', mode: 'no-cors',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'delete', id: id, user: userName, store: store }) // <--- Added store here
+        body: JSON.stringify({ action: 'delete', id: id, user: userName, store: store })
     }).catch(() => {});
 }
 
@@ -7244,7 +7232,7 @@ function clearChecklistTab() {
     const checkedItems = items.filter(i => i.checked);
     if (checkedItems.length === 0) return;
 
-    const userName = sessionStorage.getItem('speeksUserName');
+    const userName = getChecklistUser();
     const store = sessionStorage.getItem('speeksUserStore') || 'OVL';
 
     items.forEach(i => i.checked = false);
@@ -7281,26 +7269,6 @@ function updateChecklistChip() {
     btn.classList.toggle('cl-needs-attention', done < total && !isOpen);
 }
 
-function showChecklistToast() {
-    const role = (sessionStorage.getItem('speeksUserRole') || '').toLowerCase();
-    if (role !== 'manager' && role !== 'district manager') return;
-
-    const user = (sessionStorage.getItem('speeksUserName') || '').trim().toLowerCase();
-    if (!user) return;
-    const key = `speeksChecklistToastDate_${user}`;
-    const today = new Date().toLocaleDateString('en-CA');
-    if (localStorage.getItem(key) === today) return;
-
-    localStorage.setItem(key, today);
-    const toast = document.getElementById('checklistToast');
-    if (!toast) return;
-    toast.classList.add('show');
-}
-
-function dismissChecklistToast() {
-    const toast = document.getElementById('checklistToast');
-    if (toast) toast.classList.remove('show');
-}
 
 // --- BULLETPROOF TOGGLE & CLICK-AWAY LOGIC ---
 window.toggleChecklistPanel = function(event) {
@@ -7312,6 +7280,11 @@ window.toggleChecklistPanel = function(event) {
     if (toggle) {
         toggle.classList.toggle('panel-active', isOpen);
         if (isOpen) toggle.classList.remove('cl-needs-attention');
+    }
+    if (isOpen) {
+        document.getElementById('goalsSidePanel')?.classList.remove('open');
+        document.querySelector('.gi-nav-toggle')?.classList.remove('panel-active');
+        _resetToCurrentMonth?.();
     }
 };
 
@@ -7341,27 +7314,6 @@ document.addEventListener('click', function(e) {
                 }
     }
 });
-
-// Run this on the 1st of EVERY month using the Monthly Time-Driven Trigger
-function resetQuarterlyTasks() {
-  const today = new Date();
-  
-  // In Javascript, months are 0-indexed (Jan = 0, Feb = 1... Apr = 3, Jul = 6, Oct = 9).
-  // If the month number divided by 3 does NOT have a remainder of 0, it is NOT the start of a quarter.
-  if (today.getMonth() % 3 !== 0) {
-    return; // Stop the script immediately. Do nothing.
-  }
-  
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Tasks');
-  const data = sheet.getDataRange().getValues();
-  
-  for (let i = 1; i < data.length; i++) {
-    if (String(data[i][1]).toLowerCase() === 'quarterly') {
-      // Uncheck OVL through CORP
-      sheet.getRange(i + 1, 7, 1, 6).setValue(false); 
-    }
-  }
-}
 
 // --- ROLE SELECTION LOGIC ---
 window.updateRoleLocks = function() {

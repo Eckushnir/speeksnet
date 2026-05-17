@@ -2354,11 +2354,27 @@ select.bs-hidden-select:focus {
     z-index: 99;
     display: none;
     align-items: center;
-    overflow: hidden;
     user-select: none;
-    border-bottom: 2px solid #1a1c1e;
 }
 body.is-authenticated .info-ticker { display: flex; }
+
+.ticker-scroll-area {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.ticker-panel-buttons {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    flex-shrink: 0;
+    gap: 4px;
+    padding: 0 6px;
+}
 
 .ticker-track {
     display: flex;
@@ -2368,16 +2384,11 @@ body.is-authenticated .info-ticker { display: flex; }
     will-change: transform;
 }
 
-
 @keyframes ticker-scroll {
     0%   { transform: translateX(0); }
     100% { transform: translateX(-50%); }
 }
 
-@keyframes ticker-intro {
-    from { transform: translateX(100vw); }
-    to   { transform: translateX(0); }
-}
 
 .ticker-item {
     display: inline-flex;
@@ -2549,7 +2560,7 @@ body.is-authenticated .info-ticker { display: flex; }
 .main-content {
     flex-grow: 1;
     margin-left: 0;
-    padding: 170px 50px 50px 50px;
+    padding: 120px 50px 50px 50px;
     transition: padding 0.3s ease;
 }
 
@@ -3581,60 +3592,41 @@ canvas#leaderboardCanvas, canvas#mainKpiChart {
 /* =========================================================
    MANAGER CHECKLIST - SLIDING PANEL & TAB
    ========================================================= */
-/* Shared tab wrapper — fixed to the right edge, below the header */
-.nav-panel-tabs {
-    position: fixed;
-    top: var(--panel-top, 104px);
-    right: 0;
-    display: flex;
-    align-items: stretch;
-    height: 32px;
-    gap: 0;
-    z-index: 100;
-    box-shadow: -4px 6px 20px rgba(90,141,59,0.22);
-    border-radius: 0 0 0 8px;
-}
-
-/* Shared styles for both panel tabs */
+/* Shared styles for both panel tabs (now live inside the ticker bar) */
 .cl-nav-toggle,
 .gi-nav-toggle {
-    background: var(--sage-professional);
-    color: rgba(255,255,255,0.92);
-    padding: 0 14px 0 16px;
-    height: 100%;
-    border-radius: 0;
+    background: #6aaa44;
+    color: rgba(255,255,255,0.95);
+    padding: 0 10px;
+    height: calc(100% - 8px);
+    border-radius: 4px;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     font-size: 11px;
     font-weight: 800;
-    letter-spacing: 0.6px;
+    letter-spacing: 0.5px;
     white-space: nowrap;
-    border: none;
-    box-shadow: none;
-    transition: background 0.2s, color 0.2s;
-}
-
-/* Left tab: straight top, rounded bottom-left. Right tab: flush. */
-.gi-nav-toggle {
-    border-radius: 0 0 0 8px;
-    border-right: 1px solid rgba(255,255,255,0.18);
-}
-.cl-nav-toggle {
-    min-width: 190px;
-    justify-content: center;
-    border-radius: 0;
-}
-.nav-panel-tabs.gi-tab-hidden .cl-nav-toggle {
-    border-radius: 0 0 0 8px;
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    transition: background 0.15s, box-shadow 0.15s;
 }
 
 /* Shared hover / active states */
 .cl-nav-toggle:hover,
-.gi-nav-toggle:hover { background: var(--sage-professional); color: white; }
+.gi-nav-toggle:hover {
+    background: #6eb347;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.22);
+    color: white;
+}
 .cl-nav-toggle.panel-active,
-.gi-nav-toggle.panel-active { background: #3a6023; color: white; box-shadow: -4px 4px 16px rgba(90,141,59,0.35); }
+.gi-nav-toggle.panel-active {
+    background: #3a6023;
+    color: white;
+    border-color: rgba(255,255,255,0.15);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.25);
+}
 .cl-nav-toggle:hover span:first-child,
 .gi-nav-toggle:hover span:first-child {
     display: inline-block;
@@ -3660,27 +3652,30 @@ canvas#leaderboardCanvas, canvas#mainKpiChart {
 /* Drop-down checklist panel — hangs flush from the right of the header */
 .checklist-side-panel {
     position: fixed;
-    top: var(--panel-top, 104px);     /* set by _syncLayout via CSS custom property */
-    right: 0;                         /* flush with right edge of viewport */
-    width: 420px;                     /* matches goals panel width */
-    height: calc(100vh - var(--panel-top, 104px)); /* always full height below the header+ticker */
+    top: var(--panel-top, 104px);
+    right: 0;
+    width: 420px;
+    height: calc(100vh - var(--panel-top, 104px));
     background: white;
-    border-radius: 0 0 0 14px;        /* only bottom-left rounded; right is flush */
-    box-shadow: -6px 0 30px rgba(0,0,0,0.14);
-    z-index: 101;                     /* above tabs (100) when open */
+    border-radius: 0 0 0 14px;
+    box-shadow: -8px 0 32px rgba(0,0,0,0.12);
+    z-index: 101;
     display: flex;
     flex-direction: column;
-    clip-path: inset(0 0 100% 0);
-    transition: clip-path 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateX(105%);
+    opacity: 0;
+    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                opacity 0.3s ease;
     pointer-events: none;
     overflow: hidden;
     border: 1px solid #e2e8f0;
     border-top: none;
-    border-right: none;               /* no right border — viewport edge is the boundary */
+    border-right: none;
 }
 
 .checklist-side-panel.open {
-    clip-path: inset(0);
+    transform: translateX(0);
+    opacity: 1;
     pointer-events: auto;
 }
 
@@ -3703,71 +3698,34 @@ canvas#leaderboardCanvas, canvas#mainKpiChart {
     0%, 100% { box-shadow: 0 0 0px rgba(255, 200, 60, 0); }
     50%       { box-shadow: 0 0 14px rgba(255, 200, 60, 0.55), 0 0 28px rgba(255, 200, 60, 0.2); }
 }
-.cl-nav-toggle.cl-needs-attention {
-    animation: cl-glow-pulse 2.8s ease-in-out infinite;
-}
 
-/* --- Checklist nudge: daily toast --- */
-.cl-toast {
-    position: fixed;
-    bottom: -80px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--slate-charcoal, #1e293b);
-    color: white;
-    padding: 11px 18px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 13px;
-    font-weight: 600;
-    z-index: 99999;
-    box-shadow: 0 6px 24px rgba(0,0,0,0.28);
-    transition: bottom 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    white-space: nowrap;
-    pointer-events: none;
-}
-.cl-toast.show {
-    bottom: 28px;
-    pointer-events: auto;
-}
-.cl-toast-close {
-    background: none;
-    border: none;
-    color: rgba(255,255,255,0.55);
-    cursor: pointer;
-    font-size: 11px;
-    padding: 0 0 0 4px;
-    line-height: 1;
-    transition: color 0.2s;
-}
-.cl-toast-close:hover { color: white; }
 
 /* =========================================================
    GOALS & INITIATIVES SIDE PANEL (RIGHT)
    ========================================================= */
 .goals-side-panel {
     position: fixed;
-    top: var(--panel-top, 104px);     /* set by _syncLayout via CSS custom property */
+    top: var(--panel-top, 104px);
     right: 0;
     width: 420px;
     height: calc(100vh - var(--panel-top, 104px));
     background: white;
     border-radius: 0 0 0 14px;
-    box-shadow: -6px 0 30px rgba(0,0,0,0.14);
-    z-index: 101;                     /* above tabs (100) when open */
+    box-shadow: -8px 0 32px rgba(0,0,0,0.12);
+    z-index: 101;
     display: flex;
     flex-direction: column;
-    clip-path: inset(0 0 100% 0);
-    transition: clip-path 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateX(105%);
+    opacity: 0;
+    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                opacity 0.3s ease;
     pointer-events: none;
     overflow: hidden;
     border: 1px solid #e2e8f0;
     border-top: none;
     border-right: none;
 }
-.goals-side-panel.open { clip-path: inset(0); pointer-events: auto; }
+.goals-side-panel.open { transform: translateX(0); opacity: 1; pointer-events: auto; }
 
 .gi-panel-header { padding: 18px 20px; border-bottom: 1px solid #e2e8f0; background: #fcfcfc; flex-shrink: 0; }
 .gi-panel-header-row { display: flex; align-items: center; justify-content: space-between; }
