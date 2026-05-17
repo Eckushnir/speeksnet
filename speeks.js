@@ -133,7 +133,7 @@ function formatSmartValue(val, name) {
     return new Intl.NumberFormat('en-US').format(num);
 }
 
-// --- 3. GLOBAL UI, MODALS & TABS ---
+// --- 4. GLOBAL UI, MODALS & TABS ---
 let savedScrollPosition = 0;
 
 function toggleSidebar() {
@@ -338,7 +338,7 @@ async function loadCMS() {
 
                 recentHtml = recentCount === 0 ? '<div style="padding: 20px; color:#999; text-align:center;">No recent announcements</div>' : recentHtml;
                 archiveHtml = archiveCount === 0 ? '<div style="padding: 20px; color:#999; text-align:center;">No archived announcements</div>' : archiveHtml;
-                feedAnnouncementsToTicker(sortedAnns.filter((_, i) => i < 2));
+                feedAnnouncementsToTicker(sortedAnns.slice(0, 2));
             } else {
                 recentHtml = archiveHtml = '<div style="padding: 20px; color:#999; text-align:center;">No announcements</div>';
             }
@@ -1534,7 +1534,9 @@ function renderKPIDashboard() {
 }
 
 // --- 10. MODULE: LIVE VARIANCE REPORTS ---
-function formatVariancePct(num) { 
+let _varianceSyncListener = null;
+let _weeklyGridResizeListener = null;
+function formatVariancePct(num) {
     return Math.abs(num) < 0.001 ? '0.00%' : `${num < 0 ? '-' : '+'}${Math.abs(num).toFixed(2)}%`; 
 }
 
@@ -1631,8 +1633,10 @@ function renderVariance() {
             };
             
             syncHeights();
-            
+
             // If the user resizes their window, re-sync the heights!
+            if (_varianceSyncListener) window.removeEventListener('resize', _varianceSyncListener);
+            _varianceSyncListener = syncHeights;
             window.addEventListener('resize', syncHeights);
         }
     }, 50); // 50ms delay gives the browser time to paint the HTML before we measure it
@@ -1795,6 +1799,8 @@ async function fetchWeeklyKPIs() {
             else nV.style.gridTemplateColumns = '1fr';
         };
         applyGridColumns();
+        if (_weeklyGridResizeListener) window.removeEventListener('resize', _weeklyGridResizeListener);
+        _weeklyGridResizeListener = applyGridColumns;
         window.addEventListener('resize', applyGridColumns);
 
         // HTML Column Builder Helper
@@ -4856,24 +4862,19 @@ function initDashboardData() {
         setTimeout(fetchVarianceData, 300); 
         setTimeout(fetchWeeklyKPIs, 500); 
         
-        // --- ADD THESE MISSING DASHBOARD WIDGETS ---
         setTimeout(fetchScorecardData, 600);
         setTimeout(fetchAlertsData, 650);
         setTimeout(fetchMasterDistrictDashboard, 680);
-        // -------------------------------------------
-
-        setTimeout(fetchKPIData, 700); 
+        setTimeout(fetchKPIData, 700);
+        setTimeout(fetchDistrictMonthlyKPIs, 750);
         setTimeout(fetchRecordsData, 800);
-        setTimeout(fetchAwardsData, 900);
         setTimeout(fetchChampions, 850);
+        setTimeout(fetchAwardsData, 900);
         setTimeout(fetchDmGoalsData, 1000);
         setTimeout(fetchAndRenderEmployeeGoals, 1100);
         setTimeout(fetchAndRenderEmployeeKPIs, 1200);
-        
-        // --- ADD THE COMMENT POPUP CHECK HERE TOO ---
         setTimeout(fetchAndDisplayStoreComment, 1500);
         startStoreCommentPolling();
-        // --------------------------------------------
 
 
         // Pre-load checklist in background so chip + glow appear without opening the panel
@@ -4934,6 +4935,7 @@ document.addEventListener("DOMContentLoaded", () => {
         applyRoleBasedUI();
         initDashboardData();
         initTicker();
+        if (document.getElementById('mainKpiChart')) syncAllData();
     } else {
         if (!window.location.href.includes('index.html') && document.getElementById('authOverlay')) {
             window.location.href = "index.html"; 
@@ -4955,12 +4957,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
     
-    if (document.getElementById('mainKpiChart') && typeof syncAllData === 'function') syncAllData();
-
-    if (typeof fetchScorecardData === 'function') fetchScorecardData();
-    if (typeof fetchAlertsData === 'function') fetchAlertsData();
-    if (typeof fetchMasterDistrictDashboard === 'function') fetchMasterDistrictDashboard();
-    if (typeof fetchDistrictMonthlyKPIs === 'function') fetchDistrictMonthlyKPIs();
 });
 
 // ============================================================================
@@ -5098,10 +5094,6 @@ document.addEventListener('click', async (e) => {
                 setTimeout(() => {
                     if (typeof initDashboardData === 'function') initDashboardData();
                     if (document.getElementById('mainKpiChart') && typeof syncAllData === 'function') syncAllData();
-                    if (typeof fetchScorecardData === 'function') fetchScorecardData();
-                    if (typeof fetchAlertsData === 'function') fetchAlertsData();
-                    if (typeof fetchMasterDistrictDashboard === 'function') fetchMasterDistrictDashboard();
-                    if (typeof fetchDistrictMonthlyKPIs === 'function') fetchDistrictMonthlyKPIs();
                     if (document.getElementById('pane-records') && typeof fetchRecordsData === 'function') fetchRecordsData();
                     if (document.getElementById('listing-champions-body') && typeof fetchChampions === 'function') fetchChampions();
                 }, 100);
@@ -7322,27 +7314,6 @@ document.addEventListener('click', function(e) {
                 }
     }
 });
-
-// Run this on the 1st of EVERY month using the Monthly Time-Driven Trigger
-function resetQuarterlyTasks() {
-  const today = new Date();
-  
-  // In Javascript, months are 0-indexed (Jan = 0, Feb = 1... Apr = 3, Jul = 6, Oct = 9).
-  // If the month number divided by 3 does NOT have a remainder of 0, it is NOT the start of a quarter.
-  if (today.getMonth() % 3 !== 0) {
-    return; // Stop the script immediately. Do nothing.
-  }
-  
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Tasks');
-  const data = sheet.getDataRange().getValues();
-  
-  for (let i = 1; i < data.length; i++) {
-    if (String(data[i][1]).toLowerCase() === 'quarterly') {
-      // Uncheck OVL through CORP
-      sheet.getRange(i + 1, 7, 1, 6).setValue(false); 
-    }
-  }
-}
 
 // --- ROLE SELECTION LOGIC ---
 window.updateRoleLocks = function() {
