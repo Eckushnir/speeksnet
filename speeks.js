@@ -338,7 +338,7 @@ async function loadCMS() {
 
                 recentHtml = recentCount === 0 ? '<div style="padding: 20px; color:#999; text-align:center;">No recent announcements</div>' : recentHtml;
                 archiveHtml = archiveCount === 0 ? '<div style="padding: 20px; color:#999; text-align:center;">No archived announcements</div>' : archiveHtml;
-                feedAnnouncementsToTicker(sortedAnns.slice(0, 2));
+                feedAnnouncementsToTicker(showBadge ? sortedAnns.slice(0, 2) : []);
                 _tickerSourceDone('cms');
             } else {
                 recentHtml = archiveHtml = '<div style="padding: 20px; color:#999; text-align:center;">No announcements</div>';
@@ -615,12 +615,37 @@ const _TICKER_DEFAULTS = [
     { icon: '💬', text: 'Use PayMore and SPEEKS Discord for buying & listing help', _type: 'static' },
 ];
 
-let _tickerItems          = [];
-let _tickerReady          = false;
+let _tickerAnnouncement   = null;
+let _tickerChampions      = null;
+let _tickerLeaderboard    = null;
+let _tickerStatic         = [];
 let _tickerShown          = false;
-let _tickerFetchDone      = false;                             // TICKER_URL static items loaded
-let _tickerPendingSources = new Set(['cms','hub','champions']); // sources still loading; idempotent — delete is a no-op if already removed
-let _tickerMaxWaitTimer   = null;
+let _tickerIniting        = false;
+
+// Each source gets a Promise; we await all of them before starting the ticker.
+let _tickerSrcResolvers   = {};
+let _tickerSrcPromises    = {};
+
+function _tickerResetSources() {
+    ['static', 'cms', 'hub', 'champions'].forEach(name => {
+        _tickerSrcPromises[name] = new Promise(resolve => { _tickerSrcResolvers[name] = resolve; });
+    });
+}
+_tickerResetSources();
+
+function _tickerSourceDone(name) {
+    if (_tickerSrcResolvers[name]) _tickerSrcResolvers[name]();
+}
+
+// Always assemble items in fixed order: announcement → champions → leaderboard → static
+function _getOrderedTickerItems() {
+    const items = [];
+    if (_tickerAnnouncement) items.push(_tickerAnnouncement);
+    if (_tickerChampions)    items.push(_tickerChampions);
+    if (_tickerLeaderboard)  items.push(_tickerLeaderboard);
+    items.push(..._tickerStatic);
+    return items.length ? items : [..._TICKER_DEFAULTS];
+}
 
 function _syncLayout() {
     const nav = document.querySelector('.top-nav');
@@ -633,41 +658,35 @@ function _syncLayout() {
     document.documentElement.style.setProperty('--panel-top', totalTop + 'px');
 }
 
-function initTicker() {
-    if (_tickerReady) return;
+async function initTicker() {
+    if (_tickerIniting || _tickerShown) return;
+    _tickerIniting = true;
     const ticker = document.getElementById('infoTicker');
-    if (!ticker) return;
-    _tickerReady = true;
-    _tickerPendingSources = new Set(['cms', 'hub', 'champions']);
+    if (!ticker) { _tickerIniting = false; return; }
+
     requestAnimationFrame(_syncLayout);
     const nav = document.querySelector('.top-nav');
     if (nav && window.ResizeObserver) new ResizeObserver(_syncLayout).observe(nav);
     window.addEventListener('resize', _syncLayout);
-    // Fallback: start after 10s even if a source is still pending or slow
-    _tickerMaxWaitTimer = setTimeout(() => {
-        _tickerMaxWaitTimer = null;
-        _tickerPendingSources.clear();
-        _tickerFetchDone = true;
-        _tryStartTicker();
-    }, 10000);
-    _tryStartTicker(); // fires immediately if loadTickerItems already finished pre-auth and pending is 0
-}
 
-function _tryStartTicker() {
-    if (!_tickerReady || _tickerShown) return;
-    if (!_tickerFetchDone || _tickerPendingSources.size > 0) return;
-    if (_tickerMaxWaitTimer) { clearTimeout(_tickerMaxWaitTimer); _tickerMaxWaitTimer = null; }
-    _showTickerFirstTime();
-}
+    // Wait until all 4 sources check in, or 12 s absolute max
+    await Promise.race([
+        Promise.allSettled(Object.values(_tickerSrcPromises)),
+        new Promise(r => setTimeout(r, 12000))
+    ]);
 
-// Each source passes its own name; Set.delete is idempotent so double-calls are safe.
-function _tickerSourceDone(source) {
-    _tickerPendingSources.delete(source);
-    _tryStartTicker();
+    if (_tickerShown) return;
+    _tickerShown = true;
+
+    if (!_tickerLeaderboard && typeof cachedLeaderboardData !== 'undefined' && cachedLeaderboardData) {
+        feedLeaderboardToTicker(cachedLeaderboardData);
+    }
+    _loadCachedLeaderboard();
+    _loadCachedChampions();
+    _applyTickerContent();
 }
 
 function _resetTicker() {
-    if (_tickerMaxWaitTimer) { clearTimeout(_tickerMaxWaitTimer); _tickerMaxWaitTimer = null; }
     const track = document.getElementById('tickerTrack');
     if (track) {
         if (track._tickerLoopHandler) {
@@ -677,26 +696,22 @@ function _resetTicker() {
         track.style.animation = 'none';
         track.innerHTML = '';
     }
-    _tickerItems          = [];
-    _tickerReady          = false;
-    _tickerShown          = false;
-    _tickerFetchDone      = false;
-    _tickerPendingSources = new Set(['cms', 'hub', 'champions']);
+    _tickerAnnouncement = null;
+    _tickerChampions    = null;
+    _tickerLeaderboard  = null;
+    _tickerStatic       = [];
+    _tickerShown        = false;
+    _tickerIniting      = false;
+    _tickerResetSources();
     loadTickerItems();
     initTicker();
-}
-
-function _showTickerFirstTime() {
-    _tickerShown = true;
-    if (_tickerItems.length === 0) _tickerItems = [..._TICKER_DEFAULTS];
-    _applyTickerContent();
 }
 
 function _applyTickerContent() {
     const track = document.getElementById('tickerTrack');
     if (!track) return;
     const sep  = '<span class="ticker-sep">◆</span>';
-    const html = _tickerItems.map(item =>
+    const html = _getOrderedTickerItems().map(item =>
         `<span class="ticker-item"><span class="t-icon">${item.icon}</span>${escapeHtml(item.text)}</span>${sep}`
     ).join('');
     track.innerHTML = html + html;
@@ -735,18 +750,17 @@ function _applyTickerContent() {
 }
 
 function feedAnnouncementsToTicker(announcements) {
-    if (!announcements || !announcements.length) return;
+    if (!announcements || !announcements.length) { _tickerAnnouncement = null; return; }
     const isHighPriority = announcements.some(a => a.text && (a.text.includes('HIGH PRIORITY') || a.text.includes('🚨')));
-    _tickerItems = _tickerItems.filter(i => i._type !== 'announcement');
-    _tickerItems.unshift({
+    _tickerAnnouncement = {
         icon: isHighPriority ? '🚨' : '📣',
         text: isHighPriority ? 'High Priority Announcement — check the bell!' : 'New Announcement posted — check the bell!',
         _type: 'announcement'
-    });
+    };
 }
 
 function feedLeaderboardToTicker(leaderboardData) {
-    if (!_tickerReady || !leaderboardData || !leaderboardData.activeStores) return;
+    if (!leaderboardData || !leaderboardData.activeStores) return;
     const stores = leaderboardData.activeStores;
     const getLeader = (data) => {
         const norm = {};
@@ -759,19 +773,28 @@ function feedLeaderboardToTicker(leaderboardData) {
     };
     const gpLeader = getLeader(leaderboardData.gp || {});
     const revLeader = getLeader(leaderboardData.revenue || {});
-    if (!gpLeader && !revLeader) return;
-    _tickerItems = _tickerItems.filter(i => i._type !== 'leaderboard');
     let text;
     if (gpLeader && revLeader && gpLeader !== revLeader) {
         text = `Monthly GP Leader: ${gpLeader}  ·  Revenue Leader: ${revLeader}`;
-    } else {
+    } else if (gpLeader || revLeader) {
         text = `${gpLeader || revLeader} is leading district GP & Revenue this month`;
     }
-    _tickerItems.push({ icon: '🏆', text, _type: 'leaderboard' });
+    if (text) {
+        _tickerLeaderboard = { icon: '🏆', text, _type: 'leaderboard' };
+        localStorage.setItem('_tickerLeaderboardCache', JSON.stringify(_tickerLeaderboard));
+    } else {
+        const cached = localStorage.getItem('_tickerLeaderboardCache');
+        if (cached) try { _tickerLeaderboard = JSON.parse(cached); } catch (_) {}
+    }
+}
+
+function _loadCachedLeaderboard() {
+    if (_tickerLeaderboard) return;
+    const cached = localStorage.getItem('_tickerLeaderboardCache');
+    if (cached) try { _tickerLeaderboard = JSON.parse(cached); } catch (_) {}
 }
 
 function feedChampionsToTicker(allBuyers, allListers, allGoogleReviews) {
-    if (!_tickerReady) return;
     const getTop = (arr, key) => {
         if (!arr.length) return null;
         const merged = {};
@@ -784,30 +807,48 @@ function feedChampionsToTicker(allBuyers, allListers, allGoogleReviews) {
     const topBuyer = getTop(allBuyers, 'score');
     const topLister = getTop(allListers, 'listed');
     const topReviewer = getTop(allGoogleReviews, 'reviews');
-    if (!topBuyer && !topLister && !topReviewer) return;
-    _tickerItems = _tickerItems.filter(i => i._type !== 'champions');
     const parts = [];
-    if (topBuyer) parts.push(`Buying: ${topBuyer.name} (${topBuyer.store})`);
-    if (topLister) parts.push(`Listing: ${topLister.name} (${topLister.store})`);
+    if (topBuyer)    parts.push(`Buying: ${topBuyer.name} (${topBuyer.store})`);
+    if (topLister)   parts.push(`Listing: ${topLister.name} (${topLister.store})`);
     if (topReviewer) parts.push(`Reviews: ${topReviewer.name} (${topReviewer.store})`);
-    _tickerItems.push({ icon: '🥇', text: 'Weekly Champions — ' + parts.join('  ·  '), _type: 'champions' });
+    if (parts.length) {
+        _tickerChampions = { icon: '🥇', text: 'Weekly Champions — ' + parts.join('  ·  '), _type: 'champions' };
+        localStorage.setItem('_tickerChampionsCache', JSON.stringify(_tickerChampions));
+    } else {
+        const cached = localStorage.getItem('_tickerChampionsCache');
+        if (cached) try { _tickerChampions = JSON.parse(cached); } catch (_) {}
+    }
+}
+
+function _loadCachedChampions() {
+    if (_tickerChampions) return;
+    const cached = localStorage.getItem('_tickerChampionsCache');
+    if (cached) try { _tickerChampions = JSON.parse(cached); } catch (_) {}
 }
 
 async function loadTickerItems() {
     const controller = new AbortController();
     const tid = setTimeout(() => controller.abort(), 8000);
+    let loaded = false;
     try {
         const res = await fetch(`${TICKER_URL}?v=${Date.now()}`, { signal: controller.signal });
         const data = await res.json();
         if (data.items && data.items.length > 0) {
-            _tickerItems = _tickerItems.filter(i => i._type !== 'static');
-            const staticItems = data.items.map(item => ({ icon: item.icon || '📌', text: item.text, _type: 'static' }));
-            _tickerItems = [...staticItems, ..._tickerItems];
+            localStorage.setItem('_tickerStaticCache', JSON.stringify(data.items));
+            _tickerStatic = data.items.map(item => ({ icon: item.icon || '📌', text: item.text, _type: 'static' }));
+            loaded = true;
         }
-    } catch (e) { console.warn('[Ticker] AppScript fetch failed — check deployment access settings:', e); }
+    } catch (e) { console.warn('[Ticker] AppScript fetch failed — using cache:', e); }
+    if (!loaded) {
+        try {
+            const cached = JSON.parse(localStorage.getItem('_tickerStaticCache') || '[]');
+            if (cached.length > 0) {
+                _tickerStatic = cached.map(item => ({ icon: item.icon || '📌', text: item.text, _type: 'static' }));
+            }
+        } catch (_) {}
+    }
     clearTimeout(tid);
-    _tickerFetchDone = true;
-    _tryStartTicker();
+    _tickerSourceDone('static');
 }
 
 const TICKER_EMOJIS = [
@@ -898,10 +939,8 @@ async function saveTickerItems() {
     btn.style.opacity = '0.7';
     try {
         await fetch(TICKER_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ items }) });
-        _tickerItems = _tickerItems.filter(i => i._type !== 'static');
-        const newStatic = items.map(item => ({ icon: item.icon, text: item.text, _type: 'static' }));
-        _tickerItems = newStatic.length ? [...newStatic, ..._tickerItems] : [..._TICKER_DEFAULTS, ..._tickerItems];
-        if (_tickerShown) _applyTickerContent(); else _tryStartTicker();
+        _tickerStatic = items.length ? items.map(item => ({ icon: item.icon, text: item.text, _type: 'static' })) : [..._TICKER_DEFAULTS];
+        if (_tickerShown) _applyTickerContent();
         closeAllModals();
     } catch (e) {
         alert('Failed to save ticker items.');
@@ -1920,20 +1959,6 @@ async function fetchHubData() {
         const response = await fetch(`${HUB_URL}?v=${Date.now()}`);
         const freshData = await response.json();
 
-        // Track per-store last-updated timestamps based on actual data changes
-        const _bsStores = ['ovl', 'lee', 'wsp', 'mpl', 'bal'];
-        const _bsFields = s => [`${s}BuyVal`,`${s}BuyProj`,`${s}BuyMargin`,`${s}Pct`,`${s}Goal`,`${s}TrackGP`,`${s}GP`,`${s}Rev`,`${s}SellMargin`];
-        const _bsPrev = JSON.parse(localStorage.getItem('bsPrevHubCache') || '{}');
-        const _bsTs = JSON.parse(localStorage.getItem('bsStoreTimestamps') || '{}');
-        // Migrate any old long-form weekdays ("Monday, May 18" → "May 18") and strip stale time suffixes
-        _bsStores.forEach(s => { if (_bsTs[s]) _bsTs[s] = _bsTs[s].replace(/^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s*/i, '').replace(/\s+\d{1,2}:\d{2}\s*(AM|PM)/i, ''); });
-        const _bsNow = new Date();
-        const _bsLabel = _bsNow.toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric' });
-        _bsStores.forEach(s => {
-            if (_bsFields(s).some(f => freshData[f] !== _bsPrev[f])) _bsTs[s] = _bsLabel;
-        });
-        localStorage.setItem('bsStoreTimestamps', JSON.stringify(_bsTs));
-        localStorage.setItem('bsPrevHubCache', JSON.stringify(freshData));
 
         hubDataCache = freshData;
 
@@ -1947,7 +1972,6 @@ async function fetchHubData() {
         // Let the Hub power the Leaderboard automatically!
         if (hubDataCache.leaderboard) {
             cachedLeaderboardData = hubDataCache.leaderboard;
-            console.log('[Ticker] leaderboard data:', JSON.stringify(cachedLeaderboardData).slice(0, 300));
             feedLeaderboardToTicker(cachedLeaderboardData);
             if (document.getElementById('lb-wrapper')) drawLeaderboard();
         } else if (document.getElementById('lb-wrapper')) {
@@ -1956,7 +1980,9 @@ async function fetchHubData() {
         _tickerSourceDone('hub');
     } catch(e) {
         console.error("Hub Sync Failed", e);
-        _tickerSourceDone('hub');
+        // Delay so a concurrent fetchHubData call (syncAllData vs initDashboardData race)
+        // has time to succeed and set the leaderboard before the ticker starts.
+        setTimeout(() => _tickerSourceDone('hub'), 2000);
     }
 }
 
@@ -2017,8 +2043,7 @@ function renderBuyingSales() {
 
     const bsDateEl = document.getElementById('bs-last-updated');
     if (bsDateEl) {
-        const _bsTs = JSON.parse(localStorage.getItem('bsStoreTimestamps') || '{}');
-        bsDateEl.innerText = _bsTs[store] || '—';
+        bsDateEl.innerText = hubDataCache[`${store}BuyDate`] || '—';
     }
 }
 
@@ -3487,11 +3512,10 @@ async function fetchMasterDistrictDashboard() {
 
     const renderMasterBoard = (hubData, varData, scoreData, alertsData, weeklyResults) => {
         let html = '';
-        const _bsTs = JSON.parse(localStorage.getItem('bsStoreTimestamps') || '{}');
         STORES.forEach(store => {
             const sLower = store.toLowerCase();
             const icon = STORE_ICONS[store];
-            const storeLastEdited = _bsTs[sLower] || null;
+            const storeLastEdited = hubData[`${sLower}BuyDate`] || null;
 
             // 1. SCORECARD & HEADER
             const sScore = scoreData.data?.find(s => s.store.toUpperCase() === store) || {};
