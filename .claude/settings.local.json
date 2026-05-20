@@ -8,7 +8,9 @@
       "Bash(Select-Object -ExpandProperty FullName)",
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\nickh\\\\Github Repos\\\\speeksnet\" -Recurse -Force)",
       "Bash(Select-Object FullName, PSIsContainer)",
-      "Bash(Sort-Object FullName)"
+      "Bash(Sort-Object FullName)",
+      "mcp__supabase__get_project_url",
+      "mcp__supabase__list_tables"
     ]
   }
 }
