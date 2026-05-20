@@ -27,24 +27,25 @@
 })();
 
 // --- 1. API URLS ---
-const CMS_URL = 'https://script.google.com/macros/s/AKfycbxZviJiiQKcQYyp3SK4tcNBHrHXkID7cmwwuONStVPE9DHCSAMappqAs9dBns7ufECI/exec';
-const HOTKEYS_URL = 'https://script.google.com/macros/s/AKfycbyLburcVWM8xAKwDt2RHAQhZBLb_rJjb2__EzhoAKx1KgkNFi-BchVetgaTKvwCwqZiRw/exec';
-const DOCS_URL = 'https://script.google.com/macros/s/AKfycbyRLeIuWH3v2lMeFmoWcCohDz_YB-AFOnG_QgPckjiYnjni1dUKm0jRqaXeJGAViSYkQg/exec';
-const MONTHLY_KPI_URL = 'https://script.google.com/macros/s/AKfycby0ihq9A4yUQvdZdeAF9euC5jih24hP2XGG-J_balNtxop2RHBuIuigw_mH3XTeCkkhow/exec';
-const VARIANCE_API_URL = 'https://script.google.com/macros/s/AKfycbxFO_W-PW4ZT4e5mXlQOhlYl2ccpZ9by8MZ6rF-RJ6x3lryCjbi5XxY7c57vLgfx7k/exec';
-const HUB_URL = 'https://script.google.com/macros/s/AKfycbw3Ms5nc2bhbrjVW-da3xbZ3vKhyBx2TpeR-eSd1L05ZhV-h2Yh0yLmIV_E7TWDmwM69A/exec';
-const WEEKLY_KPI_URL = 'https://script.google.com/macros/s/AKfycbyVBos-uJuhaqfLMBqoz9byNkvUG06igl4RX2_cs8hH15rbp7K4uFFEN-wpQgS2ChAU/exec';
-const AUTH_URL = 'https://script.google.com/macros/s/AKfycbza40UZxFtBWwtm3Z52MqAaBtxRfilN7flkMIuE-ylco-VFli38_nK9avh4gDioHNZjKg/exec';
-const RECORDS_URL = 'https://script.google.com/macros/s/AKfycbwPMcs33YfH84ewJyg3ikqIKZtOJByEI9X2PD3cONtavJk7oJCUnGYbP6sESBE6-j2RSA/exec';
-const QUICK_MSG_URL = 'https://script.google.com/macros/s/AKfycbxpPxDhcyS5gJ90plzsW_I1zkiC9bCZ6WA3Pl22XJL3NLg6K8L5QfeYX6VNN5bECstIeg/exec';
-const GOALS_API_URL = 'https://script.google.com/macros/s/AKfycbw_eV-2Nxizf85J8atBJ6Muyq0aOAjZAsSLwlx9abPjNKJub_RlzrMBKkQuTbcRTbF2/exec';
-const SCORECARD_URL = 'https://script.google.com/macros/s/AKfycbwvelWpXnlXCJZQGagZX5llMCN1k6CjronBpIcenNVDTjUdPISjF0mYhHYy2ry0Vdg0_Q/exec';
-const EBAY_ALERTS_URL = 'https://script.google.com/macros/s/AKfycbxap-4Jgdn5-ntkv_X-vFZLTWlTB29_bDLdwcFxhWd2su3ZQJ0ZS7UpUgZAK08lOIV6/exec';
-const STORE_COMMENT_URL = 'https://script.google.com/macros/s/AKfycbzoqWLZz07niO-dVqDpQS7I-bDvUgLjHT4CYGiqb--yAQYQPkFCUi9EXoi5Wsz-V0Ne/exec';
-const CHECKLIST_URL = 'https://script.google.com/macros/s/AKfycbxr4ZEoSKeF4BZ1H2-tcmc6Gy30-le5Gdm3CSdee6XxOhZFes3-5SF_PNcWR4OLEGN2hQ/exec';
-const TUTORIAL_URL = 'https://script.google.com/macros/s/AKfycbySrXu6IW3S39GKiEsXkJwd4s75aO0uG-BTTg_swxEx3BMG_W7qqZBwHKnuEm_k_Agh/exec';
-const PATCH_NOTES_URL = 'https://script.google.com/macros/s/AKfycbzzk6beS7HWINw8GtQZ12FpezgFhBXj_1GgV1Fs342bc05Y6x9-tJGgr_MMl13rIfP3/exec';
-const TICKER_URL = 'https://script.google.com/macros/s/AKfycbyfvqCn2Vwwp1xGzKiXM9cFkicXosI3ErIp83Qu4GduhS6CRoldVSnDI267j54C72qyVw/exec';
+const _BASE = 'https://ejzaqmyxxrkmxvzbjeuo.supabase.co/functions/v1';
+const CMS_URL           = `${_BASE}/cms`;
+const HOTKEYS_URL       = `${_BASE}/hotkeys`;
+const DOCS_URL          = `${_BASE}/docs`;
+const MONTHLY_KPI_URL   = `${_BASE}/monthly-kpi`;
+const VARIANCE_API_URL  = `${_BASE}/variance`;
+const HUB_URL           = `${_BASE}/hub`;
+const WEEKLY_KPI_URL    = `${_BASE}/weekly-kpi`;
+const AUTH_URL          = `${_BASE}/auth`;
+const RECORDS_URL       = `${_BASE}/records`;
+const QUICK_MSG_URL     = `${_BASE}/quick-messages`;
+const GOALS_API_URL     = `${_BASE}/listing-goals`;
+const SCORECARD_URL     = `${_BASE}/scorecard`;
+const EBAY_ALERTS_URL   = `${_BASE}/ebay-alerts`;
+const STORE_COMMENT_URL = `${_BASE}/store-comments`;
+const CHECKLIST_URL     = `${_BASE}/checklist`;
+const TUTORIAL_URL      = `${_BASE}/tutorial`;
+const PATCH_NOTES_URL   = `${_BASE}/patch-notes`;
+const TICKER_URL        = `${_BASE}/ticker`;
 
 // --- 2. NAV COMPACT MODE ---
 (function () {
