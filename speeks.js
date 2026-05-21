@@ -1672,22 +1672,14 @@ function formatVariancePct(num) {
 
 function createVarianceStoreCard(sKey) {
     if (sKey === "NONE" || !liveVarianceDataCache[sKey]?.employees) return '';
-    
+
     const d = liveVarianceDataCache[sKey];
-    const isNew = d.fileDate && (Date.now() - d.fileDate) < 604800000;
-    
     const totalColorClass = d.total < 0 ? 'delta-neg' : (d.total > 0 ? 'delta-pos' : 'delta-neutral');
-    const badgeHtml = isNew ? `<div class="notif-dot active" style="display:block; position:relative; margin-left: 10px; width: 10px; height: 10px; border-width: 2px;" title="New Report Added This Week"></div>` : '';
 
     let html = `
     <div style="border: 1px solid #eee; border-radius: 12px; background: white; overflow: hidden;">
         <div style="background: #f9fafb; padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: flex-start;">
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-                <div style="display: flex; align-items: center;">
-                    <span style="font-size: 16px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase;">${sKey} TOTAL</span>
-                    ${badgeHtml}
-                </div>
-            </div>
+            <span style="font-size: 16px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase;">${sKey} TOTAL</span>
             <span class="delta-badge ${totalColorClass}" style="font-size: 16px; padding: 8px 14px;">${formatVariancePct(d.total)}</span>
         </div>
         <div class="vw-scroll-area" style="display: flex; flex-direction: column;">`;
@@ -1719,15 +1711,9 @@ function renderVariance() {
     if (dateSpan && liveVarianceDataCache[p]) {
         const d = liveVarianceDataCache[p];
         let pTxt = "Current";
-        
-        if (d.fileName) {
-            pTxt = d.fileName
-                .replace(new RegExp(`${p}\\s*`, 'i'), '')
-                .trim()
-                .replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/ig, m => {
-                    const fullMonths = {"Jan":"January","Feb":"February","Mar":"March","Apr":"April","May":"May","Jun":"June","Jul":"July","Aug":"August","Sep":"September","Oct":"October","Nov":"November","Dec":"December"};
-                    return fullMonths[m.charAt(0).toUpperCase() + m.slice(1).toLowerCase()] || m;
-                });
+        if (d.dateFrom && d.dateTo) {
+            const fmt = (iso) => new Date(iso + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            pTxt = `${fmt(d.dateFrom)} – ${fmt(d.dateTo)}`;
         }
         dateSpan.innerText = pTxt;
     }
@@ -1789,6 +1775,107 @@ async function fetchVarianceData() {
         renderVariance();
     } catch (e) { 
         cont.innerHTML = '<div style="padding: 40px; text-align: center; color: #dc2626; font-weight: 600; grid-column: 1 / -1;">Failed to sync Variance data.</div>'; 
+    }
+}
+
+// --- 10b. VARIANCE INPUT TOOL ---
+function toggleVarianceInput() {
+    closeAllModals();
+    const modal = document.getElementById('varianceInputModal');
+    if (!modal) return;
+    modal.classList.add('show');
+    lockAndBlurScreen();
+    loadVarianceStoreEmployees();
+}
+
+function loadVarianceStoreEmployees() {
+    const store = document.getElementById('vi-store')?.value;
+    const container = document.getElementById('vi-employees');
+    if (!container || !store) return;
+    container.innerHTML = '';
+
+    // Get users for this store from auth cache
+    let storeUsers = [];
+    try {
+        const authData = JSON.parse(localStorage.getItem('speeksAuthCache') || '{}');
+        storeUsers = (authData.users || []).filter(u =>
+            (u.store || '').toUpperCase() === store.toUpperCase() &&
+            (u.role || '').toLowerCase() !== 'training'
+        );
+    } catch (_) {}
+
+    // Build a map of existing variance % from the last report for this store
+    const lastPcts = {};
+    const cached = liveVarianceDataCache?.[store];
+    if (cached?.employees?.length > 0) {
+        cached.employees.forEach(e => { lastPcts[e.name.toLowerCase()] = e.val; });
+    }
+
+    if (storeUsers.length === 0) {
+        container.innerHTML = '<div style="color:#888; font-size:13px; text-align:center; padding:10px;">No users found for this store.</div>';
+        return;
+    }
+
+    storeUsers.forEach(u => {
+        const existingPct = lastPcts[u.name.toLowerCase()] ?? '';
+        addVarianceEmployeeRow(u.name, existingPct);
+    });
+}
+
+function addVarianceEmployeeRow(name, pct) {
+    const container = document.getElementById('vi-employees');
+    if (!container) return;
+    const row = document.createElement('div');
+    row.style.cssText = 'display: grid; grid-template-columns: 1fr 110px; gap: 8px; align-items: center;';
+    row.dataset.empName = name;
+    row.innerHTML = `
+        <span class="vi-emp-name" style="font-size: 13px; font-weight: 600; color: var(--slate-charcoal); padding: 0 4px;">${escapeHtml(String(name))}</span>
+        <input type="number" class="form-input-lg vi-emp-pct" placeholder="%" step="0.01" value="${pct !== '' ? pct : ''}" style="margin: 0; text-align: right;">`;
+    container.appendChild(row);
+}
+
+async function submitVarianceReport() {
+    const store = document.getElementById('vi-store')?.value;
+    const dateFrom = document.getElementById('vi-date-from')?.value;
+    const dateTo = document.getElementById('vi-date-to')?.value;
+    const storePct = parseFloat(document.getElementById('vi-store-pct')?.value);
+    const btn = document.getElementById('vi-submit-btn');
+
+    if (!store || !dateFrom || !dateTo || isNaN(storePct)) {
+        alert('Please fill in the store, date range, and store variance %.');
+        return;
+    }
+    if (dateFrom > dateTo) {
+        alert('Date From must be before Date To.');
+        return;
+    }
+
+    const employees = [];
+    document.querySelectorAll('#vi-employees > div[data-emp-name]').forEach(row => {
+        const name = row.dataset.empName;
+        const pct = parseFloat(row.querySelector('.vi-emp-pct')?.value);
+        if (name && !isNaN(pct)) employees.push({ name, pct });
+    });
+
+    btn.textContent = 'Submitting...';
+    btn.disabled = true;
+
+    try {
+        const res = await fetch(VARIANCE_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ store, dateFrom, dateTo, storePct, employees })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        alert(`Variance report for ${store} submitted successfully!`);
+        closeAllModals();
+        fetchVarianceData();
+    } catch (e) {
+        alert('Failed to submit: ' + (e.message || 'Unknown error'));
+    } finally {
+        btn.textContent = 'Submit Report';
+        btn.disabled = false;
     }
 }
 

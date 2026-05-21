@@ -47,6 +47,7 @@
             <a class="dev-dropdown-link dynamic-module-block role-district-manager" onclick="toggleManageTicker()">Ticker Items</a>
             <a class="dev-dropdown-link dynamic-module-block role-district-manager" onclick="toggleSendCommentModal()">Send Store Comment</a>
             <a class="dev-dropdown-link dynamic-module-block role-district-manager role-ceo role-owner-manager" onclick="toggleManageUsers()">User Permissions</a>
+            <a class="dev-dropdown-link dynamic-module-block role-district-manager" onclick="toggleVarianceInput()">Submit Variance Report</a>
             <a class="dev-dropdown-link dynamic-module-block role-district-manager" onclick="toggleManageAlerts()">Performance Metrics</a>
             <a class="dev-dropdown-link dynamic-module-block role-district-manager" onclick="toggleManageRecords()">Company Records</a>
             <a class="dev-dropdown-link dynamic-module-block role-district-manager" onclick="openScorecardModal()">Submit Scorecard</a>
@@ -225,6 +226,45 @@
     </div>
     <div class="manage-footer flex-end">
         <button id="sendCommentBtn" class="btn-primary" onclick="submitStoreComment()">Send Message</button>
+    </div>
+</div>
+
+<!-- ===== VARIANCE INPUT MODAL ===== -->
+<div class="modal-menu manage-menu" id="varianceInputModal">
+    <div class="modal-header">
+        <h3>📊 Submit Variance Report</h3>
+        <button class="modal-close-btn" onclick="closeAllModals()">✖</button>
+    </div>
+    <div class="manage-content">
+        <label class="form-label-caps">Store</label>
+        <select id="vi-store" class="form-input-lg" style="margin-bottom: 15px;" onchange="loadVarianceStoreEmployees()">
+            <option value="OVL">OVL</option>
+            <option value="LEE">LEE</option>
+            <option value="WSP">WSP</option>
+            <option value="MPL">MPL</option>
+            <option value="BAL">BAL</option>
+        </select>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+            <div>
+                <label class="form-label-caps">Date From</label>
+                <input type="date" id="vi-date-from" class="form-input-lg" style="margin: 0;">
+            </div>
+            <div>
+                <label class="form-label-caps">Date To</label>
+                <input type="date" id="vi-date-to" class="form-input-lg" style="margin: 0;">
+            </div>
+        </div>
+
+        <label class="form-label-caps">Store Overall Variance %</label>
+        <input type="number" id="vi-store-pct" class="form-input-lg" step="0.01" placeholder="e.g. -2.45" style="margin-bottom: 15px;">
+
+        <label class="form-label-caps">Employees</label>
+        <div id="vi-employees" style="display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto;"></div>
+    </div>
+    <div class="manage-footer flex-end">
+        <button class="btn-secondary" onclick="closeAllModals()">Cancel</button>
+        <button id="vi-submit-btn" class="btn-primary" onclick="submitVarianceReport()">Submit Report</button>
     </div>
 </div>
 
