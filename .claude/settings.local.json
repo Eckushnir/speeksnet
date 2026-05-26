@@ -11,7 +11,10 @@
       "Bash(Sort-Object FullName)",
       "mcp__supabase__get_project_url",
       "mcp__supabase__list_tables",
-      "WebFetch(domain:docs.google.com)"
+      "WebFetch(domain:docs.google.com)",
+      "Bash(node -e ' *)",
+      "Bash(ls \"C:\\\\Users\\\\nickh\\\\OneDrive\\\\Desktop\\\\Json from sales summary.txt\" 2>/dev/null && echo \"EXISTS\" || echo \"NOT FOUND\")",
+      "Read(//c/Users/nickh/OneDrive/Desktop/**)"
     ]
   }
 }
