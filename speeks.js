@@ -6772,8 +6772,8 @@ const SCORECARD_CATEGORIES = [
     "Recycle Organization",
     "Retail Displays",
     "Overall Organization",
-    "Online Store Pictures",
-    "Staff Goals Readiness",
+    "Staff Goals Readiness",        // index 5 — In-Store Operations ends here
+    "Online Store Pictures",        // index 6 — Media and Markets starts here
     "5 Facebook Listings",
     "2 Social Media Posts",
     "Store Listing Review",
@@ -6781,8 +6781,8 @@ const SCORECARD_CATEGORIES = [
 ];
 
 const SCORECARD_BUCKETS = [
-    { label: "In-Store Operations", count: 7 },
-    { label: "Media and Markets", count: 2 },
+    { label: "In-Store Operations", count: 6 },
+    { label: "Media and Markets", count: 3 },
     { label: "Store Reviews", count: 2 }
 ];
 
@@ -6900,23 +6900,27 @@ function submitNewScorecard() {
 
     fetch(SCORECARD_URL, {
         method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
-    }).then(() => {
+    }).then(async res => {
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || json.success === false) throw new Error(json.error || 'Save failed');
+
         btn.innerText = "Saved Successfully!";
         btn.style.background = "var(--sage-professional)";
 
         setTimeout(() => {
             if (typeof fetchScorecardData === 'function') fetchScorecardData();
+            if (typeof fetchMasterDistrictDashboard === 'function') fetchMasterDistrictDashboard();
             closeScorecardModal();
             btn.innerText = "Save Scorecard";
             btn.style.background = "";
             btn.disabled = false;
         }, 1500);
     }).catch(err => {
-        alert("Error saving scorecard.");
+        alert("Error saving scorecard: " + (err.message || err));
         btn.innerText = "Save Scorecard";
+        btn.style.background = "";
         btn.disabled = false;
     });
 }
