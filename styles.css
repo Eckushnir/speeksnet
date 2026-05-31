@@ -3182,8 +3182,26 @@ canvas#leaderboardCanvas, canvas#mainKpiChart {
 
 /* NEW: Gives the KPI card a temporary holding height so it doesn't blow up on load! */
 .kpi-master-card.bottom-locked-card {
-    height: 500px !important; 
+    height: 500px !important;
 }
+
+/* Weekly KPI card — half-width beside Live Variance */
+.weekly-expanded-card {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 500px !important;  /* matches kpi-master-card.bottom-locked-card */
+}
+.weekly-kpi-scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
+    padding: 4px 0 8px;
+}
+.weekly-kpi-scroll-area::-webkit-scrollbar { width: 5px; }
+.weekly-kpi-scroll-area::-webkit-scrollbar-track { background: transparent; }
+.weekly-kpi-scroll-area::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+.weekly-kpi-scroll-area::-webkit-scrollbar-thumb:hover { background: var(--sage-professional); }
 
 .vw-dashboard {
     min-height: 0 !important;
@@ -5061,13 +5079,18 @@ canvas#leaderboardCanvas, canvas#mainKpiChart {
 
 /* =========================================================
    KPI SPREADSHEET GRID
+   border-collapse: separate + border-spacing: 0 is required
+   so position:sticky works on thead th cells (collapse breaks it)
    ========================================================= */
 .kpi-entry-grid {
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     width: 100%;
     table-layout: fixed;
     font-size: 11px;
     font-family: 'Inter', sans-serif;
+    border-top: 1px solid #e2e6ea;
+    border-left: 1px solid #e2e6ea;
 }
 
 /* Fixed column widths via colgroup */
@@ -5078,16 +5101,27 @@ canvas#leaderboardCanvas, canvas#mainKpiChart {
 .kpi-entry-grid col.col-review-input  { width: 4.5%; }
 .kpi-entry-grid col.col-computed      { width: 3.5%; }
 
-/* Entire thead locks vertically as one unit */
-.kpi-entry-grid thead {
+/* ── Sticky row 1: section headers (Buying / No Deals / Listings / Reviews) ── */
+.kpi-grid-section-header {
     position: sticky;
     top: 0;
-    z-index: 10;
+    z-index: 20;
+    font-size: 9px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 4px 4px;
+    border-right: 1px solid #e2e6ea;
+    border-bottom: 1px solid #c8cdd4;
+    text-align: center;
 }
 
+/* ── Sticky row 2: column sub-headers — sit just below row 1 (~23px) ── */
 .kpi-grid-th {
+    position: sticky;
+    top: 23px;
+    z-index: 20;
     background: #f8f9fb;
-    z-index: 2;
     padding: 5px 3px;
     text-align: center;
     font-size: 10px;
@@ -5095,19 +5129,14 @@ canvas#leaderboardCanvas, canvas#mainKpiChart {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    border: 1px solid #e2e6ea;
+    border-right: 1px solid #e2e6ea;
+    border-bottom: 1px solid #c8cdd4;
     color: #374151;
+    box-shadow: 0 1px 0 #c8cdd4;
 }
 
-.kpi-grid-section-header {
-    font-size: 9px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    padding: 4px 4px;
-    border: 1px solid #e2e6ea;
-    text-align: center;
-}
+/* Employee cell is rowspan=2 → stays at top:0 */
+.kpi-entry-grid thead tr:first-child .kpi-grid-th { top: 0; z-index: 21; }
 
 .kpi-section-buying   { background: #eff6ff; color: #1d4ed8; }
 .kpi-section-nodeals  { background: #fff7ed; color: #c2410c; }
@@ -5117,23 +5146,33 @@ canvas#leaderboardCanvas, canvas#mainKpiChart {
 .kpi-col-input    { color: #1f2937; }
 .kpi-col-computed { color: #9ca3af; font-style: italic; }
 
-/* Employee column locks horizontally; z-index above thead so corner cell is always on top */
+/* ── Employee column: sticky left, above everything ── */
 .kpi-grid-name-col {
     position: sticky;
     left: 0;
     background: white !important;
     z-index: 12;
     width: 105px;
-    border-right: 2px solid #d1d5db !important;
+    border-right: 2px solid #c8cdd4 !important;
+    border-bottom: 1px solid #e8eaed !important;
     text-align: left;
     padding: 0 6px;
 }
 
-.kpi-entry-grid thead .kpi-grid-name-col { z-index: 15 !important; background: #f8f9fb !important; }
+/* Corner cell (Employee header) must sit above both sticky axes */
+.kpi-entry-grid thead .kpi-grid-name-col {
+    z-index: 25 !important;
+    background: #f8f9fb !important;
+    top: 0;
+    border-right: 2px solid #c8cdd4 !important;
+    border-bottom: 1px solid #c8cdd4 !important;
+}
 
+/* All body cells: right+bottom only (table provides top+left edges) */
 .kpi-entry-grid tbody tr td {
     padding: 2px 2px;
-    border: 1px solid #f0f0f0;
+    border-right: 1px solid #ebebeb;
+    border-bottom: 1px solid #ebebeb;
     vertical-align: middle;
     overflow: hidden;
 }
@@ -5265,19 +5304,21 @@ canvas#leaderboardCanvas, canvas#mainKpiChart {
    KPI SECTION DIVIDERS (week / month separators)
    ========================================================= */
 .kpi-section-divider-row td {
-    padding: 0 !important;
-    border: none !important;
+    padding: 16px 0 0 0 !important; /* gap above each section */
+    border-right: none !important;
     border-bottom: none !important;
+    background: transparent !important;
 }
 
 .kpi-section-header-inner {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 9px 14px 9px 14px;
-    background: #f1f5f9;
-    border-top: 1px solid #e2e8f0;
-    border-bottom: 1px solid #e2e8f0;
+    padding: 10px 14px;
+    background: #dde3eb;
+    border: 1px solid #c4cdd8;
+    border-bottom: 2px solid #b8c2cc;
+    border-radius: 8px 8px 0 0;
 }
 
 .kpi-section-label {
@@ -5343,6 +5384,16 @@ canvas#leaderboardCanvas, canvas#mainKpiChart {
 /* Alternating row shade */
 .kpi-row-alt { background: #fafafa; }
 .kpi-row-alt .kpi-grid-name-col { background: #f5f5f5 !important; }
+
+/* Store Total row — Excel alternating-row gray, rounds off each section like a card */
+.kpi-total-row td                        { background: #d9d9d9 !important; border-right: 1px solid #c0c0c0 !important; border-bottom: 2px solid #b8c2cc !important; padding: 1px 2px !important; }
+.kpi-total-row:hover td                  { background: #d9d9d9 !important; }
+.kpi-total-name-col                      { background: #d9d9d9 !important; border-right: 2px solid #b0b0b0 !important; }
+.kpi-total-row:hover .kpi-total-name-col { background: #d9d9d9 !important; }
+.kpi-total-row td:first-child            { border-bottom-left-radius: 7px; }
+.kpi-total-row td:last-child             { border-bottom-right-radius: 7px; border-right: 1px solid #c0c0c0 !important; }
+.kpi-total-emp-name  { color: #3a3a3a !important; font-weight: 700 !important; font-size: 9.5px !important; text-transform: uppercase; letter-spacing: 0.4px; }
+.kpi-total-cell      { color: #2a2a2a !important; font-weight: 600 !important; font-size: 10px !important; }
 
 .kpi-cancel-btn {
     height: 38px;

@@ -1950,9 +1950,10 @@ async function fetchWeeklyKPIs() {
         nV.style.cssText = 'display:grid; gap:20px; align-items:start;';
 
         const applyGridColumns = () => {
-            if (window.innerWidth > 1100)      nV.style.gridTemplateColumns = 'repeat(5, 1fr)';
-            else if (window.innerWidth > 768)  nV.style.gridTemplateColumns = 'repeat(2, 1fr)';
-            else                               nV.style.gridTemplateColumns = '1fr';
+            const w = nV.parentElement ? nV.parentElement.offsetWidth : window.innerWidth;
+            if (w > 700)      nV.style.gridTemplateColumns = 'repeat(3, 1fr)';
+            else if (w > 420) nV.style.gridTemplateColumns = 'repeat(2, 1fr)';
+            else              nV.style.gridTemplateColumns = '1fr';
         };
         applyGridColumns();
         if (_weeklyGridResizeListener) window.removeEventListener('resize', _weeklyGridResizeListener);
@@ -2229,6 +2230,26 @@ function _kpiUpdateRow(pk, empIdx) {
     if (statusEl) { statusEl.textContent = '●'; statusEl.style.color = '#f59e0b'; statusEl.title = 'Unsaved'; }
 }
 
+function _kpiStoreTotalRowHtml(entries) {
+    // Sum all numeric input fields; average avg_transaction_time
+    const totals = { employee_name: 'Store Total' };
+    _KPI_INPUT_FIELDS.forEach(function(f) {
+        if (f === 'avg_transaction_time') {
+            const vals = entries.map(function(e) { return Number(e[f]); }).filter(function(v) { return v > 0 && !isNaN(v); });
+            totals[f] = vals.length ? vals.reduce(function(a, b) { return a + b; }, 0) / vals.length : null;
+        } else {
+            const vals = entries.map(function(e) { return Number(e[f]); }).filter(function(v) { return v != null && !isNaN(v); });
+            totals[f] = vals.length ? vals.reduce(function(a, b) { return a + b; }, 0) : null;
+        }
+    });
+    const computed = _kpiCalcDerived(totals);
+    let cells = '<td class="kpi-grid-name-col kpi-total-name-col"><div class="kpi-grid-name-cell"><span class="kpi-grid-emp-name kpi-total-emp-name">Store Total</span></div></td>';
+    _KPI_GRID_FIELDS.forEach(function(f) {
+        cells += '<td class="kpi-grid-computed kpi-total-cell">' + _kpiFormatComputed(f.key, computed[f.key]) + '</td>';
+    });
+    return '<tr class="kpi-total-row">' + cells + '</tr>';
+}
+
 function _kpiWeekRangeLabel(periodEndDate) {
     const end = new Date(periodEndDate + 'T12:00:00');
     const start = new Date(end);
@@ -2257,6 +2278,8 @@ function _kpiRenderWeekly(periods) {
         tbody += _kpiSectionDividerHtml('📅 ' + _kpiWeekRangeLabel(p.period_end_date), wkBadges[i] || '', wkBClass[i] || 'badge-old',
             _kpiSectionControls(p.period_end_date, isEd, p.is_editable), '#3b82f6');
         tbody += _kpiEmpRowsHtml(p.entries, p.period_end_date, isEd, false);
+        const hasSavedData = p.entries.some(function(e) { return e.id; });
+        if (hasSavedData) tbody += _kpiStoreTotalRowHtml(p.entries);
     });
     body.innerHTML = '<div class="kpi-grid-scroll-wrapper"><table class="kpi-entry-grid kpi-full-table">' + _kpiTheadHtml() + '<tbody>' + tbody + '</tbody></table></div>';
 }
@@ -2340,6 +2363,8 @@ function _kpiRenderMonthly(periods) {
         tbody += _kpiSectionDividerHtml('📆 ' + p.period_label, i < 2 ? moBadges[i] : null, i < 2 ? moBClass[i] : '',
             _kpiSectionControls(p.period_end_date, isEd, p.is_editable), '#7c3aed');
         tbody += _kpiEmpRowsHtml(p.entries, p.period_end_date, isEd, false);
+        const hasSavedData = p.entries.some(function(e) { return e.id; });
+        if (hasSavedData) tbody += _kpiStoreTotalRowHtml(p.entries);
     });
     body.innerHTML = '<div class="kpi-grid-scroll-wrapper"><table class="kpi-entry-grid kpi-full-table">' + _kpiTheadHtml() + '<tbody>' + tbody + '</tbody></table></div>';
 }
@@ -2637,7 +2662,9 @@ let currentLeaderboardMetric = 'Revenue';
 let cachedLeaderboardData = null; 
 let currentTimeframe = '4-Week'; 
 let currentChartMode = 'averages';
-let kpiChartCache = JSON.parse(localStorage.getItem('speeksKpiChartCache')) || { '4-Week': null, 'Monthly': null };
+let _rawChartCache = JSON.parse(localStorage.getItem('speeksKpiChartCache')) || {};
+// Discard any old CSV-format cache entries (they had array data, not {mode, tf, ...})
+let kpiChartCache = (_rawChartCache['4-Week']?.mode && _rawChartCache['Monthly']?.mode) ? _rawChartCache : { '4-Week': null, 'Monthly': null };
 let _latestPatchKey = null; // title|date of the most recent patch notes group
 
 function switchPageTab(tab) {
@@ -2679,57 +2706,56 @@ function switchLeaderboardMetric(metric) {
     drawLeaderboard(); 
 }
 
-function loadKpiData() { 
+function loadKpiData() {
     const mSelect = document.getElementById('metricSelector');
     if (!mSelect) return;
-    
-    const m = mSelect.value;
     const loader = document.getElementById('chartLoading');
-    
-    if (loader) {
-        loader.style.display = 'flex';
-        loader.innerHTML = '<div class="status-message">Syncing Live Data...</div>';
-    }
-    
-    // Always fetch fresh data from the server, bypassing the stale local cache
-    fetchChartData(currentTimeframe); 
+    if (loader) { loader.style.display = 'flex'; loader.innerHTML = '<div class="status-message">Syncing Live Data...</div>'; }
+    fetchChartData(currentTimeframe);
 }
 
 async function fetchChartData(tf) {
     const loader = document.getElementById('chartLoading');
-    if (loader) {
-        loader.style.display = 'flex';
-        loader.innerHTML = '<div class="status-message">Syncing Data...</div>';
-    }
-    
+    if (loader) { loader.style.display = 'flex'; loader.innerHTML = '<div class="status-message">Syncing Data...</div>'; }
+
+    const STORES = ['OVL','LEE','WSP','MPL','BAL'];
+    const safeJson = (url) => fetch(url).then(r => r.json()).catch(() => null);
+
     try {
-        const d = await Promise.all([
-            fetch(`${WEEKLY_KPI_URL}?store=OVL&time=${tf}`).then(r => r.json()), 
-            fetch(`${WEEKLY_KPI_URL}?store=LEE&time=${tf}`).then(r => r.json()), 
-            fetch(`${WEEKLY_KPI_URL}?store=WSP&time=${tf}`).then(r => r.json()),
-            fetch(`${WEEKLY_KPI_URL}?store=MPL&time=${tf}`).then(r => r.json()),
-            fetch(`${WEEKLY_KPI_URL}?store=BAL&time=${tf}`).then(r => r.json())
-        ]);
-        
-        kpiChartCache[tf] = d; 
+        let payload;
+        if (currentChartMode === 'averages') {
+            if (tf === 'Monthly') {
+                const results = await Promise.all(STORES.map(s => safeJson(`${MONTHLY_KPI_URL}?store=${s}&v=${Date.now()}`)));
+                payload = { mode: 'averages', tf, stores: STORES, results };
+            } else {
+                const results = await Promise.all(STORES.map(s => safeJson(`${KPI_MANAGE_URL}?store=${s}&period_type=weekly&v=${Date.now()}`)));
+                payload = { mode: 'averages', tf, stores: STORES, results };
+            }
+        } else {
+            const store = document.getElementById('dmChartStoreSelector')?.value || sessionStorage.getItem('speeksUserStore') || 'OVL';
+            const pt = tf === 'Monthly' ? 'monthly' : 'weekly';
+            const result = await safeJson(`${KPI_MANAGE_URL}?store=${store}&period_type=${pt}&v=${Date.now()}`);
+            payload = { mode: 'employees', tf, store, result };
+        }
+
+        kpiChartCache[tf] = payload;
         try { localStorage.setItem('speeksKpiChartCache', JSON.stringify(kpiChartCache)); } catch(e) {}
-        
+
         if (currentTimeframe === tf) {
             const mSelect = document.getElementById('metricSelector');
-            if (mSelect) renderKpiChart(d, mSelect.value);
+            if (mSelect) renderKpiChart(payload, mSelect.value);
         }
     } catch (e) {
-        console.error("fetchChartData error:", e);
+        console.error('fetchChartData error:', e);
         if (loader) loader.innerHTML = '<div class="status-message" style="color:var(--red-alert);">Failed to load chart data.</div>';
-    } 
+    }
 }
 
 function syncAllData() {
     try {
         const mSelect = document.getElementById('metricSelector');
-        if (typeof kpiChartCache !== 'undefined' && kpiChartCache && kpiChartCache[currentTimeframe] && mSelect) {
-            renderKpiChart(kpiChartCache[currentTimeframe], mSelect.value);
-        }
+        const cached = kpiChartCache && kpiChartCache[currentTimeframe];
+        if (cached && cached.mode && mSelect) renderKpiChart(cached, mSelect.value);
     } catch (e) {}
 
     try {
@@ -5703,203 +5729,140 @@ window.addEventListener('popstate', () => {
 // ============================================================================
 
 // --- CHART: RENDER KPI ---
-function renderKpiChart(allData, metric) {
-    if(!document.getElementById('mainKpiChart')) return;
-
-    if (typeof Chart === 'undefined') { 
+function renderKpiChart(payload, metric) {
+    if (!document.getElementById('mainKpiChart')) return;
+    if (typeof Chart === 'undefined') {
         const loader = document.getElementById('chartLoading');
-        if (loader) { 
-            loader.innerHTML = '<div class="status-message" style="color:var(--red-alert);">Chart.js Library Missing!</div>'; 
-            loader.style.display = 'flex'; 
-        } 
-        return; 
+        if (loader) { loader.innerHTML = '<div class="status-message" style="color:var(--red-alert);">Chart.js Library Missing!</div>'; loader.style.display = 'flex'; }
+        return;
     }
+    if (!payload) return;
 
-    const t = { 'conversion': 'Customer Conversion %', 'margin': 'Buying Margin %', 'nodeals': 'Total No Deals', 'time': 'Transaction Time' }[metric];
-    const unit = metric === 'time' ? '' : (metric === 'nodeals' ? '' : '%'); 
-    const isPct = metric === 'conversion' || metric === 'margin';
-    
-    const strs = [ 
-        { key: 'OVL', color: '#a855f7', label: 'OVL' }, 
-        { key: 'LEE', color: '#3b82f6', label: 'LEE' }, 
-        { key: 'WSP', color: '#22c55e', label: 'WSP' },
-        { key: 'MPL', color: '#f97316', label: 'MPL' },
-        { key: 'BAL', color: '#ef4444', label: 'BAL' } 
-    ];
-    
-    let lbls = [], fData = [], nums = [];
-
-    const parseChartVal = (v) => {
-        if (v === undefined || v === null) return null;
-        
-        // Convert to string and lowercase to catch everything safely
-        let strVal = String(v).trim().toLowerCase();
-        
-        // 1. Catch completely empty cells or Google Sheets errors
-        if (strVal === "" || strVal === "-" || strVal === "#div/0!" || strVal === "#n/a" || strVal === "null") {
-            return null;
-        }
-
-        // 2. Catch literal zeros. This forces closed stores/employees to be completely blank instead of flatlining at 0.
-        // Exception: nodeals — 0 is a valid meaningful result (employee had no bad deals that week).
-        if (metric !== 'nodeals' && (strVal === "0" || strVal === "0%" || strVal === "0.00%" || strVal === "0.0%" || strVal === "0:00")) {
-            return null;
-        }
-
-        if (metric === 'time') {
-            if (strVal.includes(':')) {
-                let parts = strVal.split(':');
-                return parseInt(parts[0] || 0) + (parseInt(parts[1] || 0) / 60);
-            }
-            if (strVal.includes('.')) {
-                let parts = strVal.split('.');
-                let mins = parseInt(parts[0] || 0);
-                let secsStr = parts[1] || '0';
-                if (secsStr.length === 1) secsStr += '0'; 
-                let secs = parseInt(secsStr.substring(0,2)) || 0;
-                return mins + (secs / 60);
-            }
-            
-            let p = parseFloat(strVal.replace(/[^0-9.-]/g, ''));
-            if (!isNaN(p)) {
-                if (p > 30) return p / 60;
-                return p;
-            }
-            return null;
-        }
-        
-        let p = parseNum(v);
-        if (p === 0 && metric !== 'nodeals') return null; // Final failsafe — zero means no data except for no-deals
-
-        return (isPct && p <= 1.5 && p >= -1.5) ? p * 100 : p;
+    // ── Metric config ────────────────────────────────────────────────────────
+    const METRIC = {
+        conversion: { field: 'customer_conversion_pct', moName: 'Customer Conversion %', unit: '%',  isPct: true  },
+        margin:     { field: 'gross_margin_pct',         moName: 'Gross Margin %',         unit: '%',  isPct: true  },
+        nodeals:    { field: 'no_deal_count',             moName: 'No Deal Count',           unit: '',   isPct: false },
+        time:       { field: 'avg_transaction_time',      moName: 'Avg Transaction Time',    unit: ' min',isPct: false },
     };
+    const mc = METRIC[metric] || METRIC.conversion;
+    const { field, unit, isPct } = mc;
+
+    const STORE_COLORS = { OVL:'#a855f7', LEE:'#3b82f6', WSP:'#22c55e', MPL:'#f97316', BAL:'#ef4444' };
+    const EMP_COLORS   = ['#a855f7','#3b82f6','#22c55e','#f97316','#ef4444','#14b8a6','#eab308','#ec4899'];
 
     const dmDropdown = document.getElementById('dmChartStoreSelector');
-    if (dmDropdown) dmDropdown.style.display = currentChartMode === 'averages' ? 'none' : 'block';
+    if (dmDropdown) dmDropdown.style.display = payload.mode === 'employees' ? 'block' : 'none';
 
-    if (currentChartMode === 'averages') {
-        allData.forEach((d, idx) => {
-            if (!d || !Array.isArray(d)) return;
-            let sData = [], sr=-1, sc=-1;
-            
-            for(let i=0; i<d.length; i++) { 
-                if (!Array.isArray(d[i])) continue;
-                for(let j=0; j<d[i].length; j++) if(d[i][j] && String(d[i][j]).trim() === t) { sr=i; sc=j; break; } 
-                if(sr!==-1) break; 
-            } 
-            if(sr === -1 || !Array.isArray(d[sr+1])) return;
-            
-            let monthCol = Math.max(0, sc - 1);
-            let sCol = -1;
-            
-            for(let c = sc; c < d[sr+1].length; c++) {
-                let val = String(d[sr+1][c] || '').trim().toLowerCase();
-                if (val === 'store' || val === 'store total') { sCol = c; break; }
-            }
-            if(sCol === -1) sCol = d[sr+1].length - 1; 
-            
-            if(!lbls.length) { 
-                for (let i = sr + 2; i < d.length; i++) { 
-                    if (!Array.isArray(d[i])) continue;
-                    let l = String(d[i][monthCol] || '').trim(); 
-                    if (!l || l.includes('Store') || l.includes('%')) break; 
-                    lbls.push(l); 
-                } 
-            }
-            
-            lbls.forEach((lbl) => {
-                let rowIdx = -1;
-                for (let r = sr + 2; r < d.length; r++) {
-                    if (!Array.isArray(d[r])) continue;
-                    if (String(d[r][monthCol] || '').trim() === lbl) { rowIdx = r; break; }
-                }
-                if (rowIdx === -1) { sData.push(null); return; }
-                let row = d[rowIdx];
-                let v = (metric === 'time' && currentTimeframe === '4-Week') ? row[5] : row[sCol];
-                let parsed = parseChartVal(v);
-            
-                sData.push(parsed);
-                if (parsed !== null) nums.push(parsed);
-            });
-            
-            // FIX: Only push to the chart if there is at least one valid data point
-            if (idx < strs.length && sData.some(val => val !== null)) {
-                fData.push({ label: '   ' + strs[idx].label + '   ', data: sData, borderColor: strs[idx].color, backgroundColor: strs[idx].color, tension: 0.4, pointRadius: 5, spanGaps: true });
-            }
-        });
-    } else {
-        let userStore = dmDropdown ? dmDropdown.value : (sessionStorage.getItem('speeksUserStore') || 'OVL');
-        if (userStore === 'ALL' || userStore === 'CORP') userStore = 'OVL';
-        let storeIdx = strs.findIndex(s => s.key === userStore);
-        if (storeIdx === -1) storeIdx = 0;
-        
-        let d = allData[storeIdx];
-        if (d && Array.isArray(d)) {
-            let sr=-1, sc=-1;
-            for(let i=0; i<d.length; i++) { 
-                if (!Array.isArray(d[i])) continue;
-                for(let j=0; j<d[i].length; j++) if(d[i][j] && String(d[i][j]).trim() === t) { sr=i; sc=j; break; } 
-                if(sr!==-1) break; 
-            }
-            if(sr !== -1 && Array.isArray(d[sr+1])) {
-                let monthCol = Math.max(0, sc - 1);
-                let sCol = -1;
-                
-                for(let c = sc; c < d[sr+1].length; c++) {
-                    let val = String(d[sr+1][c] || '').trim().toLowerCase();
-                    if (val === 'store' || val === 'store total') { sCol = c; break; }
-                }
-                if (sCol === -1) sCol = d[sr+1].length - 1;
+    const safeVal = (v) => {
+        if (v == null || isNaN(Number(v))) return null;
+        const n = Number(v);
+        if (!isFinite(n)) return null;
+        if (n === 0 && metric !== 'nodeals') return null;
+        return n;
+    };
 
-                if(!lbls.length) { 
-                    for (let i = sr + 2; i < d.length; i++) { 
-                        if (!Array.isArray(d[i])) continue;
-                        let l = String(d[i][monthCol] || '').trim(); 
-                        if (!l || l.includes('Store') || l.includes('%')) break; 
-                        lbls.push(l); 
-                    } 
-                }
+    let lbls = [], fData = [], nums = [];
 
-                let empCols = [];
-                for(let c = sc; c < sCol; c++) {
-                    let colName = String(d[sr+1][c] || '').trim();
-                    if (!colName) continue; 
-                    let lowerName = colName.toLowerCase();
-                    if(!lowerName.includes('average') && lowerName !== 'store' && lowerName !== 'store total' && lowerName !== t.toLowerCase() && !strs.some(s => s.key.toLowerCase() === lowerName)) {
-                        if (!empCols.some(e => e.name === colName)) empCols.push({ name: colName, idx: c });
-                    }
-                }
+    // ── AVERAGES MODE ────────────────────────────────────────────────────────
+    if (payload.mode === 'averages') {
 
-                const empColors = ['#a855f7', '#3b82f6', '#22c55e', '#f97316', '#ef4444', '#14b8a6', '#eab308', '#ec4899'];
-                
-                empCols.forEach((emp, eIdx) => {
-                    let sData = [];
-                    lbls.forEach((lbl) => {
-                        let rowIdx = -1;
-                        for (let r = sr + 2; r < d.length; r++) {
-                            if (!Array.isArray(d[r])) continue;
-                            if (String(d[r][monthCol] || '').trim() === lbl) { rowIdx = r; break; }
-                        }
-                        if (rowIdx === -1) { sData.push(null); return; }
-                        let parsed = parseChartVal(d[rowIdx][emp.idx]);
-                        sData.push(parsed);
-                        if (parsed !== null) nums.push(parsed);
-                    });
-                    
-                    if (sData.some(val => val !== null)) {
-                        let color = empColors[eIdx % empColors.length];
-                        fData.push({ label: '   ' + emp.name + '   ', data: sData, borderColor: color, backgroundColor: color, tension: 0.4, pointRadius: 5, spanGaps: true });
-                    }
+        if (payload.tf === 'Monthly') {
+            // monthly-kpi returns { months:[...], data:[{name, values}] } per store
+            const first = (payload.results || []).find(r => r && r.months && r.months.length);
+            lbls = first ? first.months : [];
+
+            (payload.results || []).forEach((r, idx) => {
+                if (!r || !r.months || !r.data) return;
+                const store = payload.stores[idx];
+                const row = r.data.find(m => m.name.toLowerCase().includes(
+                    metric === 'conversion' ? 'customer conversion' :
+                    metric === 'margin'     ? 'gross margin'        :
+                    metric === 'nodeals'    ? 'no deal count'       : 'avg transaction'
+                ));
+                if (!row) return;
+                const vals = lbls.map(lbl => {
+                    const i = r.months.indexOf(lbl);
+                    return i === -1 ? null : safeVal(row.values[i]);
                 });
-            }
+                const valid = vals.filter(v => v !== null);
+                if (!valid.length) return;
+                nums.push(...valid);
+                fData.push({ label: '   ' + store + '   ', data: vals, borderColor: STORE_COLORS[store], backgroundColor: STORE_COLORS[store], tension: 0.4, pointRadius: 5, spanGaps: true });
+            });
+
+        } else {
+            // 4-Week: kpi-manage returns periods newest-first — reverse for left=old, right=new
+            const first = (payload.results || []).find(r => r && r.periods && r.periods.length);
+            lbls = first ? [...first.periods].reverse().map(p => _kpiWeekRangeLabel(p.period_end_date)) : [];
+
+            (payload.results || []).forEach((r, idx) => {
+                if (!r || !r.periods) return;
+                const store = payload.stores[idx];
+                const vals = [...r.periods].reverse().map(p => {
+                    if (!p.entries || !p.entries.length) return null;
+                    const total = _kpiStoreTotalRowHtml ? (() => {
+                        // compute totals inline without the HTML builder
+                        const t2 = { employee_name: 'Store Total' };
+                        _KPI_INPUT_FIELDS.forEach(function(f) {
+                            if (f === 'avg_transaction_time') {
+                                const vs = p.entries.map(e => Number(e[f])).filter(v => v > 0 && !isNaN(v));
+                                t2[f] = vs.length ? vs.reduce((a,b)=>a+b,0)/vs.length : null;
+                            } else {
+                                const vs = p.entries.map(e => Number(e[f])).filter(v => v != null && !isNaN(v));
+                                t2[f] = vs.length ? vs.reduce((a,b)=>a+b,0) : null;
+                            }
+                        });
+                        return _kpiCalcDerived(t2);
+                    })() : null;
+                    return total ? safeVal(total[field]) : null;
+                });
+                const valid = vals.filter(v => v !== null);
+                if (!valid.length) return;
+                nums.push(...valid);
+                fData.push({ label: '   ' + store + '   ', data: vals, borderColor: STORE_COLORS[store], backgroundColor: STORE_COLORS[store], tension: 0.4, pointRadius: 5, spanGaps: true });
+            });
         }
+
+    // ── EMPLOYEES MODE ───────────────────────────────────────────────────────
+    } else {
+        const r = payload.result;
+        if (!r || !r.periods || !r.periods.length) {
+            const loader = document.getElementById('chartLoading');
+            if (loader) { loader.innerHTML = '<div class="status-message">No data available.</div>'; loader.style.display = 'flex'; }
+            return;
+        }
+
+        // kpi-manage returns newest-first — reverse so chart reads left=old, right=new
+        const periods = [...r.periods].reverse();
+
+        lbls = payload.tf === 'Monthly'
+            ? periods.map(p => p.period_label)
+            : periods.map(p => _kpiWeekRangeLabel(p.period_end_date));
+
+        const empNames = [...new Set(periods.flatMap(p => (p.entries || []).map(e => e.employee_name)))];
+
+        empNames.forEach((name, eIdx) => {
+            const vals = periods.map(p => {
+                const entry = (p.entries || []).find(e => e.employee_name === name);
+                if (!entry) return null;
+                const computed = _kpiCalcDerived(entry);
+                return safeVal(computed[field]);
+            });
+            const valid = vals.filter(v => v !== null);
+            if (!valid.length) return;
+            nums.push(...valid);
+            const color = EMP_COLORS[eIdx % EMP_COLORS.length];
+            fData.push({ label: '   ' + name + '   ', data: vals, borderColor: color, backgroundColor: color, tension: 0.4, pointRadius: 5, spanGaps: true });
+        });
     }
 
-    let yMin = 0, yMax = 100; 
-    if (nums.length) { 
-        let mx = Math.max(...nums), mn = Math.min(...nums); 
+    // ── Y-axis bounds ────────────────────────────────────────────────────────
+    let yMin = 0, yMax = 100;
+    if (nums.length) {
+        const mx = Math.max(...nums), mn = Math.min(...nums);
         if (isPct) {
-            yMin = Math.max(0, Math.floor(mn/10)*10 - 10); 
+            yMin = Math.max(0, Math.floor(mn/10)*10 - 10);
             yMax = Math.min(100, Math.ceil(mx/10)*10 + 10);
         } else if (metric === 'time') {
             yMin = Math.max(0, Math.floor(mn) - 1);
@@ -5910,58 +5873,34 @@ function renderKpiChart(allData, metric) {
         }
     }
 
-    const formatTimeStr = (v) => {
-        let mins = Math.floor(v);
-        let secs = Math.round((v - mins) * 60);
-        if (secs === 60) { mins++; secs = 0; }
-        return mins + ':' + (secs < 10 ? '0' : '') + secs;
+    const fmtVal = (v) => {
+        if (v === null) return '';
+        if (metric === 'time') { const m2=Math.floor(v), s=Math.round((v-m2)*60); return m2+':'+(s<10?'0':'')+s+' min'; }
+        return (Math.round(v*10)/10) + unit;
     };
 
+    // ── Draw chart ───────────────────────────────────────────────────────────
     if (mainChartInstance) mainChartInstance.destroy();
-    
-    mainChartInstance = new Chart(document.getElementById('mainKpiChart').getContext('2d'), { 
-        type: 'line', 
-        plugins: typeof ChartDataLabels !== 'undefined' ? [ChartDataLabels] : [], 
-        data: { labels: lbls, datasets: fData }, 
-        options: { 
-            responsive: true, 
-            maintainAspectRatio: false, 
+
+    mainChartInstance = new Chart(document.getElementById('mainKpiChart').getContext('2d'), {
+        type: 'line',
+        plugins: typeof ChartDataLabels !== 'undefined' ? [ChartDataLabels] : [],
+        data: { labels: lbls, datasets: fData },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
             layout: { padding: { top: 55, right: 20, left: 10, bottom: 0 } },
-            animation: { duration: 400 }, 
-            plugins: { 
-                legend: { 
-                    position: 'bottom', 
-                    labels: { font: { size: 13, family: "'Inter', sans-serif", weight: 'bold' }, usePointStyle: true, boxWidth: 8, padding: 20 }
-                }, 
-                datalabels: { 
-                    align: 'top', 
-                    anchor: 'end', 
-                    formatter: v => {
-                        if (v === null) return '';
-                        return metric === 'time' ? formatTimeStr(v) : (Math.round(v*10)/10 + unit);
-                    },
-                    font: { size: 11, weight: 'bold' },
-                    color: '#666',
-                    offset: 4
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            let label = context.dataset.label.trim() || '';
-                            if (label) label += ': ';
-                            if (context.parsed.y !== null) {
-                                label += metric === 'time' ? formatTimeStr(context.parsed.y) : (Math.round(context.parsed.y*10)/10 + unit);
-                            }
-                            return label;
-                        }
-                    }
-                }
-            }, 
-            scales: { 
-                y: { min: yMin, max: yMax, ticks: { callback: v => metric === 'time' ? formatTimeStr(v) : (v + unit) } }, 
-                x: { grid: { display: false } } 
-            } 
-        } 
+            animation: { duration: 400 },
+            plugins: {
+                legend: { position: 'bottom', labels: { font: { size: 13, family:"'Inter',sans-serif", weight:'bold' }, usePointStyle: true, boxWidth: 8, padding: 20 } },
+                datalabels: { align:'top', anchor:'end', formatter: fmtVal, font:{ size:11, weight:'bold' }, color:'#666', offset:4 },
+                tooltip: { callbacks: { label: ctx => { const lbl = ctx.dataset.label.trim(); return lbl + ': ' + fmtVal(ctx.parsed.y); } } }
+            },
+            scales: {
+                y: { min: yMin, max: yMax, ticks: { callback: v => metric === 'time' ? (Math.floor(v)+':'+(Math.round((v-Math.floor(v))*60)<10?'0':'')+Math.round((v-Math.floor(v))*60)+' min') : (v+unit) } },
+                x: { grid: { display: false } }
+            }
+        }
     });
 
     const activeLoader = document.getElementById('chartLoading');

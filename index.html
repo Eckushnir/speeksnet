@@ -961,13 +961,14 @@
           </div>
       </div>
 
-      <div class="card district-master-panel employee-widget-card dynamic-module-flex role-manager role-owner-manager full-width-card">
+      <div class="card kpi-master-card district-master-panel employee-widget-card dynamic-module-flex role-manager role-owner-manager weekly-expanded-card">
           <div class="district-kpi-header weekly-kpi-header">
               <div class="align-center gap-8">
                   <span class="district-kpi-title">Weekly KPI Breakdown <span id="weeklyKpiPeriod" class="widget-date-display"></span></span>
               </div>
               <div class="align-center gap-10">
-                  <button class="kpi-update-trigger-btn" onclick="openKpiEntryPanel('weekly')">📊 View KPIs</button>
+                  <button class="kpi-update-trigger-btn" onclick="openKpiEntryPanel('weekly')">📊 View / Edit KPIs</button>
+                  <button class="kpi-update-trigger-btn" onclick="openKpiEntryPanel('monthly')" style="background:#f0fdf4; color:var(--sage-professional); border-color:var(--sage-professional);">📆 Monthly KPIs</button>
                   <select id="weeklyKpiStoreSelect" class="kpi-select hide-by-default" onchange="fetchWeeklyKPIs()">
                       <option value="OVL">OVL</option>
                       <option value="LEE">LEE</option>
@@ -977,46 +978,10 @@
                   </select>
               </div>
           </div>
-          
-          <div class="weekly-kpi-grid mb-10" id="weeklyKpiContainer">
-              <div class="status-message">Syncing Live Weekly Data...</div>
-          </div>
-      </div>
 
-      <div class="card kpi-master-card district-master-panel employee-widget-card dynamic-module-flex role-manager role-owner-manager bottom-locked-card">
-          <div class="district-kpi-header">
-              <span class="district-kpi-title">Monthly KPI Comparison</span>
-              <div class="kpi-header-controls">
-                  <button class="kpi-update-trigger-btn" onclick="openKpiEntryPanel('monthly')">📊 View KPIs</button>
-                  <div class="kpi-select-group">
-                      <select id="kpiStoreSelect" class="kpi-select hide-by-default">
-                          <option value="OVL">OVL</option>
-                          <option value="LEE">LEE</option>
-                          <option value="WSP">WSP</option>
-                          <option value="MPL">MPL</option>
-                          <option value="BAL">BAL</option>
-                      </select>
-                  </div>
-                  <div class="kpi-select-group" style="margin-left: auto;">
-                      <select id="primaryMonthSelect" class="kpi-select" onchange="renderKPIDashboard()"></select>
-                  </div>
-                  <div class="kpi-select-group vw-vs-text">vs</div>
-                  <div class="kpi-select-group">
-                      <select id="compareMonthSelect" class="kpi-select" onchange="renderKPIDashboard()"></select>
-                  </div>
-              </div>
-          </div>
-        
-          <div class="kpi-inner-wrapper">
-              <div class="kpi-table-header">
-                  <div>Metric & 12-Mo Trend</div>
-                  <div id="header-primary-label">Primary</div>
-                  <div id="header-compare-label">Compare</div>
-                  <div>Delta (+/-)</div>
-              </div>
-
-              <div id="kpiDashboardContainer" class="kpi-scroll-area">
-                  <div class="status-message">Syncing KPI Data...</div>
+          <div class="weekly-kpi-scroll-area">
+              <div class="weekly-kpi-grid" id="weeklyKpiContainer">
+                  <div class="status-message">Syncing Live Weekly Data...</div>
               </div>
           </div>
       </div>
