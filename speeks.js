@@ -1963,7 +1963,7 @@ async function fetchWeeklyKPIs() {
         const fmt$ = v => (v != null && v !== '') ? `$${Math.round(Number(v)).toLocaleString()}` : '—';
         const fmtPct = v => (v != null && v !== '') ? `${Number(v).toFixed(1)}%` : '—';
         const fmtN   = v => (v != null && v !== '') ? String(v) : '—';
-        const fmtMin = v => (v != null && v !== '') ? `${Number(v).toFixed(1)} min` : '—';
+        const fmtMin = v => (v != null && v !== '') ? `${Number(v).toFixed(1)}` : '—';
 
         const buildCol = (title, storeMain, storeBadge, getMain, getBadge, ruleName, mainFmt, badgeFmt) => {
             let h = `<div style="border:1px solid #eee;border-radius:12px;background:white;overflow:hidden;display:flex;flex-direction:column;">
@@ -2099,7 +2099,7 @@ function _kpiFormatComputed(key, val) {
                         'no_deal_value','no_deal_cost','listed_retail_price','listed_cost','listed_sold_value'];
     if (pctKeys.includes(key))    return n.toFixed(1) + '%';
     if (dollarKeys.includes(key)) return '$' + Math.round(n).toLocaleString();
-    if (key === 'avg_transaction_time') return n.toFixed(1) + ' min';
+    if (key === 'avg_transaction_time') return n.toFixed(1);
     return String(Math.round(n * 10) / 10);
 }
 
@@ -4312,7 +4312,7 @@ async function fetchMasterDistrictDashboard() {
             const t = d.store_total || {};
             const fmtPct = v => v != null ? `${Number(v).toFixed(1)}` : '';
             const fmtN   = v => v != null ? String(Math.round(Number(v))) : '';
-            const fmtMin = v => v != null ? `${Number(v).toFixed(1)} min` : '';
+            const fmtMin = v => v != null ? `${Number(v).toFixed(1)}` : '';
             const sAvg = {
                 buyMargin:  fmtPct(t.gross_margin_pct),
                 conversion: fmtPct(t.customer_conversion_pct),
@@ -5127,7 +5127,7 @@ async function fetchAndRenderEmployeeKPIs() {
         const fmtBuy = v => v != null ? `$${Math.round(Number(v)).toLocaleString()}` : '';
         const fmtPct = v => v != null ? `${Number(v).toFixed(1)}` : '';
         const fmtN   = v => v != null ? String(Math.round(Number(v))) : '';
-        const fmtMin = v => v != null ? `${Number(v).toFixed(1)} min` : '';
+        const fmtMin = v => v != null ? `${Number(v).toFixed(1)}` : '';
 
         let sAvg = {
             buyVal:     fmtBuy(total.buying_value),
