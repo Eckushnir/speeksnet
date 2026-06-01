@@ -47,6 +47,7 @@
             <a class="dev-dropdown-link dynamic-module-block role-district-manager" onclick="toggleManageTicker()">Ticker Items</a>
             <a class="dev-dropdown-link dynamic-module-block role-district-manager" onclick="toggleSendCommentModal()">Send Store Comment</a>
             <a class="dev-dropdown-link dynamic-module-block role-district-manager role-ceo role-owner-manager" onclick="toggleManageUsers()">User Permissions</a>
+            <a class="dev-dropdown-link dynamic-module-block role-district-manager" onclick="toggleVarianceInput()">Submit Variance Report</a>
             <a class="dev-dropdown-link dynamic-module-block role-district-manager" onclick="toggleManageAlerts()">Performance Metrics</a>
             <a class="dev-dropdown-link dynamic-module-block role-district-manager" onclick="toggleManageRecords()">Company Records</a>
             <a class="dev-dropdown-link dynamic-module-block role-district-manager" onclick="openScorecardModal()">Submit Scorecard</a>
@@ -75,7 +76,7 @@
     <div class="greeting-stack">
         <h2 id="userGreeting">Welcome!</h2>
         <div class="version-signout-row">
-            <span class="version-tag">V1.0.4-PRE</span>
+            <span class="version-tag">v2.0.2-alpha</span>
             <button onclick="handleSignOut()" class="sign-out-mini">Sign Out</button>
         </div>
       </div>
@@ -152,6 +153,34 @@
     </div>
 </div>
 
+<!-- KPI View Modal (full screen) -->
+<div class="modal-menu kpi-fullscreen-modal" id="kpiEntryModal">
+    <div class="modal-header kpi-modal-header-tight">
+        <div class="align-center gap-15">
+            <h3>Store KPIs</h3>
+            <div class="notif-tabs">
+                <button id="kpi-tab-weekly"  class="tab-btn active" onclick="switchKpiTab('weekly')">📅 Weekly</button>
+                <button id="kpi-tab-monthly" class="tab-btn"        onclick="switchKpiTab('monthly')">📆 Monthly</button>
+            </div>
+            <select id="kpiModalStoreSelect" class="kpi-select dynamic-module-block role-district-manager role-ceo role-tom" onchange="_kpiLoadAll(_kpiCurrentTab)" style="display:none;">
+                <option value="OVL">OVL</option>
+                <option value="LEE">LEE</option>
+                <option value="WSP">WSP</option>
+                <option value="MPL">MPL</option>
+                <option value="BAL">BAL</option>
+            </select>
+            <span id="kpiModalSubtitle" style="font-size:11px;color:#888;font-weight:600;"></span>
+        </div>
+        <div class="align-center gap-8">
+            <button class="kpi-export-btn" onclick="_kpiExportCSV()" title="Export to CSV">⬇ Export CSV</button>
+            <button class="modal-close-btn" onclick="closeAllModals()">✖</button>
+        </div>
+    </div>
+    <div class="kpi-fullscreen-body" id="kpiModalBody">
+        <div class="kpi-empty-state">Loading…</div>
+    </div>
+</div>
+
 <div class="modal-menu manage-menu" id="manageRecordsDropdown">
     <div class="modal-header">
         <h3>Edit Company Records</h3>
@@ -225,6 +254,45 @@
     </div>
     <div class="manage-footer flex-end">
         <button id="sendCommentBtn" class="btn-primary" onclick="submitStoreComment()">Send Message</button>
+    </div>
+</div>
+
+<!-- ===== VARIANCE INPUT MODAL ===== -->
+<div class="modal-menu manage-menu" id="varianceInputModal">
+    <div class="modal-header">
+        <h3>📊 Submit Variance Report</h3>
+        <button class="modal-close-btn" onclick="closeAllModals()">✖</button>
+    </div>
+    <div class="manage-content">
+        <label class="form-label-caps">Store</label>
+        <select id="vi-store" class="form-input-lg" style="margin-bottom: 15px;" onchange="loadVarianceStoreEmployees()">
+            <option value="OVL">OVL</option>
+            <option value="LEE">LEE</option>
+            <option value="WSP">WSP</option>
+            <option value="MPL">MPL</option>
+            <option value="BAL">BAL</option>
+        </select>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+            <div>
+                <label class="form-label-caps">Date From</label>
+                <input type="date" id="vi-date-from" class="form-input-lg" style="margin: 0;">
+            </div>
+            <div>
+                <label class="form-label-caps">Date To</label>
+                <input type="date" id="vi-date-to" class="form-input-lg" style="margin: 0;">
+            </div>
+        </div>
+
+        <label class="form-label-caps">Store Overall Variance %</label>
+        <input type="number" id="vi-store-pct" class="form-input-lg" step="0.01" placeholder="e.g. -2.45" style="margin-bottom: 15px;">
+
+        <label class="form-label-caps">Employees</label>
+        <div id="vi-employees" style="display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto;"></div>
+    </div>
+    <div class="manage-footer flex-end">
+        <button class="btn-secondary" onclick="closeAllModals()">Cancel</button>
+        <button id="vi-submit-btn" class="btn-primary" onclick="submitVarianceReport()">Submit Report</button>
     </div>
 </div>
 
@@ -429,11 +497,11 @@
         <div class="hotbar-container">
           <span class="hotbar-label">DM</span>
           <div class="hotbar-links">
+            <button class="hotbar-btn hotbar-btn-primary" onclick="openKpiEntryPanel('weekly')">📊 View KPIs</button>
             <a href="https://drive.google.com/drive/folders/1nO9KTRU6Kb9Mv-cTAPp-kffV4DVESdC8?usp=sharing" target="_blank" class="hotbar-btn">📁 Store Manager Folder</a>
             <a href="https://drive.google.com/drive/folders/1kV1if60GZ9211JGgK0nxY9McBfdtENDK?usp=sharing" target="_blank" class="hotbar-btn">🔑 Store Passwords</a>
             <a href="https://docs.google.com/spreadsheets/d/1NkIdw8dlvwXmQ6kdpo73zqRwnPd4kIAkgJ7yAG2XCt4/edit?usp=sharing" target="_blank" class="hotbar-btn">🎯 Listing Goals</a>  
             <a href="https://docs.google.com/spreadsheets/d/1i_oV37lZXq8s91f9ymzwQlrM8WY2UlQQQ0qsRP3xLJ8/edit" target="_blank" class="hotbar-btn">📊 Sales Summary</a>  
-            <a href="https://docs.google.com/spreadsheets/d/1oHOnA6wDwaLQ-EP4-CiDTkKpAdP2V7y8mOay416HDME/edit" target="_blank" class="hotbar-btn">📈 Weekly Metrics</a>
             <a href="https://docs.google.com/spreadsheets/d/1e4mW-pcwUMJjl2Pjry6PT180P8M8nkYL5Z4GcspQmEA/edit" target="_blank" class="hotbar-btn">📉 Monthly KPIs</a>
             <a href="https://drive.google.com/drive/folders/12Fjxp44sY6T-o6OlrG6n_YtrHow4bE2f?usp=sharing" target="_blank" class="hotbar-btn">⚖️ Variance</a>
             <a href="https://docs.google.com/spreadsheets/d/1agChyBxxwJqP-3CXo10C36-95Y_dVKXTA4GboeCaRRs/edit" target="_blank" class="hotbar-btn">📋 Scorecard</a>
@@ -482,7 +550,7 @@
         <div class="hotbar-container">
           <span class="hotbar-label">MGR</span>
           <div class="hotbar-links">
-            <a href="https://docs.google.com/spreadsheets/d/1oHOnA6wDwaLQ-EP4-CiDTkKpAdP2V7y8mOay416HDME/edit?usp=sharing" target="_blank" class="hotbar-btn">📈 Weekly Metrics</a>
+            <button class="hotbar-btn hotbar-btn-primary" onclick="openKpiEntryPanel('weekly')">📊 View KPIs</button>
             <a href="https://docs.google.com/spreadsheets/d/1e4mW-pcwUMJjl2Pjry6PT180P8M8nkYL5Z4GcspQmEA/edit" target="_blank" class="hotbar-btn">📉 Monthly KPIs</a>
             <a href="https://docs.google.com/spreadsheets/d/1NkIdw8dlvwXmQ6kdpo73zqRwnPd4kIAkgJ7yAG2XCt4/edit?usp=sharing" target="_blank" class="hotbar-btn">🎯 Daily Listing Goals</a>  
             <a href="https://docs.google.com/spreadsheets/d/1KdQNDYfJT-Gt6wal6cgCbh6aqOUOHxey3PEsoeyztzQ/edit?usp=sharing" target="_blank" class="hotbar-btn">⏳ Aging Inventory</a>
@@ -899,65 +967,31 @@
           </div>
       </div>
 
-      <div class="card district-master-panel employee-widget-card dynamic-module-flex role-manager role-owner-manager full-width-card">
-          <div class="district-kpi-header weekly-kpi-header">
-              <div class="align-center gap-8">
-                  <span class="district-kpi-title">Weekly KPI Breakdown <span id="weeklyKpiPeriod" class="widget-date-display"></span></span>
-              </div>
-              <div class="align-center gap-10">
-                  <select id="weeklyKpiStoreSelect" class="kpi-select hide-by-default" onchange="fetchWeeklyKPIs()">
+      <div class="card kpi-master-card district-master-panel employee-widget-card dynamic-module-flex role-manager role-owner-manager role-district-manager role-ceo weekly-expanded-card">
+          <div class="district-kpi-header mb-brief-header">
+              <span class="district-kpi-title">Monthly Performance Brief</span>
+              <div class="mb-brief-controls">
+                  <select id="mbStoreSelect" class="kpi-select" onchange="fetchMonthlyBrief()">
                       <option value="OVL">OVL</option>
                       <option value="LEE">LEE</option>
                       <option value="WSP">WSP</option>
                       <option value="MPL">MPL</option>
                       <option value="BAL">BAL</option>
                   </select>
+                  <select id="mbPrimaryMonth" class="kpi-select" onchange="renderMonthlyBrief()"></select>
+                  <span class="vw-vs-text">vs</span>
+                  <select id="mbCompareMonth" class="kpi-select" onchange="renderMonthlyBrief()"></select>
+                  <button id="mbEditBtn" class="kpi-update-trigger-btn" style="display:none;" onclick="mbStartEdit()">✏️ Edit</button>
+                  <button id="mbSaveBtn" class="kpi-save-section-btn" style="display:none;" onclick="mbSaveBrief()">Save</button>
+                  <button id="mbCancelBtn" class="kpi-cancel-btn" style="display:none;" onclick="mbCancelEdit()">Cancel</button>
               </div>
           </div>
-          
-          <div class="weekly-kpi-grid mb-10" id="weeklyKpiContainer">
-              <div class="status-message">Syncing Live Weekly Data...</div>
-          </div>
-      </div>
-
-      <div class="card kpi-master-card district-master-panel employee-widget-card dynamic-module-flex role-manager role-owner-manager bottom-locked-card">
-          <div class="district-kpi-header">
-              <span class="district-kpi-title">Monthly KPI Comparison</span>
-              <div class="kpi-header-controls">
-                  <div class="kpi-select-group">
-                      <select id="kpiStoreSelect" class="kpi-select hide-by-default">
-                          <option value="OVL">OVL</option>
-                          <option value="LEE">LEE</option>
-                          <option value="WSP">WSP</option>
-                          <option value="MPL">MPL</option>
-                          <option value="BAL">BAL</option>
-                      </select>
-                  </div>
-                  <div class="kpi-select-group" style="margin-left: auto;">
-                      <select id="primaryMonthSelect" class="kpi-select" onchange="renderKPIDashboard()"></select>
-                  </div>
-                  <div class="kpi-select-group vw-vs-text">vs</div>
-                  <div class="kpi-select-group">
-                      <select id="compareMonthSelect" class="kpi-select" onchange="renderKPIDashboard()"></select>
-                  </div>
-              </div>
-          </div>
-        
-          <div class="kpi-inner-wrapper">
-              <div class="kpi-table-header">
-                  <div>Metric & 12-Mo Trend</div>
-                  <div id="header-primary-label">Primary</div>
-                  <div id="header-compare-label">Compare</div>
-                  <div>Delta (+/-)</div>
-              </div>
-
-              <div id="kpiDashboardContainer" class="kpi-scroll-area">
-                  <div class="status-message">Syncing KPI Data...</div>
-              </div>
+          <div class="weekly-kpi-scroll-area" id="mbBody">
+              <div class="status-message">Syncing Performance Brief…</div>
           </div>
       </div>
 
-      <div class="card district-master-panel employee-widget-card dynamic-module-flex role-manager role-owner-manager flex-col-card bottom-locked-card" style="margin-bottom: 0;">
+      <div class="card kpi-master-card district-master-panel employee-widget-card dynamic-module-flex role-manager role-owner-manager flex-col-card bottom-locked-card" style="margin-bottom: 0;">
           <div class="district-kpi-header" style="border-bottom: none;">
               <span class="district-kpi-title">Live Variance Reports <span id="variance-date-display" class="widget-date-display"></span></span>
               <div class="vw-controls">

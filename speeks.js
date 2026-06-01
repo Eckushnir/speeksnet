@@ -27,24 +27,27 @@
 })();
 
 // --- 1. API URLS ---
-const CMS_URL = 'https://script.google.com/macros/s/AKfycbxZviJiiQKcQYyp3SK4tcNBHrHXkID7cmwwuONStVPE9DHCSAMappqAs9dBns7ufECI/exec';
-const HOTKEYS_URL = 'https://script.google.com/macros/s/AKfycbyLburcVWM8xAKwDt2RHAQhZBLb_rJjb2__EzhoAKx1KgkNFi-BchVetgaTKvwCwqZiRw/exec';
-const DOCS_URL = 'https://script.google.com/macros/s/AKfycbyRLeIuWH3v2lMeFmoWcCohDz_YB-AFOnG_QgPckjiYnjni1dUKm0jRqaXeJGAViSYkQg/exec';
-const MONTHLY_KPI_URL = 'https://script.google.com/macros/s/AKfycby0ihq9A4yUQvdZdeAF9euC5jih24hP2XGG-J_balNtxop2RHBuIuigw_mH3XTeCkkhow/exec';
-const VARIANCE_API_URL = 'https://script.google.com/macros/s/AKfycbxFO_W-PW4ZT4e5mXlQOhlYl2ccpZ9by8MZ6rF-RJ6x3lryCjbi5XxY7c57vLgfx7k/exec';
-const HUB_URL = 'https://script.google.com/macros/s/AKfycbw3Ms5nc2bhbrjVW-da3xbZ3vKhyBx2TpeR-eSd1L05ZhV-h2Yh0yLmIV_E7TWDmwM69A/exec';
-const WEEKLY_KPI_URL = 'https://script.google.com/macros/s/AKfycbyVBos-uJuhaqfLMBqoz9byNkvUG06igl4RX2_cs8hH15rbp7K4uFFEN-wpQgS2ChAU/exec';
-const AUTH_URL = 'https://script.google.com/macros/s/AKfycbza40UZxFtBWwtm3Z52MqAaBtxRfilN7flkMIuE-ylco-VFli38_nK9avh4gDioHNZjKg/exec';
-const RECORDS_URL = 'https://script.google.com/macros/s/AKfycbwPMcs33YfH84ewJyg3ikqIKZtOJByEI9X2PD3cONtavJk7oJCUnGYbP6sESBE6-j2RSA/exec';
-const QUICK_MSG_URL = 'https://script.google.com/macros/s/AKfycbxpPxDhcyS5gJ90plzsW_I1zkiC9bCZ6WA3Pl22XJL3NLg6K8L5QfeYX6VNN5bECstIeg/exec';
-const GOALS_API_URL = 'https://script.google.com/macros/s/AKfycbw_eV-2Nxizf85J8atBJ6Muyq0aOAjZAsSLwlx9abPjNKJub_RlzrMBKkQuTbcRTbF2/exec';
-const SCORECARD_URL = 'https://script.google.com/macros/s/AKfycbwvelWpXnlXCJZQGagZX5llMCN1k6CjronBpIcenNVDTjUdPISjF0mYhHYy2ry0Vdg0_Q/exec';
-const EBAY_ALERTS_URL = 'https://script.google.com/macros/s/AKfycbxap-4Jgdn5-ntkv_X-vFZLTWlTB29_bDLdwcFxhWd2su3ZQJ0ZS7UpUgZAK08lOIV6/exec';
-const STORE_COMMENT_URL = 'https://script.google.com/macros/s/AKfycbzoqWLZz07niO-dVqDpQS7I-bDvUgLjHT4CYGiqb--yAQYQPkFCUi9EXoi5Wsz-V0Ne/exec';
-const CHECKLIST_URL = 'https://script.google.com/macros/s/AKfycbxr4ZEoSKeF4BZ1H2-tcmc6Gy30-le5Gdm3CSdee6XxOhZFes3-5SF_PNcWR4OLEGN2hQ/exec';
-const TUTORIAL_URL = 'https://script.google.com/macros/s/AKfycbySrXu6IW3S39GKiEsXkJwd4s75aO0uG-BTTg_swxEx3BMG_W7qqZBwHKnuEm_k_Agh/exec';
-const PATCH_NOTES_URL = 'https://script.google.com/macros/s/AKfycbzzk6beS7HWINw8GtQZ12FpezgFhBXj_1GgV1Fs342bc05Y6x9-tJGgr_MMl13rIfP3/exec';
-const TICKER_URL = 'https://script.google.com/macros/s/AKfycbyfvqCn2Vwwp1xGzKiXM9cFkicXosI3ErIp83Qu4GduhS6CRoldVSnDI267j54C72qyVw/exec';
+const _BASE = 'https://ejzaqmyxxrkmxvzbjeuo.supabase.co/functions/v1';
+const CMS_URL           = `${_BASE}/cms`;
+const HOTKEYS_URL       = `${_BASE}/hotkeys`;
+const DOCS_URL          = `${_BASE}/docs`;
+const MONTHLY_KPI_URL   = `${_BASE}/monthly-kpi`;
+const VARIANCE_API_URL  = `${_BASE}/variance`;
+const HUB_URL           = `${_BASE}/hub`;
+const WEEKLY_KPI_URL    = `${_BASE}/weekly-kpi`;
+const AUTH_URL          = `${_BASE}/auth`;
+const RECORDS_URL       = `${_BASE}/records`;
+const QUICK_MSG_URL     = `${_BASE}/quick-messages`;
+const GOALS_API_URL     = `${_BASE}/listing-goals`;
+const SCORECARD_URL     = `${_BASE}/scorecard`;
+const EBAY_ALERTS_URL   = `${_BASE}/ebay-alerts`;
+const STORE_COMMENT_URL = `${_BASE}/store-comments`;
+const CHECKLIST_URL     = `${_BASE}/checklist`;
+const TUTORIAL_URL      = `${_BASE}/tutorial`;
+const PATCH_NOTES_URL   = `${_BASE}/patch-notes`;
+const TICKER_URL        = `${_BASE}/ticker`;
+const KPI_MANAGE_URL    = `${_BASE}/kpi-manage`;
+const MONTHLY_BRIEF_URL = `${_BASE}/monthly-brief`;
 
 // --- 2. NAV COMPACT MODE ---
 (function () {
@@ -1395,10 +1398,11 @@ async function checkPIN() {
         const matched = payload.users.find(u => u.pin === String(pin));
         
         if (matched) {
-            sessionStorage.setItem('speeksUnlocked', 'true'); 
+            sessionStorage.setItem('speeksUnlocked', 'true');
             sessionStorage.setItem('speeksUserName', matched.name);
             sessionStorage.setItem('speeksUserRole', matched.role ? matched.role.toLowerCase() : 'employee');
             sessionStorage.setItem('speeksUserStore', matched.store ? matched.store.toUpperCase() : 'ALL');
+            sessionStorage.setItem('speeksUserPin', matched.pin);
             
             const authOverlay = document.getElementById('authOverlay');
             if (authOverlay) authOverlay.style.display = 'none'; 
@@ -1456,49 +1460,38 @@ function toggleCategory(el) {
 }
 
 function groupKPIs(data) {
-    const cats = { 
-        "Buying Metrics": [], 
-        "Inventory": [], 
-        "Gross Sales": [], 
-        "Net Sales & Margins": [], 
-        "Sales Channels": [], 
-        "Shipping Costs": [], 
-        "eBay Performance": [], 
-        "Rankings & Reviews": [], 
-        "Recycled & Confiscated": [], 
-        "Other Metrics": [] 
+    const cats = {
+        "Buying Metrics":    [],
+        "No Deal Tracking":  [],
+        "Listings":          [],
+        "Rankings & Reviews":[],
+        "Other Metrics":     [],
     };
-    
-    const ignore = ['ebay rank', 'top rated', 'cases closed'];
+
     let all = [];
-    
     if (Array.isArray(data)) {
         data.forEach(item => {
-            if (item.metrics) {
-                all.push(...item.metrics);
-            } else if (item.name) {
-                all.push(item);
-            }
+            if (item.metrics) all.push(...item.metrics);
+            else if (item.name) all.push(item);
         });
     }
-    
+
     all.forEach(m => {
         if (!m?.name) return;
-        let n = m.name.toLowerCase().replace(/\s+/g, ' ').trim();
-        if (ignore.some(iw => n.includes(iw))) return; 
-        
-        if (n.match(/buying|buy vs|close rate|# of customers|buy value|# of items|returning|avg trans/)) cats["Buying Metrics"].push(m);
-        else if (n.match(/inventory cost|% of inventory over/)) cats["Inventory"].push(m);
-        else if (n.match(/gross sales|discount|refund|return/)) cats["Gross Sales"].push(m);
-        else if (n.match(/net sales|cogs|gross profit/)) cats["Net Sales & Margins"].push(m);
-        else if (n.match(/draft order|pos|online|non ebay/)) cats["Sales Channels"].push(m);
-        else if (n.includes("shipping")) cats["Shipping Costs"].push(m);
-        else if (n.match(/defect rate|late shipment|case with no resolution|case w\/no resolution|tracking uploaded/)) cats["eBay Performance"].push(m);
-        else if (n.match(/paymore|google/)) cats["Rankings & Reviews"].push(m);
-        else if (n.match(/recycled|confiscation/)) cats["Recycled & Confiscated"].push(m);
-        else cats["Other Metrics"].push(m);
+        const n = m.name.toLowerCase();
+        if (n.match(/buying value|buying cost|estimated gross profit|gross margin|transaction count|customer conversion|device count|device conversion|avg transaction/)) {
+            cats["Buying Metrics"].push(m);
+        } else if (n.match(/no deal count|no deal value|no deal cost|lost profit|% no deal/)) {
+            cats["No Deal Tracking"].push(m);
+        } else if (n.match(/listed count|listed retail|listed cost|listed sold|listed gross|% listed/)) {
+            cats["Listings"].push(m);
+        } else if (n.match(/google|paymore/)) {
+            cats["Rankings & Reviews"].push(m);
+        } else {
+            cats["Other Metrics"].push(m);
+        }
     });
-    
+
     return Object.keys(cats)
         .map(c => ({ category: c, metrics: cats[c] }))
         .filter(g => g.metrics.length > 0);
@@ -1671,22 +1664,14 @@ function formatVariancePct(num) {
 
 function createVarianceStoreCard(sKey) {
     if (sKey === "NONE" || !liveVarianceDataCache[sKey]?.employees) return '';
-    
+
     const d = liveVarianceDataCache[sKey];
-    const isNew = d.fileDate && (Date.now() - d.fileDate) < 604800000;
-    
     const totalColorClass = d.total < 0 ? 'delta-neg' : (d.total > 0 ? 'delta-pos' : 'delta-neutral');
-    const badgeHtml = isNew ? `<div class="notif-dot active" style="display:block; position:relative; margin-left: 10px; width: 10px; height: 10px; border-width: 2px;" title="New Report Added This Week"></div>` : '';
 
     let html = `
     <div style="border: 1px solid #eee; border-radius: 12px; background: white; overflow: hidden;">
         <div style="background: #f9fafb; padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: flex-start;">
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-                <div style="display: flex; align-items: center;">
-                    <span style="font-size: 16px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase;">${sKey} TOTAL</span>
-                    ${badgeHtml}
-                </div>
-            </div>
+            <span style="font-size: 16px; font-weight: 900; color: var(--slate-charcoal); text-transform: uppercase;">${sKey} TOTAL</span>
             <span class="delta-badge ${totalColorClass}" style="font-size: 16px; padding: 8px 14px;">${formatVariancePct(d.total)}</span>
         </div>
         <div class="vw-scroll-area" style="display: flex; flex-direction: column;">`;
@@ -1718,15 +1703,9 @@ function renderVariance() {
     if (dateSpan && liveVarianceDataCache[p]) {
         const d = liveVarianceDataCache[p];
         let pTxt = "Current";
-        
-        if (d.fileName) {
-            pTxt = d.fileName
-                .replace(new RegExp(`${p}\\s*`, 'i'), '')
-                .trim()
-                .replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/ig, m => {
-                    const fullMonths = {"Jan":"January","Feb":"February","Mar":"March","Apr":"April","May":"May","Jun":"June","Jul":"July","Aug":"August","Sep":"September","Oct":"October","Nov":"November","Dec":"December"};
-                    return fullMonths[m.charAt(0).toUpperCase() + m.slice(1).toLowerCase()] || m;
-                });
+        if (d.dateFrom && d.dateTo) {
+            const fmt = (iso) => new Date(iso + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            pTxt = `${fmt(d.dateFrom)} – ${fmt(d.dateTo)}`;
         }
         dateSpan.innerText = pTxt;
     }
@@ -1791,6 +1770,107 @@ async function fetchVarianceData() {
     }
 }
 
+// --- 10b. VARIANCE INPUT TOOL ---
+function toggleVarianceInput() {
+    closeAllModals();
+    const modal = document.getElementById('varianceInputModal');
+    if (!modal) return;
+    modal.classList.add('show');
+    lockAndBlurScreen();
+    loadVarianceStoreEmployees();
+}
+
+function loadVarianceStoreEmployees() {
+    const store = document.getElementById('vi-store')?.value;
+    const container = document.getElementById('vi-employees');
+    if (!container || !store) return;
+    container.innerHTML = '';
+
+    // Get users for this store from auth cache
+    let storeUsers = [];
+    try {
+        const authData = JSON.parse(localStorage.getItem('speeksAuthCache') || '{}');
+        storeUsers = (authData.users || []).filter(u =>
+            (u.store || '').toUpperCase() === store.toUpperCase() &&
+            (u.role || '').toLowerCase() !== 'training'
+        );
+    } catch (_) {}
+
+    // Build a map of existing variance % from the last report for this store
+    const lastPcts = {};
+    const cached = liveVarianceDataCache?.[store];
+    if (cached?.employees?.length > 0) {
+        cached.employees.forEach(e => { lastPcts[e.name.toLowerCase()] = e.val; });
+    }
+
+    if (storeUsers.length === 0) {
+        container.innerHTML = '<div style="color:#888; font-size:13px; text-align:center; padding:10px;">No users found for this store.</div>';
+        return;
+    }
+
+    storeUsers.forEach(u => {
+        const existingPct = lastPcts[u.name.toLowerCase()] ?? '';
+        addVarianceEmployeeRow(u.name, existingPct);
+    });
+}
+
+function addVarianceEmployeeRow(name, pct) {
+    const container = document.getElementById('vi-employees');
+    if (!container) return;
+    const row = document.createElement('div');
+    row.style.cssText = 'display: grid; grid-template-columns: 1fr 110px; gap: 8px; align-items: center;';
+    row.dataset.empName = name;
+    row.innerHTML = `
+        <span class="vi-emp-name" style="font-size: 13px; font-weight: 600; color: var(--slate-charcoal); padding: 0 4px;">${escapeHtml(String(name))}</span>
+        <input type="number" class="form-input-lg vi-emp-pct" placeholder="%" step="0.01" value="${pct !== '' ? pct : ''}" style="margin: 0; text-align: right;">`;
+    container.appendChild(row);
+}
+
+async function submitVarianceReport() {
+    const store = document.getElementById('vi-store')?.value;
+    const dateFrom = document.getElementById('vi-date-from')?.value;
+    const dateTo = document.getElementById('vi-date-to')?.value;
+    const storePct = parseFloat(document.getElementById('vi-store-pct')?.value);
+    const btn = document.getElementById('vi-submit-btn');
+
+    if (!store || !dateFrom || !dateTo || isNaN(storePct)) {
+        alert('Please fill in the store, date range, and store variance %.');
+        return;
+    }
+    if (dateFrom > dateTo) {
+        alert('Date From must be before Date To.');
+        return;
+    }
+
+    const employees = [];
+    document.querySelectorAll('#vi-employees > div[data-emp-name]').forEach(row => {
+        const name = row.dataset.empName;
+        const pct = parseFloat(row.querySelector('.vi-emp-pct')?.value);
+        if (name && !isNaN(pct)) employees.push({ name, pct });
+    });
+
+    btn.textContent = 'Submitting...';
+    btn.disabled = true;
+
+    try {
+        const res = await fetch(VARIANCE_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ store, dateFrom, dateTo, storePct, employees })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        alert(`Variance report for ${store} submitted successfully!`);
+        closeAllModals();
+        fetchVarianceData();
+    } catch (e) {
+        alert('Failed to submit: ' + (e.message || 'Unknown error'));
+    } finally {
+        btn.textContent = 'Submit Report';
+        btn.disabled = false;
+    }
+}
+
 // --- 11. MODULE: WEEKLY KPI GRID ---
 function formatTime(val) {
     if (!val) return ""; 
@@ -1817,28 +1897,23 @@ function checkRule(r, v) {
 }
 
 async function fetchWeeklyKPIs() {
-    const cont = document.getElementById('weeklyKpiContainer');
+    const cont  = document.getElementById('weeklyKpiContainer');
     const store = document.getElementById('weeklyKpiStoreSelect')?.value;
-    const pB = document.getElementById('weeklyKpiPeriod');
-    
-    if(!cont || !store) return;
-    
-    // Clean up the parent container to prevent grid-in-grid conflicts
-    cont.style.display = 'block'; 
+    const pB    = document.getElementById('weeklyKpiPeriod');
+
+    if (!cont || !store) return;
+
+    cont.style.display = 'block';
     cont.classList.remove('weekly-kpi-grid');
-    
-    const vId = `weekly-view-${store}`; 
+
+    const vId = `weekly-view-${store}`;
     Array.from(cont.children).forEach(c => c.style.display = 'none');
-    
+
     if (document.getElementById(vId)) {
-        document.getElementById(vId).style.display = 'grid'; 
-        if (weeklyKpiCache[store]?.periodText) { 
-            pB.innerText = weeklyKpiCache[store].periodText; 
-            pB.style.display = "inline-block"; 
-        } else {
-            pB.style.display = "none";
-        }
-        return; 
+        document.getElementById(vId).style.display = 'grid';
+        pB.innerText = weeklyKpiCache[store]?.periodText || '';
+        pB.style.display = weeklyKpiCache[store]?.periodText ? 'inline-block' : 'none';
+        return;
     }
 
     let msg = document.getElementById('weekly-fetch-msg');
@@ -1848,141 +1923,763 @@ async function fetchWeeklyKPIs() {
         msg.style.cssText = 'padding: 40px; text-align: center; color: #888; font-weight: 600;';
         cont.appendChild(msg);
     }
-    
-    msg.innerText = 'Syncing Data...'; 
+    msg.innerText = 'Syncing Data...';
     msg.style.display = 'block';
 
     try {
-        const response = await fetch(`${WEEKLY_KPI_URL}?store=${store}&time=4-Week&v=${Date.now()}`);
-        const d = await response.json();
-        
-        let sAvg = {};
-        let emps = [];
-        let fIdx = -1;
-        const _kpiStoreLabels = ["store", "store total", "ovl", "lee", "wsp", "mpl", "bal"];
-        let sIdx = d.findLastIndex(r => String(r[0]).trim().toLowerCase() === "store" || String(r[0]).trim().toLowerCase() === "store total");
+        const resp = await fetch(`${WEEKLY_KPI_URL}?store=${store}&v=${Date.now()}`);
+        const d    = await resp.json();
 
-        if (sIdx !== -1) {
-            let st = d[sIdx];
-            sAvg = { buyVal: st[2], buyMargin: st[5], customers: st[6], conversion: st[8], time: formatTime(st[12]), noDeals: st[14], listed: st[20] };
+        const emps  = d.employees   || [];
+        const total = d.store_total || {};
+        const pTxt  = d.period_label || '';
 
-            for (let i = Math.max(0, sIdx - 6); i <= Math.min(d.length - 1, sIdx + 6); i++) {
-                if (i === sIdx) continue;
-                let n = String(d[i][0]).trim();
-                let lN = n.toLowerCase();
+        weeklyKpiCache[store] = { periodText: pTxt };
+        pB.innerText      = pTxt;
+        pB.style.display  = pTxt ? 'inline-block' : 'none';
 
-                if (n && !_kpiStoreLabels.includes(lN) && !lN.includes("average") && !lN.includes("week")) {
-                    if (String(d[i][2]).trim() !== "" || String(d[i][20]).trim() !== "") {
-                        if (fIdx === -1) fIdx = i; 
-                        emps.push({ name: n, buyVal: d[i][2], buyMargin: d[i][5], customers: d[i][6], conversion: d[i][8], time: formatTime(d[i][12]), noDeals: d[i][14], listed: d[i][20] });
-                    }
-                }
-            }
+        if (!emps.length) {
+            msg.innerText   = 'No data entered yet for this week.';
+            msg.style.color = '#888';
+            return;
         }
 
-        let pTxt = "";
-        if (fIdx !== -1) {
-            let hR = d[fIdx - 3] || d[fIdx - 2];
-            if (hR && hR[2] && hR[4] && hR[6]) {
-                const getOrdinal = (n) => {
-                    let val = parseInt(String(n).replace(/\D/g, ''));
-                    if (isNaN(val)) return n;
-                    let s = ["th", "st", "nd", "rd"], v = val % 100;
-                    return val + (s[(v - 20) % 10] || s[v] || s[0]);
-                };
-                
-                const monthNames = {"Jan":"January","Feb":"February","Mar":"March","Apr":"April","May":"May","Jun":"June","Jul":"July","Aug":"August","Sep":"September","Oct":"October","Nov":"November","Dec":"December"};
-                let monthName = String(hR[2]).replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/ig, m => monthNames[m.charAt(0).toUpperCase() + m.slice(1).toLowerCase()] || m);
-                
-                let startDay = getOrdinal(hR[4]);
-                let endDay = getOrdinal(hR[6]);
-                
-                pTxt = `${monthName} ${startDay} - ${endDay}`;
-            }
-        }
-        
-        weeklyKpiCache[store] = { periodText: pTxt }; 
-        pB.innerText = pTxt; 
-        pB.style.display = pTxt ? "inline-block" : "none";
-
-        if (!emps.length) { 
-            msg.innerText = 'No employee data.'; 
-            msg.style.color = '#dc2626'; 
-            return; 
-        }
-
-        msg.style.display = 'none'; 
-        const nV = document.createElement('div'); 
-        nV.id = vId; 
-        
-        // BULLETPROOF GRID OVERRIDE
+        msg.style.display = 'none';
+        const nV = document.createElement('div');
+        nV.id        = vId;
         nV.className = 'weekly-kpi-grid';
-        nV.style.display = 'grid';
-        nV.style.gap = '20px';
-        nV.style.alignItems = 'start';
-        
-        // This ensures the columns auto-stack if you look at it on a phone vs a desktop!
+        nV.style.cssText = 'display:grid; gap:20px; align-items:start;';
+
         const applyGridColumns = () => {
-            if (window.innerWidth > 1100) nV.style.gridTemplateColumns = 'repeat(5, 1fr)';
-            else if (window.innerWidth > 768) nV.style.gridTemplateColumns = 'repeat(2, 1fr)';
-            else nV.style.gridTemplateColumns = '1fr';
+            const w = nV.parentElement ? nV.parentElement.offsetWidth : window.innerWidth;
+            if (w > 700)      nV.style.gridTemplateColumns = 'repeat(3, 1fr)';
+            else if (w > 420) nV.style.gridTemplateColumns = 'repeat(2, 1fr)';
+            else              nV.style.gridTemplateColumns = '1fr';
         };
         applyGridColumns();
         if (_weeklyGridResizeListener) window.removeEventListener('resize', _weeklyGridResizeListener);
         _weeklyGridResizeListener = applyGridColumns;
         window.addEventListener('resize', applyGridColumns);
 
-        // HTML Column Builder Helper
-        const buildColHtml = (title, storeVal, storeBadgeVal, empKey, empBadgeKey, ruleName, isPercentBadge) => {
-            let html = `
-            <div style="border: 1px solid #eee; border-radius: 12px; background: white; overflow: hidden; display: flex; flex-direction: column;">
-                <div style="background: #f9fafb; padding: 15px; border-bottom: 1px solid #eee; text-align: center;">
-                    <h4 style="font-size: 12px; font-weight: 800; color: var(--slate-charcoal); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px; white-space: nowrap;">${title}</h4>
-                    <div style="display: grid; grid-template-columns: 1fr 75px 55px; align-items: center; background: white; padding: 0 12px; height: 40px; border-radius: 8px; border: 1px solid #eee; gap: 8px;">
-                        <span style="font-size: 11px; font-weight: 800; color: #888; text-align: left;">STORE TOTAL</span>
-                        <span style="font-size: 13px; font-weight: 800; text-align: right; white-space: nowrap; ${checkRule(ruleName, storeVal) ? 'color: var(--red-alert);' : 'color: var(--slate-charcoal);'}">${storeVal || ''}</span>`;
-                        
-            if (empBadgeKey && storeBadgeVal) {
-                html += `<span style="display: flex; justify-content: flex-end;"><span class="delta-badge ${checkRule(ruleName, storeBadgeVal) ? 'delta-neg' : 'delta-neutral'}">${storeBadgeVal}${isPercentBadge && !String(storeBadgeVal).includes('%') ? '%' : ''}</span></span>`;
-            } else {
-                html += `<span></span>`;
-            }
-            
-            html += `</div></div><div style="display: flex; flex-direction: column;">`;
-            
+        const fmt$ = v => (v != null && v !== '') ? `$${Math.round(Number(v)).toLocaleString()}` : '—';
+        const fmtPct = v => (v != null && v !== '') ? `${Number(v).toFixed(1)}%` : '—';
+        const fmtN   = v => (v != null && v !== '') ? String(v) : '—';
+        const fmtMin = v => (v != null && v !== '') ? `${Number(v).toFixed(1)}` : '—';
+
+        const buildCol = (title, storeMain, storeBadge, getMain, getBadge, ruleName, mainFmt, badgeFmt) => {
+            let h = `<div style="border:1px solid #eee;border-radius:12px;background:white;overflow:hidden;display:flex;flex-direction:column;">
+                <div style="background:#f9fafb;padding:15px;border-bottom:1px solid #eee;text-align:center;">
+                    <h4 style="font-size:12px;font-weight:800;color:var(--slate-charcoal);text-transform:uppercase;margin-bottom:10px;letter-spacing:0.5px;white-space:nowrap;">${title}</h4>
+                    <div style="display:grid;grid-template-columns:1fr 75px 55px;align-items:center;background:white;padding:0 12px;height:40px;border-radius:8px;border:1px solid #eee;gap:8px;">
+                        <span style="font-size:11px;font-weight:800;color:#888;text-align:left;">STORE TOTAL</span>
+                        <span style="font-size:13px;font-weight:800;text-align:right;white-space:nowrap;color:${checkRule(ruleName,storeMain)?'var(--red-alert)':'var(--slate-charcoal)'};">${mainFmt(storeMain)}</span>`;
+            h += storeBadge != null
+                ? `<span style="display:flex;justify-content:flex-end;"><span class="delta-badge ${checkRule(ruleName,storeBadge)?'delta-neg':'delta-neutral'}">${badgeFmt(storeBadge)}</span></span>`
+                : `<span></span>`;
+            h += `</div></div><div style="display:flex;flex-direction:column;">`;
             emps.forEach(e => {
-                html += `
-                <div class="kpi-row" style="display: grid; grid-template-columns: 1fr 75px 55px; align-items: center; padding: 0 15px; height: 48px; border-top: 1px solid #f5f5f5; border-radius: 0; background: white; margin: 0; border-left: none; border-right: none; gap: 8px;">
-                    <span class="kpi-name" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${e.name}</span>
-                    <span style="text-align: right; font-size: 12px; font-weight: ${checkRule(ruleName, e[empKey]) ? '900' : '700'}; color: ${checkRule(ruleName, e[empKey]) ? 'var(--red-alert)' : '#555'}; white-space: nowrap;">${e[empKey] || ''}</span>`;
-                    
-                if (empBadgeKey && e[empBadgeKey]) {
-                    html += `<span style="display: flex; justify-content: flex-end;"><span class="delta-badge ${checkRule(ruleName, e[empBadgeKey]) ? 'delta-neg' : 'delta-neutral'}">${e[empBadgeKey]}${isPercentBadge && !String(e[empBadgeKey]).includes('%') ? '%' : ''}</span></span>`;
-                } else {
-                    html += `<span></span>`;
-                }
-                html += `</div>`;
+                const mv = getMain(e), bv = getBadge ? getBadge(e) : null;
+                h += `<div class="kpi-row" style="display:grid;grid-template-columns:1fr 75px 55px;align-items:center;padding:0 15px;height:48px;border-top:1px solid #f5f5f5;background:white;margin:0;border-left:none;border-right:none;gap:8px;">
+                    <span class="kpi-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e.employee_name}</span>
+                    <span style="text-align:right;font-size:12px;font-weight:${checkRule(ruleName,mv)?'900':'700'};color:${checkRule(ruleName,mv)?'var(--red-alert)':'#555'};white-space:nowrap;">${mainFmt(mv)}</span>`;
+                h += bv != null
+                    ? `<span style="display:flex;justify-content:flex-end;"><span class="delta-badge ${checkRule(ruleName,bv)?'delta-neg':'delta-neutral'}">${badgeFmt(bv)}</span></span>`
+                    : `<span></span>`;
+                h += `</div>`;
             });
-            
-            html += `</div></div>`;
-            return html;
+            h += `</div></div>`;
+            return h;
         };
-        
-        // Assemble the 5 Columns perfectly!
-        nV.innerHTML = 
-            buildColHtml('Buying Performance', sAvg.buyVal, sAvg.buyMargin, 'buyVal', 'buyMargin', 'margin', true) + 
-            buildColHtml('Customer Conversion', sAvg.customers, sAvg.conversion, 'customers', 'conversion', 'conversion', true) + 
-            buildColHtml('No Deals', '', sAvg.noDeals, '', 'noDeals', 'nodeals', false) + 
-            buildColHtml('Avg Trans. Time', '', sAvg.time, '', 'time', 'time', false) + 
-            buildColHtml('Processed / Listed', sAvg.listed, '', 'listed', '', null, false);
-            
+
+        nV.innerHTML =
+            buildCol('Buying Performance',
+                total.buying_value,          total.gross_margin_pct,
+                e => e.buying_value,         e => e.gross_margin_pct,
+                'margin', fmt$, fmtPct) +
+            buildCol('Customer Conversion',
+                total.transaction_count,     total.customer_conversion_pct,
+                e => e.transaction_count,    e => e.customer_conversion_pct,
+                'conversion', fmtN, fmtPct) +
+            buildCol('No Deals',
+                total.no_deal_count,         total.no_deal_vs_buying_pct,
+                e => e.no_deal_count,        e => e.no_deal_vs_buying_pct,
+                null, fmtN, fmtPct) +
+            buildCol('Avg Trans. Time',
+                total.avg_transaction_time,  null,
+                e => e.avg_transaction_time, null,
+                null, fmtMin, null) +
+            buildCol('Listed / Sold',
+                total.listed_count,          total.listed_sold_pct,
+                e => e.listed_count,         e => e.listed_sold_pct,
+                null, fmtN, fmtPct);
+
         cont.appendChild(nV);
-        
-    } catch (e) { 
-        msg.innerText = 'Failed to load Weekly KPI.'; 
-        msg.style.color = '#dc2626'; 
+
+    } catch (e) {
+        msg.innerText   = 'Failed to load Weekly KPI.';
+        msg.style.color = '#dc2626';
     }
 }
+
+// --- 11b. MODULE: KPI VIEW / ENTRY ---
+
+let _kpiCurrentTab     = 'weekly';
+let _kpiPeriodsData    = [];   // [{ period_end_date, period_label, is_editable, entries[] }]
+let _kpiEditingPeriod  = null; // period_end_date string currently in edit mode
+
+// Keep these for backward compat with saveKpiEntry
+let _kpiEntryPeriodType    = 'weekly';
+let _kpiEntryPeriodEndDate = '';
+let _kpiEntryData          = [];
+
+
+// ── KPI Grid constants ────────────────────────────────────────────────────────
+const _KPI_GRID_FIELDS = [
+    { key: 'buying_value',            step: '0.01', computed: false },
+    { key: 'buying_cost',             step: '0.01', computed: false },
+    { key: 'estimated_gross_profit',               computed: true  },
+    { key: 'gross_margin_pct',                     computed: true  },
+    { key: 'transaction_count',       step: '1',   computed: false },
+    { key: 'transaction_converted',   step: '1',   computed: false },
+    { key: 'customer_conversion_pct',              computed: true  },
+    { key: 'device_count',            step: '1',   computed: false },
+    { key: 'device_converted',        step: '1',   computed: false },
+    { key: 'device_conversion_pct',                computed: true  },
+    { key: 'avg_transaction_time',    step: '0.1', computed: false },
+    { key: 'no_deal_count',           step: '1',   computed: false },
+    { key: 'no_deal_value',           step: '0.01',computed: false },
+    { key: 'no_deal_cost',            step: '0.01',computed: false },
+    { key: 'lost_profit',                          computed: true  },
+    { key: 'no_deal_vs_buying_pct',                computed: true  },
+    { key: 'listed_count',            step: '1',   computed: false },
+    { key: 'listed_retail_price',     step: '0.01',computed: false },
+    { key: 'listed_cost',             step: '0.01',computed: false },
+    { key: 'listed_sold_value',       step: '0.01',computed: false },
+    { key: 'listed_gross_margin_pct',              computed: true  },
+    { key: 'listed_sold_pct',                      computed: true  },
+    { key: 'mtd_google_reviews',      step: '1',   computed: false },
+];
+const _KPI_INPUT_FIELDS = _KPI_GRID_FIELDS.filter(f => !f.computed).map(f => f.key);
+const _KPI_INT_FIELDS   = new Set(['transaction_count','transaction_converted','device_count','device_converted','no_deal_count','listed_count','mtd_google_reviews']);
+
+// ── Derived-field calculator ──────────────────────────────────────────────────
+function _kpiCalcDerived(entry) {
+    const bv  = Number(entry.buying_value)          || 0;
+    const bc  = Number(entry.buying_cost)           || 0;
+    const tc  = Number(entry.transaction_count)     || 0;
+    const tco = Number(entry.transaction_converted) || 0;
+    const dc  = Number(entry.device_count)          || 0;
+    const dco = Number(entry.device_converted)      || 0;
+    const ndv = Number(entry.no_deal_value)         || 0;
+    const ndc = Number(entry.no_deal_cost)          || 0;
+    const lrp = Number(entry.listed_retail_price)   || 0;
+    const lc  = Number(entry.listed_cost)           || 0;
+    const lsv = Number(entry.listed_sold_value)     || 0;
+    const gp  = bv - bc;
+    const r2  = n => n !== null ? Math.round(n * 100) / 100 : null;
+    return {
+        ...entry,
+        estimated_gross_profit:  gp,
+        gross_margin_pct:        bv  > 0 ? r2((1 - bc  / bv)  * 100) : null,
+        customer_conversion_pct: tc  > 0 ? r2((tco / tc)  * 100)     : null,
+        device_conversion_pct:   dc  > 0 ? r2((dco / dc)  * 100)     : null,
+        lost_profit:             ndv - ndc,
+        no_deal_vs_buying_pct:   gp  > 0 ? r2(((ndv - ndc) / gp) * 100) : null,
+        listed_gross_margin_pct: lrp > 0 ? r2((1 - lc  / lrp) * 100)    : null,
+        listed_sold_pct:         lrp > 0 ? r2((lsv / lrp) * 100)         : null,
+    };
+}
+
+function _kpiFormatComputed(key, val) {
+    if (val == null || val === '') return '—';
+    const n = Number(val);
+    if (isNaN(n)) return '—';
+    const pctKeys = ['gross_margin_pct','customer_conversion_pct','device_conversion_pct',
+                     'no_deal_vs_buying_pct','listed_gross_margin_pct','listed_sold_pct'];
+    const dollarKeys = ['estimated_gross_profit','lost_profit','buying_value','buying_cost',
+                        'no_deal_value','no_deal_cost','listed_retail_price','listed_cost','listed_sold_value'];
+    if (pctKeys.includes(key))    return n.toFixed(1) + '%';
+    if (dollarKeys.includes(key)) return '$' + Math.round(n).toLocaleString();
+    if (key === 'avg_transaction_time') return n.toFixed(1);
+    return String(Math.round(n * 10) / 10);
+}
+
+function _kpiComputeAverages(periods) {
+    if (!periods || !periods.length) return [];
+    const empNames = periods[0].entries.map(e => e.employee_name);
+    return empNames.map(name => {
+        const empRows = periods.map(p => p.entries.find(e => e.employee_name === name)).filter(Boolean);
+        const avg = { employee_name: name };
+        _KPI_INPUT_FIELDS.forEach(f => {
+            const vals = empRows.map(e => e[f]).filter(v => v != null && v !== '' && !isNaN(Number(v)));
+            avg[f] = vals.length ? vals.reduce((a, b) => a + Number(b), 0) / vals.length : null;
+        });
+        return _kpiCalcDerived(avg);
+    });
+}
+
+// ── HTML builders ─────────────────────────────────────────────────────────────
+function _kpiTheadHtml() {
+    return '<colgroup>' +
+        '<col class="col-name">' +
+        '<col span="2" class="col-buying-input"><col span="2" class="col-computed">' +
+        '<col span="2" class="col-buying-input"><col class="col-computed">' +
+        '<col span="2" class="col-buying-input"><col class="col-computed">' +
+        '<col class="col-buying-input">' +
+        '<col span="3" class="col-nd-input"><col span="2" class="col-computed">' +
+        '<col span="4" class="col-listing-input"><col span="2" class="col-computed">' +
+        '<col class="col-review-input">' +
+        '</colgroup>' +
+        '<thead><tr>' +
+        '<th rowspan="2" class="kpi-grid-th kpi-grid-name-col">Employee</th>' +
+        '<th colspan="11" class="kpi-grid-section-header kpi-section-buying">Buying</th>' +
+        '<th colspan="5"  class="kpi-grid-section-header kpi-section-nodeals">No Deals</th>' +
+        '<th colspan="6"  class="kpi-grid-section-header kpi-section-listings">Listings</th>' +
+        '<th colspan="1"  class="kpi-grid-section-header kpi-section-reviews">Reviews</th>' +
+        '</tr><tr>' +
+        '<th class="kpi-grid-th kpi-col-input">Buy Value</th>' +
+        '<th class="kpi-grid-th kpi-col-input">Buy Cost</th>' +
+        '<th class="kpi-grid-th kpi-col-computed">Est. GP</th>' +
+        '<th class="kpi-grid-th kpi-col-computed">Margin %</th>' +
+        '<th class="kpi-grid-th kpi-col-input"># Trans.</th>' +
+        '<th class="kpi-grid-th kpi-col-input"># Conv.</th>' +
+        '<th class="kpi-grid-th kpi-col-computed">Conv %</th>' +
+        '<th class="kpi-grid-th kpi-col-input"># Devices</th>' +
+        '<th class="kpi-grid-th kpi-col-input"># Dev Conv.</th>' +
+        '<th class="kpi-grid-th kpi-col-computed">Dev Conv %</th>' +
+        '<th class="kpi-grid-th kpi-col-input">Avg Time</th>' +
+        '<th class="kpi-grid-th kpi-col-input"># No Deals</th>' +
+        '<th class="kpi-grid-th kpi-col-input">ND Value</th>' +
+        '<th class="kpi-grid-th kpi-col-input">ND Cost</th>' +
+        '<th class="kpi-grid-th kpi-col-computed">Lost Profit</th>' +
+        '<th class="kpi-grid-th kpi-col-computed">% vs Buy GP</th>' +
+        '<th class="kpi-grid-th kpi-col-input"># Listed</th>' +
+        '<th class="kpi-grid-th kpi-col-input">Retail ($)</th>' +
+        '<th class="kpi-grid-th kpi-col-input">Cost ($)</th>' +
+        '<th class="kpi-grid-th kpi-col-input">Sold ($)</th>' +
+        '<th class="kpi-grid-th kpi-col-computed">Listed Margin</th>' +
+        '<th class="kpi-grid-th kpi-col-computed">% Sold</th>' +
+        '<th class="kpi-grid-th kpi-col-input">Google Reviews</th>' +
+        '</tr></thead>';
+}
+
+function _kpiSectionDividerHtml(label, badge, badgeClass, controls, borderColor) {
+    const bdg = badge ? '<span class="kpi-section-badge ' + badgeClass + '">' + badge + '</span>' : '';
+    return '<tr class="kpi-section-divider-row"><td colspan="24"><div class="kpi-section-header-inner" style="border-left:4px solid ' + borderColor + ';">' +
+        '<div class="align-center gap-8"><span class="kpi-section-label">' + label + '</span>' + bdg + '</div>' +
+        '<div class="align-center gap-8">' + controls + '</div>' +
+        '</div></td></tr>';
+}
+
+function _kpiSectionControls(periodDate, isEditing, isEditable) {
+    const pk = periodDate.replace(/-/g, '');
+    if (!isEditable) return '<span class="kpi-readonly-label">🔒 Read only</span>';
+    if (isEditing) {
+        return '<button class="kpi-cancel-btn" onclick="_kpiCancelEdit()">Cancel</button>' +
+               '<button class="kpi-save-section-btn" id="kpiSaveBtn-' + pk + '" onclick="_kpiSavePeriod(\'' + periodDate + '\')">Save</button>';
+    }
+    return '<button class="kpi-edit-section-btn" onclick="_kpiStartEdit(\'' + periodDate + '\')">✏️ Edit</button>';
+}
+
+function _kpiEmpRowsHtml(entries, periodDate, isEditing, isAvg) {
+    const pk = periodDate.replace(/-/g, '');
+    return entries.map(function(entry, empIdx) {
+        const hasSaved = !!entry.id;
+        const sc = hasSaved ? '#16a34a' : 'transparent';
+        const rowClass = isAvg ? 'kpi-avg-row' : (empIdx % 2 === 1 ? 'kpi-row-alt' : '');
+        let cells = '<td class="kpi-grid-name-col"><div class="kpi-grid-name-cell">' +
+            '<span class="kpi-grid-emp-name">' + entry.employee_name + '</span>' +
+            (!isAvg ? '<span class="kpi-grid-status" id="kpiS-' + pk + '-' + empIdx + '" style="color:' + sc + '" title="' + (hasSaved ? 'Saved' : '') + '">' + (hasSaved ? '✓' : '') + '</span>' : '') +
+            '</div></td>';
+        _KPI_GRID_FIELDS.forEach(function(f) {
+            if (f.computed || isAvg) {
+                cells += '<td class="kpi-grid-computed' + (isAvg ? ' kpi-avg-cell' : '') + '" id="kpiC-' + pk + '-' + empIdx + '-' + f.key + '">' + _kpiFormatComputed(f.key, entry[f.key]) + '</td>';
+            } else {
+                const val = entry[f.key] != null ? entry[f.key] : '';
+                const dis = isEditing ? '' : 'disabled';
+                cells += '<td class="kpi-grid-td-input"><input class="kpi-grid-input" type="number" step="' + f.step + '" min="0" id="kpi-' + pk + '-' + empIdx + '-' + f.key + '" value="' + val + '" ' + dis + ' oninput="_kpiUpdateRow(\'' + pk + '\',' + empIdx + ')"></td>';
+            }
+        });
+        return '<tr class="' + rowClass + '" data-period="' + periodDate + '">' + cells + '</tr>';
+    }).join('');
+}
+
+function _kpiUpdateRow(pk, empIdx) {
+    const g   = function(k) { var el = document.getElementById('kpi-' + pk + '-' + empIdx + '-' + k); return el ? (Number(el.value) || 0) : 0; };
+    const bv  = g('buying_value'),        bc  = g('buying_cost');
+    const tc  = g('transaction_count'),   tco = g('transaction_converted');
+    const dc  = g('device_count'),        dco = g('device_converted');
+    const ndv = g('no_deal_value'),       ndc = g('no_deal_cost');
+    const lrp = g('listed_retail_price'),  lc = g('listed_cost'), lsv = g('listed_sold_value');
+    const gp  = bv - bc;
+    const r2  = function(n) { return n !== null ? Math.round(n * 100) / 100 : null; };
+    const computed = {
+        estimated_gross_profit:  gp,
+        gross_margin_pct:        bv  > 0 ? r2((1-bc/bv)*100)        : null,
+        customer_conversion_pct: tc  > 0 ? r2((tco/tc)*100)         : null,
+        device_conversion_pct:   dc  > 0 ? r2((dco/dc)*100)         : null,
+        lost_profit:             ndv - ndc,
+        no_deal_vs_buying_pct:   gp  > 0 ? r2(((ndv-ndc)/gp)*100)  : null,
+        listed_gross_margin_pct: lrp > 0 ? r2((1-lc/lrp)*100)      : null,
+        listed_sold_pct:         lrp > 0 ? r2((lsv/lrp)*100)        : null,
+    };
+    Object.keys(computed).forEach(function(key) {
+        const el = document.getElementById('kpiC-' + pk + '-' + empIdx + '-' + key);
+        if (el) el.textContent = _kpiFormatComputed(key, computed[key]);
+    });
+    const statusEl = document.getElementById('kpiS-' + pk + '-' + empIdx);
+    if (statusEl) { statusEl.textContent = '●'; statusEl.style.color = '#f59e0b'; statusEl.title = 'Unsaved'; }
+}
+
+function _kpiStoreTotalRowHtml(entries) {
+    // Sum all numeric input fields; average avg_transaction_time
+    const totals = { employee_name: 'Store Total' };
+    _KPI_INPUT_FIELDS.forEach(function(f) {
+        if (f === 'avg_transaction_time') {
+            const vals = entries.map(function(e) { return Number(e[f]); }).filter(function(v) { return v > 0 && !isNaN(v); });
+            totals[f] = vals.length ? vals.reduce(function(a, b) { return a + b; }, 0) / vals.length : null;
+        } else {
+            const vals = entries.map(function(e) { return Number(e[f]); }).filter(function(v) { return v != null && !isNaN(v); });
+            totals[f] = vals.length ? vals.reduce(function(a, b) { return a + b; }, 0) : null;
+        }
+    });
+    const computed = _kpiCalcDerived(totals);
+    let cells = '<td class="kpi-grid-name-col kpi-total-name-col"><div class="kpi-grid-name-cell"><span class="kpi-grid-emp-name kpi-total-emp-name">Store Total</span></div></td>';
+    _KPI_GRID_FIELDS.forEach(function(f) {
+        cells += '<td class="kpi-grid-computed kpi-total-cell">' + _kpiFormatComputed(f.key, computed[f.key]) + '</td>';
+    });
+    return '<tr class="kpi-total-row">' + cells + '</tr>';
+}
+
+function _kpiWeekRangeLabel(periodEndDate) {
+    const end = new Date(periodEndDate + 'T12:00:00');
+    const start = new Date(end);
+    start.setDate(start.getDate() - 6);
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const sm = months[start.getMonth()], sd = start.getDate();
+    const em = months[end.getMonth()],   ed = end.getDate();
+    return 'Week ' + sm + ' ' + sd + ' - ' + em + ' ' + ed;
+}
+
+function _kpiRenderWeekly(periods) {
+    const body = document.getElementById('kpiModalBody');
+    if (!body) return;
+    const store = sessionStorage.getItem('speeksUserStore') || '';
+    const sub = document.getElementById('kpiModalSubtitle');
+    if (sub) sub.textContent = store + ' · 4-Week View';
+    if (!periods || !periods.length) {
+        body.innerHTML = '<div class="kpi-empty-state">No weekly KPI data yet. Click Edit on the current week to get started.</div>';
+        return;
+    }
+    const wkBadges  = ['Current Week','Last Week','2 Weeks Ago','3 Weeks Ago'];
+    const wkBClass  = ['badge-current','badge-prev','badge-old','badge-old'];
+    let tbody = '';
+    periods.forEach(function(p, i) {
+        const isEd = _kpiEditingPeriod === p.period_end_date;
+        tbody += _kpiSectionDividerHtml('📅 ' + _kpiWeekRangeLabel(p.period_end_date), wkBadges[i] || '', wkBClass[i] || 'badge-old',
+            _kpiSectionControls(p.period_end_date, isEd, p.is_editable), '#3b82f6');
+        tbody += _kpiEmpRowsHtml(p.entries, p.period_end_date, isEd, false);
+        const hasSavedData = p.entries.some(function(e) { return e.id; });
+        if (hasSavedData) tbody += _kpiStoreTotalRowHtml(p.entries);
+    });
+    body.innerHTML = '<div class="kpi-grid-scroll-wrapper"><table class="kpi-entry-grid kpi-full-table">' + _kpiTheadHtml() + '<tbody>' + tbody + '</tbody></table></div>';
+}
+
+function _kpiExportCSV() {
+    if (!_kpiPeriodsData || !_kpiPeriodsData.length) return;
+    const store = sessionStorage.getItem('speeksUserStore') || 'STORE';
+    const isWeekly = _kpiCurrentTab === 'weekly';
+
+    const headers = [
+        'Period','Employee',
+        'Buy Value','Buy Cost','Est. GP','Margin %',
+        '# Trans','# Conv.','Conv. %',
+        '# Devices','# Dev Conv.','Dev Conv. %',
+        'Avg Time (min)',
+        '# No Deals','ND Value','ND Cost','Lost Profit','% vs Buy GP',
+        '# Listed','Retail ($)','Cost ($)','Sold ($)','Listed Margin %','% Sold',
+        'Google Reviews'
+    ];
+
+    const csvRows = [headers];
+
+    _kpiPeriodsData.forEach(function(p) {
+        const label = isWeekly ? _kpiWeekRangeLabel(p.period_end_date) : p.period_label;
+        p.entries.forEach(function(raw) {
+            const e = _kpiCalcDerived(raw);
+            const r2 = function(v) { return v == null ? '' : Math.round(v * 100) / 100; };
+            csvRows.push([
+                label,
+                e.employee_name,
+                r2(e.buying_value),       r2(e.buying_cost),
+                r2(e.estimated_gross_profit), r2(e.gross_margin_pct),
+                r2(e.transaction_count),  r2(e.transaction_converted), r2(e.customer_conversion_pct),
+                r2(e.device_count),       r2(e.device_converted),      r2(e.device_conversion_pct),
+                r2(e.avg_transaction_time),
+                r2(e.no_deal_count),      r2(e.no_deal_value),         r2(e.no_deal_cost),
+                r2(e.lost_profit),        r2(e.no_deal_vs_buying_pct),
+                r2(e.listed_count),       r2(e.listed_retail_price),   r2(e.listed_cost),
+                r2(e.listed_sold_value),  r2(e.listed_gross_margin_pct), r2(e.listed_sold_pct),
+                r2(e.mtd_google_reviews)
+            ]);
+        });
+    });
+
+    const csv = csvRows.map(function(row) {
+        return row.map(function(v) {
+            const s = String(v);
+            return s.includes(',') || s.includes('"') || s.includes('\n') ? '"' + s.replace(/"/g, '""') + '"' : s;
+        }).join(',');
+    }).join('\r\n');
+
+    const tab = isWeekly ? 'Weekly' : 'Monthly';
+    const ts  = new Date().toISOString().slice(0, 10);
+    const filename = store + '_KPI_' + tab + '_' + ts + '.csv';
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = filename; a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// --- 11c. MODULE: MONTHLY PERFORMANCE BRIEF (district-level, DM-editable) ---
+let _mbData = {};        // { period_end_date: { metric_key: value } }
+let _mbMonths = [];      // sorted date strings
+let _mbMetrics = [];     // catalog [{key,label,type,section}]
+let _mbEditable = '';    // editable period_end_date
+let _mbEditing = false;
+
+function _mbMonthLabel(dateStr) {
+    const d = new Date(dateStr + 'T12:00:00');
+    return d.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+}
+
+function _mbFmt(type, v) {
+    if (v == null || v === '' || isNaN(Number(v))) return '—';
+    const n = Number(v);
+    if (type === 'money')  return '$' + Math.round(n).toLocaleString();
+    if (type === 'pct')    return n.toFixed(1) + '%';
+    if (type === 'rating') return n.toFixed(1) + ' ★';
+    if (type === 'int')    return Math.round(n).toLocaleString();
+    return String(Math.round(n * 10) / 10);
+}
+
+// Metrics where a DECREASE is good (lower = better). All others: increase = good.
+const _MB_INVERSE = new Set([
+    'avg_transaction_time', 'inventory_cost', 'inventory_cost_under_30', 'pct_inventory_over_30',
+    'recycled_inventory', 'recycled_pct_inventory', 'inventory_confiscation',
+    'refunds', 'discounts', 'return_rate', 'shipping_label_cost', 'shipping_cost_pct_sales',
+    'paymore_ranking', 'defect_rate', 'late_shipment_rate', 'case_no_resolution',
+]);
+
+// Absolute difference (primary − compare), signed and formatted by type.
+function _mbFmtDelta(type, diff) {
+    const s = diff > 0 ? '+' : (diff < 0 ? '-' : '');
+    const a = Math.abs(diff);
+    if (type === 'money')  return s + '$' + Math.round(a).toLocaleString();
+    if (type === 'pct')    return s + a.toFixed(1) + ' pts';
+    if (type === 'rating') return s + a.toFixed(1);
+    if (type === 'int')    return s + Math.round(a).toLocaleString();
+    return s + (Math.round(a * 10) / 10);
+}
+
+async function fetchMonthlyBrief() {
+    const body = document.getElementById('mbBody');
+    if (!body) return;
+    const sel = document.getElementById('mbStoreSelect');
+    let store = sel ? sel.value : (sessionStorage.getItem('speeksUserStore') || 'OVL');
+    // Managers without the picker default to their own store
+    if (sel && sel.offsetParent === null) { store = sessionStorage.getItem('speeksUserStore') || store; }
+    _mbEditing = false;
+    body.innerHTML = '<div class="status-message">Syncing Performance Brief…</div>';
+    try {
+        const d = await fetch(`${MONTHLY_BRIEF_URL}?store=${store}&v=${Date.now()}`).then(r => r.json());
+        _mbData     = d.data || {};
+        _mbMonths   = d.months || [];
+        _mbMetrics  = d.metrics || [];
+        _mbEditable = d.editable_period || '';
+        _mbPopulateMonthSelects();
+        renderMonthlyBrief();
+    } catch (e) {
+        body.innerHTML = '<div class="status-message" style="color:var(--red-alert)">Failed to load brief.</div>';
+    }
+}
+
+function _mbPopulateMonthSelects() {
+    const pSel = document.getElementById('mbPrimaryMonth');
+    const cSel = document.getElementById('mbCompareMonth');
+    if (!pSel || !cSel) return;
+    const desc = [..._mbMonths].sort().reverse(); // newest first
+    const opts = desc.map(m => `<option value="${m}">${_mbMonthLabel(m)}</option>`).join('');
+    const prevP = pSel.value, prevC = cSel.value;
+    pSel.innerHTML = opts;
+    cSel.innerHTML = opts;
+    // Default: primary = newest, compare = previous month
+    pSel.value = (prevP && desc.includes(prevP)) ? prevP : desc[0];
+    cSel.value = (prevC && desc.includes(prevC)) ? prevC : (desc[1] || desc[0]);
+}
+
+function renderMonthlyBrief() {
+    const body = document.getElementById('mbBody');
+    if (!body) return;
+    const pDate = document.getElementById('mbPrimaryMonth')?.value;
+    const cDate = document.getElementById('mbCompareMonth')?.value;
+    if (!pDate) { body.innerHTML = '<div class="status-message">No data available.</div>'; return; }
+
+    // Edit button only for DM, and only when the primary selection is the editable month
+    const role = (sessionStorage.getItem('speeksUserRole') || '').toLowerCase().trim();
+    const isDM = role === 'district manager';
+    const canEdit = isDM && pDate === _mbEditable;
+    const editBtn = document.getElementById('mbEditBtn');
+    if (editBtn) editBtn.style.display = (canEdit && !_mbEditing) ? 'inline-block' : 'none';
+    document.getElementById('mbSaveBtn').style.display   = (_mbEditing) ? 'inline-block' : 'none';
+    document.getElementById('mbCancelBtn').style.display = (_mbEditing) ? 'inline-block' : 'none';
+
+    const pVals = _mbData[pDate] || {};
+    const cVals = _mbData[cDate] || {};
+
+    // Group metrics by section
+    const sections = [];
+    const bySection = {};
+    _mbMetrics.forEach(m => {
+        if (!bySection[m.section]) { bySection[m.section] = []; sections.push(m.section); }
+        bySection[m.section].push(m);
+    });
+
+    let html = '<table class="mb-table"><thead><tr>' +
+        '<th class="mb-th-metric">Metric</th>' +
+        '<th class="mb-th-val">' + _mbMonthLabel(pDate) + '</th>' +
+        '<th class="mb-th-val">' + _mbMonthLabel(cDate) + '</th>' +
+        '<th class="mb-th-delta">Δ</th>' +
+        '</tr></thead><tbody>';
+
+    sections.forEach(sec => {
+        html += '<tr class="mb-section-row"><td colspan="4">' + sec + '</td></tr>';
+        bySection[sec].forEach(m => {
+            const pv = pVals[m.key];
+            const cv = cVals[m.key];
+            let primaryCell;
+            if (_mbEditing && canEdit) {
+                const step = (m.type === 'int') ? '1' : (m.type === 'rating' ? '0.1' : '0.01');
+                primaryCell = '<input class="mb-input" type="number" step="' + step + '" id="mb-in-' + m.key + '" value="' + (pv != null ? pv : '') + '">';
+            } else {
+                primaryCell = _mbFmt(m.type, pv);
+            }
+            // Delta = primary column − compare column. Color by whether the change
+            // is good for THIS metric (some metrics are better when they drop).
+            let delta = '—', deltaCls = '';
+            if (pv != null && cv != null && !isNaN(pv) && !isNaN(cv)) {
+                const diff = Number(cv) - Number(pv);
+                delta = _mbFmtDelta(m.type, diff);
+                if (diff !== 0) {
+                    const good = _MB_INVERSE.has(m.key) ? (diff < 0) : (diff > 0);
+                    deltaCls = good ? 'mb-up' : 'mb-down';
+                }
+            }
+            html += '<tr class="mb-row">' +
+                '<td class="mb-metric-name">' + m.label + '</td>' +
+                '<td class="mb-val mb-val-primary">' + primaryCell + '</td>' +
+                '<td class="mb-val">' + _mbFmt(m.type, cv) + '</td>' +
+                '<td class="mb-delta ' + deltaCls + '">' + delta + '</td>' +
+                '</tr>';
+        });
+    });
+
+    html += '</tbody></table>';
+    body.innerHTML = html;
+}
+
+function mbStartEdit() {
+    _mbEditing = true;
+    // Force primary to the editable month
+    const pSel = document.getElementById('mbPrimaryMonth');
+    if (pSel && _mbEditable) {
+        if (![...pSel.options].some(o => o.value === _mbEditable)) {
+            pSel.add(new Option(_mbMonthLabel(_mbEditable), _mbEditable), 0);
+        }
+        pSel.value = _mbEditable;
+    }
+    renderMonthlyBrief();
+}
+
+function mbCancelEdit() {
+    _mbEditing = false;
+    renderMonthlyBrief();
+}
+
+async function mbSaveBrief() {
+    const store = document.getElementById('mbStoreSelect')?.value || sessionStorage.getItem('speeksUserStore');
+    const pin   = sessionStorage.getItem('speeksUserPin');
+    if (!pin) { alert('Session expired — please sign in again.'); return; }
+
+    const values = {};
+    _mbMetrics.forEach(m => {
+        const el = document.getElementById('mb-in-' + m.key);
+        if (el) values[m.key] = el.value === '' ? null : Number(el.value);
+    });
+
+    const saveBtn = document.getElementById('mbSaveBtn');
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving…'; }
+    try {
+        const resp = await fetch(MONTHLY_BRIEF_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-user-pin': pin },
+            body: JSON.stringify({ store, period_end_date: _mbEditable, values }),
+        });
+        const result = await resp.json();
+        if (!resp.ok || result.error) throw new Error(result.error || 'Save failed');
+        // Merge saved values into local cache
+        _mbData[_mbEditable] = Object.assign({}, _mbData[_mbEditable] || {}, values);
+        if (!_mbMonths.includes(_mbEditable)) { _mbMonths.push(_mbEditable); _mbPopulateMonthSelects(); }
+        _mbEditing = false;
+        renderMonthlyBrief();
+    } catch (e) {
+        alert('Could not save: ' + e.message);
+    } finally {
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save'; }
+    }
+}
+
+function _kpiRenderMonthly(periods) {
+    const body = document.getElementById('kpiModalBody');
+    if (!body) return;
+    const store = sessionStorage.getItem('speeksUserStore') || '';
+    const sub = document.getElementById('kpiModalSubtitle');
+    if (sub) sub.textContent = store + ' · Monthly';
+    if (!periods || !periods.length) {
+        body.innerHTML = '<div class="kpi-empty-state">No monthly KPI data yet. Click Edit on the current month to get started.</div>';
+        return;
+    }
+    const moBadges  = ['Current Month','Last Month'];
+    const moBClass  = ['badge-current','badge-prev'];
+    let tbody = '';
+    periods.forEach(function(p, i) {
+        const isEd = _kpiEditingPeriod === p.period_end_date;
+        tbody += _kpiSectionDividerHtml('📆 ' + p.period_label, i < 2 ? moBadges[i] : null, i < 2 ? moBClass[i] : '',
+            _kpiSectionControls(p.period_end_date, isEd, p.is_editable), '#7c3aed');
+        tbody += _kpiEmpRowsHtml(p.entries, p.period_end_date, isEd, false);
+        const hasSavedData = p.entries.some(function(e) { return e.id; });
+        if (hasSavedData) tbody += _kpiStoreTotalRowHtml(p.entries);
+    });
+    body.innerHTML = '<div class="kpi-grid-scroll-wrapper"><table class="kpi-entry-grid kpi-full-table">' + _kpiTheadHtml() + '<tbody>' + tbody + '</tbody></table></div>';
+}
+
+async function _kpiLoadAll(tab) {
+    const modalSel = document.getElementById('kpiModalStoreSelect');
+    const store = (modalSel && modalSel.offsetParent !== null && modalSel.value) || sessionStorage.getItem('speeksUserStore');
+    if (!store) return;
+    const body = document.getElementById('kpiModalBody');
+    if (body) body.innerHTML = '<div class="kpi-empty-state">Loading…</div>';
+    try {
+        const resp = await fetch(KPI_MANAGE_URL + '?store=' + store + '&period_type=' + tab + '&v=' + Date.now());
+        const data = await resp.json();
+        _kpiPeriodsData = data.periods || [];
+        if (tab === 'weekly') _kpiRenderWeekly(_kpiPeriodsData);
+        else                  _kpiRenderMonthly(_kpiPeriodsData);
+    } catch(e) {
+        if (body) body.innerHTML = '<div class="kpi-empty-state" style="color:var(--red-alert)">Failed to load KPI data.</div>';
+    }
+}
+
+function toggleDmKpiPicker(e) {
+    e.stopPropagation();
+    const dd = document.getElementById('dmKpiDropdown');
+    if (!dd) return;
+    const open = dd.classList.toggle('open');
+    if (open) {
+        const close = () => { dd.classList.remove('open'); document.removeEventListener('click', close); };
+        setTimeout(() => document.addEventListener('click', close), 0);
+    }
+}
+
+async function openKpiEntryPanelForStore(store, tab) {
+    const sel = document.getElementById('kpiModalStoreSelect');
+    if (sel) sel.value = store;
+    await openKpiEntryPanel(tab);
+}
+
+async function openKpiEntryPanel(tab) {
+    _kpiCurrentTab = tab || 'weekly';
+    _kpiEditingPeriod = null;
+    // Seed the modal store selector with the user's own store (managers); DMs keep whatever is selected
+    const sel = document.getElementById('kpiModalStoreSelect');
+    const userStore = sessionStorage.getItem('speeksUserStore');
+    if (sel && userStore && sel.offsetParent === null) sel.value = userStore;
+    document.getElementById('kpi-tab-weekly') && document.getElementById('kpi-tab-weekly').classList.toggle('active', _kpiCurrentTab === 'weekly');
+    document.getElementById('kpi-tab-monthly') && document.getElementById('kpi-tab-monthly').classList.toggle('active', _kpiCurrentTab === 'monthly');
+    toggleModal('kpiEntryModal');
+    await _kpiLoadAll(_kpiCurrentTab);
+}
+
+async function switchKpiTab(tab) {
+    _kpiCurrentTab = tab;
+    _kpiEditingPeriod = null;
+    document.getElementById('kpi-tab-weekly') && document.getElementById('kpi-tab-weekly').classList.toggle('active', tab === 'weekly');
+    document.getElementById('kpi-tab-monthly') && document.getElementById('kpi-tab-monthly').classList.toggle('active', tab === 'monthly');
+    await _kpiLoadAll(tab);
+}
+
+function _kpiStartEdit(periodDate) {
+    if (_kpiEditingPeriod === periodDate) return;
+    _kpiEditingPeriod = periodDate;
+    if (_kpiCurrentTab === 'weekly') _kpiRenderWeekly(_kpiPeriodsData);
+    else _kpiRenderMonthly(_kpiPeriodsData);
+}
+
+function _kpiCancelEdit() {
+    _kpiEditingPeriod = null;
+    if (_kpiCurrentTab === 'weekly') _kpiRenderWeekly(_kpiPeriodsData);
+    else _kpiRenderMonthly(_kpiPeriodsData);
+}
+
+async function _kpiSavePeriod(periodDate) {
+    const store = sessionStorage.getItem('speeksUserStore');
+    const pin   = sessionStorage.getItem('speeksUserPin');
+    if (!store || !pin) return;
+    const pk     = periodDate.replace(/-/g, '');
+    const period = _kpiPeriodsData.find(function(p) { return p.period_end_date === periodDate; });
+    if (!period) return;
+    const saveBtn = document.getElementById('kpiSaveBtn-' + pk);
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving...'; }
+    for (let empIdx = 0; empIdx < period.entries.length; empIdx++) {
+        const entry   = period.entries[empIdx];
+        const reqBody = { store: store, period_type: _kpiCurrentTab, period_end_date: periodDate, employee_name: entry.employee_name };
+        _KPI_INPUT_FIELDS.forEach(function(f) {
+            const el = document.getElementById('kpi-' + pk + '-' + empIdx + '-' + f);
+            if (el && el.value !== '') reqBody[f] = _KPI_INT_FIELDS.has(f) ? parseInt(el.value) : parseFloat(el.value);
+        });
+        const hasData = _KPI_INPUT_FIELDS.some(function(f) { return reqBody[f] != null; });
+        if (!hasData) continue;
+        try {
+            const resp   = await fetch(KPI_MANAGE_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-user-pin': pin }, body: JSON.stringify(reqBody) });
+            const result = await resp.json();
+            if (!resp.ok) throw new Error(result.error || 'Save failed');
+            period.entries[empIdx] = result.entry;
+            const s = document.getElementById('kpiS-' + pk + '-' + empIdx);
+            if (s) { s.textContent = '✓'; s.style.color = '#16a34a'; s.title = 'Saved'; }
+        } catch(e) {
+            const s = document.getElementById('kpiS-' + pk + '-' + empIdx);
+            if (s) { s.textContent = '✗'; s.style.color = 'var(--red-alert)'; s.title = String(e.message); }
+        }
+    }
+    _kpiEditingPeriod = null;
+    await _kpiLoadAll(_kpiCurrentTab);
+}
+
+function _kpiGetThisSunday() {
+    const d = new Date(); d.setHours(0,0,0,0);
+    const day = d.getDay(); d.setDate(d.getDate() + (day === 0 ? 0 : 7 - day));
+    return d.toISOString().slice(0,10);
+}
+function _kpiGetLastDayOfMonth() {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth()+1, 0).toISOString().slice(0,10);
+}
+
 
 // --- 12. MODULE: HUB DATA & LIVE DASHBOARDS ---
 
@@ -2186,7 +2883,9 @@ let currentLeaderboardMetric = 'Revenue';
 let cachedLeaderboardData = null; 
 let currentTimeframe = '4-Week'; 
 let currentChartMode = 'averages';
-let kpiChartCache = JSON.parse(localStorage.getItem('speeksKpiChartCache')) || { '4-Week': null, 'Monthly': null };
+let _rawChartCache = JSON.parse(localStorage.getItem('speeksKpiChartCache')) || {};
+// Discard any old CSV-format cache entries (they had array data, not {mode, tf, ...})
+let kpiChartCache = (_rawChartCache['4-Week']?.mode && _rawChartCache['Monthly']?.mode) ? _rawChartCache : { '4-Week': null, 'Monthly': null };
 let _latestPatchKey = null; // title|date of the most recent patch notes group
 
 function switchPageTab(tab) {
@@ -2228,57 +2927,56 @@ function switchLeaderboardMetric(metric) {
     drawLeaderboard(); 
 }
 
-function loadKpiData() { 
+function loadKpiData() {
     const mSelect = document.getElementById('metricSelector');
     if (!mSelect) return;
-    
-    const m = mSelect.value;
     const loader = document.getElementById('chartLoading');
-    
-    if (loader) {
-        loader.style.display = 'flex';
-        loader.innerHTML = '<div class="status-message">Syncing Live Data...</div>';
-    }
-    
-    // Always fetch fresh data from the server, bypassing the stale local cache
-    fetchChartData(currentTimeframe); 
+    if (loader) { loader.style.display = 'flex'; loader.innerHTML = '<div class="status-message">Syncing Live Data...</div>'; }
+    fetchChartData(currentTimeframe);
 }
 
 async function fetchChartData(tf) {
     const loader = document.getElementById('chartLoading');
-    if (loader) {
-        loader.style.display = 'flex';
-        loader.innerHTML = '<div class="status-message">Syncing Data...</div>';
-    }
-    
+    if (loader) { loader.style.display = 'flex'; loader.innerHTML = '<div class="status-message">Syncing Data...</div>'; }
+
+    const STORES = ['OVL','LEE','WSP','MPL','BAL'];
+    const safeJson = (url) => fetch(url).then(r => r.json()).catch(() => null);
+
     try {
-        const d = await Promise.all([
-            fetch(`${WEEKLY_KPI_URL}?store=OVL&time=${tf}`).then(r => r.json()), 
-            fetch(`${WEEKLY_KPI_URL}?store=LEE&time=${tf}`).then(r => r.json()), 
-            fetch(`${WEEKLY_KPI_URL}?store=WSP&time=${tf}`).then(r => r.json()),
-            fetch(`${WEEKLY_KPI_URL}?store=MPL&time=${tf}`).then(r => r.json()),
-            fetch(`${WEEKLY_KPI_URL}?store=BAL&time=${tf}`).then(r => r.json())
-        ]);
-        
-        kpiChartCache[tf] = d; 
+        let payload;
+        if (currentChartMode === 'averages') {
+            if (tf === 'Monthly') {
+                const results = await Promise.all(STORES.map(s => safeJson(`${MONTHLY_KPI_URL}?store=${s}&v=${Date.now()}`)));
+                payload = { mode: 'averages', tf, stores: STORES, results };
+            } else {
+                const results = await Promise.all(STORES.map(s => safeJson(`${KPI_MANAGE_URL}?store=${s}&period_type=weekly&v=${Date.now()}`)));
+                payload = { mode: 'averages', tf, stores: STORES, results };
+            }
+        } else {
+            const store = document.getElementById('dmChartStoreSelector')?.value || sessionStorage.getItem('speeksUserStore') || 'OVL';
+            const pt = tf === 'Monthly' ? 'monthly' : 'weekly';
+            const result = await safeJson(`${KPI_MANAGE_URL}?store=${store}&period_type=${pt}&v=${Date.now()}`);
+            payload = { mode: 'employees', tf, store, result };
+        }
+
+        kpiChartCache[tf] = payload;
         try { localStorage.setItem('speeksKpiChartCache', JSON.stringify(kpiChartCache)); } catch(e) {}
-        
+
         if (currentTimeframe === tf) {
             const mSelect = document.getElementById('metricSelector');
-            if (mSelect) renderKpiChart(d, mSelect.value);
+            if (mSelect) renderKpiChart(payload, mSelect.value);
         }
     } catch (e) {
-        console.error("fetchChartData error:", e);
+        console.error('fetchChartData error:', e);
         if (loader) loader.innerHTML = '<div class="status-message" style="color:var(--red-alert);">Failed to load chart data.</div>';
-    } 
+    }
 }
 
 function syncAllData() {
     try {
         const mSelect = document.getElementById('metricSelector');
-        if (typeof kpiChartCache !== 'undefined' && kpiChartCache && kpiChartCache[currentTimeframe] && mSelect) {
-            renderKpiChart(kpiChartCache[currentTimeframe], mSelect.value);
-        }
+        const cached = kpiChartCache && kpiChartCache[currentTimeframe];
+        if (cached && cached.mode && mSelect) renderKpiChart(cached, mSelect.value);
     } catch (e) {}
 
     try {
@@ -3247,24 +3945,25 @@ async function fetchAlertsData() {
         if (!storeData) return;
 
         const formatPercent = (val) => {
-            if (!val || String(val).trim() === '') return '';
+            if (val === null || val === undefined) return '0%';
             let str = String(val).trim();
+            if (str === '' || str === 'null') return '0%';
             if (str.endsWith('%')) return str;
             let num = parseFloat(str.replace(/[^0-9.-]/g, ''));
-            if (isNaN(num)) return str; 
-            return (num * 100).toFixed(2) + '%';
+            if (isNaN(num)) return '0%';
+            return num.toFixed(2) + '%';
         };
 
         // NEW: Dynamic Severity Calculator for eBay Top Rated Thresholds
         const getSeverity = (type, rawVal) => {
-            if (!rawVal || String(rawVal).trim() === '') return 'clear';
+            if (rawVal === null || rawVal === undefined || String(rawVal).trim() === '') return 'clear';
             let str = String(rawVal).trim();
-            
+
             let num = parseFloat(str.replace(/[^0-9.-]/g, ''));
             if (isNaN(num)) return 'clear';
 
-            // Convert raw sheet decimal to percentage for accurate logic comparison
-            let valToCheck = str.endsWith('%') ? num : num * 100;
+            // Values are stored as percentages (e.g. 0.12 = 0.12%, 99.19 = 99.19%)
+            let valToCheck = num;
 
             if (type === 'defectRate') {
                 if (valToCheck >= 0.5) return 'very-high'; // Red
@@ -3296,12 +3995,12 @@ async function fetchAlertsData() {
             let displayText = 'All Clear';
             let pulseHtml = '';
             
-            if (rawValue !== '') {
+            if (rawValue !== null && rawValue !== undefined && String(rawValue).trim() !== '') {
                 if (isPercent) {
                     displayText = formatPercent(rawValue);
                 } else {
                     if (String(rawValue).includes(',')) {
-                        displayText = String(rawValue).split(',').map(s => 
+                        displayText = String(rawValue).split(',').map(s =>
                             `<span style="display:block; padding: 2px 0;">${s.trim()}</span>`
                         ).join('<div style="height:1px; background:rgba(0,0,0,0.1); margin: 3px 0;"></div>');
                     } else {
@@ -3310,7 +4009,7 @@ async function fetchAlertsData() {
                 }
 
                 if (severity === 'high') {
-                    bgColor = '#fef3c7'; 
+                    bgColor = '#fef3c7';
                     textColor = '#92400e';
                 } else if (severity === 'very-high') {
                     bgColor = '#fee2e2';
@@ -3388,7 +4087,7 @@ async function fetchDistrictMonthlyKPIs() {
                 districtKpiCache.masterMonths = res.data.months; 
             }
             if (res.data && !res.data.error && res.data.data) {
-                districtKpiCache.stores[res.store] = { months: res.data.months || [], data: res.data.data };
+                districtKpiCache.stores[res.store] = { months: res.data.months || [], data: groupKPIs(res.data.data) };
             } else {
                 districtKpiCache.stores[res.store] = { months: [], data: [] }; 
             }
@@ -3580,20 +4279,21 @@ async function fetchMasterDistrictDashboard() {
 
             // 4 New Service Metrics logic
             const formatPercent = (val) => {
-                if (!val || String(val).trim() === '') return '';
+                if (val === null || val === undefined) return '0%';
                 let str = String(val).trim();
+                if (str === '' || str === 'null') return '0%';
                 if (str.endsWith('%')) return str;
                 let num = parseFloat(str.replace(/[^0-9.-]/g, ''));
-                if (isNaN(num)) return str; 
-                return (num * 100).toFixed(2) + '%';
+                if (isNaN(num)) return '0%';
+                return num.toFixed(2) + '%';
             };
 
             const getSev = (type, rawVal) => {
-                if (!rawVal || String(rawVal).trim() === '') return 'clear';
+                if (rawVal === null || rawVal === undefined || String(rawVal).trim() === '') return 'clear';
                 let str = String(rawVal).trim();
                 let num = parseFloat(str.replace(/[^0-9.-]/g, ''));
                 if (isNaN(num)) return 'clear';
-                let valToCheck = str.endsWith('%') ? num : num * 100;
+                let valToCheck = num;
 
                 if (type === 'defectRate') {
                     if (valToCheck >= 0.5) return 'very-high';
@@ -3808,13 +4508,18 @@ async function fetchMasterDistrictDashboard() {
         ]);
 
         const weeklyPromises = STORES.map(async (store) => {
-            const d = await fetch(`${WEEKLY_KPI_URL}?store=${store}&time=4-Week&v=${Date.now()}`).then(r => r.json());
-            let sAvg = {};
-            let sIdx = d.findLastIndex(r => String(r[0]).trim().toLowerCase() === "store" || String(r[0]).trim().toLowerCase() === "store total");
-            if (sIdx !== -1) {
-                let st = d[sIdx];
-                sAvg = { buyMargin: st[5], conversion: st[8], time: formatTime(st[12]), noDeals: st[14], listed: st[20] };
-            }
+            const d = await fetch(`${WEEKLY_KPI_URL}?store=${store}&v=${Date.now()}`).then(r => r.json());
+            const t = d.store_total || {};
+            const fmtPct = v => v != null ? `${Number(v).toFixed(1)}` : '';
+            const fmtN   = v => v != null ? String(Math.round(Number(v))) : '';
+            const fmtMin = v => v != null ? `${Number(v).toFixed(1)}` : '';
+            const sAvg = {
+                buyMargin:  fmtPct(t.gross_margin_pct),
+                conversion: fmtPct(t.customer_conversion_pct),
+                time:       fmtMin(t.avg_transaction_time),
+                noDeals:    fmtN(t.no_deal_count),
+                listed:     fmtN(t.listed_count),
+            };
             return { store, sAvg };
         });
 
@@ -4611,80 +5316,52 @@ async function fetchAndRenderEmployeeKPIs() {
     if (store === 'ALL' || store === 'CORP') store = 'OVL';
 
     try {
-        const response = await fetch(`${WEEKLY_KPI_URL}?store=${store}&time=4-Week&v=${Date.now()}`);
+        const response = await fetch(`${WEEKLY_KPI_URL}?store=${store}&v=${Date.now()}`);
         const d = await response.json();
-        
-        let sAvg = {};
+
+        // New clean JSON format: { employees, store_total, period_label }
+        const emps   = d.employees   || [];
+        const total  = d.store_total || {};
+        const pTxt   = d.period_label || '';
+
+        const fmtBuy = v => v != null ? `$${Math.round(Number(v)).toLocaleString()}` : '';
+        const fmtPct = v => v != null ? `${Number(v).toFixed(1)}` : '';
+        const fmtN   = v => v != null ? String(Math.round(Number(v))) : '';
+        const fmtMin = v => v != null ? `${Number(v).toFixed(1)}` : '';
+
+        let sAvg = {
+            buyVal:     fmtBuy(total.buying_value),
+            buyMargin:  fmtPct(total.gross_margin_pct),
+            customers:  fmtN(total.transaction_count),
+            conversion: fmtPct(total.customer_conversion_pct),
+            time:       fmtMin(total.avg_transaction_time),
+            noDeals:    fmtN(total.no_deal_count),
+            listed:     fmtN(total.listed_count),
+        };
+
+        const sessionName      = String(userName).trim().toLowerCase();
+        const sessionFirstName = sessionName.split(' ')[0];
+        const myEntry = emps.find(e => {
+            const dbName  = String(e.employee_name).trim().toLowerCase();
+            if (dbName === sessionName) return true;
+            const dbFirst = dbName.split(' ')[0];
+            return dbFirst.length > 2 && sessionFirstName.length > 2 &&
+                   (dbFirst.startsWith(sessionFirstName) || sessionFirstName.startsWith(dbFirst));
+        });
+
         let myData = {};
-        let sIdx = d.findLastIndex(r => String(r[0]).trim().toLowerCase() === "store" || String(r[0]).trim().toLowerCase() === "store total");
-        
-        if (sIdx !== -1) {
-            let st = d[sIdx];
-            sAvg = { buyVal: st[2], buyMargin: st[5], customers: st[6], conversion: st[8], time: formatTime(st[12]), noDeals: st[14], listed: st[20] };
-            
-            const sessionName = String(userName).trim().toLowerCase();
-            const sessionFirstName = sessionName.split(' ')[0];
-
-            for (let i = Math.max(0, sIdx - 6); i <= Math.min(d.length - 1, sIdx + 6); i++) {
-                if (i === sIdx) continue;
-                let n = String(d[i][0]).trim();
-                let dbName = n.toLowerCase();
-                
-                if (n && !["name", "employee", "store", "store total", "ovl", "lee", "wsp", "mpl", "bal"].includes(dbName) && !dbName.includes("average") && !dbName.includes("week")) {
-                    
-                    let isMatch = false;
-                    if (dbName === sessionName) {
-                        isMatch = true;
-                    } else {
-                        const dbFirstName = dbName.split(' ')[0];
-                        if (dbFirstName.length > 2 && sessionFirstName.length > 2) {
-                            if (dbFirstName.startsWith(sessionFirstName) || sessionFirstName.startsWith(dbFirstName)) {
-                                isMatch = true;
-                            }
-                        }
-                    }
-
-                    if (isMatch) {
-                        myData = { buyVal: d[i][2], buyMargin: d[i][5], customers: d[i][6], conversion: d[i][8], time: formatTime(d[i][12]), noDeals: d[i][14], listed: d[i][20] };
-                        break; 
-                    }
-                }
-            }
+        if (myEntry) {
+            myData = {
+                buyVal:     fmtBuy(myEntry.buying_value),
+                buyMargin:  fmtPct(myEntry.gross_margin_pct),
+                customers:  fmtN(myEntry.transaction_count),
+                conversion: fmtPct(myEntry.customer_conversion_pct),
+                time:       fmtMin(myEntry.avg_transaction_time),
+                noDeals:    fmtN(myEntry.no_deal_count),
+                listed:     fmtN(myEntry.listed_count),
+            };
         }
 
-        let pTxt = "";
-        if (sIdx !== -1) {
-            let firstEmpIdx = -1;
-            for (let i = Math.max(0, sIdx - 6); i <= Math.min(d.length - 1, sIdx + 6); i++) {
-                let n = String(d[i][0]).trim(), lN = n.toLowerCase();
-                if (n && !["name", "employee", "store", "store total", "ovl", "lee", "wsp", "mpl", "bal"].includes(lN) && !lN.includes("average") && !lN.includes("week")) {
-                    if (String(d[i][2]).trim() !== "" || String(d[i][20]).trim() !== "") {
-                        firstEmpIdx = i;
-                        break; 
-                    }
-                }
-            }
-
-            if (firstEmpIdx !== -1) {
-                let hR = d[firstEmpIdx - 3] || d[firstEmpIdx - 2];
-                if (hR && hR[2] && hR[4] && hR[6]) {
-                    const getOrdinal = (n) => {
-                        let val = parseInt(String(n).replace(/\D/g, ''));
-                        if (isNaN(val)) return n;
-                        let s = ["th", "st", "nd", "rd"], v = val % 100;
-                        return val + (s[(v - 20) % 10] || s[v] || s[0]);
-                    };
-                    
-                    const monthNames = {"Jan":"January","Feb":"February","Mar":"March","Apr":"April","May":"May","Jun":"June","Jul":"July","Aug":"August","Sep":"September","Oct":"October","Nov":"November","Dec":"December"};
-                    let monthName = String(hR[2]).replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/ig, m => monthNames[m.charAt(0).toUpperCase() + m.slice(1).toLowerCase()] || m);
-                    
-                    let startDay = getOrdinal(hR[4]);
-                    let endDay = getOrdinal(hR[6]);
-                    
-                    pTxt = `${monthName} ${startDay} - ${endDay}`;
-                }
-            }
-        }
         if (periodLabel) periodLabel.innerText = pTxt;
 
         // --- NEW: ROBUST VARIANCE FETCH ---
@@ -4904,7 +5581,7 @@ function applyRoleBasedUI() {
     }
 
     if (userStore !== 'ALL') {
-        ['kpiStoreSelect', 'am-kpiStoreSelect', 'weeklyKpiStoreSelect', 'bsStoreSelect', 'vw-primary', 'dmChartStoreSelector'].forEach(id => {
+        ['kpiStoreSelect', 'am-kpiStoreSelect', 'weeklyKpiStoreSelect', 'bsStoreSelect', 'vw-primary', 'dmChartStoreSelector', 'mbStoreSelect'].forEach(id => {
             const dropdown = document.getElementById(id);
             if (dropdown && Array.from(dropdown.options).some(opt => opt.value === userStore)) {
                 dropdown.value = userStore;
@@ -5017,6 +5694,8 @@ function initDashboardData() {
         setTimeout(fetchKPIData, 700);
         setTimeout(fetchDistrictMonthlyKPIs, 750);
         setTimeout(fetchRecordsData, 800);
+        setTimeout(() => { if (document.getElementById('mainKpiChart')) fetchChartData(currentTimeframe); }, 950);
+        setTimeout(() => { if (document.getElementById('mbBody')) fetchMonthlyBrief(); }, 1000);
         setTimeout(fetchChampions, 850);
         setTimeout(fetchAwardsData, 900);
         setTimeout(fetchDmGoalsData, 1000);
@@ -5031,6 +5710,7 @@ function initDashboardData() {
         if (_clRole === 'manager' || _clRole === 'district manager') {
             setTimeout(loadChecklist, 1200);
         }
+
 
         if (typeof preloadAllStores === 'function') setTimeout(preloadAllStores, 4000); 
         if (typeof initListingGoals === 'function') setTimeout(initListingGoals, 200);
@@ -5272,203 +5952,148 @@ window.addEventListener('popstate', () => {
 // ============================================================================
 
 // --- CHART: RENDER KPI ---
-function renderKpiChart(allData, metric) {
-    if(!document.getElementById('mainKpiChart')) return;
-
-    if (typeof Chart === 'undefined') { 
+function renderKpiChart(payload, metric) {
+    if (!document.getElementById('mainKpiChart')) return;
+    if (typeof Chart === 'undefined') {
         const loader = document.getElementById('chartLoading');
-        if (loader) { 
-            loader.innerHTML = '<div class="status-message" style="color:var(--red-alert);">Chart.js Library Missing!</div>'; 
-            loader.style.display = 'flex'; 
-        } 
-        return; 
+        if (loader) { loader.innerHTML = '<div class="status-message" style="color:var(--red-alert);">Chart.js Library Missing!</div>'; loader.style.display = 'flex'; }
+        return;
     }
+    if (!payload) return;
 
-    const t = { 'conversion': 'Customer Conversion %', 'margin': 'Buying Margin %', 'nodeals': 'Total No Deals', 'time': 'Transaction Time' }[metric];
-    const unit = metric === 'time' ? '' : (metric === 'nodeals' ? '' : '%'); 
-    const isPct = metric === 'conversion' || metric === 'margin';
-    
-    const strs = [ 
-        { key: 'OVL', color: '#a855f7', label: 'OVL' }, 
-        { key: 'LEE', color: '#3b82f6', label: 'LEE' }, 
-        { key: 'WSP', color: '#22c55e', label: 'WSP' },
-        { key: 'MPL', color: '#f97316', label: 'MPL' },
-        { key: 'BAL', color: '#ef4444', label: 'BAL' } 
-    ];
-    
-    let lbls = [], fData = [], nums = [];
-
-    const parseChartVal = (v) => {
-        if (v === undefined || v === null) return null;
-        
-        // Convert to string and lowercase to catch everything safely
-        let strVal = String(v).trim().toLowerCase();
-        
-        // 1. Catch completely empty cells or Google Sheets errors
-        if (strVal === "" || strVal === "-" || strVal === "#div/0!" || strVal === "#n/a" || strVal === "null") {
-            return null;
-        }
-
-        // 2. Catch literal zeros. This forces closed stores/employees to be completely blank instead of flatlining at 0.
-        // Exception: nodeals — 0 is a valid meaningful result (employee had no bad deals that week).
-        if (metric !== 'nodeals' && (strVal === "0" || strVal === "0%" || strVal === "0.00%" || strVal === "0.0%" || strVal === "0:00")) {
-            return null;
-        }
-
-        if (metric === 'time') {
-            if (strVal.includes(':')) {
-                let parts = strVal.split(':');
-                return parseInt(parts[0] || 0) + (parseInt(parts[1] || 0) / 60);
-            }
-            if (strVal.includes('.')) {
-                let parts = strVal.split('.');
-                let mins = parseInt(parts[0] || 0);
-                let secsStr = parts[1] || '0';
-                if (secsStr.length === 1) secsStr += '0'; 
-                let secs = parseInt(secsStr.substring(0,2)) || 0;
-                return mins + (secs / 60);
-            }
-            
-            let p = parseFloat(strVal.replace(/[^0-9.-]/g, ''));
-            if (!isNaN(p)) {
-                if (p > 30) return p / 60;
-                return p;
-            }
-            return null;
-        }
-        
-        let p = parseNum(v);
-        if (p === 0 && metric !== 'nodeals') return null; // Final failsafe — zero means no data except for no-deals
-
-        return (isPct && p <= 1.5 && p >= -1.5) ? p * 100 : p;
+    // ── Metric config ────────────────────────────────────────────────────────
+    const METRIC = {
+        conversion: { field: 'customer_conversion_pct', moName: 'Customer Conversion %', unit: '%',  isPct: true  },
+        margin:     { field: 'gross_margin_pct',         moName: 'Gross Margin %',         unit: '%',  isPct: true  },
+        nodeals:    { field: 'no_deal_count',             moName: 'No Deal Count',           unit: '',   isPct: false },
+        time:       { field: 'avg_transaction_time',      moName: 'Avg Transaction Time',    unit: ' min',isPct: false },
     };
+    const mc = METRIC[metric] || METRIC.conversion;
+    const { field, unit, isPct } = mc;
+
+    const STORE_COLORS = { OVL:'#a855f7', LEE:'#3b82f6', WSP:'#22c55e', MPL:'#f97316', BAL:'#ef4444' };
+    const EMP_COLORS   = ['#a855f7','#3b82f6','#22c55e','#f97316','#ef4444','#14b8a6','#eab308','#ec4899'];
 
     const dmDropdown = document.getElementById('dmChartStoreSelector');
-    if (dmDropdown) dmDropdown.style.display = currentChartMode === 'averages' ? 'none' : 'block';
+    if (dmDropdown) dmDropdown.style.display = payload.mode === 'employees' ? 'block' : 'none';
 
-    if (currentChartMode === 'averages') {
-        allData.forEach((d, idx) => {
-            if (!d || !Array.isArray(d)) return;
-            let sData = [], sr=-1, sc=-1;
-            
-            for(let i=0; i<d.length; i++) { 
-                if (!Array.isArray(d[i])) continue;
-                for(let j=0; j<d[i].length; j++) if(d[i][j] && String(d[i][j]).trim() === t) { sr=i; sc=j; break; } 
-                if(sr!==-1) break; 
-            } 
-            if(sr === -1 || !Array.isArray(d[sr+1])) return;
-            
-            let monthCol = Math.max(0, sc - 1);
-            let sCol = -1;
-            
-            for(let c = sc; c < d[sr+1].length; c++) {
-                let val = String(d[sr+1][c] || '').trim().toLowerCase();
-                if (val === 'store' || val === 'store total') { sCol = c; break; }
-            }
-            if(sCol === -1) sCol = d[sr+1].length - 1; 
-            
-            if(!lbls.length) { 
-                for (let i = sr + 2; i < d.length; i++) { 
-                    if (!Array.isArray(d[i])) continue;
-                    let l = String(d[i][monthCol] || '').trim(); 
-                    if (!l || l.includes('Store') || l.includes('%')) break; 
-                    lbls.push(l); 
-                } 
-            }
-            
-            lbls.forEach((lbl) => {
-                let rowIdx = -1;
-                for (let r = sr + 2; r < d.length; r++) {
-                    if (!Array.isArray(d[r])) continue;
-                    if (String(d[r][monthCol] || '').trim() === lbl) { rowIdx = r; break; }
-                }
-                if (rowIdx === -1) { sData.push(null); return; }
-                let row = d[rowIdx];
-                let v = (metric === 'time' && currentTimeframe === '4-Week') ? row[5] : row[sCol];
-                let parsed = parseChartVal(v);
-            
-                sData.push(parsed);
-                if (parsed !== null) nums.push(parsed);
-            });
-            
-            // FIX: Only push to the chart if there is at least one valid data point
-            if (idx < strs.length && sData.some(val => val !== null)) {
-                fData.push({ label: '   ' + strs[idx].label + '   ', data: sData, borderColor: strs[idx].color, backgroundColor: strs[idx].color, tension: 0.4, pointRadius: 5, spanGaps: true });
-            }
-        });
-    } else {
-        let userStore = dmDropdown ? dmDropdown.value : (sessionStorage.getItem('speeksUserStore') || 'OVL');
-        if (userStore === 'ALL' || userStore === 'CORP') userStore = 'OVL';
-        let storeIdx = strs.findIndex(s => s.key === userStore);
-        if (storeIdx === -1) storeIdx = 0;
-        
-        let d = allData[storeIdx];
-        if (d && Array.isArray(d)) {
-            let sr=-1, sc=-1;
-            for(let i=0; i<d.length; i++) { 
-                if (!Array.isArray(d[i])) continue;
-                for(let j=0; j<d[i].length; j++) if(d[i][j] && String(d[i][j]).trim() === t) { sr=i; sc=j; break; } 
-                if(sr!==-1) break; 
-            }
-            if(sr !== -1 && Array.isArray(d[sr+1])) {
-                let monthCol = Math.max(0, sc - 1);
-                let sCol = -1;
-                
-                for(let c = sc; c < d[sr+1].length; c++) {
-                    let val = String(d[sr+1][c] || '').trim().toLowerCase();
-                    if (val === 'store' || val === 'store total') { sCol = c; break; }
-                }
-                if (sCol === -1) sCol = d[sr+1].length - 1;
+    const safeVal = (v) => {
+        if (v == null || isNaN(Number(v))) return null;
+        const n = Number(v);
+        if (!isFinite(n)) return null;
+        if (n === 0 && metric !== 'nodeals') return null;
+        return n;
+    };
 
-                if(!lbls.length) { 
-                    for (let i = sr + 2; i < d.length; i++) { 
-                        if (!Array.isArray(d[i])) continue;
-                        let l = String(d[i][monthCol] || '').trim(); 
-                        if (!l || l.includes('Store') || l.includes('%')) break; 
-                        lbls.push(l); 
-                    } 
-                }
+    let lbls = [], fData = [], nums = [];
 
-                let empCols = [];
-                for(let c = sc; c < sCol; c++) {
-                    let colName = String(d[sr+1][c] || '').trim();
-                    if (!colName) continue; 
-                    let lowerName = colName.toLowerCase();
-                    if(!lowerName.includes('average') && lowerName !== 'store' && lowerName !== 'store total' && lowerName !== t.toLowerCase() && !strs.some(s => s.key.toLowerCase() === lowerName)) {
-                        if (!empCols.some(e => e.name === colName)) empCols.push({ name: colName, idx: c });
-                    }
-                }
+    // ── AVERAGES MODE ────────────────────────────────────────────────────────
+    if (payload.mode === 'averages') {
 
-                const empColors = ['#a855f7', '#3b82f6', '#22c55e', '#f97316', '#ef4444', '#14b8a6', '#eab308', '#ec4899'];
-                
-                empCols.forEach((emp, eIdx) => {
-                    let sData = [];
-                    lbls.forEach((lbl) => {
-                        let rowIdx = -1;
-                        for (let r = sr + 2; r < d.length; r++) {
-                            if (!Array.isArray(d[r])) continue;
-                            if (String(d[r][monthCol] || '').trim() === lbl) { rowIdx = r; break; }
-                        }
-                        if (rowIdx === -1) { sData.push(null); return; }
-                        let parsed = parseChartVal(d[rowIdx][emp.idx]);
-                        sData.push(parsed);
-                        if (parsed !== null) nums.push(parsed);
-                    });
-                    
-                    if (sData.some(val => val !== null)) {
-                        let color = empColors[eIdx % empColors.length];
-                        fData.push({ label: '   ' + emp.name + '   ', data: sData, borderColor: color, backgroundColor: color, tension: 0.4, pointRadius: 5, spanGaps: true });
-                    }
+        if (payload.tf === 'Monthly') {
+            // monthly-kpi returns { months:[...], data:[{name, values}] } per store
+            const first = (payload.results || []).find(r => r && r.months && r.months.length);
+            lbls = first ? first.months : [];
+
+            (payload.results || []).forEach((r, idx) => {
+                if (!r || !r.months || !r.data) return;
+                const store = payload.stores[idx];
+                const row = r.data.find(m => m.name.toLowerCase().includes(
+                    metric === 'conversion' ? 'customer conversion' :
+                    metric === 'margin'     ? 'gross margin'        :
+                    metric === 'nodeals'    ? 'no deal count'       : 'avg transaction'
+                ));
+                if (!row) return;
+                const vals = lbls.map(lbl => {
+                    const i = r.months.indexOf(lbl);
+                    return i === -1 ? null : safeVal(row.values[i]);
                 });
-            }
+                const valid = vals.filter(v => v !== null);
+                if (!valid.length) return;
+                nums.push(...valid);
+                fData.push({ label: '   ' + store + '   ', data: vals, borderColor: STORE_COLORS[store], backgroundColor: STORE_COLORS[store], tension: 0.4, pointRadius: 5, spanGaps: true });
+            });
+
+        } else {
+            // 4-Week: kpi-manage returns periods newest-first — reverse for left=old, right=new
+            const first = (payload.results || []).find(r => r && r.periods && r.periods.length);
+            lbls = first ? [...first.periods].reverse().map(p => _kpiWeekRangeLabel(p.period_end_date)) : [];
+
+            (payload.results || []).forEach((r, idx) => {
+                if (!r || !r.periods) return;
+                const store = payload.stores[idx];
+                const vals = [...r.periods].reverse().map(p => {
+                    if (!p.entries || !p.entries.length) return null;
+                    const total = _kpiStoreTotalRowHtml ? (() => {
+                        // compute totals inline without the HTML builder
+                        const t2 = { employee_name: 'Store Total' };
+                        _KPI_INPUT_FIELDS.forEach(function(f) {
+                            if (f === 'avg_transaction_time') {
+                                const vs = p.entries.map(e => Number(e[f])).filter(v => v > 0 && !isNaN(v));
+                                t2[f] = vs.length ? vs.reduce((a,b)=>a+b,0)/vs.length : null;
+                            } else {
+                                const vs = p.entries.map(e => Number(e[f])).filter(v => v != null && !isNaN(v));
+                                t2[f] = vs.length ? vs.reduce((a,b)=>a+b,0) : null;
+                            }
+                        });
+                        return _kpiCalcDerived(t2);
+                    })() : null;
+                    return total ? safeVal(total[field]) : null;
+                });
+                const valid = vals.filter(v => v !== null);
+                if (!valid.length) return;
+                nums.push(...valid);
+                fData.push({ label: '   ' + store + '   ', data: vals, borderColor: STORE_COLORS[store], backgroundColor: STORE_COLORS[store], tension: 0.4, pointRadius: 5, spanGaps: true });
+            });
         }
+
+    // ── EMPLOYEES MODE ───────────────────────────────────────────────────────
+    } else {
+        const r = payload.result;
+        if (!r || !r.periods || !r.periods.length) {
+            const loader = document.getElementById('chartLoading');
+            if (loader) { loader.innerHTML = '<div class="status-message">No data available.</div>'; loader.style.display = 'flex'; }
+            return;
+        }
+
+        // kpi-manage returns newest-first — reverse so chart reads left=old, right=new
+        const periods = [...r.periods].reverse();
+
+        lbls = payload.tf === 'Monthly'
+            ? periods.map(p => p.period_label)
+            : periods.map(p => _kpiWeekRangeLabel(p.period_end_date));
+
+        // Only chart employees who are still current — use the editable (current) period's
+        // roster as the authoritative list, filtering out anyone who has since left the store
+        const editablePeriod = r.periods.find(p => p.is_editable);
+        const currentEmpSet = editablePeriod
+            ? new Set(editablePeriod.entries.map(e => e.employee_name))
+            : null;
+
+        const allEmpNames = [...new Set(periods.flatMap(p => (p.entries || []).map(e => e.employee_name)))];
+        const empNames = currentEmpSet ? allEmpNames.filter(n => currentEmpSet.has(n)) : allEmpNames;
+
+        empNames.forEach((name, eIdx) => {
+            const vals = periods.map(p => {
+                const entry = (p.entries || []).find(e => e.employee_name === name);
+                if (!entry) return null;
+                const computed = _kpiCalcDerived(entry);
+                return safeVal(computed[field]);
+            });
+            const valid = vals.filter(v => v !== null);
+            if (!valid.length) return;
+            nums.push(...valid);
+            const color = EMP_COLORS[eIdx % EMP_COLORS.length];
+            fData.push({ label: '   ' + name + '   ', data: vals, borderColor: color, backgroundColor: color, tension: 0.4, pointRadius: 5, spanGaps: true });
+        });
     }
 
-    let yMin = 0, yMax = 100; 
-    if (nums.length) { 
-        let mx = Math.max(...nums), mn = Math.min(...nums); 
+    // ── Y-axis bounds ────────────────────────────────────────────────────────
+    let yMin = 0, yMax = 100;
+    if (nums.length) {
+        const mx = Math.max(...nums), mn = Math.min(...nums);
         if (isPct) {
-            yMin = Math.max(0, Math.floor(mn/10)*10 - 10); 
+            yMin = Math.max(0, Math.floor(mn/10)*10 - 10);
             yMax = Math.min(100, Math.ceil(mx/10)*10 + 10);
         } else if (metric === 'time') {
             yMin = Math.max(0, Math.floor(mn) - 1);
@@ -5479,58 +6104,34 @@ function renderKpiChart(allData, metric) {
         }
     }
 
-    const formatTimeStr = (v) => {
-        let mins = Math.floor(v);
-        let secs = Math.round((v - mins) * 60);
-        if (secs === 60) { mins++; secs = 0; }
-        return mins + ':' + (secs < 10 ? '0' : '') + secs;
+    const fmtVal = (v) => {
+        if (v === null) return '';
+        if (metric === 'time') { const m2=Math.floor(v), s=Math.round((v-m2)*60); return m2+':'+(s<10?'0':'')+s; }
+        return (Math.round(v*10)/10) + unit;
     };
 
+    // ── Draw chart ───────────────────────────────────────────────────────────
     if (mainChartInstance) mainChartInstance.destroy();
-    
-    mainChartInstance = new Chart(document.getElementById('mainKpiChart').getContext('2d'), { 
-        type: 'line', 
-        plugins: typeof ChartDataLabels !== 'undefined' ? [ChartDataLabels] : [], 
-        data: { labels: lbls, datasets: fData }, 
-        options: { 
-            responsive: true, 
-            maintainAspectRatio: false, 
+
+    mainChartInstance = new Chart(document.getElementById('mainKpiChart').getContext('2d'), {
+        type: 'line',
+        plugins: typeof ChartDataLabels !== 'undefined' ? [ChartDataLabels] : [],
+        data: { labels: lbls, datasets: fData },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
             layout: { padding: { top: 55, right: 20, left: 10, bottom: 0 } },
-            animation: { duration: 400 }, 
-            plugins: { 
-                legend: { 
-                    position: 'bottom', 
-                    labels: { font: { size: 13, family: "'Inter', sans-serif", weight: 'bold' }, usePointStyle: true, boxWidth: 8, padding: 20 }
-                }, 
-                datalabels: { 
-                    align: 'top', 
-                    anchor: 'end', 
-                    formatter: v => {
-                        if (v === null) return '';
-                        return metric === 'time' ? formatTimeStr(v) : (Math.round(v*10)/10 + unit);
-                    },
-                    font: { size: 11, weight: 'bold' },
-                    color: '#666',
-                    offset: 4
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            let label = context.dataset.label.trim() || '';
-                            if (label) label += ': ';
-                            if (context.parsed.y !== null) {
-                                label += metric === 'time' ? formatTimeStr(context.parsed.y) : (Math.round(context.parsed.y*10)/10 + unit);
-                            }
-                            return label;
-                        }
-                    }
-                }
-            }, 
-            scales: { 
-                y: { min: yMin, max: yMax, ticks: { callback: v => metric === 'time' ? formatTimeStr(v) : (v + unit) } }, 
-                x: { grid: { display: false } } 
-            } 
-        } 
+            animation: { duration: 400 },
+            plugins: {
+                legend: { position: 'bottom', labels: { font: { size: 13, family:"'Inter',sans-serif", weight:'bold' }, usePointStyle: true, boxWidth: 8, padding: 20 } },
+                datalabels: { align:'top', anchor:'end', formatter: fmtVal, font:{ size:11, weight:'bold' }, color:'#666', offset:4 },
+                tooltip: { callbacks: { label: ctx => { const lbl = ctx.dataset.label.trim(); return lbl + ': ' + fmtVal(ctx.parsed.y); } } }
+            },
+            scales: {
+                y: { min: yMin, max: yMax, ticks: { callback: v => metric === 'time' ? (Math.floor(v)+':'+(Math.round((v-Math.floor(v))*60)<10?'0':'')+Math.round((v-Math.floor(v))*60)) : (v+unit) } },
+                x: { grid: { display: false } }
+            }
+        }
     });
 
     const activeLoader = document.getElementById('chartLoading');
@@ -6682,8 +7283,8 @@ const SCORECARD_CATEGORIES = [
     "Recycle Organization",
     "Retail Displays",
     "Overall Organization",
-    "Online Store Pictures",
-    "Staff Goals Readiness",
+    "Staff Goals Readiness",        // index 5 — In-Store Operations ends here
+    "Online Store Pictures",        // index 6 — Media and Markets starts here
     "5 Facebook Listings",
     "2 Social Media Posts",
     "Store Listing Review",
@@ -6691,8 +7292,8 @@ const SCORECARD_CATEGORIES = [
 ];
 
 const SCORECARD_BUCKETS = [
-    { label: "In-Store Operations", count: 7 },
-    { label: "Media and Markets", count: 2 },
+    { label: "In-Store Operations", count: 6 },
+    { label: "Media and Markets", count: 3 },
     { label: "Store Reviews", count: 2 }
 ];
 
@@ -6810,23 +7411,27 @@ function submitNewScorecard() {
 
     fetch(SCORECARD_URL, {
         method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
-    }).then(() => {
+    }).then(async res => {
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || json.success === false) throw new Error(json.error || 'Save failed');
+
         btn.innerText = "Saved Successfully!";
         btn.style.background = "var(--sage-professional)";
 
         setTimeout(() => {
             if (typeof fetchScorecardData === 'function') fetchScorecardData();
+            if (typeof fetchMasterDistrictDashboard === 'function') fetchMasterDistrictDashboard();
             closeScorecardModal();
             btn.innerText = "Save Scorecard";
             btn.style.background = "";
             btn.disabled = false;
         }, 1500);
     }).catch(err => {
-        alert("Error saving scorecard.");
+        alert("Error saving scorecard: " + (err.message || err));
         btn.innerText = "Save Scorecard";
+        btn.style.background = "";
         btn.disabled = false;
     });
 }
@@ -7058,74 +7663,31 @@ async function fetchChampions() {
         };
 
         // 3. FETCH LISTERS
-        const listerFetches = stores.map(s => fetch(`${WEEKLY_KPI_URL}?store=${s}&time=4-Week&v=${Date.now()}`).then(r => r.json()));
+        const listerFetches = stores.map(s => fetch(`${WEEKLY_KPI_URL}?store=${s}&v=${Date.now()}`).then(r => r.json()));
         const listerResults = await Promise.all(listerFetches);
 
         listerResults.forEach((d, storeIdx) => {
-            let sIdx = d.findLastIndex(r => String(r[0]).trim().toLowerCase() === "store" || String(r[0]).trim().toLowerCase() === "store total");
-            if (sIdx !== -1) {
-                for (let i = Math.max(0, sIdx - 6); i <= Math.min(d.length - 1, sIdx + 6); i++) {
-                    if (i === sIdx) continue;
-                    let n = String(d[i][0]).trim();
-                    let lN = n.toLowerCase();
-                    if (n && !["name", "employee", "store", "store total", "ovl", "lee", "wsp", "mpl", "bal"].includes(lN) && !lN.includes("average") && !lN.includes("week")) {
-                        let listed = parseNum(d[i][20]);
-                        if (listed > 0) {
-                            allListers.push({ name: getFullName(n), store: stores[storeIdx], listed: listed });
-                        }
-                        let reviews = parseNum(d[i][29]); // Column AD
-                        if (reviews > 0) {
-                            allGoogleReviews.push({ name: getFullName(n), store: stores[storeIdx], reviews: reviews });
-                        }
-                    }
-                }
-            }
+            // New clean JSON format: { employees, store_total, period_label }
+            (d.employees || []).forEach(e => {
+                const listed  = parseNum(e.listed_count);
+                const reviews = parseNum(e.mtd_google_reviews);
+                if (listed  > 0) allListers.push({ name: getFullName(e.employee_name), store: stores[storeIdx], listed });
+                if (reviews > 0) allGoogleReviews.push({ name: getFullName(e.employee_name), store: stores[storeIdx], reviews });
+            });
         });
 
-        // 4. FETCH BUYERS
+        // 4. FETCH BUYERS — reads from each store's weekly entries and ranks by buying_value
         try {
-            const buyerData = await fetch(`${WEEKLY_KPI_URL}?store=Weekly&time=Scores&v=${Date.now()}`).then(r => r.json());
-            let currentStore = "Store";
-            
-            buyerData.forEach((row, index) => {
-                let colA = String(row[0] || "").trim(); // Column A
-                let colB = String(row[1] || "").trim(); // Column B
-                let colC = String(row[2] || "").trim(); // Column C
-                
-                // Track which store's section we are in
-                if (colA.toUpperCase().includes("TEAM")) currentStore = colA.split(' ')[0]; 
-                if (colB.toUpperCase().includes("TEAM")) currentStore = colB.split(' ')[0]; 
-
-                let empName = colC; 
-                if (!empName) empName = colB; // Fallback to col B just in case
-
-                // parseNum automatically strips commas. If undefined, defaults to 0.
-                let finalScore = parseNum(row[7]) || 0; // Column H (Index 7)
-
-                let isWeek4 = colA.toLowerCase().replace(/\s/g, '') === "week4" || colB.toLowerCase().replace(/\s/g, '') === "week4";
-                
-                // Hardcoded row fallback (1-indexed for human readability)
-                let rowIndex = index + 1;
-                let isHardcodedWeek4Row = 
-                    (rowIndex >= 19 && rowIndex <= 22) || // OVL
-                    (rowIndex >= 38 && rowIndex <= 40) || // LEE
-                    (rowIndex >= 59 && rowIndex <= 62) || // WSP
-                    (rowIndex >= 78 && rowIndex <= 80) || // MPL
-                    (rowIndex >= 96 && rowIndex <= 98);   // BAL
-                
-                if (isWeek4 || isHardcodedWeek4Row) {
-                    let cleanName = empName.toLowerCase();
-                    if (cleanName && cleanName !== "employee" && cleanName !== "name" && !cleanName.includes("week") && !cleanName.includes("team")) {
-                        allBuyers.push({
-                            name: getFullName(empName),
-                            store: currentStore,
-                            score: finalScore
-                        });
-                    }
-                }
+            const buyerFetches = stores.map(s => fetch(`${WEEKLY_KPI_URL}?store=${s}&v=${Date.now()}`).then(r => r.json()));
+            const buyerResults = await Promise.all(buyerFetches);
+            buyerResults.forEach((d, storeIdx) => {
+                (d.employees || []).forEach(e => {
+                    const score = parseNum(e.buying_value);
+                    if (score > 0) allBuyers.push({ name: getFullName(e.employee_name), store: stores[storeIdx], score });
+                });
             });
         } catch (buyerErr) {
-            console.error("Failed to fetch Weekly Scores:", buyerErr);
+            console.error("Failed to fetch Weekly Buyers:", buyerErr);
         }
 
         // 5. BUILDER HELPER
