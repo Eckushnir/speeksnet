@@ -47,6 +47,7 @@ const TUTORIAL_URL      = `${_BASE}/tutorial`;
 const PATCH_NOTES_URL   = `${_BASE}/patch-notes`;
 const TICKER_URL        = `${_BASE}/ticker`;
 const KPI_MANAGE_URL    = `${_BASE}/kpi-manage`;
+const MONTHLY_BRIEF_URL = `${_BASE}/monthly-brief`;
 
 // --- 2. NAV COMPACT MODE ---
 (function () {
@@ -2343,6 +2344,187 @@ function _kpiExportCSV() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+}
+
+// --- 11c. MODULE: MONTHLY PERFORMANCE BRIEF (district-level, DM-editable) ---
+let _mbData = {};        // { period_end_date: { metric_key: value } }
+let _mbMonths = [];      // sorted date strings
+let _mbMetrics = [];     // catalog [{key,label,type,section}]
+let _mbEditable = '';    // editable period_end_date
+let _mbEditing = false;
+
+function _mbMonthLabel(dateStr) {
+    const d = new Date(dateStr + 'T12:00:00');
+    return d.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+}
+
+function _mbFmt(type, v) {
+    if (v == null || v === '' || isNaN(Number(v))) return '—';
+    const n = Number(v);
+    if (type === 'money')  return '$' + Math.round(n).toLocaleString();
+    if (type === 'pct')    return n.toFixed(1) + '%';
+    if (type === 'rating') return n.toFixed(1) + ' ★';
+    if (type === 'int')    return Math.round(n).toLocaleString();
+    return String(Math.round(n * 10) / 10);
+}
+
+async function fetchMonthlyBrief() {
+    const body = document.getElementById('mbBody');
+    if (!body) return;
+    const sel = document.getElementById('mbStoreSelect');
+    let store = sel ? sel.value : (sessionStorage.getItem('speeksUserStore') || 'OVL');
+    // Managers without the picker default to their own store
+    if (sel && sel.offsetParent === null) { store = sessionStorage.getItem('speeksUserStore') || store; }
+    _mbEditing = false;
+    body.innerHTML = '<div class="status-message">Syncing Performance Brief…</div>';
+    try {
+        const d = await fetch(`${MONTHLY_BRIEF_URL}?store=${store}&v=${Date.now()}`).then(r => r.json());
+        _mbData     = d.data || {};
+        _mbMonths   = d.months || [];
+        _mbMetrics  = d.metrics || [];
+        _mbEditable = d.editable_period || '';
+        _mbPopulateMonthSelects();
+        renderMonthlyBrief();
+    } catch (e) {
+        body.innerHTML = '<div class="status-message" style="color:var(--red-alert)">Failed to load brief.</div>';
+    }
+}
+
+function _mbPopulateMonthSelects() {
+    const pSel = document.getElementById('mbPrimaryMonth');
+    const cSel = document.getElementById('mbCompareMonth');
+    if (!pSel || !cSel) return;
+    const desc = [..._mbMonths].sort().reverse(); // newest first
+    const opts = desc.map(m => `<option value="${m}">${_mbMonthLabel(m)}</option>`).join('');
+    const prevP = pSel.value, prevC = cSel.value;
+    pSel.innerHTML = opts;
+    cSel.innerHTML = opts;
+    // Default: primary = newest, compare = previous month
+    pSel.value = (prevP && desc.includes(prevP)) ? prevP : desc[0];
+    cSel.value = (prevC && desc.includes(prevC)) ? prevC : (desc[1] || desc[0]);
+}
+
+function renderMonthlyBrief() {
+    const body = document.getElementById('mbBody');
+    if (!body) return;
+    const pDate = document.getElementById('mbPrimaryMonth')?.value;
+    const cDate = document.getElementById('mbCompareMonth')?.value;
+    if (!pDate) { body.innerHTML = '<div class="status-message">No data available.</div>'; return; }
+
+    // Edit button only for DM, and only when the primary selection is the editable month
+    const role = (sessionStorage.getItem('speeksUserRole') || '').toLowerCase().trim();
+    const isDM = role === 'district manager';
+    const canEdit = isDM && pDate === _mbEditable;
+    const editBtn = document.getElementById('mbEditBtn');
+    if (editBtn) editBtn.style.display = (canEdit && !_mbEditing) ? 'inline-block' : 'none';
+    document.getElementById('mbSaveBtn').style.display   = (_mbEditing) ? 'inline-block' : 'none';
+    document.getElementById('mbCancelBtn').style.display = (_mbEditing) ? 'inline-block' : 'none';
+
+    const pVals = _mbData[pDate] || {};
+    const cVals = _mbData[cDate] || {};
+
+    // Group metrics by section
+    const sections = [];
+    const bySection = {};
+    _mbMetrics.forEach(m => {
+        if (!bySection[m.section]) { bySection[m.section] = []; sections.push(m.section); }
+        bySection[m.section].push(m);
+    });
+
+    let html = '<table class="mb-table"><thead><tr>' +
+        '<th class="mb-th-metric">Metric</th>' +
+        '<th class="mb-th-val">' + _mbMonthLabel(pDate) + '</th>' +
+        '<th class="mb-th-val">' + _mbMonthLabel(cDate) + '</th>' +
+        '<th class="mb-th-delta">Δ</th>' +
+        '</tr></thead><tbody>';
+
+    sections.forEach(sec => {
+        html += '<tr class="mb-section-row"><td colspan="4">' + sec + '</td></tr>';
+        bySection[sec].forEach(m => {
+            const pv = pVals[m.key];
+            const cv = cVals[m.key];
+            let primaryCell;
+            if (_mbEditing && canEdit) {
+                const step = (m.type === 'int') ? '1' : (m.type === 'rating' ? '0.1' : '0.01');
+                primaryCell = '<input class="mb-input" type="number" step="' + step + '" id="mb-in-' + m.key + '" value="' + (pv != null ? pv : '') + '">';
+            } else {
+                primaryCell = _mbFmt(m.type, pv);
+            }
+            // Delta: percent change for most; absolute point diff for pct/rating metrics
+            let delta = '—', deltaCls = '';
+            if (pv != null && cv != null && !isNaN(pv) && !isNaN(cv)) {
+                if (m.type === 'pct' || m.type === 'rating') {
+                    const diff = Number(pv) - Number(cv);
+                    delta = (diff >= 0 ? '+' : '') + diff.toFixed(1) + (m.type === 'pct' ? ' pts' : '');
+                    deltaCls = diff >= 0 ? 'mb-up' : 'mb-down';
+                } else if (Number(cv) !== 0) {
+                    const pct = (Number(pv) - Number(cv)) / Math.abs(Number(cv)) * 100;
+                    delta = (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%';
+                    deltaCls = pct >= 0 ? 'mb-up' : 'mb-down';
+                }
+            }
+            html += '<tr class="mb-row">' +
+                '<td class="mb-metric-name">' + m.label + '</td>' +
+                '<td class="mb-val mb-val-primary">' + primaryCell + '</td>' +
+                '<td class="mb-val">' + _mbFmt(m.type, cv) + '</td>' +
+                '<td class="mb-delta ' + deltaCls + '">' + delta + '</td>' +
+                '</tr>';
+        });
+    });
+
+    html += '</tbody></table>';
+    body.innerHTML = html;
+}
+
+function mbStartEdit() {
+    _mbEditing = true;
+    // Force primary to the editable month
+    const pSel = document.getElementById('mbPrimaryMonth');
+    if (pSel && _mbEditable) {
+        if (![...pSel.options].some(o => o.value === _mbEditable)) {
+            pSel.add(new Option(_mbMonthLabel(_mbEditable), _mbEditable), 0);
+        }
+        pSel.value = _mbEditable;
+    }
+    renderMonthlyBrief();
+}
+
+function mbCancelEdit() {
+    _mbEditing = false;
+    renderMonthlyBrief();
+}
+
+async function mbSaveBrief() {
+    const store = document.getElementById('mbStoreSelect')?.value || sessionStorage.getItem('speeksUserStore');
+    const pin   = sessionStorage.getItem('speeksUserPin');
+    if (!pin) { alert('Session expired — please sign in again.'); return; }
+
+    const values = {};
+    _mbMetrics.forEach(m => {
+        const el = document.getElementById('mb-in-' + m.key);
+        if (el) values[m.key] = el.value === '' ? null : Number(el.value);
+    });
+
+    const saveBtn = document.getElementById('mbSaveBtn');
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving…'; }
+    try {
+        const resp = await fetch(MONTHLY_BRIEF_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-user-pin': pin },
+            body: JSON.stringify({ store, period_end_date: _mbEditable, values }),
+        });
+        const result = await resp.json();
+        if (!resp.ok || result.error) throw new Error(result.error || 'Save failed');
+        // Merge saved values into local cache
+        _mbData[_mbEditable] = Object.assign({}, _mbData[_mbEditable] || {}, values);
+        if (!_mbMonths.includes(_mbEditable)) { _mbMonths.push(_mbEditable); _mbPopulateMonthSelects(); }
+        _mbEditing = false;
+        renderMonthlyBrief();
+    } catch (e) {
+        alert('Could not save: ' + e.message);
+    } finally {
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save'; }
+    }
 }
 
 function _kpiRenderMonthly(periods) {
@@ -5382,7 +5564,7 @@ function applyRoleBasedUI() {
     }
 
     if (userStore !== 'ALL') {
-        ['kpiStoreSelect', 'am-kpiStoreSelect', 'weeklyKpiStoreSelect', 'bsStoreSelect', 'vw-primary', 'dmChartStoreSelector'].forEach(id => {
+        ['kpiStoreSelect', 'am-kpiStoreSelect', 'weeklyKpiStoreSelect', 'bsStoreSelect', 'vw-primary', 'dmChartStoreSelector', 'mbStoreSelect'].forEach(id => {
             const dropdown = document.getElementById(id);
             if (dropdown && Array.from(dropdown.options).some(opt => opt.value === userStore)) {
                 dropdown.value = userStore;
@@ -5496,6 +5678,7 @@ function initDashboardData() {
         setTimeout(fetchDistrictMonthlyKPIs, 750);
         setTimeout(fetchRecordsData, 800);
         setTimeout(() => { if (document.getElementById('mainKpiChart')) fetchChartData(currentTimeframe); }, 950);
+        setTimeout(() => { if (document.getElementById('mbBody')) fetchMonthlyBrief(); }, 1000);
         setTimeout(fetchChampions, 850);
         setTimeout(fetchAwardsData, 900);
         setTimeout(fetchDmGoalsData, 1000);

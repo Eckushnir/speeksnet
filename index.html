@@ -967,16 +967,27 @@
           </div>
       </div>
 
-      <div class="card kpi-master-card district-master-panel employee-widget-card dynamic-module-flex role-manager role-owner-manager weekly-expanded-card">
-          <div class="district-kpi-header">
-              <div class="align-center gap-8">
-                  <span class="district-kpi-title">Monthly Performance Brief</span>
+      <div class="card kpi-master-card district-master-panel employee-widget-card dynamic-module-flex role-manager role-owner-manager role-district-manager role-ceo weekly-expanded-card">
+          <div class="district-kpi-header mb-brief-header">
+              <span class="district-kpi-title">Monthly Performance Brief</span>
+              <div class="mb-brief-controls">
+                  <select id="mbStoreSelect" class="kpi-select" onchange="fetchMonthlyBrief()">
+                      <option value="OVL">OVL</option>
+                      <option value="LEE">LEE</option>
+                      <option value="WSP">WSP</option>
+                      <option value="MPL">MPL</option>
+                      <option value="BAL">BAL</option>
+                  </select>
+                  <select id="mbPrimaryMonth" class="kpi-select" onchange="renderMonthlyBrief()"></select>
+                  <span class="vw-vs-text">vs</span>
+                  <select id="mbCompareMonth" class="kpi-select" onchange="renderMonthlyBrief()"></select>
+                  <button id="mbEditBtn" class="kpi-update-trigger-btn" style="display:none;" onclick="mbStartEdit()">✏️ Edit</button>
+                  <button id="mbSaveBtn" class="kpi-save-section-btn" style="display:none;" onclick="mbSaveBrief()">Save</button>
+                  <button id="mbCancelBtn" class="kpi-cancel-btn" style="display:none;" onclick="mbCancelEdit()">Cancel</button>
               </div>
           </div>
-          <div class="module-coming-soon">
-              <div class="module-coming-soon-icon">📋</div>
-              <div class="module-coming-soon-title">Monthly Performance Brief</div>
-              <div class="module-coming-soon-sub">Extended district-level monthly KPI comparison — coming soon</div>
+          <div class="weekly-kpi-scroll-area" id="mbBody">
+              <div class="status-message">Syncing Performance Brief…</div>
           </div>
       </div>
 

@@ -3269,6 +3269,40 @@ canvas#leaderboardCanvas, canvas#mainKpiChart {
 .weekly-kpi-scroll-area::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
 .weekly-kpi-scroll-area::-webkit-scrollbar-thumb:hover { background: var(--sage-professional); }
 
+/* ── Monthly Performance Brief ── */
+.mb-brief-header { flex-wrap: wrap; gap: 8px; }
+.mb-brief-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.mb-table { width: 100%; border-collapse: separate; border-spacing: 0; font-family: 'Inter', sans-serif; font-size: 12px; }
+.mb-table thead th {
+    position: sticky; top: 0; z-index: 5;
+    background: #f8f9fb; color: #374151;
+    font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px;
+    padding: 8px 12px; text-align: right; border-bottom: 2px solid #c8cdd4;
+}
+.mb-table thead th.mb-th-metric { text-align: left; }
+.mb-th-metric { width: 42%; }
+.mb-th-val { width: 21%; }
+.mb-th-delta { width: 16%; }
+.mb-section-row td {
+    background: #dde3eb; color: var(--slate-charcoal);
+    font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;
+    padding: 6px 12px; border-top: 1px solid #c4cdd8; border-bottom: 1px solid #c4cdd8;
+}
+.mb-row td { padding: 6px 12px; border-bottom: 1px solid #f0f0f0; }
+.mb-row:hover td { background: #fafbfc; }
+.mb-metric-name { font-weight: 600; color: #334155; }
+.mb-val { text-align: right; font-weight: 700; color: var(--slate-charcoal); font-variant-numeric: tabular-nums; }
+.mb-val-primary { color: #1d4ed8; }
+.mb-delta { text-align: right; font-weight: 700; font-size: 11px; font-variant-numeric: tabular-nums; color: #94a3b8; }
+.mb-delta.mb-up   { color: #16a34a; }
+.mb-delta.mb-down { color: #dc2626; }
+.mb-input {
+    width: 92px; padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 5px;
+    font-size: 12px; font-weight: 600; text-align: right; color: #1d4ed8; outline: none;
+    font-family: 'Inter', sans-serif;
+}
+.mb-input:focus { border-color: var(--sage-professional); box-shadow: 0 0 0 2px rgba(106,153,78,0.15); }
+
 .vw-dashboard {
     min-height: 0 !important;
     overflow: visible !important;

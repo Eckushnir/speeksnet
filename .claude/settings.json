@@ -22,7 +22,12 @@
       "mcp__supabase__list_edge_functions",
       "mcp__supabase__deploy_edge_function",
       "mcp__supabase__get_edge_function",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(cd /tmp)",
+      "Bash(curl -sL https://docs.google.com/spreadsheets/d/__TRACKED_VAR__/edit -o brief.html)",
+      "Bash(wc -c)",
+      "Bash(echo \"bytes: $\\(wc -c < brief.html\\)\")",
+      "Bash(echo \"=== tab captions ===\")"
     ]
   }
 }
